@@ -1,0 +1,243 @@
+<p-toast class="p-toast" position="bottom-right"></p-toast>
+
+<!-- Action Buttons Grid -->
+<!-- <div class="modern-action-grid" *ngIf="abilitaTasti">
+  <button mat-raised-button class="modern-action-btn modern-action-btn--primary" (click)="nuovoprodotto()">
+    <mat-icon class="modern-action-btn__icon">add_box</mat-icon>
+    <span class="modern-action-btn__text">Nuovo Macro Prodotto</span>
+  </button>
+</div> -->
+
+<div class="modern-card" [@pageTransition]="state">
+  <div class="modern-card__header">
+    <div class="modern-card__header-content">
+      <mat-icon class="modern-card__header-icon">view_list</mat-icon>
+      <h2 class="modern-card__title">Gestione Macro Prodotti</h2>
+    </div>
+  </div>
+
+  <div class="modern-card__body">
+    <!-- Selected Product Card -->
+    <div [hidden]="show_product" class="selected-product-card">
+      <div class="selected-product-card__header">
+        <mat-icon class="selected-product-card__icon">shopping_basket</mat-icon>
+        <h4 class="selected-product-card__title">Macro Prodotto Selezionato</h4>
+      </div>
+      <div class="selected-product-card__content">
+        <h3 class="selected-product-card__description">{{descrizione_prodotto_sel}}</h3>
+      </div>
+    </div>
+
+    <!-- Modern Data Table -->
+    <div class="modern-table-container">
+      <table mat-table [dataSource]="dataSource" matSort class="modern-table">
+        
+        <!-- ID Column -->
+        <ng-container [matColumnDef]="displayedColumns[0]">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="modern-table__header">
+            <div class="modern-table__header-content">
+              <mat-icon class="modern-table__header-icon">tag</mat-icon>
+              <span>ID</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="modern-table__cell modern-table__cell--id">
+            <span class="modern-badge modern-badge--id">{{row.id}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Codice Macro Column with Filter -->
+        <ng-container [matColumnDef]="displayedColumns[1]">
+          <th mat-header-cell *matHeaderCellDef class="modern-table__header modern-table__header--filter">
+            <div class="modern-table__filter-section">
+              <div class="modern-table__header-content">
+                <mat-icon class="modern-table__header-icon">qr_code</mat-icon>
+                <span>CODICE MACRO</span>
+              </div>
+              <mat-form-field appearance="outline" class="modern-table__filter-field">
+                <mat-label>Filtra per codice</mat-label>
+                <input matInput (keyup)="selectValue(displayedColumns[1],$event)" 
+                       placeholder="Inserisci codice..." #input>
+                <mat-icon matSuffix>search</mat-icon>
+              </mat-form-field>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="modern-table__cell">
+            <span class="modern-code-cell">{{row.codice_macro}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Descrizione Column with Filter -->
+        <ng-container [matColumnDef]="displayedColumns[2]">
+          <th mat-header-cell *matHeaderCellDef class="modern-table__header modern-table__header--filter">
+            <div class="modern-table__filter-section">
+              <div class="modern-table__header-content">
+                <mat-icon class="modern-table__header-icon">description</mat-icon>
+                <span>DESCRIZIONE</span>
+              </div>
+              <mat-form-field appearance="outline" class="modern-table__filter-field">
+                <mat-label>Filtra per descrizione</mat-label>
+                <input matInput (keyup)="selectValue(displayedColumns[2],$event)" 
+                       placeholder="Inserisci descrizione..." #input>
+                <mat-icon matSuffix>search</mat-icon>
+              </mat-form-field>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="modern-table__cell">
+            <span class="modern-table__description">{{row.descrizione}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Punti Valore Column -->
+        <ng-container [matColumnDef]="displayedColumns[3]">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="modern-table__header">
+            <div class="modern-table__header-content">
+              <mat-icon class="modern-table__header-icon">stars</mat-icon>
+              <span>PUNTI VALORE</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="modern-table__cell modern-table__cell--points">
+            <span class="modern-badge modern-badge--points-value">{{row.punti_valore}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Punti Carriera Column -->
+        <ng-container [matColumnDef]="displayedColumns[4]">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="modern-table__header">
+            <div class="modern-table__header-content">
+              <mat-icon class="modern-table__header-icon">trending_up</mat-icon>
+              <span>PUNTI CARRIERA</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="modern-table__cell modern-table__cell--points">
+            <span class="modern-badge modern-badge--points-career">{{row.punti_carriera}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container [matColumnDef]="displayedColumns[5]">
+          <th mat-header-cell *matHeaderCellDef class="modern-table__header">
+            <div class="modern-table__header-content">
+              <mat-icon class="modern-table__header-icon">settings</mat-icon>
+              <span>AZIONI</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="modern-table__cell modern-table__cell--actions">
+            <div class="modern-table__actions">
+              <button *ngIf="abilitaTasti" mat-mini-fab 
+                      class="modern-action-btn-small modern-action-btn-small--edit"
+                      (click)="clickedRows(row)"
+                      matTooltip="Modifica macro prodotto">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Table Rows -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-table__header-row"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+            class="modern-table__row"></tr>
+
+        <!-- No Data Row -->
+        <tr class="modern-table__no-data" *matNoDataRow>
+          <td class="modern-table__no-data-cell" [attr.colspan]="displayedColumns.length">
+            <div class="modern-table__no-data-content">
+              <mat-icon class="modern-table__no-data-icon">search_off</mat-icon>
+              <span>Nessun macro prodotto trovato con i criteri di ricerca specificati</span>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 100]" 
+                     aria-label="Seleziona pagina dei macro prodotti"
+                     class="modern-paginator">
+      </mat-paginator>
+    </div>
+  </div>
+</div>
+
+<!-- Macro Product Details Form -->
+<div class="modern-details-card" *ngIf="DettaglioMacroProdotto" @pageTransition [hidden]="macroprodottoselezionato">
+  <div class="modern-details-card__header">
+    <div class="modern-details-card__header-content">
+      <mat-icon class="modern-details-card__header-icon">inventory</mat-icon>
+      <h2 class="modern-details-card__title">Dettagli Macro Prodotto</h2>
+    </div>
+  </div>
+
+  <div class="modern-details-card__body">
+    <form class="modern-details-form">
+      <div class="modern-details-form__grid">
+        
+        <!-- Codice Macro Field -->
+        <div class="modern-details-form__field">
+          <mat-form-field appearance="outline" class="modern-details-form__input">
+            <mat-label>Codice Macro</mat-label>
+            <input matInput 
+                   type="text" 
+                   name="codice_macro"
+                   class="codice_macro"
+                   [value]="DettaglioMacroProdotto[0].codice_macro"
+                   placeholder="Inserisci codice macro">
+            <mat-icon matSuffix class="modern-details-form__icon">qr_code</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <!-- Descrizione Field -->
+        <div class="modern-details-form__field">
+          <mat-form-field appearance="outline" class="modern-details-form__input">
+            <mat-label>Descrizione</mat-label>
+            <input matInput 
+                   type="text" 
+                   name="descrizioneMacroProd"
+                   class="descrizioneMacroProd"
+                   [value]="DettaglioMacroProdotto[0].descrizioneMacroProd"
+                   placeholder="Inserisci descrizione">
+            <mat-icon matSuffix class="modern-details-form__icon">description</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <!-- Punti Valore Field -->
+        <div class="modern-details-form__field">
+          <mat-form-field appearance="outline" class="modern-details-form__input">
+            <mat-label>Punti Valore</mat-label>
+            <input matInput 
+                   type="number" 
+                   name="punti_valore"
+                   class="punti_valore"
+                   [value]="DettaglioMacroProdotto[0].punti_valore"
+                   placeholder="Inserisci punti valore">
+            <mat-icon matSuffix class="modern-details-form__icon">stars</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <!-- Punti Carriera Field -->
+        <div class="modern-details-form__field">
+          <mat-form-field appearance="outline" class="modern-details-form__input">
+            <mat-label>Punti Carriera</mat-label>
+            <input matInput 
+                   type="number" 
+                   name="punti_carriera"
+                   class="punti_carriera"
+                   [value]="DettaglioMacroProdotto[0].punti_carriera"
+                   placeholder="Inserisci punti carriera">
+            <mat-icon matSuffix class="modern-details-form__icon">trending_up</mat-icon>
+          </mat-form-field>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="modern-details-form__actions">
+        <button mat-raised-button 
+                class="modern-details-form__save-btn"
+                type="submit" 
+                (click)="SalvaModificheMacroProdotto(DettaglioMacroProdotto[0].idMacroProd)">
+          <mat-icon class="modern-details-form__save-icon">save</mat-icon>
+          <span>Salva Modifiche</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

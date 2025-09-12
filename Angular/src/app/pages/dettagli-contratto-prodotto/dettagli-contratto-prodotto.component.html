@@ -1,0 +1,169 @@
+<div class="row">
+  <div [@pageTransition]="state">
+    <div class="modern-card" id="domandecontratto">
+      <div class="modern-card-header">
+        <div class="header-content">
+          <mat-icon class="header-icon">assignment</mat-icon>
+          <div class="header-text">
+            <h2 class="header-title">Dettagli Contratto</h2>
+            <p class="header-subtitle">Prodotto: {{ prodottoselezionato }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="modern-card-body">
+        <div class="instruction-section">
+          <mat-icon class="instruction-icon">info</mat-icon>
+          <p class="instruction-text">Indica le seguenti informazioni per il contratto</p>
+        </div>
+
+        <form [formGroup]="SetOpt" ngNativeValidate class="contract-form">
+          <div class="form-section" *ngFor="let item of list">
+            <!-- Campo Data -->
+            <div *ngIf="item.tipoRisposta == 2" class="form-field-container">
+              <div class="form-field-wrapper">
+                <div class="field-icon">
+                  <mat-icon>event</mat-icon>
+                </div>
+                <div class="field-content">
+                  <label class="field-label">{{ item.domanda }}</label>
+                  <div class="input-group">
+                    <input class="form-control modern-input" 
+                           placeholder="yyyy-mm-dd" 
+                           name="dp" 
+                           [(ngModel)]="model" 
+                           ngbDatepicker 
+                           #d="ngbDatepicker" 
+                           [required]="item.obbligatorio" />
+                    <button class="btn btn-date-picker" 
+                            (click)="d.toggle()" 
+                            type="button">
+                      <mat-icon>calendar_today</mat-icon>
+                    </button>
+                  </div>
+                  <div *ngIf="SetOpt.get(item.domanda)?.hasError('required') && (SetOpt.get(item.domanda)?.touched || SetOpt.get(item.domanda)?.dirty)" 
+                       class="error-message">
+                    <mat-icon class="error-icon">error</mat-icon>
+                    Questo campo è obbligatorio.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Campo Testo -->
+            <div *ngIf="item.tipoRisposta == 0" class="form-field-container">
+              <div class="form-field-wrapper">
+                <div class="field-icon">
+                  <mat-icon>text_fields</mat-icon>
+                </div>
+                <div class="field-content">
+                  <label class="field-label">{{ item.domanda }}</label>
+                  <input [ngClass]="{'input-error': SetOpt.get(item.domanda)?.errors && showErrors}" 
+                         type="text" 
+                         class="form-control modern-input" 
+                         formControlName="{{ item.domanda }}" 
+                         placeholder="Inserisci {{ item.domanda }}" 
+                         [required]="item.obbligatorio">
+                  <div *ngIf="SetOpt.get(item.domanda)?.hasError('required') && (SetOpt.get(item.domanda)?.touched || SetOpt.get(item.domanda)?.dirty)" 
+                       class="error-message">
+                    <mat-icon class="error-icon">error</mat-icon>
+                    Questo campo è obbligatorio.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Campo Checkbox -->
+            <div *ngIf="item.tipoRisposta == 1" class="form-field-container">
+              <div class="form-field-wrapper">
+                <div class="field-icon">
+                  <mat-icon>check_box</mat-icon>
+                </div>
+                <div class="field-content">
+                  <label class="field-label">{{ item.domanda }}</label>
+                  <div class="checkbox-wrapper">
+                    <mat-slide-toggle [ngClass]="{'input-error': SetOpt.get(item.domanda)?.errors && showErrors}" 
+                                      formControlName="{{ item.domanda }}" 
+                                      [required]="item.obbligatorio"
+                                      color="primary">
+                      <span class="toggle-label">Attiva/Disattiva</span>
+                    </mat-slide-toggle>
+                  </div>
+                  <div *ngIf="SetOpt.get(item.domanda)?.hasError('required') && (SetOpt.get(item.domanda)?.touched || SetOpt.get(item.domanda)?.dirty)" 
+                       class="error-message">
+                    <mat-icon class="error-icon">error</mat-icon>
+                    Questo campo è obbligatorio.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Campo Select -->
+            <div *ngIf="item.tipoRisposta == 3" class="form-field-container">
+              <div class="form-field-wrapper">
+                <div class="field-icon">
+                  <mat-icon>list</mat-icon>
+                </div>
+                <div class="field-content">
+                  <label class="field-label">{{ item.domanda }}</label>
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Seleziona un'opzione</mat-label>
+                    <mat-select [ngClass]="{'input-error': SetOpt.get(item.domanda)?.errors && showErrors}" 
+                                formControlName="{{ item.domanda }}" 
+                                [required]="item.obbligatorio">
+                      <mat-option value="">--</mat-option>
+                      <mat-option *ngFor="let selezione of item.multipla; trackBy: trackByFn" 
+                                  [value]="selezione">
+                        {{ selezione }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <div *ngIf="SetOpt.get(item.domanda)?.hasError('required') && (SetOpt.get(item.domanda)?.touched || SetOpt.get(item.domanda)?.dirty)" 
+                       class="error-message">
+                    <mat-icon class="error-icon">error</mat-icon>
+                    Questo campo è obbligatorio.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Campo Numerico -->
+            <div *ngIf="item.tipoRisposta == 4" class="form-field-container">
+              <div class="form-field-wrapper">
+                <div class="field-icon">
+                  <mat-icon>pin</mat-icon>
+                </div>
+                <div class="field-content">
+                  <label class="field-label">{{ item.domanda }}</label>
+                  <input [ngClass]="{'input-error': SetOpt.get(item.domanda)?.errors && showErrors}" 
+                         type="number" 
+                         class="form-control modern-input" 
+                         formControlName="{{ item.domanda }}" 
+                         placeholder="Inserisci {{ item.domanda }}" 
+                         [required]="item.obbligatorio">
+                  <div *ngIf="SetOpt.get(item.domanda)?.hasError('required') && (SetOpt.get(item.domanda)?.touched || SetOpt.get(item.domanda)?.dirty)" 
+                       class="error-message">
+                    <mat-icon class="error-icon">error</mat-icon>
+                    Questo campo è obbligatorio.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" 
+                    (click)="storeOpt()" 
+                    class="btn-modern-primary">
+              <mat-icon>save</mat-icon>
+              Salva Opzioni
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div [hidden]="matspinner">
+  <mat-spinner  class="centered-element-spinner large-spinner" ></mat-spinner>
+</div>

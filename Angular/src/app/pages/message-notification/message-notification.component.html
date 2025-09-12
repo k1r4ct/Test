@@ -1,0 +1,199 @@
+<!-- 🚀 Floating Action Button ottimizzato -->
+<div class="notification-fab-container">
+  <button 
+    type="button"
+    class="notification-fab"
+    [class.has-notifications]="hasUnreadMessages()"
+    (click)="togglePanel()"
+    [attr.aria-label]="'Notifiche: ' + counter() + ' nuove'"
+    [attr.aria-expanded]="isPanelOpen()"
+    title="Apri centro notifiche">
+    
+    <mat-icon>{{ hasUnreadMessages() ? 'notifications_active' : 'notifications' }}</mat-icon>
+    
+    <span class="notification-badge" *ngIf="counter() > 0" 
+          [attr.aria-label]="counter() + ' nuove notifiche'"
+          title="{{ counter() }} nuove notifiche">
+      {{ counter() > 99 ? '99+' : counter() }}
+    </span>
+  </button>
+</div>
+
+<!-- 🌟 Pannello notifiche moderno -->
+<div class="notification-panel-overlay" 
+     *ngIf="isPanelOpen()" 
+     (click)="closePanel()"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="notification-panel-title"
+     style="z-index: 9998;">
+  
+  <div class="notification-panel" 
+       (click)="$event.stopPropagation()">
+    
+    <!-- 🎨 Header con design migliorato -->
+    <div class="panel-header">
+      <mat-card>
+        <mat-card-header>
+          <div mat-card-avatar class="notification-avatar">
+            <mat-icon>notifications</mat-icon>
+          </div>
+          <mat-card-title id="notification-panel-title">
+            Centro Notifiche
+          </mat-card-title>
+          <mat-card-subtitle>
+            <span *ngIf="counter() > 0; else noNotifications">
+              {{ counter() }} {{ counter() === 1 ? 'notifica non letta' : 'notifiche non lette' }}
+            </span>
+            <ng-template #noNotifications>
+              <span>Tutte le notifiche sono state lette</span>
+            </ng-template>
+          </mat-card-subtitle>
+        </mat-card-header>
+        
+        <mat-card-actions>
+          <button 
+            type="button"
+            [disabled]="counter() === 0"
+            (click)="markAllAsRead()"
+            [attr.aria-label]="'Segna tutte le ' + counter() + ' notifiche come lette'">
+            <mat-icon>done_all</mat-icon>
+            Segna tutte
+          </button>
+          
+          <button 
+            type="button"
+            [class.active]="autoRefresh()"
+            (click)="toggleAutoRefresh()"
+            [attr.aria-label]="'Auto-aggiornamento: ' + (autoRefresh() ? 'attivo' : 'disattivo')">
+            <mat-icon>{{ autoRefresh() ? 'sync' : 'sync_disabled' }}</mat-icon>
+            Auto-refresh
+          </button>
+          
+          <button 
+            type="button"
+            (click)="closePanel()"
+            aria-label="Chiudi pannello notifiche">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+
+    <!-- 📱 Contenuto principale -->
+    <div class="panel-content">
+      
+      <!-- 🔄 Stato di caricamento elegante -->
+      <div *ngIf="isLoading()" class="loading-container" role="status" aria-live="polite">
+        <mat-spinner diameter="48" color="primary"></mat-spinner>
+        <p>Caricamento notifiche in corso...</p>
+      </div>
+
+      <!-- 📋 Lista notifiche con animazioni -->
+      <div *ngIf="!isLoading() && sortedMessages().length > 0" 
+           class="notifications-list"
+           role="list">
+        
+        <div *ngFor="let message of sortedMessages(); trackBy: trackByMessageId"
+             class="notification-card"
+             [class.selected]="selectedMessageId() === message.id"
+             [class.priority-alta]="message.priorita === 'alta'"
+             [class.priority-media]="message.priorita === 'media'"
+             [class.priority-bassa]="message.priorita === 'bassa'"
+             (click)="selectMessage(message.id)"
+             role="listitem"
+             tabindex="0"
+             [attr.aria-label]="'Notifica: ' + (message.titolo || 'Nuova notifica')"
+             (keydown.enter)="selectMessage(message.id)"
+             (keydown.space)="selectMessage(message.id)">
+          
+          <mat-card>
+            <mat-card-header>
+              <div mat-card-avatar 
+                   class="message-avatar"
+                   [ngClass]="'avatar-' + message.tipo">
+                <mat-icon [style.color]="'white'">
+                  {{ getMessageIcon(message) }}
+                </mat-icon>
+              </div>
+              
+              <mat-card-title class="message-title">
+                {{ message.titolo || 'Nuova notifica' }}
+              </mat-card-title>
+              
+              <mat-card-subtitle class="message-subtitle">
+                <mat-icon style="font-size: 14px; margin-right: 4px;">access_time</mat-icon>
+                {{ formatDate(message.created_at) }}
+              </mat-card-subtitle>
+            </mat-card-header>
+
+            <mat-card-content>
+              <div class="message-content" 
+                   [innerHTML]="message.notifica_html"
+                   [class.expanded]="selectedMessageId() === message.id">
+              </div>
+            </mat-card-content>
+
+            <mat-card-actions>
+              <button 
+                type="button"
+                (click)="markAsRead(message); $event.stopPropagation()"
+                [attr.aria-label]="'Segna come letta: ' + (message.titolo || 'questa notifica')">
+                <mat-icon>check</mat-icon>
+                Letta
+              </button>
+              
+              <button 
+                type="button"
+                (click)="selectMessage(message.id); $event.stopPropagation()"
+                [attr.aria-label]="selectedMessageId() === message.id ? 'Comprimi notifica' : 'Espandi notifica'">
+                <mat-icon>{{ selectedMessageId() === message.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+                {{ selectedMessageId() === message.id ? 'Comprimi' : 'Espandi' }}
+              </button>
+            </mat-card-actions>
+
+            <!-- 🏷️ Chip priorità migliorati -->
+            <div class="priority-chips" *ngIf="message.priorita === 'alta' || message.priorita === 'media'">
+              <mat-chip *ngIf="message.priorita === 'alta'" color="warn" [selected]="true">
+                <mat-icon matChipAvatar>warning</mat-icon>
+                Urgente
+              </mat-chip>
+              <mat-chip *ngIf="message.priorita === 'media'" color="accent" [selected]="true">
+                <mat-icon matChipAvatar>schedule</mat-icon>
+                Importante
+              </mat-chip>
+            </div>
+          </mat-card>
+        </div>
+      </div>
+
+      <!-- 🎭 Stato vuoto migliorato -->
+      <div *ngIf="!isLoading() && sortedMessages().length === 0" 
+           class="empty-state"
+           role="status">
+        <mat-icon class="empty-icon">notifications_off</mat-icon>
+        <h3>Nessuna notifica</h3>
+        <p>
+          Ottimo lavoro! <br>
+          Non ci sono nuove notifiche da leggere.
+        </p>
+        <button 
+          type="button"
+          (click)="loadMessages()"
+          aria-label="Ricarica le notifiche">
+          <mat-icon>refresh</mat-icon>
+          Ricarica
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Debug info -->
+<div class="debug-panel" *ngIf="isPanelOpen()">
+  <p>🔍 Debug Info:</p>
+  <p>Panel Open: {{ isPanelOpen() }}</p>
+  <p>Counter: {{ counter() }}</p>
+  <p>Messages: {{ messages().length }}</p>
+  <p>Loading: {{ isLoading() }}</p>
+</div>

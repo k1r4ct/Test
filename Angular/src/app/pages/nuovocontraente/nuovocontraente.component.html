@@ -1,0 +1,284 @@
+<div class="col-md-10 col-lg-10 col-xl-10" [@pageTransition]="state">
+  <div class="card card-user modern-card" id="nuovocontraente">
+    <div class="card-header modern-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="material-icons">person_add</i>
+        </div>
+        <div class="header-text">
+          <h3 class="card-title">Registrazione del Contraente</h3>
+          <p class="card-subtitle">Inserisci i dati del nuovo contraente</p>
+        </div>
+      </div>
+    </div>
+    <div class="card-body modern-body">
+
+      <!-- Tipologia Contraente Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <h4 class="section-title">
+            <span class="section-icon">🏢</span>
+            Tipologia Contraente
+          </h4>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group modern-form-group">
+              <label class="form-label modern-label">Seleziona Tipologia</label>
+              <div class="select-wrapper">
+                <select class="form-select modern-select" (change)="changeType($event)"
+                  [(ngModel)]="selectTipecliente">
+                  <option [ngValue]="0">🏢 Business</option>
+                  <option [ngValue]="1">👤 Consumer</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6" *ngIf="valoretypecli==tipocli">
+            <div class="form-group modern-form-group">
+              <label class="form-label modern-label">&nbsp;</label>
+              <button type="button" class="btn modern-btn-secondary" (click)="copiadati()">
+                <i class="material-icons">content_copy</i>
+                Copiare i dati?
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <form [formGroup]="newContraente" class="modern-form">
+        <!-- Dati Personali - Consumer -->
+        <div class="form-section" *ngIf="selectTipecliente == 1">
+          <div class="section-header">
+            <h4 class="section-title">
+              <span class="section-icon">👤</span>
+              Dati Personali
+            </h4>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">Nome</label>
+                <div class="input-wrapper">
+                  <input type="text" class="form-control modern-input" formControlName="nome" 
+                    placeholder="Inserisci il nome" 
+                    [ngClass]="{'input-error': newContraente.get('nome')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">person</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">Cognome</label>
+                <div class="input-wrapper">
+                  <input type="text" class="form-control modern-input" formControlName="cognome" 
+                    placeholder="Inserisci il cognome" 
+                    [ngClass]="{'input-error': newContraente.get('cognome')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">person</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dati Aziendali - Business -->
+        <div class="form-section" *ngIf="selectTipecliente == 0">
+          <div class="section-header">
+            <h4 class="section-title">
+              <span class="section-icon">🏢</span>
+              Dati Aziendali
+            </h4>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">Ragione Sociale</label>
+                <div class="input-wrapper">
+                  <input type="text" class="form-control modern-input" formControlName="ragione_sociale"
+                    placeholder="Inserisci la Ragione Sociale" 
+                    [ngClass]="{'input-error': newContraente.get('ragione_sociale')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">business</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Codici Fiscali -->
+        <div class="form-section">
+          <div class="section-header">
+            <h4 class="section-title">
+              <span class="section-icon">📋</span>
+              Codici Identificativi
+            </h4>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6" *ngIf="selectTipecliente == 0">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">Partita IVA</label>
+                <div class="input-wrapper">
+                  <input type="text" maxlength="12" class="form-control modern-input" formControlName="partita_iva"
+                    placeholder="Inserire Partita IVA" 
+                    [ngClass]="{'input-error': newContraente.get('partita_iva')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">receipt</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6" *ngIf="selectTipecliente == 1">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">Codice Fiscale</label>
+                <div class="input-wrapper">
+                  <input type="text" maxlength="16" class="form-control modern-input" formControlName="codice_fiscale"
+                    placeholder="Inserire Codice Fiscale" 
+                    [ngClass]="{'input-error': newContraente.get('codice_fiscale')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">badge</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contatti -->
+        <div class="form-section">
+          <div class="section-header">
+            <h4 class="section-title">
+              <span class="section-icon">📞</span>
+              Informazioni di Contatto
+            </h4>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">Email</label>
+                <div class="input-wrapper">
+                  <input type="email" class="form-control modern-input" formControlName="email" 
+                    placeholder="indirizzo@email.com" 
+                    [ngClass]="{'input-error': newContraente.get('email')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">email</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">Telefono</label>
+                <div class="input-wrapper">
+                  <input type="tel" class="form-control modern-input" formControlName="telefono" 
+                    placeholder="+39 123 456 7890" 
+                    [ngClass]="{'input-error': newContraente.get('telefono')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">phone</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">Indirizzo</label>
+                <div class="input-wrapper">
+                  <input type="text" class="form-control modern-input" formControlName="indirizzo" 
+                    placeholder="Via, Numero Civico" 
+                    [ngClass]="{'input-error': newContraente.get('indirizzo')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">location_on</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Localizzazione -->
+        <div class="form-section">
+          <div class="section-header">
+            <h4 class="section-title">
+              <span class="section-icon">🌍</span>
+              Localizzazione
+            </h4>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">Città</label>
+                <div class="input-wrapper">
+                  <input type="text" class="form-control modern-input" formControlName="citta" 
+                    placeholder="Inserisci la città" 
+                    [ngClass]="{'input-error': newContraente.get('citta')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">location_city</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">Nazione</label>
+                <div class="input-wrapper">
+                  <input type="text" class="form-control modern-input" formControlName="nazione" 
+                    placeholder="Inserisci la nazione" 
+                    [ngClass]="{'input-error': newContraente.get('nazione')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">public</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group modern-form-group">
+                <label class="modern-label">CAP</label>
+                <div class="input-wrapper">
+                  <input type="text" class="form-control modern-input" formControlName="cap" 
+                    placeholder="00000" 
+                    [ngClass]="{'input-error': newContraente.get('cap')?.errors && showError}">
+                  <span class="input-icon">
+                    <i class="material-icons">markunread_mailbox</i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Submit Button -->
+        <div class="form-section">
+          <div class="form-actions">
+            <button type="submit" class="btn modern-btn-primary" (click)="storeContraente()">
+              <span class="btn-icon">
+                <i class="material-icons">person_add</i>
+              </span>
+              <span class="btn-text">Registra Contraente</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<div [hidden]="matspinner" class="loading-overlay">
+  <div class="loading-content">
+    <mat-spinner class="modern-spinner"></mat-spinner>
+    <p class="loading-text">Registrazione in corso...</p>
+  </div>
+</div>

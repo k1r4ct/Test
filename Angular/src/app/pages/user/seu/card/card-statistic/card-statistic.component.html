@@ -1,0 +1,109 @@
+<div class="statistics-container compact">
+  <!-- Header Section -->
+  <div class="statistics-header">
+    <h2 class="statistics-title">
+      <span class="title-icon">📊</span>
+      STATISTICHE PV/PC/LEAD/CONTRATTI
+    </h2>
+    
+    
+  </div>
+  <div class="date-selector">
+      <label class="date-label">Cambia Mese</label>
+      <p-datepicker
+        class="modern-datepicker"
+        [(ngModel)]="date"
+        view="month"
+        dateFormat="mm/yy"
+        [readonlyInput]="true"
+        [placeholder]="placeholder"
+        (onSelect)="onDateSelect($event)">
+      </p-datepicker>
+    </div>
+  <!-- Statistics Cards Grid -->
+  <div class="statistics-grid col-12">
+    <!-- Punti Valore Personali -->
+    <div class="stat-card gradient-orange">
+      <div class="stat-card-inner">
+        <div class="stat-icon">
+          <i class="material-icons">public</i>
+        </div>
+        <div class="stat-content">
+          <h4 class="stat-category">Punti Valore Personali</h4>
+          <div class="stat-value">{{compensopvdiretti}}</div>
+          <div class="stat-unit">Selezioni un mese</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Punti Valore Squadra -->
+    <div class="stat-card gradient-blue">
+      <div class="stat-card-inner">
+        <div class="stat-icon">
+          <i class="material-icons">groups</i>
+        </div>
+        <div class="stat-content">
+          <h4 class="stat-category">Punti Valore Squadra</h4>
+          <div class="stat-value">{{compensopvdirettiSquadra}}</div>
+          <div class="stat-unit">Selezioni un mese</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Punti Carriera Personali -->
+    <div class="stat-card gradient-green">
+      <div class="stat-card-inner">
+        <div class="stat-icon">
+          <i class="material-icons">account_balance_wallet</i>
+        </div>
+        <div class="stat-content">
+          <h4 class="stat-category">Punti Carriera Personali</h4>
+          <div class="stat-value">{{compensopcdiretti}}</div>
+          <div class="stat-unit">Selezioni un mese</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Punti Carriera Squadra -->
+    <div class="stat-card gradient-teal">
+      <div class="stat-card-inner">
+        <div class="stat-icon">
+          <i class="material-icons">trending_up</i>
+        </div>
+        <div class="stat-content">
+          <h4 class="stat-category">Punti Carriera Squadra</h4>
+          <div class="stat-value">{{compensopcdirettiSquadra}}</div>
+          <div class="stat-unit">Selezioni un mese</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leads Personali -->
+    <div class="stat-card gradient-purple">
+      <div class="stat-card-inner">
+        <div class="stat-icon">
+          <i class="material-icons">people_outline</i>
+        </div>
+        <div class="stat-content">
+          <h4 class="stat-category">Leads Personali</h4>
+          <div class="stat-value">{{numeroClientiAmiciInvitati}}</div>
+          <div class="stat-unit">Selezioni un mese</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contratti Personali -->
+    <div class="stat-card gradient-red">
+      <div class="stat-card-inner">
+        <div class="stat-icon">
+          <i class="material-icons">description</i>
+        </div>
+        <div class="stat-content">
+          <h4 class="stat-category">Contratti Personali</h4>
+          <div class="stat-value">{{countContratti}}</div>
+          <div class="stat-unit">Selezioni un mese</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

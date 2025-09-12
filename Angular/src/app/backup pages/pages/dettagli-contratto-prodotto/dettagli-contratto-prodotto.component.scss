@@ -1,0 +1,49 @@
+.form-switch .form-check-input {
+  width: 3em;
+  height: 2em;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.form-check {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.card-user form .form-group {
+  margin-bottom: 0px;
+}
+
+.input-group {
+  margin-bottom: 0px;
+}
+
+.rowdcp{
+  height: 40px!important;
+}
+:host * {
+  position:relative;/* Seleziona tutti gli elementi discendenti del componente */
+  z-index: 10!important; /* Imposta lo z-index desiderato */
+}
+
+::ng-deep{
+  .domande{
+    background-color: rgba(0, 0, 0, 0.5)!important;
+    filter: blur(10px);
+  }
+}
+
+
+.large-spinner {
+  width: 170px!important;
+  height: 170px!important;
+}
+
+/* Elemento centrato */
+.centered-element-spinner {
+  left: calc(50% - 50px)!important;
+  width: 100px!important;
+  z-index: 100!important;
+  position: fixed!important;
+  top: 55%!important;
+}

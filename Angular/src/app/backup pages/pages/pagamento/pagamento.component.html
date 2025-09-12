@@ -1,0 +1,63 @@
+<div class="row">
+
+  <div @pageTransition>
+    <div class="card card-user" id="tipopagamento">
+      <div class="card-header">
+        <h3 class="card-title">Indicare la data di stipula e il metodo di pagamento</h3>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="SetOpt" ngNativeValidate>
+
+          <div class="row">
+
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Data stipula contratto</label>
+                <!-- <input class="form-control w-100" style="z-index: 1000;" placeholder="yyyy-mm-dd" formControlName="data_Pagamento" ngbDatepicker #d="ngbDatepicker" /> -->
+                <mat-datepicker #picker></mat-datepicker>
+                <input class="form-control w-50" formControlName="data_Pagamento_mat" [matDatepicker]="picker" placeholder="gg-mm-aaaa" (click)="picker.open()" [ngClass]="{'input-error': SetOpt.get('data_Pagamento_mat')?.errors && showError }"/>
+              </div>
+            </div>
+
+            <!-- <div class="col-md-6 align-content-end align-items-end align-self-end align-text-bottom">
+              <div class="form-group ">
+                <input class="form-control w-100" style="z-index: 1000;" placeholder="yyyy-mm-dd" formControlName="data_Pagamento" ngbDatepicker #d="ngbDatepicker" />
+                <button class="btn btn-outline-secondary nc-icon nc-calendar-60" (click)="d.toggle()"
+                  type="button"></button>
+              </div>
+            </div> -->
+
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group text-uppercase">
+                <label>Tipo di Pagamento</label>
+                <select class="form-select ng-pristine ng-valid ng-touched w-75" formControlName="Tipo_pagamento" [ngClass]="{'input-error': SetOpt.get('Tipo_pagamento')?.errors && showError }">
+                  <option value="" selected disabled>--</option>
+                  <option *ngFor="let tipo of tipiDiPagamento" value="{{tipo.id}}">{{tipo.tipo_pagamento}}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+
+
+
+
+          <div class="row rowdcp mt-5">
+            <div class="update ml-auto mr-auto">
+              <button type="submit" (click)="storeOpt()" class="btn bottoniFormConferma" [disabled]="buttonStoreOpt">Salva Opzioni</button>
+            </div>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div [hidden]="matspinner">
+  <mat-spinner  class="centered-element-spinner large-spinner" ></mat-spinner>
+</div>

@@ -1,0 +1,35 @@
+
+<div class="sidebar-wrapper">
+  <div class="logo">
+    <a href="http://semprechiaro.com/clearportal" class="simple-text logo-mini">
+      <div class="logo-image-small">
+        <img class="logo-mini" src="assets/img/angular2-logo.png" width="100" height="100" class="img-responsive">
+      </div>
+    </a>
+    <a href="#" class="simple-text logo-normal" (click)="logout()">
+      SEMPRECHIARO
+    </a>
+  </div>
+  <hr class="horizontal light mt-0 mb-2">
+    <ul class="nav">
+        <li *ngFor="let menuItem of menuItems" routerLinkActive="active" class="{{menuItem.class}}" >
+            <a *ngIf="enable" [routerLink]="[menuItem.path]">
+                <i class="nc-icon {{menuItem.icon}}"></i>
+                <p>{{menuItem.title}}</p>
+            </a>
+            <a *ngIf="!enable" class="disabled-link" (click)="opensnackbar()"> 
+              <i class="nc-icon {{menuItem.icon}}"></i>
+              <p>{{menuItem.title}}</p>
+          </a>
+        </li>
+        <li class="ng-star-inserted">
+          <a href="#" (click)="logout()">
+            <i class="nc-icon nc-button-power"></i>
+            <p>LogOut</p>
+          </a>
+              
+
+        </li>
+    </ul>
+</div>
+

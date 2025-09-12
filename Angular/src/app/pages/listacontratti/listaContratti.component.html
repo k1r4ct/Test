@@ -1,0 +1,1225 @@
+<!-- Wrapper principale per tutto il contenuto -->
+<div class="content-wrapper">
+  <!-- Header moderno con azione principale -->
+  <div class="page-header-modern">
+  <div class="header-content">
+    <div class="header-icon">
+      <mat-icon class="header-main-icon">description</mat-icon>
+    </div>
+    <div class="header-text">
+      <h1 class="page-title">Gestione Contratti</h1>
+      <p class="page-subtitle">Ricerca e gestisci tutti i contratti aziendali</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button mat-raised-button color="primary" class="primary-action-btn" (click)="vaiAClienti()">
+      <mat-icon>add_circle</mat-icon>
+      <span>Nuovo Contratto</span>
+    </button>
+  </div>
+</div>
+
+<!-- Card filtri modernizzata -->
+<div class="filters-card" [@pageTransition]="state">
+  <div class="card-header-modern">
+    <div class="header-icon">
+      <mat-icon>filter_list</mat-icon>
+    </div>
+    <div class="header-text">
+      <h3>Filtri di Ricerca</h3>
+      <span class="subtitle">Affina la ricerca dei contratti</span>
+    </div>
+    <div class="header-actions">
+      <button mat-icon-button (click)="resetFiltri()" matTooltip="Reset filtri">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button mat-icon-button *ngIf="abilitaDownload" (click)="esportaCSV()" matTooltip="Esporta CSV">
+        <mat-icon>download</mat-icon>
+      </button>
+    </div>
+  </div>
+
+
+  <div *ngIf="LISTACONTRATTI" class="card-body-modern">
+
+
+    <!-- Prima riga filtri -->
+    <div class="filters-row">
+      <div class="filter-group">
+        <div class="filter-label">
+          <mat-icon>tag</mat-icon>
+          <span>ID Contratti</span>
+        </div>
+        <mat-form-field appearance="outline" class="modern-field">
+          <mat-label>Inserisci ID (separati da virgola)</mat-label>
+          <textarea
+            [formControl]="formID"
+            matInput
+            placeholder="1001, 1002, 1003..."
+            (keyup)="applyFilterId($event)"
+            rows="3"
+            class="id-textarea">
+          </textarea>
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">
+          <mat-icon>inventory_2</mat-icon>
+          <span>Prodotti</span>
+        </div>
+        <mat-form-field appearance="outline" class="modern-field select_prodotti">
+          <mat-label>Seleziona prodotti</mat-label>
+          <mat-select [formControl]="formProdotti" multiple>
+            <mat-select-trigger>
+              <div class="selection-display">
+                <span *ngIf="!formProdotti.value || formProdotti.value.length === 0">Nessun prodotto selezionato</span>
+                <span *ngIf="formProdotti.value && formProdotti.value.length === 1">{{formProdotti.value[0]}}</span>
+                <span *ngIf="formProdotti.value && formProdotti.value.length > 1">
+                  {{formProdotti.value[0]}} <span class="additional-count">(+{{formProdotti.value.length - 1}})</span>
+                </span>
+              </div>
+            </mat-select-trigger>
+            <div class="search-input-container">
+              <input 
+                class="search-input" 
+                [ngStyle]="{ 'display' : (formProdotti.value?.length == 0) ? 'block' : 'none' }" 
+                matInput 
+                placeholder="Cerca prodotto..."
+                (focus)="onInputFocus('.select_prodotti')" 
+                (blur)="onInputBlur('.select_prodotti')" 
+                (keyup)="filterSelectProdotti($event)">
+            </div>
+            <mat-option *ngFor="let prodotto of listaProdotti" [value]="prodotto"
+              (click)="selectOpt('prodotto',this.formProdotti.value)">
+              {{prodotto}}
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix>expand_more</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">
+          <mat-icon>person</mat-icon>
+          <span>Cliente</span>
+        </div>
+        <mat-form-field appearance="outline" class="modern-field">
+          <mat-label>Nome Cognome Cliente</mat-label>
+          <input 
+            [formControl]="formCliente" 
+            matInput 
+            placeholder="Ricerca per cognome o nome"
+            (keyup)="applyFilterName($event)">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">
+          <mat-icon>account_circle</mat-icon>
+          <span>SEU</span>
+        </div>
+        <mat-form-field appearance="outline" class="modern-field select_seu">
+          <mat-label>Seleziona SEU</mat-label>
+          <mat-select [formControl]="formSEU" multiple>
+            <mat-select-trigger>
+              <div class="selection-display">
+                <span *ngIf="!formSEU.value || formSEU.value.length === 0">Nessun SEU selezionato</span>
+                <span *ngIf="formSEU.value && formSEU.value.length === 1">{{formSEU.value[0]}}</span>
+                <span *ngIf="formSEU.value && formSEU.value.length > 1">
+                  {{formSEU.value[0]}} <span class="additional-count">(+{{formSEU.value.length - 1}})</span>
+                </span>
+              </div>
+            </mat-select-trigger>
+            <div class="search-input-container">
+              <input 
+                class="search-input" 
+                [ngStyle]="{ 'display' : (formSEU.value?.length == 0) ? 'block' : 'none' }" 
+                matInput 
+                placeholder="Cerca SEU..."
+                (focus)="onInputFocus('.select_seu')" 
+                (blur)="onInputBlur('.select_seu')" 
+                (keyup)="filterSelectSEU($event)">
+            </div>
+            <mat-option *ngFor="let seu of listaSEU" [value]="seu" 
+              (click)="selectOpt('seu',this.formSEU.value)">{{seu}}</mat-option>
+          </mat-select>
+          <mat-icon matSuffix>expand_more</mat-icon>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Seconda riga filtri -->
+    <div class="filters-row">
+      <div class="filter-group" [ngClass]="{'date-disabled': isPickerformDataInsDisabled}">
+        <div class="filter-label">
+          <mat-icon>event</mat-icon>
+          <span>Data Inserimento</span>
+        </div>
+        <mat-form-field appearance="outline" class="modern-field date-range-field">
+          <mat-label>Seleziona periodo</mat-label>
+          <mat-date-range-input [rangePicker]="pickerDataIns">
+            <input matStartDate placeholder="Data inizio" #startDateInputDI [disabled]="isPickerformDataInsDisabled">
+            <input matEndDate placeholder="Data fine" #endDateInputDI
+              (dateChange)="dateRangeChange(startDateInputDI, endDateInputDI, 'datains')">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="pickerDataIns"
+            [ngClass]="{'date-disabled': isPickerformDataInsDisabled}"></mat-datepicker-toggle>
+          <mat-date-range-picker #pickerDataIns></mat-date-range-picker>
+        </mat-form-field>
+      </div>        
+      <div class="filter-group">
+          <div class="filter-label">
+            <mat-icon>category</mat-icon>
+            <span>Macro Prodotto</span>
+          </div>
+          <mat-form-field appearance="outline" class="modern-field select_macro_prodotto">
+            <mat-label>Seleziona macro prodotti</mat-label>
+            <mat-select [formControl]="formMacroPro" multiple>
+              <mat-select-trigger>
+                <div class="selection-display">
+                  <span *ngIf="!formMacroPro.value || formMacroPro.value.length === 0">Nessun macro prodotto</span>
+                  <span *ngIf="formMacroPro.value && formMacroPro.value.length === 1">{{formMacroPro.value[0]}}</span>
+                  <span *ngIf="formMacroPro.value && formMacroPro.value.length > 1">
+                    {{formMacroPro.value[0]}} <span class="additional-count">(+{{formMacroPro.value.length - 1}})</span>
+                  </span>
+                </div>
+              </mat-select-trigger>
+              <div class="search-input-container">
+                <input 
+                  class="search-input" 
+                  [ngStyle]="{ 'display' : (formMacroPro.value?.length == 0) ? 'block' : 'none' }" 
+                  matInput 
+                  placeholder="Cerca macro prodotto..."
+                  (focus)="onInputFocus('.select_macro_prodotto')" 
+                  (blur)="onInputBlur('.select_macro_prodotto')" 
+                  (keyup)="filterSelectMacroProdotto($event)">
+              </div>
+              <mat-option *ngFor="let macroProdotto of listaMacroPro" [value]="macroProdotto"
+                (click)="selectOpt('macroprodotto',this.formMacroPro.value)">{{macroProdotto}}</mat-option>
+            </mat-select>
+            <mat-icon matSuffix>expand_more</mat-icon>
+          </mat-form-field>
+        </div>
+
+      <div class="filter-group">
+        <div class="filter-label">
+          <mat-icon>badge</mat-icon>
+          <span>Cod.Fisc. / P.Iva</span>
+        </div>
+        <mat-form-field appearance="outline" class="modern-field">
+          <mat-label>Codice fiscale o Partita IVA</mat-label>
+          
+              <input 
+                class="search-input"
+                matInput 
+                placeholder="Cerca codice..."
+                (keyup)="filterSelectCFPI($event)">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">
+          <mat-icon>business</mat-icon>
+          <span>Fornitore</span>
+        </div>
+        <mat-form-field appearance="outline" class="modern-field select_supplier">
+          <mat-label>Seleziona fornitore</mat-label>
+          <mat-select [formControl]="formSupplier" multiple>
+            <mat-select-trigger>
+              <div class="selection-display">
+                <span *ngIf="!formSupplier.value || formSupplier.value.length === 0">Nessun fornitore</span>
+                <span *ngIf="formSupplier.value && formSupplier.value.length === 1">{{formSupplier.value[0]}}</span>
+                <span *ngIf="formSupplier.value && formSupplier.value.length > 1">
+                  {{formSupplier.value[0]}} <span class="additional-count">(+{{formSupplier.value.length - 1}})</span>
+                </span>
+              </div>
+            </mat-select-trigger>
+            <div class="search-input-container">
+              <input 
+                class="search-input" 
+                [ngStyle]="{ 'display' : (formSupplier.value?.length == 0) ? 'block' : 'none' }" 
+                matInput 
+                placeholder="Cerca fornitore..."
+                (focus)="onInputFocus('.select_supplier')" 
+                (blur)="onInputBlur('.select_supplier')" 
+                (keyup)="filterSelectSupplier($event)">
+            </div>
+            <mat-option *ngFor="let supplier of listaSupplier" [value]="supplier"
+              (click)="selectOpt('supplier',this.formSupplier.value)">{{supplier}}</mat-option>
+          </mat-select>
+          <mat-icon matSuffix>expand_more</mat-icon>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Terza riga filtri -->
+    <div class="filters-row">
+      <div class="filter-group" [ngClass]="{'date-disabled': isPickerformDataStipulaDisabled}">
+        <div class="filter-label">
+          <mat-icon>schedule</mat-icon>
+          <span>Data Stipula</span>
+        </div>
+        <mat-form-field appearance="outline" class="modern-field date-range-field">
+          <mat-label>Periodo stipula</mat-label>
+          <mat-date-range-input [rangePicker]="pickerDataStipula">
+            <input matStartDate placeholder="Data inizio" #startDateInputDS [disabled]="isPickerformDataStipulaDisabled">
+            <input matEndDate placeholder="Data fine" #endDateInputDS
+              (dateChange)="dateRangeChange(startDateInputDS, endDateInputDS, 'datastipula')">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="pickerDataStipula"
+            [ngClass]="{'date-disabled': isPickerformDataStipulaDisabled}"></mat-datepicker-toggle>
+          <mat-date-range-picker #pickerDataStipula></mat-date-range-picker>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">
+          <mat-icon>flag</mat-icon>
+          <span>Macro Stato</span>
+        </div>
+        <mat-form-field appearance="outline" class="modern-field select_macro_stato">
+          <mat-label>Seleziona macro stati</mat-label>
+          <mat-select [formControl]="formMacroStato" multiple>
+            <mat-select-trigger>
+              <div class="selection-display">
+                <span *ngIf="!formMacroStato.value || formMacroStato.value.length === 0">Nessun macro stato</span>
+                <span *ngIf="formMacroStato.value && formMacroStato.value.length === 1">{{formMacroStato.value[0]}}</span>
+                <span *ngIf="formMacroStato.value && formMacroStato.value.length > 1">
+                  {{formMacroStato.value[0]}} <span class="additional-count">(+{{formMacroStato.value.length - 1}})</span>
+                </span>
+              </div>
+            </mat-select-trigger>
+            <div class="search-input-container">
+              <input 
+                class="search-input" 
+                [ngStyle]="{ 'display' : (formMacroStato.value?.length == 0) ? 'block' : 'none' }" 
+                matInput 
+                placeholder="Cerca macro stato..."
+                (focus)="onInputFocus('.select_macro_stato')" 
+                (blur)="onInputBlur('.select_macro_stato')" 
+                (keyup)="filterSelectMacroStato($event)">
+            </div>
+            <mat-option *ngFor="let macrostato of listaMacroStato" [value]="macrostato"
+              (click)="selectOpt('macrostato',this.formMacroStato.value)">{{macrostato}}</mat-option>
+          </mat-select>
+          <mat-icon matSuffix>expand_more</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">
+          <mat-icon>check_circle</mat-icon>
+          <span>Stato</span>
+        </div>
+        <mat-form-field appearance="outline" class="modern-field select_stato">
+          <mat-label>Seleziona stati</mat-label>
+          <mat-select [formControl]="formStato" multiple>
+            <mat-select-trigger>
+              <div class="selection-display">
+                <span *ngIf="!formStato.value || formStato.value.length === 0">Nessuno stato</span>
+                <span *ngIf="formStato.value && formStato.value.length === 1">{{formStato.value[0]}}</span>
+                <span *ngIf="formStato.value && formStato.value.length > 1">
+                  {{formStato.value[0]}} <span class="additional-count">(+{{formStato.value.length - 1}})</span>
+                </span>
+              </div>
+            </mat-select-trigger>
+            <div class="search-input-container">
+              <input 
+                class="search-input" 
+                [ngStyle]="{ 'display' : (formStato.value?.length == 0) ? 'block' : 'none' }" 
+                matInput 
+                placeholder="Cerca stato..."
+                (focus)="onInputFocus('.select_stato')" 
+                (blur)="onInputBlur('.select_stato')" 
+                (keyup)="filterSelectStato($event)">
+            </div>
+            <mat-option *ngFor="let stato of listaStato" [value]="stato" 
+              (click)="selectOpt('stato',this.formStato.value)">{{stato}}</mat-option>
+          </mat-select>
+          <mat-icon matSuffix>expand_more</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="filter-group empty-space"></div>
+    </div>
+
+    <!-- Pulsanti di azione modernizzati -->
+    <div class="actions-row">
+      <div class="action-buttons">
+        <button mat-stroked-button class="action-btn reset-btn" (click)="resetFiltri()">
+          <mat-icon>refresh</mat-icon>
+          <span>Reset Filtri</span>
+        </button>
+        <button
+          *ngIf="abilitaSelezioneMultipla" 
+          mat-stroked-button
+          class="action-btn multi-select-btn" 
+          (click)="SelectMulti()">
+          <mat-icon>checklist</mat-icon>
+          <span>Selezione Multipla</span>
+        </button>
+        <button mat-raised-button 
+                *ngIf="abilitaDownload"
+                color="accent" 
+                class="action-btn export-btn"
+                (click)="esportaCSV()">
+          <mat-icon>file_download</mat-icon>
+          <span>Esporta CSV</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Tabella contratti modernizzata -->
+<div class="results-section">
+  <div class="results-header">
+    <div class="results-info">
+      <mat-icon>list_alt</mat-icon>
+      <h3>Risultati della Ricerca</h3>
+      <span class="results-count" *ngIf="dataSourceFilters?.data">
+        ({{dataSourceFilters.data.length}} contratti trovati)
+      </span>
+    </div>
+  </div>
+
+  <div class="table-container-modern">
+    <!-- Loader specifico per la tabella -->
+    <div class="table-loading-overlay" *ngIf="isLoadingContratti">
+      <div class="table-loader">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span class="loading-text">Caricamento contratti...</span>
+      </div>
+    </div>
+
+    <table mat-table [dataSource]="dataSourceFilters" matSort 
+           class="modern-contracts-table"
+           [class.loading]="isLoadingContratti">
+      
+      <!-- Colonna selezione multipla -->
+      <ng-container matColumnDef="selectMulti" *ngIf="selectMulti">
+        <th mat-header-cell *matHeaderCellDef class="select-column">
+          <div class="header-select">
+            <mat-icon>checklist</mat-icon>
+            <span>Seleziona</span>
+            <mat-checkbox (change)="toggleSelectAll($event)"></mat-checkbox>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="select-cell">
+          <mat-checkbox 
+            [id]="'check-'+row.id" 
+            [value]="row.id" 
+            [disabled]="row.stato === 'Gettonato' || row.stato === 'Stornato'"
+            (change)="onCheckboxChange(row, $event)"
+            (click)="$event.stopPropagation()"
+            [matTooltip]="(row.stato === 'Gettonato' || row.stato === 'Stornato') ? 'Contratto non selezionabile - Stato: ' + row.stato : ''"
+            matTooltipPosition="above">
+          </mat-checkbox>
+        </td>
+      </ng-container>
+
+      <!-- Colonna ID -->
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="id-column">
+          <div class="header-content">
+            <mat-icon>tag</mat-icon>
+            <span>ID</span>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="id-cell">
+          <div class="id-badge">#{{row.id}}</div>
+        </td>
+      </ng-container>
+
+      <!-- Colonna Cliente -->
+      <ng-container matColumnDef="cliente">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="client-column">
+          <div class="header-content">
+            <mat-icon>person</mat-icon>
+            <span>Nome Cognome</span>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="client-cell">
+          <div class="client-info">
+            <mat-icon class="client-icon">account_circle</mat-icon>
+            <span class="client-name">{{row.cliente}}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Colonna P.IVA/CF -->
+      <ng-container matColumnDef="pivacf">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="tax-column">
+          <div class="header-content">
+            <mat-icon>badge</mat-icon>
+            <span>P. Iva / Cod. Fis.</span>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="tax-cell">
+          <div class="tax-code">{{row.pivacf}}</div>
+        </td>
+      </ng-container>
+
+      <!-- Colonna Data Inserimento -->
+      <ng-container matColumnDef="datains">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="date-column">
+          <div class="header-content">
+            <mat-icon>event</mat-icon>
+            <span>Data Ins.</span>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="date-cell">
+          <div class="date-info">
+            <mat-icon class="date-icon">schedule</mat-icon>
+            <span>{{row.datains}}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Colonna Data Stipula -->
+      <ng-container matColumnDef="datastipula">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="date-column">
+          <div class="header-content">
+            <mat-icon>assignment</mat-icon>
+            <span>Stipula</span>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="date-cell">
+          <div class="date-info">
+            <mat-icon class="date-icon">event_available</mat-icon>
+            <span>{{row.datastipula}}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Colonna Prodotto -->
+      <ng-container matColumnDef="prodotto">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="product-column">
+          <div class="header-content">
+            <mat-icon>inventory_2</mat-icon>
+            <span>Prodotto</span>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="product-cell">
+          <div class="product-chip">
+            <mat-icon class="product-icon">shopping_bag</mat-icon>
+            <span>{{row.prodotto}}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Colonna SEU -->
+      <ng-container matColumnDef="seu">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="seu-column">
+          <div class="header-content">
+            <mat-icon>support_agent</mat-icon>
+            <span>Nome SEU</span>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="seu-cell">
+          <div class="seu-info">
+            <mat-icon class="seu-icon">person_outline</mat-icon>
+            <span>{{row.seu}}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Colonna Stato -->
+      <ng-container matColumnDef="stato">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="status-column">
+          <div class="header-content">
+            <mat-icon>flag</mat-icon>
+            <span>Stato</span>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="status-cell">
+          <div class="status-badge" [ngClass]="getStatusClass(row.stato)">
+            <mat-icon class="status-icon">{{getStatusIcon(row.stato)}}</mat-icon>
+            <span>{{row.stato}}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Colonna File -->
+      <ng-container matColumnDef="file">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header class="file-column">
+          <div class="header-content">
+            <mat-icon>attach_file</mat-icon>
+            <span>Documenti</span>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="file-cell">
+          <div class="file-status" [ngClass]="{'has-files': row.file && row.file.length > 0}">
+            <mat-icon class="file-icon">
+              {{row.file && row.file.length > 0 ? 'folder' : 'folder_open'}}
+            </mat-icon>
+            <span>{{row.file && row.file.length > 0 ? 'File Presenti' : 'Nessun file'}}</span>
+            <mat-chip-set *ngIf="row.file && row.file.length > 0">
+              <mat-chip class="file-count-chip">{{row.file.length}}</mat-chip>
+            </mat-chip-set>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Colonna Azioni -->
+      <ng-container matColumnDef="azioni">
+        <th mat-header-cell *matHeaderCellDef class="actions-column">
+          <div class="header-content">
+            <mat-icon>settings</mat-icon>
+            <span>Azioni</span>
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" class="actions-cell">
+          <button mat-icon-button 
+                  class="action-button" 
+                  (click)="vaiAClientiCodFPiva(row.pivacf)"
+                  matTooltip="Visualizza dettagli cliente">
+            <mat-icon>visibility</mat-icon>
+          </button>
+          <button mat-icon-button 
+                  class="action-button edit-btn" 
+                  matTooltip="Modifica contratto">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <!-- Righe tabella -->
+      <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+          (click)="clickedRows(row)" 
+          class="modern-data-row"
+          [class.selected]="row === selectedRow"></tr>
+
+      <!-- Riga vuota quando non ci sono dati -->
+      <tr *ngIf="!LISTACONTRATTI" class="empty-row">
+        <td [attr.colspan]="displayedColumns.length" class="empty-cell">
+          <div class="empty-state">
+            <mat-icon class="empty-icon">inbox</mat-icon>
+            <h3>Nessun contratto trovato</h3>
+            <p>Non ci sono contratti che corrispondono ai filtri selezionati.</p>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Paginazione modernizzata con gestione server-side -->
+    <div class="pagination-container" *ngIf="paginationInfo.total > 0">
+      <div class="pagination-info">
+        <span class="info-text">
+          Mostrando {{paginationInfo.from}} - {{paginationInfo.to}} di {{paginationInfo.total}} contratti
+        </span>
+      </div>
+      
+      <div class="pagination-controls">
+        <mat-form-field appearance="outline" class="per-page-selector">
+          <mat-label>Contratti per pagina</mat-label>
+          <mat-select [value]="paginationInfo.perPage" (selectionChange)="changePerPage($event.value)">
+            <mat-option [value]="25">25</mat-option>
+            <mat-option [value]="50">50</mat-option>
+            <mat-option [value]="100">100</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="pagination-buttons">
+          <button mat-icon-button 
+                  [disabled]="paginationInfo.currentPage === 1 || isLoadingContratti"
+                  (click)="goToFirstPage()"
+                  matTooltip="Prima pagina">
+            <mat-icon>first_page</mat-icon>
+          </button>
+          
+          <button mat-icon-button 
+                  [disabled]="paginationInfo.currentPage === 1 || isLoadingContratti"
+                  (click)="goToPreviousPage()"
+                  matTooltip="Pagina precedente">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          
+          <span class="page-info">
+            Pagina {{paginationInfo.currentPage}} di {{paginationInfo.lastPage}}
+          </span>
+          
+          <button mat-icon-button 
+                  [disabled]="paginationInfo.currentPage >= paginationInfo.lastPage || isLoadingContratti"
+                  (click)="goToNextPage()"
+                  matTooltip="Pagina successiva">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+          
+          <button mat-icon-button 
+                  [disabled]="paginationInfo.currentPage >= paginationInfo.lastPage || isLoadingContratti"
+                  (click)="goToLastPage()"
+                  matTooltip="Ultima pagina">
+            <mat-icon>last_page</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Indicatore di caricamento -->
+      <div class="loading-indicator" *ngIf="isLoadingContratti">
+        <mat-spinner diameter="20"></mat-spinner>
+        <span>Caricamento...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sezione dettagli contratto modernizzata -->
+<div class="details-card" *ngIf="DettagliContratto" [@pageTransition] [hidden]="contrattoselezionato">
+  <div class="details-header">
+    <div class="header-icon">
+      <mat-icon>description</mat-icon>
+    </div>
+    <div class="header-text">
+      <h3>Dettagli Contratto Selezionato</h3>
+      <span class="subtitle">Informazioni complete del contratto</span>
+    </div>
+    <div class="header-actions">
+      <button mat-icon-button (click)="contrattoselezionato = true" matTooltip="Chiudi dettagli">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="details-body">
+    <div class="details-section" *ngFor="let contratto of DettagliContratto">
+      <!-- Informazioni principali -->
+      <div class="info-section">
+        <h4><mat-icon>person</mat-icon> Informazioni Cliente</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>ID Contratto</label>
+            <div class="modern-input-wrapper">
+              <mat-icon>tag</mat-icon>
+              <input type="text" class="modern-input id_contratto" readonly value="{{contratto.id}}">
+            </div>
+          </div>
+          <div class="info-item">
+            <label>Cliente/Rag. Sociale</label>
+            <div class="modern-input-wrapper">
+              <mat-icon>business</mat-icon>
+              <input type="text" class="modern-input nome_contraente" value="{{contratto.cliente}}">
+            </div>
+          </div>
+          <div class="info-item">
+            <label>P.Iva/CF</label>
+            <div class="modern-input-wrapper">
+              <mat-icon>badge</mat-icon>
+              <input type="text" class="modern-input pivacodfisc_contraente" value="{{contratto.partitaiva}}">
+            </div>
+          </div>
+          <div class="info-item">
+            <label>Data Inserimento</label>
+            <div class="modern-input-wrapper">
+              <mat-icon>event</mat-icon>
+              <input type="text" class="modern-input" readonly value="{{contratto.datains}}">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informazioni prodotto -->
+      <div class="info-section">
+        <h4><mat-icon>inventory_2</mat-icon> Informazioni Prodotto</h4>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Macro Prodotto</label>
+            <mat-form-field appearance="outline" class="modern-select">
+              <mat-label>Seleziona macro prodotto</mat-label>
+              <mat-select class="macroprodotto" [formControl]="formMacroProdotto" (selectionChange)="onMacroProdottoChange($event)">
+                <mat-option *ngFor="let contratto of DettagliContratto" [value]="contratto.macroprodotto" disabled>{{contratto.macroprodotto}}</mat-option>
+                <mat-option disabled>---</mat-option>
+                <mat-option *ngFor="let macroProdotti of MACROPRODOTTI" [value]="macroProdotti.id">
+                  {{ macroProdotti.descrizione }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="info-item">
+            <label>Micro Prodotto</label>
+            <mat-form-field appearance="outline" class="modern-select">
+              <mat-label>Seleziona micro prodotto</mat-label>
+              <mat-select class="microprodotto" [formControl]="formMicroProdotto">
+                <mat-option *ngFor="let contratto of DettagliContratto" [value]="contratto.microprodotto_id" disabled>{{contratto.microprodotto}}</mat-option>
+                <mat-option disabled>---</mat-option>
+                <mat-option *ngFor="let alterProduct of ALTRIPRODOTTI" [value]="alterProduct.id">
+                  {{ alterProduct.descrizione }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stato contratto -->
+      <div class="info-section">
+        <h4><mat-icon>flag</mat-icon> Stato Contratto</h4>
+        <div class="info-item full-width">
+          <label>Stato Avanzamento</label>
+          <mat-form-field appearance="outline" class="modern-select">
+            <mat-label>Seleziona stato</mat-label>
+            <mat-select 
+              class="stato_avanzamento" 
+              [formControl]="formStatoAvanzamento"
+              [disabled]="DettagliContratto && DettagliContratto.length > 0 && (DettagliContratto[0].stato === 'Gettonato' || DettagliContratto[0].stato === 'Stornato')"
+              [matTooltip]="(DettagliContratto && DettagliContratto.length > 0 && (DettagliContratto[0].stato === 'Gettonato' || DettagliContratto[0].stato === 'Stornato')) ? 'Stato non modificabile - Contratto ' + DettagliContratto[0].stato : ''"
+              matTooltipPosition="above">
+              <!-- Opzione dello stato attuale sempre visibile -->
+              <mat-option *ngFor="let contratto of DettagliContratto" [value]="contratto.id_stato">
+                {{contratto.stato}} 
+                <span *ngIf="contratto.stato === 'Gettonato' || contratto.stato === 'Stornato'">(Stato finale)</span>
+              </mat-option>
+              <!-- Le opzioni di cambio stato sono visibili solo se il contratto non è in stato Gettonato o Stornato -->
+              <ng-container *ngIf="!(DettagliContratto && DettagliContratto.length > 0 && (DettagliContratto[0].stato === 'Gettonato' || DettagliContratto[0].stato === 'Stornato'))">
+                <ng-container *ngFor="let macroStato of microStatiPerMacroStato | keyvalue; let i = index">
+                  <mat-optgroup *ngIf="i === 0" [label]="'1. ' + macroStato.key">
+                    <mat-option *ngFor="let opt of getMicroStatiPerMacroStato(macroStato.key)" [value]="opt.id_status">
+                      {{opt.micro_stato}}
+                    </mat-option>
+                  </mat-optgroup>
+                </ng-container>
+                <ng-container *ngFor="let macroStato of microStatiPerMacroStato | keyvalue; let i = index">
+                  <mat-optgroup *ngIf="i === 2" [label]="'2. ' + macroStato.key">
+                    <mat-option *ngFor="let opt of getMicroStatiPerMacroStato(macroStato.key)" [value]="opt.id_status">
+                      {{opt.micro_stato}}
+                    </mat-option>
+                  </mat-optgroup>
+                </ng-container>
+                <ng-container *ngFor="let macroStato of microStatiPerMacroStato | keyvalue; let i = index">
+                  <mat-optgroup *ngIf="i === 1" [label]="'3. ' + macroStato.key">
+                    <mat-option *ngFor="let opt of getMicroStatiPerMacroStato(macroStato.key)" [value]="opt.id_status">
+                      {{opt.micro_stato}}
+                    </mat-option>
+                  </mat-optgroup>
+                </ng-container>
+                <ng-container *ngFor="let macroStato of microStatiPerMacroStato | keyvalue; let i = index">
+                  <mat-optgroup *ngIf="i > 2" [label]="(i + 1) + '. ' + macroStato.key">
+                    <mat-option *ngFor="let opt of getMicroStatiPerMacroStato(macroStato.key)" [value]="opt.id_status">
+                      {{opt.micro_stato}}
+                    </mat-option>
+                  </mat-optgroup>
+                </ng-container>
+              </ng-container>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="info-item full-width">
+          <label>Note Backoffice</label>
+          <mat-form-field appearance="outline" class="modern-textarea">
+            <mat-label>Note interne</mat-label>
+            <textarea matInput class="note_backoffice" [value]="contratto.note" placeholder="Inserisci note..."></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sezione Dettagli Contraente separata -->
+<div class="details-card contraente-card" *ngIf="DettagliContratto" [@pageTransition] [hidden]="contrattoselezionato">
+  <div class="details-header contraente-header">
+    <div class="header-icon">
+      <mat-icon>account_box</mat-icon>
+    </div>
+    <div class="header-text">
+      <h3>Dettagli Contraente</h3>
+      <span class="subtitle">Informazioni anagrafiche del contraente</span>
+    </div>
+  </div>
+
+  <div class="details-body">
+    <div class="contraente-details" *ngFor="let contratto of DettagliContratto">
+      <div class="contraente-grid">
+        <div class="contraente-item" *ngFor="let dettaglio of contratto.dettagli_contraente | keyvalue">
+          <label class="field-label">{{ dettaglio.key }}</label>
+          <mat-form-field appearance="outline" class="modern-field-contraente">
+            <mat-label>{{ dettaglio.key }}</mat-label>
+            <input 
+              matInput 
+              [value]="dettaglio.value"
+              [name]="dettaglio.key"
+              [class]="'contraente-input ' + dettaglio.key">
+            <mat-icon matSuffix class="field-icon">info</mat-icon>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sezione Dettagli Contratto modernizzata -->
+<div class="details-card contract-details-card" *ngIf="DettagliContratto" [@pageTransition] [hidden]="contrattoselezionato">
+  <div class="details-header contract-details-header">
+    <div class="header-icon">
+      <i class="fas fa-clipboard-list"></i>
+    </div>
+    <div class="header-text">
+      <h3>Dettagli Contratto Specifici</h3>
+      <span class="subtitle">Dati aggiuntivi e configurazioni del contratto</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-minimal" (click)="contrattoselezionato = true" title="Chiudi dettagli">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="details-body">
+    <div class="contract-specific-section" *ngFor="let contratto of DettagliContratto">
+      
+      <!-- Sezione SEU -->
+      <div class="seu-section modern-field-section">
+        <div class="field-header">
+          <i class="fas fa-user-tie field-icon"></i>
+          <h4>Riferimento SEU</h4>
+        </div>
+        <div class="field-content">
+          <div class="modern-dropdown-wrapper">
+            <p-dropdown 
+              [options]="seu" 
+              class="seu modern-p-dropdown" 
+              Name="seu" 
+              [(ngModel)]="seuSelected" 
+              [showClear]="true" 
+              optionLabel="nominativo" 
+              appendTo="body" 
+              placeholder="Cambia SEU" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Form dati specifici -->
+      <div class="specific-data-form">
+        
+        <!-- Sezione domande con risposta -->
+        <div class="questions-section answered-questions" 
+             *ngIf="contratto?.specific_data && contratto.specific_data.length > 0">
+          <div class="section-header">
+            <i class="fas fa-check-circle section-icon answered"></i>
+            <h4>Domande Compilate</h4>
+            <span class="question-count">{{contratto.specific_data.length}} domande</span>
+          </div>
+          
+          <div class="questions-grid">
+            <div class="question-item answered-item" 
+                 *ngFor="let risposta of contratto.specific_data; trackBy: trackByRisposta" 
+                 [attr.tag]="risposta.domanda">
+              <div class="question-field">
+                <label class="field-label">{{ risposta.domanda }}</label>
+                <div class="field-input-wrapper">
+                  
+                  <!-- Input numerico -->
+                  <input 
+                    *ngIf="risposta.tipo === 'number'"
+                    class="form-control modern-input" 
+                    [disabled]="non_modificare_risposta" 
+                    type="number" 
+                    [value]="risposta.risposta" 
+                    [name]="risposta.domanda">
+                  
+                  <!-- Switch boolean -->
+                  <div *ngIf="risposta.tipo === 'boolean'" class="switch-wrapper">
+                    <input 
+                      class="form-check-input form-check form-switch modern-switch" 
+                      [disabled]="non_modificare_risposta" 
+                      type="checkbox" 
+                      [checked]="risposta.risposta" 
+                      [name]="risposta.domanda">
+                    <span class="switch-label">{{risposta.risposta ? 'Sì' : 'No'}}</span>
+                  </div>
+                  
+                  <!-- Input testo -->
+                  <input 
+                    *ngIf="risposta.tipo === 'text'"
+                    class="form-control modern-input" 
+                    [disabled]="non_modificare_risposta" 
+                    type="text" 
+                    [value]="risposta.risposta" 
+                    [name]="risposta.domanda">
+                  
+                  <!-- Select -->
+                  <div *ngIf="risposta.tipo === 'select'" class="select-wrapper">
+                    <select 
+                      class="form-control modern-select" 
+                      [disabled]="non_modificare_risposta" 
+                      (click)="recupera_opzioni_select(risposta,risposta.risposta)" 
+                      [name]="risposta.domanda" 
+                      [id]="'select_' + risposta.id" 
+                      tag="0">
+                      <option [value]="risposta.risposta">{{ risposta.risposta }}</option>
+                    </select>
+                    <i class="fas fa-chevron-down select-arrow"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sezione domande senza risposta -->
+        <div class="questions-section unanswered-questions" 
+             *ngIf="nuovaspecific_data && nuovaspecific_data.length > 0">
+          <div class="section-header">
+            <i class="fas fa-question-circle section-icon unanswered"></i>
+            <h4>Domande da Compilare</h4>
+            <span class="question-count">{{nuovaspecific_data.length}} domande</span>
+          </div>
+          
+          <div class="questions-grid" id="domande_non_compilate">
+            <div class="question-item unanswered-item domanda_sp_dt" 
+                 *ngFor="let domanda of getSortedDomande(nuovaspecific_data); trackBy: trackByDomanda" 
+                 [attr.tag]="domanda.domanda">
+              <div class="question-field">
+                <label class="field-label">{{ domanda.domanda }}</label>
+                <div class="field-input-wrapper">
+                  
+                  <!-- Input numerico -->
+                  <input 
+                    *ngIf="domanda.tipo_risposta === 'number'"
+                    class="form-control modern-input" 
+                    [disabled]="non_modificare_risposta" 
+                    type="number" 
+                    value="" 
+                    [name]="domanda.domanda"
+                    placeholder="Inserisci valore numerico">
+                  
+                  <!-- Switch boolean -->
+                  <div *ngIf="domanda.tipo_risposta === 'boolean'" class="switch-wrapper">
+                    <input 
+                      class="form-check-input form-check form-switch modern-switch" 
+                      [disabled]="non_modificare_risposta" 
+                      type="checkbox" 
+                      [name]="domanda.domanda">
+                    <span class="switch-label">No</span>
+                  </div>
+                  
+                  <!-- Input testo -->
+                  <input 
+                    *ngIf="domanda.tipo_risposta === 'text'"
+                    class="form-control modern-input" 
+                    [disabled]="non_modificare_risposta" 
+                    type="text" 
+                    value="" 
+                    [name]="domanda.domanda"
+                    placeholder="Inserisci testo">
+                  
+                  <!-- Select -->
+                  <div *ngIf="domanda.tipo_risposta === 'select'" class="select-wrapper">
+                    <select 
+                      class="form-control modern-select" 
+                      [disabled]="non_modificare_risposta" 
+                      [name]="domanda.domanda">
+                      <option value="">Seleziona un'opzione</option>
+                      <option *ngFor="let opzione of domanda.detail_question" [value]="opzione.opzione">
+                        {{ opzione.opzione }}
+                      </option>
+                    </select>
+                    <i class="fas fa-chevron-down select-arrow"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Stato di caricamento per le domande -->
+        <div class="loading-questions" 
+             *ngIf="caricacontratto && (!contratto?.specific_data || contratto.specific_data.length === 0) && 
+                    (!nuovaspecific_data || nuovaspecific_data.length === 0)">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Caricamento domande...</p>
+        </div>
+        
+        <!-- Messaggio quando non ci sono domande -->
+        <div class="no-questions-message" 
+             *ngIf="!caricacontratto && 
+                    (!contratto?.specific_data || contratto.specific_data.length === 0) && 
+                    (!nuovaspecific_data || nuovaspecific_data.length === 0)">
+          <i class="fas fa-info-circle"></i>
+          <p>Nessuna domanda specifica configurata per questo contratto</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sezione Gestione Documenti separata -->
+<div class="details-card documents-card" *ngIf="DettagliContratto" [@pageTransition] [hidden]="contrattoselezionato">
+  <div class="details-header documents-header">
+    <div class="header-icon">
+      <mat-icon>attach_file</mat-icon>
+    </div>
+    <div class="header-text">
+      <h3>Gestione Documenti</h3>
+      <span class="subtitle">File e allegati del contratto</span>
+    </div>
+  </div>
+
+  <div class="details-body">
+    <div class="documents-section">
+      
+      <!-- File allegati esistenti -->
+      <div class="attached-files" *ngIf="fileSelezionati && fileSelezionati.length > 0">
+        <h5 class="subsection-title">
+          <mat-icon>folder</mat-icon>
+          File Allegati ({{fileSelezionati.length}})
+        </h5>
+        <div class="files-grid">
+          <div class="file-item" *ngFor="let file of fileSelezionati">
+            <div class="file-preview" 
+                 (click)="openFile(file)"
+                 [matTooltip]="file.name"
+                 matTooltipPosition="above">
+              <img 
+                *ngIf="isImage(file.name)" 
+                [src]="file.basepath + file.id + '/' + file.name"
+                [alt]="file.name" 
+                class="file-thumbnail">
+              <div 
+                *ngIf="!isImage(file.name)" 
+                class="file-icon-wrapper">
+                <mat-icon class="file-type-icon">{{ getFileIcon(file.name) }}</mat-icon>
+              </div>
+            </div>
+            <div class="file-info">
+              <span class="file-name">{{file.name}}</span>
+              <div class="file-actions">
+                <button 
+                  mat-icon-button 
+                  class="action-btn view-btn"
+                  (click)="openFile(file)"
+                  matTooltip="Apri file">
+                  <mat-icon>open_in_new</mat-icon>
+                </button>
+                <button 
+                  mat-icon-button 
+                  color="warn" 
+                  class="action-btn delete-btn"
+                  (click)="deleteFile(file)"
+                  matTooltip="Elimina file">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messaggio nessun file -->
+      <div class="no-files-message" *ngIf="!fileSelezionati || fileSelezionati.length === 0">
+        <mat-icon class="no-files-icon">inbox</mat-icon>
+        <p>Nessun file allegato al contratto</p>
+      </div>
+
+      <!-- Area di upload -->
+      <div class="upload-section">
+        <h5 class="subsection-title">
+          <mat-icon>cloud_upload</mat-icon>
+          Carica Nuovi Documenti
+        </h5>
+        <app-dropzone uploadType="contract" class="modern-dropzone"></app-dropzone>
+      </div>
+    </div>
+
+    <!-- Azioni di salvataggio modernizzate -->
+    <div class="save-actions" *ngIf="DettagliContratto">
+      <div class="actions-container">
+        <button 
+          *ngFor="let contratto of DettagliContratto" 
+          mat-raised-button 
+          color="primary"
+          class="save-btn"
+          (click)="updateContratto(contratto.id)">
+          <mat-icon>save</mat-icon>
+          <span>Salva Modifiche</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="card" *ngIf="MODIFICAMASSIVA.length>0" @pageTransition>
+  <div class="card-header">
+    <label class="card-title title"> SELEZIONE MULTIPLA</label>
+  </div>
+  <div class="row justify-content-center">
+    <div class="col-12 col-sm-12 col-xs-12 col-md-12 col-lg-12 col-xl-12 col-xxl-12 m-5 p-5">
+        <h3><span style="font-weight: 900;">CONTRATTI SELEZIONATI: </span> <span style="font-weight: 900;color: red;"> {{MODIFICAMASSIVA.length}}</span> </h3>
+        <h3><span style="font-weight: 900;">MACRO CATEGORIE SELEZIONATE: </span> </h3>
+        <p *ngFor="let conteggio of CONTEGGIOPRODOTTI"> <span> {{conteggio.descrizione}} </span> <span style="font-weight: 900;color: red;">{{conteggio.contatore}}</span></p>
+    </div>
+  </div>
+  <div class="row m-5">
+    <div class="col-12 text-center align-content-center">
+      <label class="uppercase">Cambio Stato contratto massivo</label>
+    </div>
+    <div class="col-12 d-flex mt-5 justify-content-center text-center">
+      
+      <select class="form-control w-25 text-center stato_avanzamento_massivo" Name="stato_avanzamento_massivo" placeholder="Seleziona stato per i contratti selezionati">
+        <!-- Stato selezionato -->
+        <!-- Iterazione per i macroStati -->
+        <ng-container *ngFor="let macroStato of microStatiPerMacroStato | keyvalue; let i = index">
+          <!-- Gestione del primo gruppo (numero 1) -->
+          <ng-template [ngIf]="i === 0">
+            <optgroup [label]="'1. ' + macroStato.key" style="font-weight: bold; color: black;">
+              <option *ngFor="let opt of getMicroStatiPerMacroStato(macroStato.key)" [value]="opt.id_status">
+                {{opt.micro_stato}}
+              </option>
+            </optgroup>
+          </ng-template>
+        </ng-container>
+
+        <!-- Gestione del terzo gruppo (che deve diventare il secondo con numero 2) -->
+        <ng-container *ngFor="let macroStato of microStatiPerMacroStato | keyvalue; let i = index">
+          <ng-template [ngIf]="i === 2">
+            <optgroup [label]="'2. ' + macroStato.key" style="font-weight: bold; color: black;">
+              <option *ngFor="let opt of getMicroStatiPerMacroStato(macroStato.key)" [value]="opt.id_status">
+                {{opt.micro_stato}}
+              </option>
+            </optgroup>
+          </ng-template>
+        </ng-container>
+
+        <!-- Gestione del secondo gruppo (che deve diventare il terzo con numero 3) -->
+        <ng-container *ngFor="let macroStato of microStatiPerMacroStato | keyvalue; let i = index">
+          <ng-template [ngIf]="i === 1">
+            <optgroup [label]="'3. ' + macroStato.key" style="font-weight: bold; color: black;">
+              <option *ngFor="let opt of getMicroStatiPerMacroStato(macroStato.key)" [value]="opt.id_status">
+                {{opt.micro_stato}}
+              </option>
+            </optgroup>
+          </ng-template>
+        </ng-container>
+
+        <!-- Gestione del resto dei gruppi (numero 4 in poi) -->
+        <ng-container *ngFor="let macroStato of microStatiPerMacroStato | keyvalue; let i = index">
+          <ng-template [ngIf]="i > 2">
+            <optgroup [label]="(i + 1) + '. ' + macroStato.key" style="font-weight: bold; color: black;">
+              <option *ngFor="let opt of getMicroStatiPerMacroStato(macroStato.key)" [value]="opt.id_status">
+                {{opt.micro_stato}}
+              </option>
+            </optgroup>
+          </ng-template>
+        </ng-container>
+      </select>
+    </div>
+    <div class="col-12 text-center mt-5">
+      <button type="submit" class="btn bottoniFormConferma"
+              (click)="updateStatiMassivi()">Cambia Stato</button>
+    </div>
+  </div>
+</div>    <!-- Indicatore di filtro attivo e cache -->
+    <div class="filter-status-container" *ngIf="totalCachedContratti.length > 0">
+      <div class="filter-indicator"></div>
+      <div class="cache-info">
+        <span>Contratti in cache: {{totalCachedContratti.length}} di {{paginationInfo.total}}</span>
+        <button mat-flat-button color="primary" (click)="resetFiltri()" *ngIf="OGGETTO_FILTRICONTRATTI">
+          <mat-icon>clear</mat-icon> Rimuovi filtri
+        </button>
+      </div>
+    </div>
+</div> <!-- Fine content-wrapper -->

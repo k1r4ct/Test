@@ -1,0 +1,325 @@
+
+
+// Modern Card Styles
+.modern-card {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.modern-card-header {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  padding: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  .header-text {
+    flex: 1;
+  }
+
+  .header-title {
+    color: white;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .header-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.modern-card-body {
+  background: white;
+  padding: 2rem;
+  min-height: 300px;
+}
+
+// Search Form
+.newcliente-form {
+  .search-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .search-type-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+
+    .search-type-btn {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border: 2px solid #dee2e6;
+      border-radius: 15px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 600;
+      color: #495057;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      min-width: 200px;
+      justify-content: center;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border-color: #667eea;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      }
+
+      &.active {
+        //background: linear-gradient(180deg,#268730 10%,#027cad);
+        background: linear-gradient(180deg,#268730 10%,#027cad);
+        color: white;
+        border-color: #667eea;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+
+        mat-icon {
+          color: white;
+        }
+      }
+
+      mat-icon {
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+        color: #667eea;
+      }
+
+      span {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+
+    .search-type-info {
+      .text-muted {
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-style: italic;
+      }
+    }
+  }
+
+  .form-group {
+    position: relative;
+    margin-bottom: 18px;
+  }
+
+  .input-icon {
+    position: absolute;
+    left: 1rem;
+    z-index: 2;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+
+    mat-icon {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  .modern-search-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3.5rem;
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    font-size: 1rem;
+    background: #f8f9fa;
+    transition: all 0.2s ease;
+    font-weight: 500;
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      background: white;
+    }
+
+    &::placeholder {
+      color: #6c757d;
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    &:valid {
+      border-color: #28a745;
+      
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+      }
+    }
+  }
+
+  .input-error {
+    border-color: #e53935 !important;
+  }
+
+  .btn-search-primary {
+    //background: linear-gradient(180deg,#268730 10%,#027cad);
+    background: linear-gradient(180deg,#268730 10%,#027cad);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    align-self: center;
+    min-width: 200px;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+      background: linear-gradient(135deg, #5a6fd8 0%, #6a5acd 100%);
+    }
+
+    &:active {
+      transform: translateY(-1px);
+    }
+
+    mat-icon {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .modern-card-header {
+    padding: 1.5rem;
+
+    .header-content {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.75rem;
+    }
+
+    .header-icon {
+      font-size: 1.75rem;
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    .header-title {
+      font-size: 1.25rem;
+    }
+  }
+
+  .modern-card-body {
+    padding: 1.5rem;
+  }
+
+  .newcliente-form {
+    .search-type-selector .search-type-btn {
+      min-width: 100%;
+    }
+
+    .btn-search-primary {
+      min-width: 100%;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-card-header {
+    padding: 1rem;
+
+    .header-title {
+      font-size: 1.1rem;
+    }
+
+    .header-subtitle {
+      font-size: 0.8rem;
+    }
+  }
+
+  .modern-card-body {
+    padding: 1rem;
+  }
+
+  .newcliente-form {
+    .search-section {
+      gap: 1rem;
+    }
+
+    .search-type-selector .search-type-btn {
+      padding: 0.875rem 1.25rem;
+      font-size: 0.9rem;
+    }
+
+    .modern-search-input {
+      padding: 0.875rem 0.875rem 0.875rem 3rem;
+      font-size: 0.9rem;
+    }
+
+    .input-icon {
+      left: 0.875rem;
+
+      mat-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+
+    .btn-search-primary {
+      padding: 0.875rem 1.5rem;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// Legacy compatibility
+:host * {
+  position: relative;
+  z-index: 10 !important;
+}

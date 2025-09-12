@@ -1,0 +1,69 @@
+<div class="prevision-pv-container">
+  <div class="chart-wrapper">
+    <div class="chart-header">
+      <h3 class="chart-title">Previsioni PV</h3>
+      <p class="chart-subtitle">Confronto tra PV reali e potenziali per mese</p>
+    </div>
+    
+    <div class="chart-content">
+      @if (isLoading()) {
+        <div class="loading-container">
+          <i class="pi pi-spinner pi-spin" aria-label="Caricamento..."></i>
+          <span class="loading-text">Caricamento dati...</span>
+        </div>
+      } @else if (hasError()) {
+        <div class="error-container">
+          <i class="pi pi-exclamation-triangle" aria-label="Errore"></i>
+          <span class="error-text">Errore nel caricamento dei dati</span>
+        </div>
+      } @else if (isEmpty()) {
+        <div class="empty-container">
+          <i class="pi pi-chart-bar" aria-label="Nessun dato"></i>
+          <span class="empty-text">Nessun dato disponibile</span>
+        </div>
+      } @else {
+        <div class="chart-display">
+          <div class="chart-component">
+            <p-chart 
+              type="bar" 
+              [data]="chartData()" 
+              [options]="chartOptions()" 
+              class="pv-chart"
+              [ariaLabel]="'Grafico PV: ' + chartSummary()"
+            />
+          </div>
+          
+          <div class="stats-summary">
+            <div class="stat-item">
+              <span class="stat-value">{{ totalPvReali() }}</span>
+              <span class="stat-label">PV Reali Totali</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ totalPvPotenziali() }}</span>
+              <span class="stat-label">PV Potenziali Totali</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ achievementRate() }}%</span>
+              <span class="stat-label">Tasso Realizzazione</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ activeMonths() }}</span>
+              <span class="stat-label">Mesi Attivi</span>
+            </div>
+          </div>
+          
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-color pv-reali"></div>
+              <span>PV Reali</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color pv-potenziali"></div>
+              <span>PV Potenziali</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

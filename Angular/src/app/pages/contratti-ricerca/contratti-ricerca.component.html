@@ -1,0 +1,283 @@
+<div class="contracts-container" @pageTransition>
+  <!-- Header modernizzato -->
+  <mat-card class="header-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon class="header-icon">assignment</mat-icon>
+        Contratti Trovati
+      </mat-card-title>
+      <mat-card-subtitle>
+        Ricerca per: <span class="search-term">{{codFpIva}}</span>
+      </mat-card-subtitle>
+    </mat-card-header>
+  </mat-card>
+
+  <!-- Sezione filtri e azioni -->
+  <mat-card class="filters-card" appearance="outlined">
+    <mat-card-content>
+      <div class="filters-row">
+        <!-- Campo di ricerca -->
+        <mat-form-field class="search-field" appearance="outline">
+          <mat-label>Cerca nei contratti</mat-label>
+          <input matInput 
+                 (keyup)="applyFilter($event)" 
+                 placeholder="ID, cliente, contraente, prodotto..."
+                 #input>
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <!-- Contatore risultati -->
+        <div class="results-counter">
+          <mat-chip-set>
+            <mat-chip color="primary">
+              <mat-icon matChipTrailingIcon>assignment</mat-icon>
+              {{dataSource.data.length}} contratti trovati
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Tabella modernizzata -->
+  <mat-card class="table-card" appearance="outlined">
+    <mat-card-content class="table-content">
+      <div class="table-container">
+        <table mat-table 
+               [dataSource]="dataSource" 
+               matSort 
+               class="contracts-table"
+               multiTemplateDataRows>
+          
+          <!-- Colonna ID con sorting -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="header-content">
+                <mat-icon>tag</mat-icon>
+                ID
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row" class="id-cell">
+              <mat-chip color="accent" class="id-chip">{{ row.id }}</mat-chip>
+            </td>
+          </ng-container>
+
+          <!-- Colonna Tipo Contratto con badge -->
+          <ng-container matColumnDef="tipo_contratto">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="header-content">
+                <mat-icon>business</mat-icon>
+                Tipo
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row" class="type-cell">
+              <mat-chip [color]="row.tipo_contratto === 'Contratto business' ? 'primary' : 'warn'">
+                <mat-icon matChipLeadingIcon>
+                  {{ row.tipo_contratto === 'Contratto business' ? 'business' : 'person' }}
+                </mat-icon>
+                {{ row.tipo_contratto === 'Contratto business' ? 'Business' : 'Consumer' }}
+              </mat-chip>
+            </td>
+          </ng-container>
+          
+          <!-- Colonna Cliente -->
+          <ng-container matColumnDef="cliente/Rag.Sociale">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="header-content">
+                <mat-icon>account_circle</mat-icon>
+                Cliente
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row" class="client-cell">
+              <div class="cell-content">
+                <div class="primary-text">{{ row.cliente }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Colonna Contraente -->
+          <ng-container matColumnDef="contraente">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="header-content">
+                <mat-icon>person</mat-icon>
+                Contraente
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row" class="contractor-cell">
+              <div class="cell-content">
+                <div class="primary-text">{{ row.contraente }}</div>
+                <div class="secondary-text" *ngIf="row.dettagli_contraente?.telefono">
+                  <mat-icon class="inline-icon">phone</mat-icon>
+                  {{ row.dettagli_contraente.telefono }}
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Colonna Codice Fiscale/P.IVA -->
+          <ng-container matColumnDef="pivacf">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="header-content">
+                <mat-icon>badge</mat-icon>
+                CF/P.IVA
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row" class="fiscal-cell">
+              <code class="fiscal-code">{{ row.pivacf }}</code>
+            </td>
+          </ng-container>
+
+          <!-- Colonna Date con formattazione -->
+          <ng-container matColumnDef="datains">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="header-content">
+                <mat-icon>event</mat-icon>
+                Inserimento
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row" class="date-cell">
+              <div class="date-content" *ngIf="row.datains; else noDateIns">
+                <mat-icon class="date-icon">add_circle</mat-icon>
+                <span>{{ formatDate(row.datains) }}</span>
+              </div>
+              <ng-template #noDateIns>
+                <div class="date-content no-date">
+                  <mat-icon class="date-icon">event_busy</mat-icon>
+                  <span>Non disponibile</span>
+                </div>
+              </ng-template>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="datastipula">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="header-content">
+                <mat-icon>event_available</mat-icon>
+                Stipula
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row" class="date-cell">
+              <div class="date-content" *ngIf="row.datastipula; else noDateStip">
+                <mat-icon class="date-icon">handshake</mat-icon>
+                <span>{{ formatDate(row.datastipula) }}</span>
+              </div>
+              <ng-template #noDateStip>
+                <div class="date-content no-date">
+                  <mat-icon class="date-icon">event_busy</mat-icon>
+                  <span>Non disponibile</span>
+                </div>
+              </ng-template>
+            </td>
+          </ng-container>
+
+          <!-- Colonna Prodotto -->
+          <ng-container matColumnDef="prodotto">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="header-content">
+                <mat-icon>inventory</mat-icon>
+                Prodotto
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row" class="product-cell">
+              <div class="cell-content">
+                <div class="primary-text">{{ row.prodotto }}</div>
+                <div class="secondary-text">{{ row.macroprodotto }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Colonna SEU -->
+          <ng-container matColumnDef="seu">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="header-content">
+                <mat-icon>support_agent</mat-icon>
+                SEU
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row" class="seu-cell">
+              <div class="seu-content">
+                <mat-icon class="seu-icon">account_box</mat-icon>
+                {{ row.seu }}
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Colonna Stato con badge colorato -->
+          <ng-container matColumnDef="stato">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+              <div class="header-content">
+                <mat-icon>info</mat-icon>
+                Stato
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let row" class="status-cell">
+              <div class="status-content">
+                <mat-chip class="status-chip" [color]="getStatusColor(row.macrostato)">
+                  <mat-icon matChipLeadingIcon>{{ getStatusIcon(row.macrostato) }}</mat-icon>
+                  {{ row.stato }}
+                </mat-chip>
+                <div class="macro-status">{{ row.macrostato }}</div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Colonna Azioni -->
+          <ng-container matColumnDef="azioni">
+            <th mat-header-cell *matHeaderCellDef class="actions-header">
+              <mat-icon>settings</mat-icon>
+              Azioni
+            </th>
+            <td mat-cell *matCellDef="let row" class="actions-cell">
+              <button mat-icon-button 
+                      color="primary"
+                      (click)="visualizzaDettagli(row, 'ricercaContratti'); $event.stopPropagation()"
+                      matTooltip="Visualizza dettagli"
+                      aria-label="Visualizza dettagli contratto">
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <!-- Header e righe -->
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row 
+              *matRowDef="let row; columns: displayedColumns;" 
+              class="contract-row"
+              [class.selected-row]="selectedRow === row"
+              (click)="selectRow(row)"
+              (dblclick)="visualizzaDettagli(row, 'ricercaContratti')"
+              matRipple
+              role="button"
+              tabindex="0"
+              [attr.aria-label]="'Contratto ' + row.id + ' di ' + row.contraente">
+          </tr>
+
+          <!-- Riga per stato vuoto -->
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell no-data-cell" [attr.colspan]="displayedColumns.length">
+              <div class="no-data-content">
+                <mat-icon class="no-data-icon">search_off</mat-icon>
+                <p class="no-data-text">Nessun contratto trovato</p>
+                <p class="no-data-subtext">Prova a modificare i filtri di ricerca</p>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Paginazione modernizzata -->
+      <mat-paginator 
+        [pageSizeOptions]="[10, 25, 50, 100]"
+        [pageSize]="25"
+        [showFirstLastButtons]="true"
+        aria-label="Seleziona pagina dei contratti">
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading e stati -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p class="loading-text">Caricamento contratti...</p>
+  </div>
+</div>

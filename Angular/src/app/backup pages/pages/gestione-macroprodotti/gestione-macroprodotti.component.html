@@ -1,0 +1,201 @@
+<p-toast class="p-toast" position="bottom-right"></p-toast>
+<!-- <div class="button-container" *ngIf="abilitaTasti">
+
+    <button mat-raised-button color="warn" class="square-button" (click)="null">
+      <div class="button-content">
+        <mat-icon class="button-icon">fiber_new</mat-icon>
+        <span class="button-text">Nuovo Macro Prodotto</span>
+      </div>
+    </button>
+
+  </div> -->
+
+<div class="card mt-5" [@pageTransition]="state">
+
+    <div class="card-header">
+        <div class="container-fluid">
+            <div class="row justify-content-between">
+                <div class="col-auto">
+                    <h3 class="card-title"> Tabella Macro Prodotti </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+
+
+        <!-- [hidden]="show_product" -->
+        <div [hidden]="show_product" class="card" data-background-color="yellow">
+            <h4 class="card-header">Prodotto selezionato</h4>
+            <div class="card-body mb-2">
+                <h3>{{descrizione_prodotto_sel}}</h3>
+            </div>
+        </div>
+
+        <div class="mat-elevation-z8 demo-table">
+            <table mat-table [dataSource]="dataSource" matSort>
+                <!-- [dataSource]="dataSource"  -->
+
+                <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+                <ng-container [matColumnDef]="displayedColumns[0]">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                        ID
+                    </th>
+                    <td mat-cell *matCellDef="let row"> {{row.id}} </td>
+                </ng-container>
+
+
+                <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+                <ng-container [matColumnDef]="displayedColumns[1]">
+                    <th mat-header-cell *matHeaderCellDef>
+                        <mat-form-field>
+                            <mat-label>CODICE MACRO</mat-label>
+                            <input matInput (keyup)="selectValue(displayedColumns[1],$event)"
+                                placeholder="CERCA PER CODICE" #input>
+                        </mat-form-field>
+                    </th>
+                    <td mat-cell *matCellDef="let row"> {{row.codice_macro}} </td>
+                </ng-container>
+
+
+                <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+                <ng-container [matColumnDef]="displayedColumns[2]">
+                  <th mat-header-cell *matHeaderCellDef>
+                      <mat-form-field>
+                          <mat-label>DESCRIZIONE</mat-label>
+                          <input matInput (keyup)="selectValue(displayedColumns[2],$event)"
+                              placeholder="CERCA PER DESCRIZIONE" #input>
+                      </mat-form-field>
+                  </th>
+                  <td mat-cell *matCellDef="let row"> {{row.descrizione}} </td>
+                </ng-container>
+
+
+                <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+                <ng-container [matColumnDef]="displayedColumns[3]">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                      PUNTI VALORE
+                  </th>
+                  <td mat-cell *matCellDef="let row"> {{row.punti_valore}} </td>
+              </ng-container>
+
+                <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+                <ng-container [matColumnDef]="displayedColumns[4]">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                      PUNTI CARRIERA
+                  </th>
+                  <td mat-cell *matCellDef="let row"> {{row.punti_carriera}} </td>
+              </ng-container>
+
+
+                <ng-container [matColumnDef]="displayedColumns[5]">
+                    <th mat-header-cell *matHeaderCellDef>AZIONI</th>
+                    <td mat-cell *matCellDef="let row">
+
+                        <button *ngIf="abilitaTasti" mat-mini-fab color="primary"
+                        (click)="clickedRows(row)" class="m-1">
+                        <mat-icon>edit</mat-icon>
+                        </button>
+
+                        <!--
+                        <button *ngIf="abilitaTasti" mat-mini-fab color="warn"
+                        (click)="deleteMacroProduct(row)" class="m-1">
+                        <mat-icon>delete_outline</mat-icon>
+                        </button> -->
+
+                    </td>
+                </ng-container>
+
+                <!-- SEZIONE RIGHE VISUALIZZATE -->
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+
+                <!-- MESSAGGIO RIGHE NON TROVATE -->
+                <tr class="mat-row" *matNoDataRow>
+                    <td class="mat-cell" colspan="4">Nessun dato corrispondente alla ricerca</td>
+                </tr>
+
+            </table>
+
+            <mat-paginator [pageSizeOptions]="[ 10, 25, 100]" aria-label="Select page of users"></mat-paginator>
+        </div>
+
+    </div>
+</div>
+
+
+
+
+<div class="card contrattoselezionato" *ngIf="DettaglioMacroProdotto" @pageTransition [hidden]="macroprodottoselezionato">
+    <div class="card-header">
+        <label class="card-title title"> DETTAGLI MACRO PRODOTTO SELEZIONATO</label>
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="ps-5 align-content-center labelmp">
+                                <label class="uppercase ">Codice </label>
+                            </div>
+                            <div class="col-xl-10 col-lg-8 col-md-8 col-sm-7 col-xs-7">
+                                <!-- accedere ai valori di DettaglioMacroProdotto -->
+                                <input type="text" class="form-control input codice_macro" Name="codice_macro"
+                                placeholder="" value="{{DettaglioMacroProdotto[0].codice_macro}}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="ps-5 align-content-center labelmp">
+                                <label class="uppercase">Descrizione </label>
+                            </div>
+                            <div class="col-xl-10 col-lg-8 col-md-8 col-sm-7 col-xs-7">
+                                <input type="text" class="form-control descrizioneMacroProd" Name="descrizioneMacroProd"
+                                placeholder="Descrizione" value="{{DettaglioMacroProdotto[0].descrizioneMacroProd}}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class=" ps-5 align-content-center labelmp">
+                                <label class="uppercase">Punti Valore</label>
+                            </div>
+                            <div class="col-xl-10 col-lg-8 col-md-8 col-sm-7 col-xs-7">
+                                <input  type="text" class="form-control inputnumber punti_valore" Name="punti_valore"
+                                    placeholder="punti_valore" value="{{DettaglioMacroProdotto[0].punti_valore}}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class=" col-lg-1 ps-5 align-content-center labelmp">
+                                <label class="uppercase">Punti Valore</label>
+                            </div>
+                            <div class="col-xl-10 col-lg-8 col-md-8 col-sm-7 col-xs-7">
+                                <input type="text" class="form-control inputnumber punti_carriera"  Name="punti_carriera"
+                                placeholder="Punti Carriera" value="{{DettaglioMacroProdotto[0].punti_carriera}}" >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 d-flex justify-content-center"> <button mat-raised-button color="primary"
+                    type="submit" (click)="SalvaModificheMacroProdotto(DettaglioMacroProdotto[0].idMacroProd)">Salva Modifiche</button>
+            </div>
+        </div>
+    </div>
+</div>

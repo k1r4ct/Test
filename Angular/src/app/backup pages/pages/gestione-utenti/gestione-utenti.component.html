@@ -1,0 +1,343 @@
+<p-toast class="p-toast" position="bottom-right"></p-toast>
+<div class="button-container">
+
+    <button mat-raised-button color="warn" class="square-button" (click)="nuovoUtente()">
+      <div class="button-content">
+        <mat-icon class="button-icon">supervised_user_circle</mat-icon>
+        <span class="button-text">Nuovo utente</span>
+      </div>
+    </button>
+  </div>
+
+
+<app-registrazione [@pageTransition]="state" [hidden]="showRegistrazione"></app-registrazione>
+
+
+<div class="card mt-5" [@pageTransition]="state">
+
+    <div class="card-header">
+        <div class="container-fluid">
+            <div class="row justify-content-between">
+                <div class="col-auto">
+                    <h3 class="card-title"> Lista Utenti </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <p-multiSelect
+            [options]="ruolo"
+            [(ngModel)]="selectedRuolo"
+            optionLabel="descrizione"
+            display="chip"
+            placeholder="Seleziona Ruolo"
+            (onChange)="applyFilter()"/>
+
+        <p-multiSelect
+            [options]="Utenti"
+            [(ngModel)]="selectedUtenti"
+            optionLabel="nominativo_ragSoc"
+            display="chip"
+            placeholder="Seleziona Utente"
+            (onChange)="applyFilter()" />
+
+        <p-multiSelect
+            [options]="Utenti"
+            [(ngModel)]="selectedIdUtenti"
+            optionLabel="id"
+            display="chip"
+            placeholder="Seleziona ID Utente"
+            (onChange)="applyFilter()" />
+        <!-- [hidden]="show_product" -->
+
+
+        <div class="mat-elevation-z8 demo-table" style="border-radius:90%!important">
+            <table mat-table [dataSource]="dataSource" matSort class="table-responsive">
+                <!-- [dataSource]="dataSource"  -->
+
+                <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+                <ng-container matColumnDef="id">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header  style="width: 2%;">
+                        ID
+                    </th>
+                    <td mat-cell *matCellDef="let row"> {{row.id}} </td>
+                </ng-container>
+
+
+                <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+                <ng-container matColumnDef="nominativo/Rag.Sociale">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header style="width: 15%;">
+                        nominativo/Rag.Sociale
+                    </th>
+                    <td mat-cell *matCellDef="let row"> {{row.nominativo_ragSoc}} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="email">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header style="width: 15%;">
+                        email
+                    </th>
+                    <td mat-cell *matCellDef="let row"> {{row.email}} </td>
+                </ng-container>
+
+                <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+                <ng-container matColumnDef="ruolo">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header style="width: 5%;">
+                        Ruolo
+                    </th>
+                    <td mat-cell *matCellDef="let row"> {{row.ruolo}} </td>
+                </ng-container>
+
+                <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+                <ng-container matColumnDef="qualifica">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header style="width: 9%;">
+                        Qualifica
+                    </th>
+                    <td mat-cell *matCellDef="let row"> {{row.qualifica}} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="codice">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header style="width: 15%;">
+                        Codice
+                    </th>
+                    <td mat-cell *matCellDef="let row"> {{row.codice}} </td>
+                </ng-container>
+
+                <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+                <ng-container matColumnDef="codice_fiscale/P.iva">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header style="width: 20%;">
+                        Codice Fiscale/P.iva
+                    </th>
+                    <td mat-cell *matCellDef="let row"> {{row.codf_Piva}} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="azioni">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header style="width: 2%;">
+                        Azioni
+                    </th>
+                    <td mat-cell *matCellDef="let row">
+                        <button mat-mini-fab color="primary"
+                        (click)="editUser(row)" class="m-1">
+                        <mat-icon>edit</mat-icon>
+                    </button>
+                    </td>
+                </ng-container>
+
+
+
+                <!-- SEZIONE RIGHE VISUALIZZATE -->
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+
+                <!-- MESSAGGIO RIGHE NON TROVATE -->
+                <tr class="mat-row" *matNoDataRow>
+                    <td class="mat-cell" colspan="4">Nessun dato corrispondente alla ricerca</td>
+                </tr>
+
+            </table>
+
+            <mat-paginator [pageSizeOptions]="[ 10, 25, 100]" aria-label="Select page of users"></mat-paginator>
+        </div>
+
+    </div>
+</div>
+<div class="card dettagliUtenteSelezionato" *ngIf="Utenti" @pageTransition [hidden]="userselezionato">
+    <div class="card-header">
+        <label class="card-title title"> DETTAGLI UTENTE SELEZIONATO</label>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="row">
+                <input *ngFor="let user of dettagliUtente" type="hidden"
+                                    class="form-control input id" Name="id"
+                                    value="{{user.id}}">
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-2 ps-5 align-content-center">
+                                <label class="uppercase">Nome</label>
+                            </div>
+                            <div class="col-10">
+                                <input *ngFor="let user of dettagliUtente" type="text"
+                                    class="form-control input nome" Name="nome" placeholder="Nome"
+                                    value="{{user.nome}}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-2 ps-5 align-content-center">
+                                <label class="uppercase">Cognome</label>
+                            </div>
+                            <div class="col-10">
+                                <input *ngFor="let user of dettagliUtente" type="text"
+                                    class="form-control input cognome" Name="cognome" placeholder="Cognome"
+                                    value="{{user.cognome}}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-2 ps-5 align-content-center">
+                                <label class="uppercase">Rag.Soc.</label>
+                            </div>
+                            <div class="col-10">
+                                <input *ngFor="let user of dettagliUtente" type="text"
+                                    class="form-control input rag_soc" Name="rag_soc" placeholder="Rag.Sociale"
+                                    value="{{user.nominativo_ragSoc}}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-2 ps-5 align-content-center">
+                                <label class="uppercase">Email</label>
+                            </div>
+                            <div class="col-10">
+                                <input *ngFor="let user of dettagliUtente" type="text"
+                                    class="form-control email" Name="email"
+                                    placeholder="Email" value="{{user.email}}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-2 ps-5 align-content-center">
+                                <label class="uppercase">Ruolo</label>
+                            </div>
+                            <div class="col-10" *ngFor="let user of dettagliUtente">
+
+                                <p-dropdown
+                                [options]="ruolo"
+                                class="ruolo"
+                                Name="ruolo"
+                                [(ngModel)]="selectedRuoloUser"
+                                [showClear]="true"
+                                optionLabel="descrizione"
+                                placeholder="Cambia Ruolo"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-2 ps-5 align-content-center">
+                                <label class="uppercase">Qualifica</label>
+                            </div>
+                            <div class="col-10" *ngFor="let user of dettagliUtente">
+
+                                <p-dropdown
+                                [options]="qualifiche"
+                                class="ruolo"
+                                Name="ruolo"
+                                [(ngModel)]="selectedQualifiche"
+                                [showClear]="true"
+                                optionLabel="descrizione"
+                                placeholder="Cambia Qualifica"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-2 ps-5 align-content-center">
+                                <label class="uppercase">Seu di riferimento</label>
+                            </div>
+                            <div class="col-10" *ngFor="let user of dettagliUtente">
+
+                                <p-dropdown
+                                    [options]="seu"
+                                    class="seu"
+                                    Name="seu"
+                                    [(ngModel)]="seuSelected"
+                                    [showClear]="true"
+                                    optionLabel="nominativo"
+                                    appendTo="body"
+                                    placeholder="Cambia SEU"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-2 ps-5 align-content-center">
+                                <label class="uppercase">Prodotti Gestiti</label>
+                            </div>
+                            <div class="col-10" *ngFor="let user of dettagliUtente">
+
+                                <p-multiSelect
+                                    [options]="macro_product"
+                                    class="contract_management w-100 custom-multiselect"
+                                    Name="contract_management"
+                                    [(ngModel)]="macro_productSelected"
+                                    [showClear]="true"
+                                    optionLabel="descrizione"
+                                    display="chip"
+                                    placeholder="Seleziona Prodotti"
+                                    [maxSelectedLabels]="20"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-2 ps-5 align-content-center">
+                                <label class="uppercase">Codice</label>
+                            </div>
+                            <div class="col-10">
+                                <input *ngFor="let user of dettagliUtente" type="text" class="form-control cod_utente"
+                                    Name="cod_utente" placeholder="Codice Utente"
+                                    value="{{user.codice}}" >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-2 ps-5 align-content-center">
+                                <label class="uppercase">Codice Fiscale/P.Iva</label>
+                            </div>
+                            <div class="col-10">
+                                <input *ngFor="let user of dettagliUtente" type="text" class="form-control cod_fPiva"
+                                    Name="cod_fPiva" placeholder="Codice F./P.Iva"
+                                    value="{{user.codf_Piva}}" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+                  <div class="form-group">
+                      <div class="row">
+                          <div class="col-2 ps-5 align-content-center">
+                              <label class="uppercase">Resetta la Password</label>
+                          </div>
+                          <div class="col-10">
+                            <input class="form-check-input resetpwd" type="checkbox" id="resetpwd" name="resetpwd" value="false" (click)="resetpwd('resetpwd')">
+                        </div>
+                      </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div *ngFor="let user of dettagliUtente" class="col-12 d-flex justify-content-center"> <button mat-raised-button color="primary"
+                    type="submit" (click)="SalvaModificheUtente(user)">Salva Modifiche</button>
+            </div>
+        </div>
+    </div>
+</div>

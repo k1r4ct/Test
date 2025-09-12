@@ -1,0 +1,57 @@
+<div  @pageTransition (@pageTransition.done)="animationDone($event)" class="row">
+  <mat-spinner [hidden]="matspinner"></mat-spinner>
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title"> CONTRATTI GENERATI DA LEAD</h1>
+            </div>
+            <div class="card-body">
+                <div class="lead-container table-responsive">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8  card-body">
+        
+                        <ng-container matColumnDef="id">
+                            <th mat-header-cell *matHeaderCellDef style="width: 1%;"> ID </th>
+                            <td mat-cell *matCellDef="let lead"> {{lead.id}} </td>
+                        </ng-container>
+        
+                        <ng-container matColumnDef="nominativo/Rag.Sociale">
+                            <th mat-header-cell *matHeaderCellDef style="width: 4%;"> NOMINATIVO/RAG.SOCIALE </th>
+                            <td mat-cell *matCellDef="let lead">
+                                {{lead.nomeRag_Sociale}}
+                            </td>
+                        </ng-container>
+        
+                        <ng-container matColumnDef="p.iva/cod.fisc">
+                            <th mat-header-cell *matHeaderCellDef style="width: 5%;"> PARTITA IVA/CODICE FISCALE </th>
+                            <td mat-cell *matCellDef="let lead">
+                                {{lead.pIva_CodFisc}}
+                            </td>
+                        </ng-container>
+        
+                        <ng-container matColumnDef="Data Inserimento">
+                            <th mat-header-cell *matHeaderCellDef style="width: 7%;"> DATA INSERIMENTO </th>
+                            <td mat-cell *matCellDef="let lead"> {{lead.data_Ins}} </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="Prodotto">
+                            <th mat-header-cell *matHeaderCellDef style="width: 9%;"> PRODOTTO </th>
+                            <td mat-cell *matCellDef="let lead"> {{lead.Prodotto}} </td>
+                        </ng-container>
+        
+                        <ng-container matColumnDef="Stato">
+                            <th mat-header-cell *matHeaderCellDef style="width: 7%;"> STATO </th>
+                            <td mat-cell *matCellDef="let lead"> {{lead.Stato}} </td>
+                        </ng-container>
+        
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                        <tr mat-row *matRowDef="let row; columns: displayedColumns;" [appLeadRowColor]="row"></tr> 
+        
+                    </table>
+                    <hr>
+                    <mat-paginator #paginator class="w-100 text-center" [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+        
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

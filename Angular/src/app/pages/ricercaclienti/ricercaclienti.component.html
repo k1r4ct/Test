@@ -1,0 +1,86 @@
+<div class="container-fluid">
+  <div class="row">
+    <!-- Card di Ricerca -->
+    <div class="col-md-6">
+      <div class="modern-card" [@pageTransition]="state">
+        <div class="modern-card-header">
+          <div class="header-content">
+            <mat-icon class="header-icon">search</mat-icon>
+            <div class="header-text">
+              <h2 class="header-title">Ricerca Clienti</h2>
+              <p class="header-subtitle">Cerca per Codice Fiscale o Partita IVA</p>
+            </div>
+          </div>
+        </div>
+        <div class="modern-card-body">
+          <form [formGroup]="loginForm" (ngSubmit)="cerca()" ngNativeValidate class="search-form">
+            
+            <!-- Sezione di ricerca -->
+            <div class="search-section">
+              <div class="search-type-selector">
+                <button type="button" 
+                        class="search-type-btn" 
+                        [class.active]="bottontext === 'Codice Fiscale'"
+                        (click)="changeText()">
+                  <mat-icon>{{ bottontext === 'Codice Fiscale' ? 'person' : 'business' }}</mat-icon>
+                  <span>{{ bottontext }}</span>
+                </button>
+                <div class="search-type-info">
+                  <small class="text-muted">
+                    Modalità attuale: <strong>{{ bottontext }}</strong>
+                  </small>
+                </div>
+              </div>
+
+              <div class="search-input-wrapper">
+                <div class="input-icon">
+                  <mat-icon>{{ bottontext === 'Codice Fiscale' ? 'badge' : 'business_center' }}</mat-icon>
+                </div>
+                <input type="hidden" formControlName="tiporicerca" [(ngModel)]="bottontext">
+                <input type="text" 
+                       [maxlength]="inputmaxlength" 
+                       [minlength]="inputMinLength" 
+                       class="modern-search-input" 
+                       [(ngModel)]="codFPIvaval"  
+                       formControlName="codFPIva" 
+                       [placeholder]="'Inserisci ' + bottontext.toLowerCase()"
+                       required>
+              </div>
+
+              <button type="submit" class="btn-search-primary">
+                <mat-icon>search</mat-icon>
+                <span>Cerca Cliente</span>
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Card Messaggio -->
+    <div class="col-md-6">
+      <div class="message-card" [ngClass]="'message-' + tipo" [hidden]="hidden">
+        <div class="message-header">
+          <div class="message-icon-wrapper">
+            <mat-icon class="message-icon">
+              {{ tipo === 'success' ? 'check_circle' : tipo === 'danger' ? 'error' : tipo === 'warning' ? 'warning' : 'info' }}
+            </mat-icon>
+          </div>
+          <h3 class="message-title">
+            {{ tipo === 'success' ? 'Successo' : tipo === 'danger' ? 'Errore' : tipo === 'warning' ? 'Attenzione' : 'Informazione' }}
+          </h3>
+        </div>
+        <div class="message-body">
+          <div class="message-content">
+            <p class="message-text">{{ message }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+

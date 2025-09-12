@@ -1,0 +1,151 @@
+<div @pageTransition (@pageTransition.done)="animationDone($event)" class="table-contracts-container">
+  <mat-spinner [hidden]="matspinner" class="loading-spinner"></mat-spinner>
+  
+  <div class="table-contracts-card">
+    <div class="card-header modern-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="material-icons">assignment</i>
+        </div>
+        <div class="header-text">
+          <h1 class="card-title">
+            Contratti Generati da
+            <span *ngIf="User == 'Cliente'">Amici</span>
+            <span *ngIf="User != 'Cliente'">Leads</span>
+            Invitati
+          </h1>
+          <p class="card-subtitle">Monitora i contratti generati</p>
+        </div>
+      </div>
+      
+      <div class="filters-container">
+        <p-multiSelect
+          [options]="LeadsContract"
+          [(ngModel)]="contractSelected"
+          optionLabel="id"
+          display="chip"
+          placeholder="Seleziona ID"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
+
+        <p-multiSelect
+          [options]="LeadsContract"
+          [(ngModel)]="statusContractSelected"
+          optionLabel="Stato"
+          display="chip"
+          placeholder="Seleziona Stato"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
+
+        <p-multiSelect
+          [options]="LeadsContract"
+          [(ngModel)]="pivaCodFisc"
+          optionLabel="pIva_CodFisc"
+          display="chip"
+          placeholder="Seleziona P.iva/Cod.Fiscale"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
+      </div>
+    </div>
+    
+    <div class="card-body modern-body">
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" class="modern-table">
+          
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef class="id-column">
+              <span class="header-text">ID</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="id-cell">
+              <span class="id-badge">{{ lead.id }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="nominativo/Rag.Sociale">
+            <th mat-header-cell *matHeaderCellDef class="name-column">
+              <span class="header-text">Nominativo/Rag.Sociale</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="name-cell">
+              <div class="client-info">
+                <i class="material-icons client-icon">person</i>
+                <span class="client-name">{{ lead.nomeRag_Sociale }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="p.iva/cod.fisc">
+            <th mat-header-cell *matHeaderCellDef class="tax-column">
+              <span class="header-text">P.IVA/Cod.Fiscale</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="tax-cell">
+              <div class="tax-info">
+                <i class="material-icons tax-icon">business</i>
+                <span class="tax-code">{{ lead.pIva_CodFisc }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Data Inserimento">
+            <th mat-header-cell *matHeaderCellDef class="date-column">
+              <span class="header-text">Data Inserimento</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="date-cell">
+              <div class="date-info">
+                <i class="material-icons date-icon">event</i>
+                <span class="date-text">{{ lead.data_Ins }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Prodotto">
+            <th mat-header-cell *matHeaderCellDef class="product-column">
+              <span class="header-text">Prodotto</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="product-cell">
+              <div class="product-info">
+                <i class="material-icons product-icon">inventory</i>
+                <span class="product-name">{{ lead.Prodotto }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Seu">
+            <th mat-header-cell *matHeaderCellDef class="seu-column">
+              <span class="header-text">SEU</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="seu-cell">
+              <div class="seu-info">
+                <i class="material-icons seu-icon">support_agent</i>
+                <span class="seu-name">{{ lead.seu }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="Stato">
+            <th mat-header-cell *matHeaderCellDef class="status-column">
+              <span class="header-text">Stato</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="status-cell">
+              <span class="status-badge" [class]="'status-' + lead.Stato?.toLowerCase()">
+                {{ lead.Stato }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns" [appLeadRowColor]="row" class="modern-row"></tr>
+        </table>
+      </div>
+      
+      <div class="pagination-container">
+        <mat-paginator #paginator class="modern-paginator" [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+      </div>
+    </div>
+  </div>
+</div>

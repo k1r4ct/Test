@@ -1,0 +1,995 @@
+// Modernizzazione del componente contratti-ricerca con gestione responsive avanzata
+.contracts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+  max-width: 100%;
+  //min-height: 100vh;
+  
+  // Desktop large (>1400px)
+  @media (min-width: 1400px) {
+    padding: 2rem;
+    gap: 2rem;
+  }
+  
+  // Desktop (1200px - 1400px)
+  @media (min-width: 1200px) and (max-width: 1399px) {
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+  
+  // Tablet landscape (768px - 1199px)
+  @media (min-width: 768px) and (max-width: 1199px) {
+    padding: 1rem;
+    gap: 1.25rem;
+  }
+  
+  // Mobile e tablet portrait (<768px)
+  @media (max-width: 767px) {
+    padding: 0.75rem;
+    gap: 1rem;
+  }
+  
+  // Mobile small (<480px)
+  @media (max-width: 479px) {
+    padding: 0.5rem;
+    gap: 0.75rem;
+  }
+}
+
+// CSS per il modal - forza la visibilità con z-index più alto e gestione responsive
+::ng-deep .mat-mdc-dialog-container {
+  background: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12) !important;
+  z-index: 9999 !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-height: 90vh !important;
+  overflow: auto !important;
+  display: block !important;
+  visibility: visible !important;
+  
+  // Gestione responsive della larghezza
+  width: 90vw !important;
+  max-width: 1200px !important;
+  
+  // Desktop large (>1400px)
+  @media (min-width: 1400px) {
+    width: 70vw !important;
+    max-width: 1400px !important;
+  }
+  
+  // Desktop (1200px - 1400px)
+  @media (min-width: 1200px) and (max-width: 1399px) {
+    width: 80vw !important;
+    max-width: 1200px !important;
+  }
+  
+  // Tablet landscape (768px - 1199px)
+  @media (min-width: 768px) and (max-width: 1199px) {
+    width: 90vw !important;
+    max-width: 95vw !important;
+  }
+  
+  // Mobile e tablet portrait (<768px)
+  @media (max-width: 767px) {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 85vh !important;
+    top: 7.5vh !important;
+    transform: translateX(-50%) !important;
+  }
+  
+  // Mobile small (<480px)
+  @media (max-width: 479px) {
+    width: 98vw !important;
+    max-width: 98vw !important;
+    max-height: 90vh !important;
+    top: 5vh !important;
+    border-radius: 4px !important;
+  }
+}
+
+::ng-deep .cdk-overlay-container {
+  z-index: 9998 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+::ng-deep .cdk-global-overlay-wrapper {
+  z-index: 9998 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+::ng-deep .cdk-overlay-backdrop {
+  background: rgba(0, 0, 0, 0.5) !important;
+  //z-index: 9997 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+// Fix per il backdrop trasparente che causa problemi con le select
+::ng-deep .cdk-overlay-transparent-backdrop.cdk-overlay-backdrop-showing, 
+::ng-deep .cdk-high-contrast-active .cdk-overlay-transparent-backdrop {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+// Forza la rimozione di tutti i backdrop problematici
+::ng-deep .cdk-overlay-backdrop.cdk-overlay-transparent-backdrop {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+// Stili specifici per il nostro modal personalizzato con gestione responsive
+::ng-deep .custom-backdrop {
+  background: rgba(0, 0, 0, 0.6) !important;
+  z-index: 9997 !important;
+  pointer-events: auto !important;
+}
+
+// Regola di emergenza per rimuovere qualsiasi backdrop trasparente residuo
+::ng-deep .cdk-overlay-container .cdk-overlay-backdrop:not(.custom-backdrop) {
+  &.cdk-overlay-transparent-backdrop {
+    display: none !important;
+    pointer-events: none !important;
+  }
+}
+
+// Assicuriamoci che le select possano funzionare correttamente
+::ng-deep .mat-mdc-select-panel {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+
+::ng-deep .cdk-overlay-pane:has(.mat-mdc-select-panel) {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+
+::ng-deep .custom-modal-panel {
+  z-index: 9999 !important;
+  
+  .mat-mdc-dialog-container {
+    background: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 0 !important;
+    
+    // Gestione responsive del contenuto del modal
+    @media (max-width: 767px) {
+      border-radius: 8px !important;
+      max-height: 85vh !important;
+      
+      // Riduci padding del contenuto interno
+      .mat-mdc-dialog-content {
+        padding: 1rem !important;
+      }
+      
+      // Form più compatti
+      .form-group {
+        margin-bottom: 0.75rem !important;
+        
+        .row {
+          margin: 0 !important;
+          
+          .col-3 {
+            margin-bottom: 0.25rem;
+          }
+        }
+      }
+      
+      // Labels più piccoli
+      label {
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+      }
+      
+      // Input più compatti
+      .form-control {
+        font-size: 0.9rem !important;
+        padding: 0.5rem !important;
+      }
+    }
+    
+    @media (max-width: 479px) {
+      border-radius: 4px !important;
+      
+      .mat-mdc-dialog-content {
+        padding: 0.75rem !important;
+      }
+      
+      // Titoli delle sezioni più piccoli
+      .section-header h2 {
+        font-size: 1.1rem !important;
+      }
+      
+      // Icone più piccole
+      mat-icon {
+        font-size: 1.2rem !important;
+        width: 1.2rem !important;
+        height: 1.2rem !important;
+      }
+      
+      // Bottoni più compatti
+      .modern-actions {
+        padding: 0.75rem !important;
+        
+        .modern-btn {
+          font-size: 0.9rem !important;
+          padding: 0.5rem 1rem !important;
+        }
+      }
+    }
+  }
+}
+
+// Header modernizzato
+.header-card {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  color: white;
+  
+  .mat-mdc-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  
+  .header-icon {
+    font-size: 1.8rem;
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+  
+  .search-term {
+    color: #ffeb3b;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+  }
+  
+  .mat-mdc-card-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    margin-top: 0.5rem;
+  }
+}
+
+// Sezione filtri con gestione responsive migliorata
+.filters-card {
+  .filters-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    
+    // Desktop e tablet landscape
+    @media (min-width: 768px) {
+      flex-wrap: nowrap;
+    }
+    
+    // Tablet portrait e mobile
+    @media (max-width: 767px) {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+  }
+  
+  .search-field {
+    flex: 1;
+    min-width: 250px;
+    
+    // Desktop
+    @media (min-width: 1200px) {
+      min-width: 350px;
+    }
+    
+    // Tablet
+    @media (min-width: 768px) and (max-width: 1199px) {
+      min-width: 300px;
+    }
+    
+    // Mobile
+    @media (max-width: 767px) {
+      min-width: unset;
+      width: 100%;
+    }
+  }
+  
+  .results-counter {
+    // Mobile: centra il counter
+    @media (max-width: 767px) {
+      align-self: center;
+    }
+    
+    .mat-mdc-chip {
+      font-weight: 600;
+      
+      // Mobile: chip più piccolo
+      @media (max-width: 479px) {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+      }
+    }
+  }
+}
+
+// Tabella modernizzata con gestione responsive avanzata
+.table-card {
+  .table-content {
+    padding: 0;
+  }
+  
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+    
+    // Gestione responsive della tabella
+    @media (max-width: 1199px) {
+      // Mantieni scroll orizzontale per schermi più piccoli
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      
+      &::-webkit-scrollbar {
+        height: 6px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+        
+        &:hover {
+          background: #a8a8a8;
+        }
+      }
+    }
+    
+    @media (max-width: 767px) {
+      font-size: 0.875rem;
+      
+      // Su mobile, forza una larghezza minima per evitare testo troppo compresso
+      min-width: 600px;
+    }
+    
+    @media (max-width: 479px) {
+      font-size: 0.8rem;
+      min-width: 550px;
+    }
+  }
+}
+
+.contracts-table {
+  width: 100%;
+  
+  // Header styling
+  .mat-mdc-header-cell {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #e0e0e0;
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      
+      mat-icon {
+        font-size: 1.2rem;
+        width: 1.2rem;
+        height: 1.2rem;
+        color: #666;
+      }
+    }
+  }
+  
+  // Celle specifiche
+  .mat-mdc-cell {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .id-cell {
+    .id-chip {
+      font-weight: 600;
+      font-family: 'Courier New', monospace;
+    }
+  }
+  
+  .type-cell {
+    .mat-mdc-chip {
+      font-weight: 500;
+    }
+  }
+  
+  .client-cell,
+  .contractor-cell,
+  .product-cell {
+    .cell-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    
+    .primary-text {
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .secondary-text {
+      font-size: 0.875rem;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      
+      .inline-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+  }
+  
+  .fiscal-cell {
+    .fiscal-code {
+      background-color: #f5f5f5;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+  
+  .date-cell {
+    .date-content {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      
+      .date-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+        color: #666;
+      }
+      
+      &.no-date {
+        color: #999;
+        font-style: italic;
+        
+        .date-icon {
+          color: #ccc;
+        }
+      }
+    }
+  }
+  
+  .seu-cell {
+    .seu-content {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      
+      .seu-icon {
+        color: #2196f3;
+      }
+    }
+  }
+  
+  .status-cell {
+    .status-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      align-items: flex-start;
+    }
+    
+    .status-chip {
+      font-weight: 500;
+    }
+    
+    .macro-status {
+      font-size: 0.75rem;
+      color: #666;
+      background-color: #f0f0f0;
+      padding: 0.125rem 0.375rem;
+      border-radius: 12px;
+    }
+  }
+  
+  .actions-cell {
+    width: 80px;
+    text-align: center;
+    
+    button {
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background-color: rgba(33, 150, 243, 0.1);
+        transform: scale(1.1);
+      }
+    }
+  }
+  
+  .actions-header {
+    text-align: center;
+    width: 80px;
+  }
+}
+
+// Righe della tabella
+.contract-row {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  &.selected-row {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+  }
+  
+  &:focus {
+    outline: 2px solid #2196f3;
+    outline-offset: -2px;
+  }
+}
+
+// Stato vuoto
+.no-data-cell {
+  text-align: center;
+  padding: 3rem 1rem;
+  
+  .no-data-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: #666;
+    
+    .no-data-icon {
+      font-size: 4rem;
+      width: 4rem;
+      height: 4rem;
+      color: #ccc;
+    }
+    
+    .no-data-text {
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin: 0;
+    }
+    
+    .no-data-subtext {
+      font-size: 0.875rem;
+      margin: 0;
+      color: #999;
+    }
+  }
+}
+
+// Loading overlay con gestione responsive
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  z-index: 1000;
+  
+  .loading-text {
+    font-size: 1rem;
+    color: #666;
+    margin: 0;
+    
+    @media (max-width: 479px) {
+      font-size: 0.9rem;
+    }
+  }
+  
+  // Spinner responsive
+  mat-spinner {
+    @media (max-width: 479px) {
+      width: 40px !important;
+      height: 40px !important;
+    }
+  }
+}
+
+// Stato vuoto con gestione responsive
+.no-data-cell {
+  text-align: center;
+  padding: 3rem 1rem;
+  
+  @media (max-width: 767px) {
+    padding: 2rem 0.5rem;
+  }
+  
+  @media (max-width: 479px) {
+    padding: 1.5rem 0.25rem;
+  }
+  
+  .no-data-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: #666;
+    
+    @media (max-width: 479px) {
+      gap: 0.75rem;
+    }
+    
+    .no-data-icon {
+      font-size: 4rem;
+      width: 4rem;
+      height: 4rem;
+      color: #ccc;
+      
+      @media (max-width: 767px) {
+        font-size: 3rem;
+        width: 3rem;
+        height: 3rem;
+      }
+      
+      @media (max-width: 479px) {
+        font-size: 2.5rem;
+        width: 2.5rem;
+        height: 2.5rem;
+      }
+    }
+    
+    .no-data-text {
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin: 0;
+      
+      @media (max-width: 767px) {
+        font-size: 1.1rem;
+      }
+      
+      @media (max-width: 479px) {
+        font-size: 1rem;
+      }
+    }
+    
+    .no-data-subtext {
+      font-size: 0.875rem;
+      margin: 0;
+      color: #999;
+      
+      @media (max-width: 479px) {
+        font-size: 0.8rem;
+      }
+    }
+  }
+}
+
+// Paginazione
+mat-paginator {
+  border-top: 1px solid #e0e0e0;
+  background-color: #fafafa;
+  
+  .mat-mdc-paginator-container {
+    padding: 1rem;
+  }
+}
+
+// Gestione responsive avanzata per la tabella
+// Desktop extra large (>1400px) - Mostra tutto
+@media (min-width: 1400px) {
+  .contracts-table {
+    .mat-mdc-cell,
+    .mat-mdc-header-cell {
+      padding: 1rem;
+      font-size: 0.95rem;
+    }
+  }
+}
+
+// Desktop large (1200px - 1400px) - Nascondi colonne meno importanti
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .contracts-table {
+    .mat-mdc-cell,
+    .mat-mdc-header-cell {
+      padding: 0.75rem;
+      
+      &.seu-cell {
+        display: none;
+      }
+    }
+  }
+}
+
+// Desktop standard (992px - 1199px) - Riduci ulteriormente
+@media (min-width: 992px) and (max-width: 1199px) {
+  .contracts-table {
+    .mat-mdc-cell,
+    .mat-mdc-header-cell {
+      padding: 0.6rem;
+      
+      &.seu-cell,
+      &.status-cell {
+        display: none;
+      }
+    }
+  }
+}
+
+// Tablet landscape (768px - 991px) - Nascondi più colonne
+@media (min-width: 768px) and (max-width: 991px) {
+  .contracts-table {
+    .mat-mdc-cell,
+    .mat-mdc-header-cell {
+      padding: 0.5rem;
+      font-size: 0.875rem;
+      
+      &.seu-cell,
+      &.status-cell,
+      &.product-cell {
+        display: none;
+      }
+    }
+    
+    .header-content {
+      font-size: 0.85rem;
+      
+      mat-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+  }
+}
+
+// Tablet portrait (481px - 767px) - Tabella essenziale
+@media (min-width: 481px) and (max-width: 767px) {
+  .contracts-table {
+    .mat-mdc-cell,
+    .mat-mdc-header-cell {
+      padding: 0.4rem;
+      font-size: 0.85rem;
+      
+      &.seu-cell,
+      &.status-cell,
+      &.product-cell,
+      &.date-cell:not(:first-of-type) {
+        display: none;
+      }
+    }
+    
+    .header-content {
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.8rem;
+      
+      mat-icon {
+        font-size: 0.9rem;
+        width: 0.9rem;
+        height: 0.9rem;
+      }
+    }
+    
+    // Riduci la dimensione dei chip
+    .mat-mdc-chip {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+  }
+  
+  .filters-card {
+    .mat-mdc-card-content {
+      padding: 0.75rem;
+    }
+  }
+}
+
+// Mobile (320px - 480px) - Solo colonne essenziali
+@media (max-width: 480px) {
+  .contracts-table {
+    .mat-mdc-cell,
+    .mat-mdc-header-cell {
+      padding: 0.3rem;
+      font-size: 0.8rem;
+      
+      // Nascondi tutto tranne le colonne essenziali
+      &.seu-cell,
+      &.status-cell,
+      &.product-cell,
+      &.date-cell,
+      &.fiscal-cell {
+        display: none;
+      }
+    }
+    
+    .header-content {
+      flex-direction: column;
+      gap: 0.1rem;
+      font-size: 0.75rem;
+      text-align: center;
+      
+      mat-icon {
+        display: none; // Nascondi icone su mobile
+      }
+    }
+    
+    // Chip ancora più piccoli
+    .mat-mdc-chip {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+      min-height: 24px;
+    }
+    
+    .actions-cell {
+      width: 60px;
+      
+      button {
+        padding: 0.25rem;
+        
+        mat-icon {
+          font-size: 1.2rem;
+          width: 1.2rem;
+          height: 1.2rem;
+        }
+      }
+    }
+  }
+  
+  .filters-card {
+    .mat-mdc-card-content {
+      padding: 0.5rem;
+    }
+    
+    .search-field {
+      .mat-mdc-form-field {
+        font-size: 0.9rem;
+      }
+    }
+  }
+  
+  // Header più compatto su mobile
+  .header-card {
+    .mat-mdc-card-title {
+      font-size: 1.2rem;
+    }
+    
+    .header-icon {
+      font-size: 1.4rem;
+      width: 1.4rem;
+      height: 1.4rem;
+    }
+    
+    .mat-mdc-card-subtitle {
+      font-size: 0.9rem;
+    }
+  }
+}
+
+// Paginazione con gestione responsive
+mat-paginator {
+  border-top: 1px solid #e0e0e0;
+  background-color: #fafafa;
+  
+  .mat-mdc-paginator-container {
+    padding: 1rem;
+    
+    @media (max-width: 767px) {
+      padding: 0.75rem;
+    }
+    
+    @media (max-width: 479px) {
+      padding: 0.5rem;
+      font-size: 0.85rem;
+    }
+  }
+  
+  // Nascondi alcune opzioni su mobile molto piccolo
+  @media (max-width: 479px) {
+    .mat-mdc-paginator-page-size {
+      display: none;
+    }
+    
+    .mat-mdc-paginator-range-label {
+      font-size: 0.8rem;
+    }
+  }
+}
+
+// Accessibilità e focus con gestione responsive
+.contracts-table {
+  .mat-mdc-row:focus {
+    outline: 2px solid #2196f3;
+    outline-offset: -2px;
+    background-color: #e3f2fd;
+  }
+}
+
+// Animazioni personalizzate
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.contracts-container > * {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.contracts-container > *:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.contracts-container > *:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.contracts-container > *:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+// Fix per Material Design 3
+.mat-mdc-card {
+  --mdc-elevated-card-container-elevation: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --mdc-outlined-card-outline-color: #e0e0e0;
+}
+
+.mat-mdc-chip {
+  --mdc-chip-container-height: 28px;
+  --mdc-chip-label-text-size: 0.875rem;
+}
+
+.mat-mdc-form-field {
+  --mdc-filled-text-field-container-color: transparent;
+  --mdc-outlined-text-field-outline-color: #e0e0e0;
+}

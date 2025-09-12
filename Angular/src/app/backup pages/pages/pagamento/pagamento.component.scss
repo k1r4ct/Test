@@ -1,0 +1,24 @@
+::ng-deep{
+  .tipopagamentoload{
+    background-color: rgba(0, 0, 0, 0.5)!important;
+    filter: blur(10px);
+  }
+}
+
+.large-spinner {
+  width: 170px!important;
+  height: 170px!important;
+}
+
+/* Elemento centrato */
+.centered-element-spinner {
+  left: calc(50% - 50px)!important;
+  width: 100px!important;
+  z-index: 100!important;
+  position: fixed!important;
+  top: 55%!important;
+}
+
+::ng-deep .ngb-datepicker {
+  z-index: 9999!important;
+}

@@ -1,0 +1,454 @@
+// Modern Card Styles
+.modern-card {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.modern-card-header {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  padding: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  .header-text {
+    flex: 1;
+  }
+
+  .header-title {
+    color: white;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .header-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.modern-card-body {
+  background: white;
+  padding: 2rem;
+  min-height: 500px;
+}
+
+// Instruction Section
+.instruction-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  border-left: 4px solid #667eea;
+
+  .instruction-icon {
+    color: #667eea;
+    font-size: 1.5rem;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 50%;
+    padding: 0.5rem;
+  }
+
+  .instruction-text {
+    margin: 0;
+    color: #495057;
+    font-weight: 500;
+    font-size: 1rem;
+  }
+}
+
+// Contract Form
+.contract-form {
+  .form-section {
+    margin-bottom: 0;
+  }
+
+  .form-field-container {
+    margin-bottom: 2rem;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border-color: rgba(102, 126, 234, 0.2);
+    }
+  }
+
+  .form-field-wrapper {
+    display: flex;
+    align-items: flex-start;
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+
+  .field-icon {
+    //background: linear-gradient(180deg,#268730 10%,#027cad);
+    background: linear-gradient(180deg,#268730 10%,#027cad);
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+
+    mat-icon {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  .field-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .field-label {
+    display: block;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .modern-input {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background: #f8f9fa;
+    width: 100%;
+
+    &:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      background: white;
+      outline: none;
+    }
+
+    &.input-error {
+      border-color: #dc3545;
+      box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+    }
+
+    &::placeholder {
+      color: #6c757d;
+      font-style: italic;
+    }
+  }
+
+  .input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+
+    .modern-input {
+      flex: 1;
+    }
+  }
+
+  .btn-date-picker {
+    //background: linear-gradient(180deg,#268730 10%,#027cad);
+    background: linear-gradient(180deg,#268730 10%,#027cad);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    mat-icon {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  .checkbox-wrapper {
+    margin-top: 0.5rem;
+
+    .mat-mdc-slide-toggle {
+      .mdc-switch {
+        --mdc-switch-selected-track-color: #667eea;
+        --mdc-switch-selected-handle-color: #667eea;
+        --mdc-switch-selected-hover-track-color: #5a6fd8;
+        --mdc-switch-selected-focus-track-color: #5a6fd8;
+        --mdc-switch-selected-pressed-track-color: #5a6fd8;
+      }
+    }
+
+    .toggle-label {
+      margin-left: 0.5rem;
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+  }
+
+  .full-width {
+    width: 100%;
+
+    .mat-mdc-form-field-flex {
+      background: #f8f9fa;
+      border-radius: 10px;
+      border: 2px solid #e9ecef;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: #6c757d;
+        background: white;
+      }
+    }
+
+    &.mat-focused .mat-mdc-form-field-flex {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      background: white;
+    }
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #dc3545;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(220, 53, 69, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid #dc3545;
+
+    .error-icon {
+      font-size: 1rem;
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+}
+
+// Form Actions
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.btn-modern-primary {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(40, 167, 69, 0.4);
+    background: linear-gradient(135deg, #218838 0%, #1bb583 100%);
+  }
+
+  &:active {
+    transform: translateY(-1px);
+  }
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+// Spinner Styles
+.large-spinner {
+  width: 170px !important;
+  height: 170px !important;
+}
+
+.centered-element-spinner {
+  left: calc(50% - 85px) !important;
+  width: 170px !important;
+  z-index: 100 !important;
+  position: fixed !important;
+  top: 50% !important;
+  transform: translateY(-50%);
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .modern-card-header {
+    padding: 1.5rem;
+
+    .header-content {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.75rem;
+    }
+
+    .header-icon {
+      font-size: 1.75rem;
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    .header-title {
+      font-size: 1.25rem;
+    }
+  }
+
+  .modern-card-body {
+    padding: 1.5rem;
+  }
+
+  .instruction-section {
+    padding: 1rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .contract-form {
+    .form-field-wrapper {
+      padding: 1rem;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .field-icon {
+      align-self: center;
+    }
+  }
+
+  .btn-modern-primary {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-card-header {
+    padding: 1rem;
+
+    .header-title {
+      font-size: 1.1rem;
+    }
+
+    .header-subtitle {
+      font-size: 0.8rem;
+    }
+  }
+
+  .modern-card-body {
+    padding: 1rem;
+  }
+
+  .instruction-section {
+    padding: 0.75rem;
+  }
+
+  .contract-form {
+    .form-field-container {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-field-wrapper {
+      padding: 0.75rem;
+    }
+
+    .field-icon {
+      width: 35px;
+      height: 35px;
+
+      mat-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+  }
+}
+
+// Legacy styles for compatibility
+:host * {
+  position: relative;
+  z-index: 10 !important;
+}
+
+::ng-deep {
+  .domande {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    filter: blur(10px);
+  }
+
+  // Override Material Design form field styles
+  .full-width .mat-mdc-form-field-subscript-wrapper {
+    display: none !important;
+  }
+
+  .full-width .mat-mdc-form-field-bottom-align::before {
+    display: none !important;
+  }
+}

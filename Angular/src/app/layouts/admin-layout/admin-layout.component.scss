@@ -1,0 +1,76 @@
+// Triangoli globali a livello root - fuori da :host per funzionare correttamente
+::ng-deep body {
+  position: relative;
+  
+  &::before,
+  &::after {
+    content: '';
+    position: fixed;
+    z-index: 0; // Z-index neutro per stare sopra il body ma sotto tutti i componenti
+    height: 100vh;
+    pointer-events: none;
+    display: block !important;
+    top: 0;
+    opacity: 0.8; // Opacità per non essere troppo invasivi
+  }
+
+  &::before { /* Triangolo verde a sinistra */
+    background-color: #ccd54f;
+    clip-path: polygon(0 0, 0 100%, 80% 50%); // Triangolo più esteso verso il centro
+    left: 0 !important;
+    width: 30vw !important; // Larghezza ridotta per compensare l'estensione
+  }
+
+  &::after { /* Triangolo blu a destra */
+    background-color: #6D9EBC;
+    clip-path: polygon(100% 0, 100% 100%, 20% 50%); // Triangolo più esteso verso il centro (simmetrico)
+    right: 0 !important;
+    width: 30vw !important; // Larghezza ridotta per compensare l'estensione
+  }
+}
+
+:host {
+    /* Stile per il body dell'applicazione */
+    body {
+      background: linear-gradient(120deg, #d4e157, #aed581); /* Gradiente di sfondo */
+      margin: 0; /* Rimuovi margini predefiniti */
+    }
+
+    /* Stile per la sidebar */
+    .sidebar {
+      background-color: #fff; /* Sfondo bianco per la sidebar */
+    }
+
+    /* Wrapper ora pulito senza triangoli */
+    .wrapper {
+        position: relative;
+        overflow: visible;
+        background-attachment: fixed;
+        
+        // Con navbar posizionata al di sopra, aggiustiamo il layout
+        .sidebar {
+          // Su desktop, la sidebar parte sotto la navbar
+          top: 64px;
+          height: calc(100vh - 64px);
+          
+          @media (max-width: 991px) {
+            // Su mobile, la sidebar deve coprire tutto lo schermo quando aperta
+            top: 0;
+            height: 100vh;
+          }
+        }
+        
+        .main-panel {
+          // Su desktop, il main-panel parte sotto la navbar
+          margin-top: 64px;
+          min-height: calc(100vh - 64px);
+          
+          @media (max-width: 991px) {
+            // Su mobile, il main-panel inizia sempre sotto la navbar
+            margin-top: 64px;
+            min-height: calc(100vh - 64px);
+            margin-left: 0; // Rimuovi margine laterale su mobile
+          }
+        }
+      }
+  }

@@ -1,0 +1,172 @@
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-8">
+      <div class="modern-card" [@pageTransition]="state">
+        <div class="modern-card-header">
+          <div class="header-content">
+            <mat-icon class="header-icon">person_add</mat-icon>
+            <div class="header-text">
+              <h2 class="header-title">Nuovo Cliente</h2>
+              <p class="header-subtitle">Inserisci i dati per registrare un nuovo cliente</p>
+            </div>
+          </div>
+        </div>
+        <div class="modern-card-body">
+          <form [formGroup]="newCliente" ngNativeValidate class="newcliente-form">
+            <input type="hidden" formControlName="us_padre" [value]="user_padre">
+
+            <!-- Selettore tipologia -->
+            <div class="search-section mb-3">
+              <div class="search-type-selector">
+                <button type="button"
+                        class="search-type-btn"
+                        [class.active]="selectTipecliente === 'consumer'"
+                        (click)="onTipoClienteChange('consumer')">
+                  <mat-icon>person</mat-icon>
+                  <span>Consumer</span>
+                </button>
+                <button type="button"
+                        class="search-type-btn"
+                        [class.active]="selectTipecliente === 'businness'"
+                        (click)="onTipoClienteChange('businness')">
+                  <mat-icon>business</mat-icon>
+                  <span>Business</span>
+                </button>
+                <div class="search-type-info">
+                  <small class="text-muted">
+                    Modalità attuale: <strong>{{ selectTipecliente === 'businness' ? 'Business' : 'Consumer' }}</strong>
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Consumer -->
+            <div *ngIf="selectTipecliente == 'consumer'">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>Nome</label>
+                    <input type="text" class="modern-search-input" formControlName="nome" placeholder="Nome Cliente" required [ngClass]="{'input-error': newCliente.get('nome')?.errors && showError}">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>Cognome</label>
+                    <input type="text" class="modern-search-input" formControlName="cognome" placeholder="Cognome Cliente" required [ngClass]="{'input-error': newCliente.get('cognome')?.errors && showError}">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>Codice Fiscale</label>
+                    <div class="input-icon">
+                      <mat-icon>badge</mat-icon>
+                    </div>
+                    <input type="text" maxlength="16" class="modern-search-input" formControlName="codice_fiscale" placeholder="Inserire Codice Fiscale" required [ngClass]="{'input-error': newCliente.get('codice_fiscale')?.errors && showError}">
+                  </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                  <button type="button" class="btn-search-primary w-100" (click)="copiaCF()">
+                    <mat-icon>content_copy</mat-icon>
+                    <span>Copia Codice Fiscale</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Business -->
+            <div *ngIf="selectTipecliente == 'businness'">
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="form-group">
+                    <label>Ragione Sociale</label>
+                    <input type="text" class="modern-search-input" formControlName="ragione_sociale" placeholder="Inserisci la Ragione Sociale" required [ngClass]="{'input-error': newCliente.get('ragione_sociale')?.errors && showError}">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label>Partita Iva</label>
+                    <div class="input-icon">
+                      <mat-icon>business_center</mat-icon>
+                    </div>
+                    <input type="text" maxlength="11" class="modern-search-input" formControlName="partita_iva" placeholder="Inserire Partita Iva" required [ngClass]="{'input-error': newCliente.get('partita_iva')?.errors && showError}">
+                  </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                  <button type="button" class="btn-search-primary w-100" (click)="copiaPI()">
+                    <mat-icon>content_copy</mat-icon>
+                    <span>Copia Partita Iva</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dati comuni -->
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Email</label>
+                  <input type="email" class="modern-search-input" formControlName="email" placeholder="Indirizzo Email" required [ngClass]="{'input-error': newCliente.get('email')?.errors && showError}">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label>Telefono</label>
+                  <input type="text" class="modern-search-input" formControlName="telefono" placeholder="Telefono" [ngClass]="{'input-error': newCliente.get('telefono')?.errors && showError}">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-10">
+                <div class="form-group">
+                  <label>Indirizzo</label>
+                  <input type="text" class="modern-search-input" formControlName="indirizzo" placeholder="Indirizzo Civico" [ngClass]="{'input-error': newCliente.get('indirizzo')?.errors && showError}">
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label>Provincia</label>
+                  <input type="text" class="modern-search-input" maxlength="2" formControlName="provincia" placeholder="Provincia" [ngClass]="{'input-error': newCliente.get('provincia')?.errors && showError}">
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-5">
+                <div class="form-group">
+                  <label>Città</label>
+                  <input type="text" class="modern-search-input" formControlName="citta" placeholder="Città" [ngClass]="{'input-error': newCliente.get('citta')?.errors && showError}">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label>Nazione</label>
+                  <input type="text" class="modern-search-input" formControlName="nazione" placeholder="Nazione" [ngClass]="{'input-error': newCliente.get('nazione')?.errors && showError}">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-group">
+                  <label>CAP</label>
+                  <input type="text" class="modern-search-input" maxlength="5" formControlName="cap" placeholder="CAP" [ngClass]="{'input-error': newCliente.get('cap')?.errors && showError}">
+                </div>
+              </div>
+            </div>
+            <!-- Qualifica e Ruolo (commentato) -->
+            <!-- ...existing code... -->
+            <div class="row">
+              <div class="update ml-auto mr-auto">
+                <button type="submit" class="btn-search-primary" (click)="storeCliente()">
+                  <mat-icon>person_add</mat-icon>
+                  <span>Registra Cliente</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

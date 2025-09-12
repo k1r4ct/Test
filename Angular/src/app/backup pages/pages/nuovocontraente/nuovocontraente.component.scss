@@ -1,0 +1,28 @@
+// :host * {
+//     position:relative;/* Seleziona tutti gli elementi discendenti del componente */
+//     z-index: 10!important; /* Imposta lo z-index desiderato */
+//   }
+
+  ::ng-deep{
+    .nuovocontraente{
+      background-color: rgba(0, 0, 0, 0.5)!important;
+      filter: blur(10px);
+    }
+  }
+
+
+  .large-spinner {
+    width: 170px!important;
+    height: 170px!important;
+  }
+
+  /* Elemento centrato */
+  .centered-element-spinner {
+    left: calc(50% - 50px)!important;
+    width: 100px!important;
+    z-index: 100!important;
+    position: fixed!important;
+    top: 35%!important;
+  }
+
+

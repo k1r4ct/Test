@@ -1,0 +1,453 @@
+<p-toast class="p-toast" position="bottom-right"></p-toast>
+
+<!-- New User Action Section -->
+<div class="action-section">
+  <div class="modern-card">
+    <div class="modern-card-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>group_add</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2 class="header-title">Gestione Utenti</h2>
+          <p class="header-subtitle">Amministra gli utenti del sistema</p>
+        </div>
+      </div>
+    </div>
+    <div class="modern-card-body text-center">
+      <button mat-raised-button class="modern-action-btn" (click)="nuovoUtente()">
+        <mat-icon>person_add</mat-icon>
+        <span>Nuovo Utente</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<app-registrazione [@pageTransition]="state" [hidden]="showRegistrazione"></app-registrazione>
+
+<!-- Users List Section -->
+<div class="modern-card" [@pageTransition]="state">
+  <div class="modern-card-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>people</mat-icon>
+      </div>
+      <div class="header-text">
+        <h2 class="header-title">Lista Utenti</h2>
+        <p class="header-subtitle">Visualizza e gestisci tutti gli utenti registrati</p>
+      </div>
+    </div>
+  </div>
+  <div class="modern-card-body">
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="filter-group">
+            <label class="filter-label">
+              <mat-icon>security</mat-icon>
+              Filtra per Ruolo
+            </label>
+            <p-multiSelect
+              [options]="ruolo"
+              [(ngModel)]="selectedRuolo"
+              optionLabel="descrizione"
+              display="chip"
+              placeholder="Seleziona Ruolo"
+              (onChange)="applyFilter()"
+              styleClass="modern-multiselect"/>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="filter-group">
+            <label class="filter-label">
+              <mat-icon>person</mat-icon>
+              Filtra per Utente
+            </label>
+            <p-multiSelect
+              [options]="Utenti"
+              [(ngModel)]="selectedUtenti"
+              optionLabel="nominativo_ragSoc"
+              display="chip"
+              placeholder="Seleziona Utente"
+              (onChange)="applyFilter()"
+              styleClass="modern-multiselect"/>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="filter-group">
+            <label class="filter-label">
+              <mat-icon>badge</mat-icon>
+              Filtra per ID
+            </label>
+            <p-multiSelect
+              [options]="Utenti"
+              [(ngModel)]="selectedIdUtenti"
+              optionLabel="id"
+              display="chip"
+              placeholder="Seleziona ID Utente"
+              (onChange)="applyFilter()"
+              styleClass="modern-multiselect"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modern Table -->
+    <div class="modern-table-container">
+      <table mat-table [dataSource]="dataSource" matSort class="modern-data-table">
+        
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">
+            <div class="header-content">
+              <mat-icon>tag</mat-icon>
+              <span>ID</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="cell-content">{{row.id}}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="nominativo/Rag.Sociale">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">
+            <div class="header-content">
+              <mat-icon>person</mat-icon>
+              <span>Nome/Rag.Sociale</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <div class="user-info">
+              <div class="user-avatar">
+                <mat-icon>account_circle</mat-icon>
+              </div>
+              <span class="user-name">{{row.nominativo_ragSoc}}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">
+            <div class="header-content">
+              <mat-icon>email</mat-icon>
+              <span>Email</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="email-cell">{{row.email}}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ruolo">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">
+            <div class="header-content">
+              <mat-icon>security</mat-icon>
+              <span>Ruolo</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="role-badge">{{row.ruolo}}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="qualifica">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">
+            <div class="header-content">
+              <mat-icon>work</mat-icon>
+              <span>Qualifica</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="qualification-badge">{{row.qualifica}}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="codice">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">
+            <div class="header-content">
+              <mat-icon>code</mat-icon>
+              <span>Codice</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="code-cell">{{row.codice}}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="codice_fiscale/P.iva">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">
+            <div class="header-content">
+              <mat-icon>document_scanner</mat-icon>
+              <span>CF/P.IVA</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="tax-code-cell">{{row.codf_Piva}}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="azioni">
+          <th mat-header-cell *matHeaderCellDef class="table-header actions-header">
+            <div class="header-content">
+              <mat-icon>settings</mat-icon>
+              <span>Azioni</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell actions-cell">
+            <button mat-mini-fab class="modern-action-mini-btn" (click)="editUser(row)">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="modern-data-row"></tr>
+
+        <tr class="no-data-row" *matNoDataRow>
+          <td class="no-data-cell" [attr.colspan]="displayedColumns.length">
+            <div class="no-data-content">
+              <mat-icon>search_off</mat-icon>
+              <span>Nessun dato corrispondente alla ricerca</span>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <mat-paginator 
+        [pageSizeOptions]="[10, 25, 100]" 
+        aria-label="Select page of users"
+        class="modern-paginator">
+      </mat-paginator>
+    </div>
+  </div>
+</div>
+<!-- User Details Section -->
+<div class="modern-card user-details-card" *ngIf="Utenti" @pageTransition [hidden]="userselezionato">
+  <div class="modern-card-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>person_pin</mat-icon>
+      </div>
+      <div class="header-text">
+        <h2 class="header-title">Dettagli Utente Selezionato</h2>
+        <p class="header-subtitle">Modifica le informazioni dell'utente</p>
+      </div>
+    </div>
+  </div>
+  <div class="modern-card-body">
+    <div class="user-details-form">
+      <input *ngFor="let user of dettagliUtente" type="hidden" 
+             class="form-control id" name="id" value="{{user.id}}">
+      
+      <!-- Nome Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">person</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Nome</label>
+          <input *ngFor="let user of dettagliUtente" 
+                 type="text" 
+                 class="modern-form-input nome" 
+                 name="nome" 
+                 placeholder="Inserisci il nome"
+                 value="{{user.nome}}">
+        </div>
+      </div>
+
+      <!-- Cognome Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">badge</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Cognome</label>
+          <input *ngFor="let user of dettagliUtente" 
+                 type="text" 
+                 class="modern-form-input cognome" 
+                 name="cognome" 
+                 placeholder="Inserisci il cognome"
+                 value="{{user.cognome}}">
+        </div>
+      </div>
+
+      <!-- Ragione Sociale Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">business</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Ragione Sociale</label>
+          <input *ngFor="let user of dettagliUtente" 
+                 type="text" 
+                 class="modern-form-input rag_soc" 
+                 name="rag_soc" 
+                 placeholder="Inserisci la ragione sociale"
+                 value="{{user.nominativo_ragSoc}}">
+        </div>
+      </div>
+
+      <!-- Email Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">email</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Email</label>
+          <input *ngFor="let user of dettagliUtente" 
+                 type="email" 
+                 class="modern-form-input email" 
+                 name="email" 
+                 placeholder="Inserisci l'email"
+                 value="{{user.email}}">
+        </div>
+      </div>
+
+      <!-- Ruolo Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">security</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Ruolo</label>
+          <div *ngFor="let user of dettagliUtente" class="dropdown-wrapper">
+            <p-dropdown
+              [options]="ruolo"
+              class="modern-dropdown"
+              name="ruolo"
+              [(ngModel)]="selectedRuoloUser"
+              [showClear]="true"
+              optionLabel="descrizione"
+              placeholder="Seleziona il ruolo"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Qualifica Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">work</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Qualifica</label>
+          <div *ngFor="let user of dettagliUtente" class="dropdown-wrapper">
+            <p-dropdown
+              [options]="qualifiche"
+              class="modern-dropdown"
+              name="qualifica"
+              [(ngModel)]="selectedQualifiche"
+              [showClear]="true"
+              optionLabel="descrizione"
+              placeholder="Seleziona la qualifica"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEU di riferimento Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">location_on</mat-icon>
+        <div class="field-content">
+          <label class="field-label">SEU di riferimento</label>
+          <div *ngFor="let user of dettagliUtente" class="dropdown-wrapper">
+            <p-dropdown
+              [options]="seu"
+              class="modern-dropdown"
+              name="seu"
+              [(ngModel)]="seuSelected"
+              [showClear]="true"
+              optionLabel="nominativo"
+              appendTo="body"
+              placeholder="Seleziona il SEU"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prodotti Gestiti Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">inventory</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Prodotti Gestiti</label>
+          <div *ngFor="let user of dettagliUtente" class="multiselect-wrapper">
+            <p-multiSelect
+              [options]="macro_product"
+              class="modern-multiselect"
+              name="contract_management"
+              [(ngModel)]="macro_productSelected"
+              [showClear]="true"
+              optionLabel="descrizione"
+              display="chip"
+              placeholder="Seleziona i prodotti"
+              [maxSelectedLabels]="5"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Codice Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">code</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Codice</label>
+          <input *ngFor="let user of dettagliUtente" 
+                 type="text" 
+                 class="modern-form-input" 
+                 name="cod_utente" 
+                 placeholder="Inserisci il codice utente"
+                 value="{{user.codice}}">
+        </div>
+      </div>
+
+      <!-- Codice Fiscale/P.Iva Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">document_scanner</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Codice Fiscale/P.Iva</label>
+          <input *ngFor="let user of dettagliUtente" 
+                 type="text" 
+                 class="modern-form-input readonly" 
+                 name="cod_fPiva" 
+                 placeholder="Codice Fiscale/P.Iva"
+                 value="{{user.codf_Piva}}" 
+                 readonly>
+        </div>
+      </div>
+
+      <!-- Reset Password Field -->
+      <div class="form-field-modern checkbox-field">
+        <mat-icon class="field-icon">lock_reset</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Resetta la Password</label>
+          <div class="checkbox-wrapper">
+            <mat-slide-toggle 
+              class="modern-toggle resetpwd" 
+              name="resetpwd"
+              #resetpasswd
+
+              (change)="resetpwd('resetpasswd')">
+              <span class="toggle-label">Abilita reset password</span>
+            </mat-slide-toggle>
+          </div>
+        </div>
+      </div>
+
+      <!-- attiva/disattiva Utente -->
+      <div class="form-field-modern checkbox-field">
+        <mat-icon class="field-icon">lock_reset</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Utente Attivo</label>
+          <div class="checkbox-wrapper">
+            <mat-slide-toggle *ngFor="let user of dettagliUtente"
+              class="modern-toggle activeUser" 
+              name="activeUser"
+              #attivoUser
+              [checked]="user.stato_user == 1"
+              (change)="activeUser('activeUser')">
+              <span class="toggle-label">Abilita utente</span>
+            </mat-slide-toggle>
+          </div>
+        </div>
+      </div>
+      <!-- Save Button -->
+      <div class="form-actions">
+        <button *ngFor="let user of dettagliUtente" 
+                mat-raised-button 
+                class="modern-save-btn" 
+                type="submit" 
+                (click)="SalvaModificheUtente(user)">
+          <mat-icon>save</mat-icon>
+          <span>Salva Modifiche</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

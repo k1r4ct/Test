@@ -1,0 +1,355 @@
+<p-toast class="p-toast" position="bottom-right"></p-toast>
+
+<!-- Actions Section -->
+<div class="actions-section" *ngIf="abilitaTasti">
+  <div class="modern-card">
+    <div class="modern-card-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <mat-icon>inventory_2</mat-icon>
+        </div>
+        <div class="header-text">
+          <h2 class="header-title">Gestione Prodotti</h2>
+          <p class="header-subtitle">Amministra categorie, fornitori e prodotti</p>
+        </div>
+      </div>
+    </div>
+    <div class="modern-card-body">
+      <div class="action-buttons-grid">
+        <button mat-raised-button class="modern-action-btn primary" (click)="nuovoFornitore()">
+          <mat-icon>playlist_add</mat-icon>
+          <span>Nuovo Categoria / Fornitore</span>
+        </button>
+
+        <button mat-raised-button class="modern-action-btn secondary" (click)="nuovoprodotto()">
+          <mat-icon>fiber_new</mat-icon>
+          <span>Nuovo Prodotto</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Product Selection Section -->
+<div class="modern-card" [@pageTransition]="state">
+  <div class="modern-card-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>shopping_cart</mat-icon>
+      </div>
+      <div class="header-text">
+        <h2 class="header-title">Selezionare il Prodotto</h2>
+        <p class="header-subtitle">Scegli un prodotto dalla lista per visualizzarne i dettagli</p>
+      </div>
+    </div>
+  </div>
+  <div class="modern-card-body">
+
+    <!-- Selected Product Info -->
+    <div [hidden]="show_product" class="selected-product-card">
+      <div class="selected-product-header">
+        <mat-icon>check_circle</mat-icon>
+        <h4>Prodotto selezionato</h4>
+      </div>
+      <div class="selected-product-body">
+        <h3 class="product-name">{{descrizione_prodotto_sel}}</h3>
+      </div>
+    </div>
+
+    <!-- Modern Table -->
+    <div class="modern-table-container">
+      <table mat-table [dataSource]="dataSource" matSort class="modern-data-table">
+
+        <!-- ID Column -->
+        <ng-container [matColumnDef]="displayedColumns[0]">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="table-header">
+            <div class="header-content">
+              <mat-icon>tag</mat-icon>
+              <span>ID</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="cell-content">{{row.id}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Description Column with Search -->
+        <ng-container [matColumnDef]="displayedColumns[1]">
+          <th mat-header-cell *matHeaderCellDef class="table-header filter-header">
+            <div class="header-content">
+              <mat-icon>description</mat-icon>
+              <span>Descrizione</span>
+            </div>
+            <div class="filter-input-wrapper">
+              <mat-form-field appearance="outline" class="modern-filter-field">
+                <mat-label>Cerca per descrizione</mat-label>
+                <input matInput (keyup)="selectValue(displayedColumns[1],$event)" placeholder="Inserisci descrizione"
+                  #input>
+                <mat-icon matSuffix>search</mat-icon>
+              </mat-form-field>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="description-cell">{{row.descrizione}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Macro Product Column -->
+        <ng-container [matColumnDef]="displayedColumns[2]">
+          <th mat-header-cell *matHeaderCellDef class="table-header filter-header">
+            <div class="header-content">
+              <mat-icon>category</mat-icon>
+              <span>Macro Prodotto</span>
+            </div>
+            <div class="filter-select-wrapper">
+              <mat-form-field appearance="outline" class="modern-filter-field">
+                <mat-label>Filtra Macro Prodotto</mat-label>
+                <mat-select [formControl]="mpdToppings" multiple>
+                  <mat-select-trigger>
+                    {{mpdToppings.value?.[0] || ''}}
+                    @if ((mpdToppings.value?.length || 0) > 1) {
+                    <span class="additional-selection">
+                      (+{{(mpdToppings.value?.length || 0) - 1}}
+                      {{mpdToppings.value?.length === 2 ? 'selezionato' : 'selezionati'}})
+                    </span>
+                    }
+                  </mat-select-trigger>
+                  @for (topping of MacroDescrizione; track topping) {
+                  <mat-option [value]="topping" (click)="selectOpt(displayedColumns[2],this.mpdToppings.value)">
+                    {{topping}}
+                  </mat-option>
+                  }
+                </mat-select>
+                <mat-icon matSuffix>filter_list</mat-icon>
+              </mat-form-field>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="macro-badge">{{row.macro_descrizione}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Macro Product Code Column -->
+        <ng-container [matColumnDef]="displayedColumns[3]">
+          <th mat-header-cell *matHeaderCellDef class="table-header filter-header">
+            <div class="header-content">
+              <mat-icon>code</mat-icon>
+              <span>Codice Macro</span>
+            </div>
+            <div class="filter-select-wrapper">
+              <mat-form-field appearance="outline" class="modern-filter-field">
+                <mat-label>Filtra Codice</mat-label>
+                <mat-select [formControl]="mprToppings" multiple>
+                  <mat-select-trigger>
+                    {{mprToppings.value?.[0] || ''}}
+                    @if ((mprToppings.value?.length || 0) > 1) {
+                    <span class="additional-selection">
+                      (+{{(mprToppings.value?.length || 0) - 1}}
+                      {{mprToppings.value?.length === 2 ? 'selezionato' : 'selezionati'}})
+                    </span>
+                    }
+                  </mat-select-trigger>
+                  @for (topping of MacroProList; track topping) {
+                  <mat-option [value]="topping" (click)="selectOpt(displayedColumns[3],this.mprToppings.value)">
+                    {{topping}}
+                  </mat-option>
+                  }
+                </mat-select>
+                <mat-icon matSuffix>filter_list</mat-icon>
+              </mat-form-field>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="code-cell">{{row.macro_product?.codice_macro || row.macro_product}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Supplier Column -->
+        <ng-container [matColumnDef]="displayedColumns[4]">
+          <th mat-header-cell *matHeaderCellDef class="table-header filter-header">
+            <div class="header-content">
+              <mat-icon>business</mat-icon>
+              <span>Fornitore</span>
+            </div>
+            <div class="filter-select-wrapper">
+              <mat-form-field appearance="outline" class="modern-filter-field">
+                <mat-label>Filtra Fornitore</mat-label>
+                <mat-select [formControl]="forToppings" multiple>
+                  <mat-select-trigger>
+                    {{forToppings.value?.[0] || ''}}
+                    @if ((forToppings.value?.length || 0) > 1) {
+                    <span class="additional-selection">
+                      (+{{(forToppings.value?.length || 0) - 1}}
+                      {{forToppings.value?.length === 2 ? 'selezionato' : 'selezionati'}})
+                    </span>
+                    }
+                  </mat-select-trigger>
+                  @for (topping of fornitoriList; track topping) {
+                  <mat-option [value]="topping" (click)="selectOpt(displayedColumns[4],this.forToppings.value)">
+                    {{topping}}
+                  </mat-option>
+                  }
+                </mat-select>
+                <mat-icon matSuffix>filter_list</mat-icon>
+              </mat-form-field>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell">
+            <span class="supplier-cell">{{row.nome_fornitore}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container [matColumnDef]="displayedColumns[5]">
+          <th mat-header-cell *matHeaderCellDef class="table-header actions-header">
+            <div class="header-content">
+              <mat-icon>settings</mat-icon>
+              <span>Azioni</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row" class="table-cell actions-cell">
+            <div class="action-buttons">
+              <button *ngIf="abilitaTasti" mat-mini-fab class="modern-edit-btn" (click)="clickedRows(row)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button *ngIf="abilitaTasti" mat-mini-fab class="modern-delete-btn"
+                (click)="deleteProduct(row,'prodotti')">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="modern-data-row"></tr>
+
+        <tr class="no-data-row" *matNoDataRow>
+          <td class="no-data-cell" [attr.colspan]="displayedColumns.length">
+            <div class="no-data-content">
+              <mat-icon>search_off</mat-icon>
+              <span>Nessun dato corrispondente alla ricerca</span>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 100]" aria-label="Select page of products" class="modern-paginator">
+      </mat-paginator>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Product Details Section -->
+<div class="modern-card product-details-card" *ngIf="DettagliProduct" @pageTransition [hidden]="prodottoselezionato">
+  <div class="modern-card-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>info</mat-icon>
+      </div>
+      <div class="header-text">
+        <h2 class="header-title">Dettagli Prodotto Selezionato</h2>
+        <p class="header-subtitle">Modifica le informazioni del prodotto</p>
+      </div>
+    </div>
+  </div>
+  <div class="modern-card-body">
+    <div class="product-details-form">
+
+      <!-- Macro Prodotto Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">category</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Macro Prodotto</label>
+          <input *ngFor="let contratto of DettagliProduct" type="text" class="modern-form-input macro_product" name="macro_product"
+            placeholder="Inserisci macro prodotto" value="{{contratto.descrizioneMacroProd}}">
+          <input *ngFor="let contratto of DettagliProduct" type="hidden" class="form-control id_macro_product" name="id_macro_product"
+            value="{{contratto.idMacroProd}}">
+        </div>
+      </div>
+
+      <!-- Prodotto Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">inventory</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Prodotto</label>
+          <input *ngFor="let contratto of DettagliProduct" type="text" class="modern-form-input descrizione" name="descrizione"
+            placeholder="Inserisci descrizione prodotto" value="{{contratto.descrizioneProd}}">
+        </div>
+      </div>
+
+      <!-- Categoria Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">label</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Categoria</label>
+          <input *ngFor="let contratto of DettagliProduct" type="text" class="modern-form-input readonly"
+            name="categoria" placeholder="Categoria" value="{{contratto.nome_categoria}}" readonly>
+        </div>
+      </div>
+
+      <!-- Codice Macro Prodotto Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">code</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Codice Macro Prodotto</label>
+          <input *ngFor="let contratto of DettagliProduct" type="text" class="modern-form-input readonly"
+            name="codice_macroprodotto" placeholder="Codice Macro Prodotto" value="{{contratto.codice_macro}}" readonly>
+        </div>
+      </div>
+
+      <!-- Punti Valore Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">stars</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Punti Valore</label>
+          <input *ngFor="let contratto of DettagliProduct" type="text" class="modern-form-input readonly"
+            name="punti_valore" placeholder="Punti Valore" value="{{contratto.punti_valore}}" readonly>
+        </div>
+      </div>
+
+      <!-- Punti Carriera Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">trending_up</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Punti Carriera</label>
+          <input *ngFor="let contratto of DettagliProduct" type="text" class="modern-form-input readonly"
+            name="punti_carriera" placeholder="Punti carriera" value="{{contratto.punti_carriera}}" readonly>
+        </div>
+      </div>
+
+      <!-- Stato Attivo Field -->
+      <div class="form-field-modern">
+        <mat-icon class="field-icon">power_settings_new</mat-icon>
+        <div class="field-content">
+          <label class="field-label">Stato Prodotto</label>
+          <div class="toggle-wrapper">
+            <mat-slide-toggle 
+              class="modern-toggle attivo" 
+              name="attivo" 
+              #attivoToggle
+              [checked]="DettagliProduct[0]?.attivo == 1 || DettagliProduct[0]?.attivo == true"
+              color="primary">
+              <span class="toggle-label">
+                {{ (DettagliProduct[0]?.attivo == 1 || DettagliProduct[0]?.attivo == true) ? 'Attivo' : 'Non Attivo' }}
+              </span>
+            </mat-slide-toggle>
+          </div>
+        </div>
+      </div>
+      <!-- Save Button -->
+      <div class="form-actions">
+        <button *ngFor="let contratto of DettagliProduct" mat-raised-button class="modern-save-btn" type="submit"
+          (click)="SalvaModificheProdotto(contratto)">
+          <mat-icon>save</mat-icon>
+          <span>Salva Modifiche</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-nuovoprodotto [hidden]="nuovoprodottoHidden"></app-nuovoprodotto>
+<app-nuovofornitore [hidden]="nuovoFornitoreHidden"></app-nuovofornitore>

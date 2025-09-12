@@ -1,0 +1,443 @@
+<p-toast class="p-toast" position="bottom-right"></p-toast>
+
+<!-- 🚀 LAYOUT OTTIMIZZATO - Container Principale -->
+<div class="user-dashboard-container" [@pageTransition]="state" [hidden]="!hideComponent">
+  
+  <!-- ========================= 
+       SEZIONE 1: PROFILO UTENTE 
+       ========================= -->
+  <div class="profile-section">
+    <div class="row">
+      <!-- Colonna sinistra: Card Profilo - Ottimizzata per tutti i dispositivi -->
+      <div class="col-xl-4 col-lg-5 col-md-12 col-sm-12">
+        <div class="profile-card-container">
+          <!-- Card Profilo Utente -->
+          <div class="card card-user" Resize>
+            <div class="image">
+              <img src="assets/img/damir-bosnjak.jpg" alt="Background">
+            </div>
+            <div class="card-body">
+              <div class="author">
+                <div class="avatar-container">
+                  <img class="avatar border-gray img-fluid" [src]="urlImageProfileUrl" alt="User Avatar">
+                  <div class="avatar-badge">
+                    <i class="nc-icon nc-check-2"></i>
+                  </div>
+                </div>
+                
+                <div class="user-info">
+                  <h2 class="title text-uppercase">{{User.nome}} {{User.cognome}}</h2>
+                  <p class="user-description">{{ dati }}</p>
+                </div>
+              </div>
+              
+              <div class="user-details">
+                <div class="detail-item">
+                  <div class="detail-icon">
+                    <i class="nc-icon nc-badge"></i>
+                  </div>
+                  <div class="detail-content">
+                    <span class="detail-label">Qualifica</span>
+                    <span class="detail-value">{{User.qualifica}}</span>
+                  </div>
+                </div>
+                
+                <div class="detail-item">
+                  <div class="detail-icon">
+                    <i class="nc-icon nc-single-02"></i>
+                  </div>
+                  <div class="detail-content">
+                    <span class="detail-label">Ruolo</span>
+                    <span class="detail-value">{{User.ruolo}}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Statistiche (condizionale per ruolo) -->
+          
+
+          <!-- Pulsanti Azione (solo per Clienti) - Layout responsive ottimizzato -->
+          <div class="action-buttons-section" *ngIf="User.ruolo=='Cliente'">
+            <div class="row g-3">
+              <div class="col-sm-6 col-12">
+                <div class="action-button-container">
+                  <button mat-raised-button class="modern-action-button invite-button w-100" (click)="vaiALead()">
+                    <div class="button-icon">
+                      <i class="material-icons">person_add</i>
+                    </div>
+                    <div class="button-label">
+                      <span class="button-title">Invita Amico</span>
+                      <span class="button-subtitle">Condividi opportunità</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <div class="col-sm-6 col-12">
+                <div class="action-button-container">
+                  <button mat-raised-button class="modern-action-button profile-button w-100" (click)="vaiASchedaPersonale()">
+                    <div class="button-icon">
+                      <i class="material-icons">account_circle</i>
+                    </div>
+                    <div class="button-label">
+                      <span class="button-title">Scheda Personale</span>
+                      <span class="button-subtitle">Gestisci profilo</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonna destra: Form Modifica Profilo - Ottimizzata per tutti i dispositivi -->
+      <div class="col-xl-8 col-lg-7 col-md-12 col-sm-12">
+        <div class="profile-edit-section">
+          <div class="profile-edit-card">
+            <div class="profile-header" (click)="showProfileForm = !showProfileForm">
+              <div class="header-content">
+                <div class="header-icon">
+                  <i class="material-icons">edit</i>
+                </div>
+                <div class="header-text">
+                  <h3 class="profile-title">Modifica Profilo</h3>
+                  <p class="profile-subtitle">Aggiorna le tue informazioni personali</p>
+                </div>
+                <div class="toggle-icon">
+                  <i class="material-icons" *ngIf="!showProfileForm">expand_more</i>
+                  <i class="material-icons" *ngIf="showProfileForm">expand_less</i>
+                </div>
+              </div>
+            </div>
+
+            <div class="profile-body" *ngIf="showProfileForm">
+              <form class="modern-form">
+                <!-- Sezione Informazioni Generali -->
+                <div class="form-section">
+                  <div class="section-header">
+                    <div class="section-icon">
+                      <i class="material-icons">person</i>
+                    </div>
+                    <h4 class="section-title">Informazioni Generali</h4>
+                  </div>
+                  
+                  <div class="form-grid">
+                    <div class="form-field">
+                      <label class="modern-label">
+                        <i class="material-icons">business</i>
+                        Ragione Sociale
+                      </label>
+                      <input type="text" class="modern-input disabled" disabled="" placeholder="Ragione Sociale" [value]="User.rag_soc">
+                    </div>
+
+                    <div class="form-field">
+                      <label class="modern-label">
+                        <i class="material-icons">email</i>
+                        Email
+                      </label>
+                      <input type="email" class="modern-input" placeholder="Email" [value]="User.email">
+                    </div>
+
+                    <div class="form-field">
+                      <label class="modern-label">
+                        <i class="material-icons">person</i>
+                        Nome
+                      </label>
+                      <input type="text" class="modern-input" placeholder="Nome" [value]="User.nome">
+                    </div>
+
+                    <div class="form-field">
+                      <label class="modern-label">
+                        <i class="material-icons">person_outline</i>
+                        Cognome
+                      </label>
+                      <input type="text" class="modern-input" placeholder="Cognome" [value]="User.cognome">
+                    </div>
+                  </div>
+
+                  <div class="form-field full-width">
+                    <label class="modern-label">
+                      <i class="material-icons">photo_camera</i>
+                      Immagine Profilo
+                    </label>
+                    <div class="dropzone-container">
+                      <app-dropzone uploadType="profile"></app-dropzone>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Sezione Cambio Password -->
+                <div class="form-section">
+                  <div class="section-header">
+                    <div class="section-icon">
+                      <i class="material-icons">lock</i>
+                    </div>
+                    <h4 class="section-title">Sicurezza Password</h4>
+                  </div>
+                  
+                  <div class="password-grid">
+                    <div class="form-field">
+                      <label class="modern-label">
+                        <i class="material-icons">lock_outline</i>
+                        Vecchia Password
+                      </label>
+                      <input type="password" class="modern-input oldpassword" placeholder="Vecchia Password">
+                    </div>
+                    
+                    <div class="form-field">
+                      <label class="modern-label">
+                        <i class="material-icons">security</i>
+                        Nuova Password
+                      </label>
+                      <input type="password" class="modern-input newPassword" placeholder="Nuova Password">
+                    </div>
+                    
+                    <div class="form-field">
+                      <label class="modern-label">
+                        <i class="material-icons">verified_user</i>
+                        Ripeti Nuova Password
+                      </label>
+                      <input type="password" class="modern-input repeatNewPassword" placeholder="Ripeti Nuova Password">
+                    </div>
+                  </div>
+
+                  <div class="button-container">
+                    <button type="button" class="modern-button password-button" (click)="modificaPassword(User.id)">
+                      <i class="material-icons">security</i>
+                      Modifica Password
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Sezione Indirizzo -->
+                <div class="form-section">
+                  <div class="section-header">
+                    <div class="section-icon">
+                      <i class="material-icons">location_on</i>
+                    </div>
+                    <h4 class="section-title">Informazioni di Residenza</h4>
+                  </div>
+                  
+                  <div class="form-field full-width">
+                    <label class="modern-label">
+                      <i class="material-icons">home</i>
+                      Indirizzo
+                    </label>
+                    <input type="text" class="modern-input" placeholder="Indirizzo completo" [value]="User.indirizzo">
+                  </div>
+
+                  <div class="address-grid">
+                    <div class="form-field">
+                      <label class="modern-label">
+                        <i class="material-icons">location_city</i>
+                        Città
+                      </label>
+                      <input type="text" class="modern-input" placeholder="Città" [value]="User.citta">
+                    </div>
+                    
+                    <div class="form-field">
+                      <label class="modern-label">
+                        <i class="material-icons">public</i>
+                        Stato/Provincia
+                      </label>
+                      <input type="text" class="modern-input" placeholder="Stato" [value]="User.stato">
+                    </div>
+                    
+                    <div class="form-field">
+                      <label class="modern-label">
+                        <i class="material-icons">markunread_mailbox</i>
+                        CAP
+                      </label>
+                      <input type="number" class="modern-input" placeholder="95121" [value]="User.cap">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Pulsante Salva -->
+                <div class="form-actions">
+                  <button type="submit" class="modern-button save-button" (click)="prova()">
+                    <i class="material-icons">save</i>
+                    Salva Modifiche
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================= 
+       SEZIONE 2: DASHBOARD STATISTICHE MODERNIZZATO
+       ========================= -->
+  <div class="dashboard-statistics-section" *ngIf="User.ruolo != 'Cliente'">
+    <!-- Header Sezione -->
+    <div class="dashboard-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="nc-icon nc-chart-bar-32"></i>
+        </div>
+        <div class="header-text">
+          <h2 class="dashboard-title">Dashboard Statistiche</h2>
+          <p class="dashboard-subtitle">Analisi delle performance e metriche operative</p>
+        </div>
+      </div>
+    </div>
+    <div class="statistics-cards" *ngIf="User.ruolo != 'Cliente'">
+            <div *ngIf="User.ruolo=='Cliente'">
+              <app-card-statistic></app-card-statistic>
+            </div>
+            <div *ngIf="User.ruolo=='Advisor'">
+              <app-card-statisticSeu></app-card-statisticSeu>
+            </div>
+          </div>
+    <!-- Grid Layout Responsive - Ottimizzato per tutti i dispositivi -->
+    <div class="charts-grid">
+      <!-- Conversione Lead Card -->
+      <div class="chart-card conversion-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="nc-icon nc-refresh-69"></i>
+          </div>
+          <div class="card-title-section">
+            <h3 class="card-title">Conversione {{textLead}}</h3>
+            <span class="card-subtitle">Analisi tasso di conversione</span>
+          </div>
+        </div>
+        <div class="card-content">
+          <app-lead-conversion></app-lead-conversion>
+        </div>
+      </div>
+
+      <!-- Previsione PV Card -->
+      <div class="chart-card pv-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <i class="nc-icon nc-chart-bar-32"></i>
+          </div>
+          <div class="card-title-section">
+            <h3 class="card-title">Previsioni PV</h3>
+            <span class="card-subtitle">Trend mensile punti valore</span>
+          </div>
+        </div>
+        <div class="card-content">
+          <app-prevision-pvbar></app-prevision-pvbar>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================= 
+       SEZIONE 3: TABELLE DATI 
+       ========================= -->
+  <div class="data-tables-section">
+    <!-- Tabelle per Non-Clienti -->
+    <div class="tables-container" *ngIf="User.ruolo != 'Cliente'">
+      <div class="row">
+        <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-6 mb-4">
+          <div class="table-wrapper">
+            <app-tabellacontratti></app-tabellacontratti>
+          </div>
+        </div>
+        <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-6 mb-4">
+          <div class="table-wrapper">
+            <app-tabellacontatti></app-tabellacontatti>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabelle per Clienti -->
+    <div class="tables-container" *ngIf="User.ruolo == 'Cliente'">
+      <div class="row">
+        <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 mb-4">
+          <div class="table-wrapper">
+            <app-tabellacontatti></app-tabellacontatti>
+          </div>
+        </div>
+        <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 mb-4">
+          <div class="table-wrapper">
+            <app-tabellacontratti></app-tabellacontratti>
+          </div>
+        </div>
+        <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 mb-4">
+          <div class="table-wrapper">
+            <app-contratti-personali></app-contratti-personali>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================= 
+     SEZIONE 4: TEAM ORGANIZATION 
+     ========================= -->
+<div class="team-section" *ngIf="!hideTeamMembers">
+  <div class="container-fluid">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title">
+          <i class="nc-icon nc-single-02"></i>
+          Il Mio Team
+        </h4>
+      </div>
+      
+      <div class="card-body">
+        <div class="team-tree-container">
+          <!-- Team Navigation Controls -->
+          <div class="team-controls" *ngIf="data && data.length > 0">
+            <div class="controls-center">
+              <span class="team-counter">
+                <i class="nc-icon nc-single-02"></i>
+                {{ getTotalMembersCount() }} membri nel team
+              </span>
+            </div>
+          </div>
+
+          <!-- JSCharting Professional Orgchart -->
+          <div class="jscharting-container" *ngIf="data && data.length > 0">
+            <div class="jscharting-header">
+              <h3 class="jscharting-title">
+                <i class="nc-icon nc-diamond"></i>
+                Organigramma Professionale
+              </h3>
+              <p class="jscharting-subtitle">
+                Organigramma interattivo con tooltip avanzati e connessioni gerarchiche
+              </p>
+            </div>
+            
+            <!-- Container per il grafico JSCharting -->
+            <div id="jsChartingContainer" class="jscharting-chart-container"></div>
+            
+            <div class="jscharting-info">
+              <div class="info-item">
+                <strong>Totale Membri:</strong> {{ getTotalMembersCount() }}
+              </div>
+              <div class="info-item">
+                <strong>Livelli Gerarchici:</strong> {{ data.length }}
+              </div>
+              <div class="info-item">
+                <strong>Interazioni:</strong> Hover per tooltip, Click per focus
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div *ngIf="!data || data.length === 0" class="empty-team-state">
+            <div class="text-center py-5">
+              <i class="nc-icon nc-single-02 empty-icon"></i>
+              <h5 class="mt-3 text-muted">Nessun membro del team</h5>
+              <p class="text-muted">Non ci sono ancora membri nel tuo team.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Fine Layout Ottimizzato -->

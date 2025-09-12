@@ -1,0 +1,348 @@
+// Modern Card Styles
+.modern-card {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.modern-card-header {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  padding: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  .header-text {
+    flex: 1;
+  }
+
+  .header-title {
+    color: white;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .header-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+  }
+}
+
+.modern-card-body {
+  background: white;
+  padding: 2rem;
+  min-height: 500px;
+}
+
+// Selected Product Card
+.selected-product-card {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(76, 175, 80, 0.4);
+  }
+
+  .selected-product-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+
+    .selected-icon {
+      color: white;
+      font-size: 1.5rem;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      padding: 0.25rem;
+    }
+
+    h4 {
+      color: white;
+      margin: 0;
+      font-weight: 600;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  .selected-product-content {
+    padding: 1rem 1.5rem;
+
+    .selected-product-name {
+      color: white;
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 500;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+// Table Container
+.table-container {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+
+  .mat-mdc-table {
+    background: transparent;
+  }
+
+  .mat-mdc-header-row {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-bottom: 2px solid #dee2e6;
+
+    .mat-mdc-header-cell {
+      color: #495057;
+      font-weight: 600;
+      border-right: 1px solid rgba(0, 0, 0, 0.05);
+      padding: 1rem 0.75rem !important;
+      vertical-align: top !important;
+      min-height: 100px !important;
+
+      &:last-child {
+        border-right: none;
+      }
+
+      .column-header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        height: 100%;
+
+        .column-title {
+          font-weight: 700;
+          color: #343a40;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          text-align: center;
+          padding: 0.25rem 0;
+          background: rgba(102, 126, 234, 0.1);
+          border-radius: 4px;
+        }
+      }
+
+      // Stile specifico per i filtri negli header - Semplificato
+      .mat-mdc-form-field {
+        width: 100% !important;
+        margin-bottom: 0 !important;
+      }
+    }
+
+    // Colonna ID più stretta
+    .id-column {
+      width: 80px !important;
+      min-width: 80px !important;
+    }
+
+    // Colonna descrizione più larga
+    .description-column {
+      width: 300px !important;
+      min-width: 250px !important;
+    }
+
+    // Altre colonne con larghezza equilibrata
+    .macro-column,
+    .macro-code-column,
+    .supplier-column {
+      width: 200px !important;
+      min-width: 180px !important;
+    }
+  }
+
+  .mat-mdc-row {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+      transform: scale(1.01);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .mat-mdc-cell {
+      padding: 1rem 0.75rem;
+      border-right: 1px solid rgba(0, 0, 0, 0.03);
+      color: #495057;
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+  }
+
+  .mat-mdc-no-data-row {
+    .mat-mdc-cell {
+      text-align: center;
+      font-style: italic;
+      color: #6c757d;
+      padding: 2rem;
+      background: #f8f9fa;
+    }
+  }
+
+  // Paginator
+  .mat-mdc-paginator {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-top: 1px solid #dee2e6;
+
+    .mat-mdc-paginator-range-label {
+      color: #495057;
+      font-weight: 500;
+    }
+  }
+}
+
+// Form Fields Styling - Semplificato
+::ng-deep {
+  .table-container {
+    .mat-mdc-header-cell {
+      .mat-mdc-form-field {
+        width: 100% !important;
+        
+        .mat-mdc-form-field-subscript-wrapper {
+          display: none !important;
+        }
+        
+        .mat-mdc-form-field-bottom-align::before {
+          display: none !important;
+        }
+      }
+    }
+  }
+}
+
+.span-additional-selection {
+  opacity: 0.75;
+  font-size: 0.75em;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  color: #667eea;
+  font-weight: 500;
+}
+
+mat-form-field {
+  display: inline !important;
+  width: 100%;
+}
+
+:host * {
+  position: relative;
+  z-index: 10 !important;
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .modern-card-header {
+    padding: 1.5rem;
+
+    .header-content {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.75rem;
+    }
+
+    .header-icon {
+      font-size: 1.75rem;
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    .header-title {
+      font-size: 1.25rem;
+    }
+  }
+
+  .modern-card-body {
+    padding: 1.5rem;
+  }
+
+  .selected-product-card {
+    margin-bottom: 1.5rem;
+
+    .selected-product-header,
+    .selected-product-content {
+      padding: 0.75rem 1rem;
+    }
+  }
+
+  .table-container {
+    overflow-x: auto;
+    
+    .mat-mdc-table {
+      min-width: 600px;
+    }
+
+    .mat-mdc-header-cell,
+    .mat-mdc-cell {
+      padding: 0.75rem 0.5rem;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-card-header {
+    padding: 1rem;
+
+    .header-title {
+      font-size: 1.1rem;
+    }
+
+    .header-subtitle {
+      font-size: 0.8rem;
+    }
+  }
+
+  .modern-card-body {
+    padding: 1rem;
+  }
+
+  .table-container {
+    .mat-mdc-header-cell,
+    .mat-mdc-cell {
+      padding: 0.5rem 0.25rem;
+      font-size: 0.8rem;
+    }
+  }
+}

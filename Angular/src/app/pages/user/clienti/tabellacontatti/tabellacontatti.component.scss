@@ -1,0 +1,386 @@
+// Tabellacontatti Modern Design
+.contacts-container {
+  //min-height: 100vh;
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  padding: 2rem 1rem;
+  animation: fadeIn 0.6s ease-out;
+
+  @media (max-width: 768px) {
+    padding: 1rem 0.5rem;
+  }
+}
+
+.contacts-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  margin: 0 auto;
+  max-width: 1400px;
+}
+
+// Header Moderno
+.modern-header {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  color: white;
+  padding: 2rem;
+  border: none;
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    .header-icon {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      .material-icons {
+        font-size: 2rem;
+        color: white;
+      }
+    }
+
+    .header-text {
+      flex: 1;
+
+      .card-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        background: linear-gradient(45deg, #fff, #f0f9ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .card-subtitle {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  .filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .modern-filter {
+      min-width: 200px;
+      
+      @media (max-width: 768px) {
+        min-width: auto;
+        width: 100%;
+      }
+    }
+
+    .clear-button {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+      }
+    }
+  }
+}
+
+// Body Moderno
+.modern-body {
+  padding: 0;
+  background: transparent;
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+// Tabella Moderna
+.modern-table {
+  width: 100%;
+  background: white;
+  border-radius: 0;
+  box-shadow: none;
+  
+  .modern-header-row {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    
+    th {
+      border-bottom: 2px solid #e2e8f0;
+      font-weight: 600;
+      color: #1e293b;
+      padding: 1.5rem 1rem;
+      
+      .header-text {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+    }
+  }
+
+  .modern-row {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f1f5f9;
+    
+    &:hover {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      transform: translateX(4px);
+      box-shadow: 4px 0 12px rgba(102, 126, 234, 0.1);
+    }
+    
+    td {
+      padding: 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      
+      &:first-child {
+        border-left: 3px solid transparent;
+      }
+    }
+    
+    &:hover td:first-child {
+      border-left-color: #667eea;
+    }
+  }
+}
+
+// Info Containers con Icone
+.contact-info, .email-info, .phone-info, .date-info, .assigned-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  
+  .material-icons {
+    font-size: 1.2rem;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+  }
+  
+  &:hover .material-icons {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.contact-icon {
+  color: #10b981;
+}
+
+.email-icon {
+  color: #3b82f6;
+}
+
+.phone-icon {
+  color: #8b5cf6;
+}
+
+.date-icon {
+  color: #f59e0b;
+}
+
+.assigned-icon {
+  color: #ef4444;
+}
+
+// Link Styles
+.email-link, .phone-link {
+  color: #1e293b;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: #667eea;
+    text-decoration: underline;
+  }
+}
+
+// Status Badges
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  
+  &.status-attivo, &.status-active {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+  }
+  
+  &.status-sospeso, &.status-suspended {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+  }
+  
+  &.status-pending, &.status-in-sospeso {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+  }
+  
+  &.status-completato, &.status-completed {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+  }
+  
+  &.status-nuovo, &.status-new {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: white;
+  }
+}
+
+// Pagination Moderna
+.pagination-container {
+  padding: 2rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.modern-paginator {
+  background: transparent;
+  
+  ::ng-deep {
+    .mat-mdc-paginator-container {
+      justify-content: center;
+      padding: 0;
+    }
+    
+    .mat-mdc-paginator-page-size, 
+    .mat-mdc-paginator-range-actions {
+      color: #64748b;
+    }
+    
+    .mat-mdc-icon-button {
+      background: white;
+      border: 1px solid #e2e8f0;
+      margin: 0 0.25rem;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      }
+      
+      &[disabled] {
+        opacity: 0.5;
+        transform: none;
+        box-shadow: none;
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .modern-table {
+    font-size: 0.85rem;
+    
+    .modern-header-row th,
+    .modern-row td {
+      padding: 0.75rem 0.5rem;
+    }
+    
+    .contact-info, .email-info, .phone-info, .date-info, .assigned-info {
+      flex-direction: column;
+      gap: 0.25rem;
+      text-align: center;
+      
+      .material-icons {
+        font-size: 1rem;
+      }
+    }
+  }
+  
+  .status-badge {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.7rem;
+  }
+}
+
+// Loading Animation
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Custom Scrollbar
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 4px;
+  
+  &:hover {
+    background: linear-gradient(135deg, #5a6fd8, #6941a0);
+  }
+}
+
+// PrimeNG Override per Filters
+::ng-deep {
+  .p-multiselect {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    color: #1e293b;
+    
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .p-multiselect-label {
+      color: #1e293b;
+    }
+  }
+  
+  .p-datepicker {
+    input {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      color: #1e293b;
+      
+      &:hover {
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+    }
+  }
+}

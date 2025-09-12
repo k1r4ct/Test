@@ -1,0 +1,46 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card card-user" [@pageTransition]="state">
+        <div class="card-header">
+          <h5 class="card-title">Ricerca Clienti</h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="loginForm" (ngSubmit)="cerca()" ngNativeValidate>
+            <div class="row">
+    
+              <div class="col-md-12">
+                <div class="form-group">
+                  <label>Cerca per Codice Fiscale o Partita Iva: clicca su pulsante per cambiare ricerca</label>
+                  <div class="input-group mb-3">
+                    <button #ricercaRicevuta class="btn btn-outline-secondary" type="button" id="button-addon1" (click)="changeText()">{{bottontext}}</button>
+                    <input type="hidden" formControlName="tiporicerca" [(ngModel)]="bottontext">
+                    <input type="text" [maxlength]="inputmaxlength" [minlength]="inputMinLength" class="form-control codFPIvaval" [(ngModel)]="codFPIvaval"  placeholder="" formControlName="codFPIva" aria-label="Codice Fiscale / P. Iva" aria-describedby="button-addon1" required>
+                  </div>
+                  <button type="submit" class="btn bottoniFormConferma float-end " >CERCA CLIENTE</button>
+                </div>
+              </div>
+    
+            </div>
+          </form>
+        </div>
+    </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card card-user alert alert-{{tipo}}" [hidden]="hidden">
+        <div class="card-header">
+          <h5 class="card-title">MESSAGGIO</h5>
+        </div>
+        <div class="card-body">
+          <div class="alert text-center align-content-center">
+            <h1 style="color:black">{{message}}</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+

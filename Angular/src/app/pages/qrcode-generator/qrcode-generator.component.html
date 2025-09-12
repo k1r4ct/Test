@@ -1,0 +1,284 @@
+<div class="qr-generator-container">
+  <div class="header">
+    <h2><i class="pi pi-qrcode"></i> Generatore QR Code</h2>
+    <p>Crea QR Code personalizzati per diversi tipi di contenuto</p>
+  </div>
+
+  <div class="content-wrapper">
+    <!-- Pannello di controllo sinistra -->
+    <div class="control-panel">
+      <div class="form-section">
+        <h3>Tipo di contenuto</h3>
+        <div class="content-type-selector">
+          <select [(ngModel)]="selectedContentType" (change)="onContentTypeChange()" class="form-control">
+            <option *ngFor="let type of contentTypes" [value]="type.value">
+              {{ type.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Input per testo libero -->
+      <!-- <div class="form-section" *ngIf="selectedContentType === 'text'">
+        <label for="textInput">Testo da codificare:</label>
+        <textarea
+          id="textInput"
+          [(ngModel)]="inputText"
+          placeholder="Inserisci il testo da convertire in QR Code..."
+          class="form-control"
+          rows="4"
+        ></textarea>
+      </div> -->
+
+      <!-- Input per URL -->
+      <div class="form-section" *ngIf="selectedContentType === 'url'">
+        <label for="urlInput">URL:</label>
+        <input
+          id="urlInput"
+          type="url"
+          [(ngModel)]="urlInput"
+          placeholder="https://esempio.com"
+          class="form-control" disabled
+        />
+      </div>
+
+      <!-- Input per Email -->
+      <div class="form-section" *ngIf="selectedContentType === 'email'">
+        <label for="emailInput">Indirizzo Email:</label>
+        <input
+          id="emailInput"
+          type="email"
+          [(ngModel)]="emailInput"
+          placeholder="esempio@email.com"
+          class="form-control"
+        />
+      </div>
+
+      <!-- Input per Telefono -->
+      <div class="form-section" *ngIf="selectedContentType === 'phone'">
+        <label for="phoneInput">Numero di telefono:</label>
+        <input
+          id="phoneInput"
+          type="tel"
+          [(ngModel)]="phoneInput"
+          placeholder="+39 123 456 7890"
+          class="form-control"
+        />
+      </div>
+
+      <!-- Input per SMS -->
+      <div class="form-section" *ngIf="selectedContentType === 'sms'">
+        <label for="smsNumber">Numero per SMS:</label>
+        <input
+          id="smsNumber"
+          type="tel"
+          [(ngModel)]="smsNumber"
+          placeholder="+39 123 456 7890"
+          class="form-control"
+        />
+        <label for="smsMessage">Messaggio:</label>
+        <textarea
+          id="smsMessage"
+          [(ngModel)]="smsMessage"
+          placeholder="Testo del messaggio..."
+          class="form-control"
+          rows="3"
+        ></textarea>
+      </div>
+
+      <!-- Input per WiFi -->
+      <div class="form-section" *ngIf="selectedContentType === 'wifi'">
+        <label for="wifiSSID">Nome rete (SSID):</label>
+        <input
+          id="wifiSSID"
+          type="text"
+          [(ngModel)]="wifiSSID"
+          placeholder="Nome della rete WiFi"
+          class="form-control"
+        />
+        
+        <label for="wifiPassword">Password:</label>
+        <input
+          id="wifiPassword"
+          type="password"
+          [(ngModel)]="wifiPassword"
+          placeholder="Password della rete"
+          class="form-control"
+        />
+        
+        <label for="wifiSecurity">Tipo di sicurezza:</label>
+        <select id="wifiSecurity" [(ngModel)]="wifiSecurity" class="form-control">
+          <option value="WPA">WPA/WPA2</option>
+          <option value="WEP">WEP</option>
+          <option value="nopass">Nessuna (Aperta)</option>
+        </select>
+        
+        <div class="checkbox-wrapper">
+          <input
+            id="wifiHidden"
+            type="checkbox"
+            [(ngModel)]="wifiHidden"
+          />
+          <label for="wifiHidden">Rete nascosta</label>
+        </div>
+      </div>
+
+      <!-- Opzioni avanzate -->
+      <div class="form-section advanced-options">
+        <h3>Opzioni avanzate</h3>
+        
+        <div class="option-group">
+          <label for="errorLevel">Livello correzione errori:</label>
+          <select id="errorLevel" [(ngModel)]="errorCorrectionLevel" class="form-control">
+            <option value="L">Basso (~7%)</option>
+            <option value="M">Medio (~15%)</option>
+            <option value="Q">Alto (~25%)</option>
+            <option value="H">Altissimo (~30%)</option>
+          </select>
+        </div>
+
+        <div class="option-group">
+          <label for="qrSize">Dimensione (px):</label>
+          <input
+            id="qrSize"
+            type="number"
+            [(ngModel)]="qrSize"
+            min="128"
+            max="1024"
+            step="32"
+            class="form-control"
+          />
+        </div>
+
+        <div class="option-group">
+          <label for="margin">Margine:</label>
+          <input
+            id="margin"
+            type="number"
+            [(ngModel)]="margin"
+            min="0"
+            max="20"
+            class="form-control"
+          />
+        </div>
+
+        <div class="color-options">
+          <div class="color-option">
+            <label for="darkColor">Colore primo piano:</label>
+            <input
+              id="darkColor"
+              type="color"
+              [(ngModel)]="darkColor"
+              class="color-input"
+            />
+          </div>
+          
+          <div class="color-option">
+            <label for="lightColor">Colore sfondo:</label>
+            <input
+              id="lightColor"
+              type="color"
+              [(ngModel)]="lightColor"
+              class="color-input"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Pulsanti di azione -->
+      <div class="action-buttons">
+        <button
+          (click)="generateQRCode()"
+          [disabled]="isGenerating"
+          class="btn btn-primary"
+        >
+          <i class="pi pi-refresh" [class.spinning]="isGenerating"></i>
+          {{ isGenerating ? 'Generazione...' : 'Genera QR Code' }}
+        </button>
+        
+        <button
+          (click)="resetForm()"
+          class="btn btn-secondary"
+        >
+          <i class="pi pi-times"></i>
+          Reset
+        </button>
+      </div>
+
+      <!-- Messaggio di errore -->
+      <div class="error-message" *ngIf="errorMessage">
+        <i class="pi pi-exclamation-triangle"></i>
+        {{ errorMessage }}
+      </div>
+    </div>
+
+    <!-- Pannello di anteprima destra -->
+    <div class="preview-panel">
+      <div class="qr-display" *ngIf="qrCodeDataURL; else noQrCode">
+        <h3>Anteprima QR Code</h3>
+        
+        <!-- QR Code generato -->
+        <div class="qr-code-container">
+          <img [src]="qrCodeDataURL" alt="QR Code generato" class="qr-image" />
+          <canvas #qrCanvas style="display: none;"></canvas>
+        </div>
+
+        <!-- Informazioni sul QR Code -->
+        <div class="qr-info">
+          <div class="info-item">
+            <strong>Dimensioni:</strong> {{ qrSize }}x{{ qrSize }}px
+          </div>
+          <div class="info-item">
+            <strong>Correzione errori:</strong> 
+            <span [ngSwitch]="errorCorrectionLevel">
+              <span *ngSwitchCase="'L'">Bassa (~7%)</span>
+              <span *ngSwitchCase="'M'">Media (~15%)</span>
+              <span *ngSwitchCase="'Q'">Alta (~25%)</span>
+              <span *ngSwitchCase="'H'">Altissima (~30%)</span>
+            </span>
+          </div>
+          <div class="info-item">
+            <strong>Tipo:</strong> 
+            <span [ngSwitch]="selectedContentType">
+              <span *ngSwitchCase="'text'">Testo libero</span>
+              <span *ngSwitchCase="'url'">URL</span>
+              <span *ngSwitchCase="'email'">Email</span>
+              <span *ngSwitchCase="'phone'">Telefono</span>
+              <span *ngSwitchCase="'sms'">SMS</span>
+              <span *ngSwitchCase="'wifi'">WiFi</span>
+              <span *ngSwitchDefault>Testo libero</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Pulsanti di azione per il QR Code -->
+        <div class="qr-actions">
+          <button
+            (click)="downloadQRCode()"
+            class="btn btn-success"
+          >
+            <i class="pi pi-download"></i>
+            Scarica PNG
+          </button>
+          
+          <button
+            (click)="copyToClipboard()"
+            class="btn btn-info"
+          >
+            <i class="pi pi-copy"></i>
+            Copia
+          </button>
+        </div>
+      </div>
+
+      <!-- Placeholder quando non c'è QR Code -->
+      <ng-template #noQrCode>
+        <div class="no-qr-placeholder">
+          <i class="pi pi-qrcode placeholder-icon"></i>
+          <h3>QR Code non generato</h3>
+          <p>Inserisci del contenuto e clicca "Genera QR Code" per visualizzare l'anteprima</p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+</div>

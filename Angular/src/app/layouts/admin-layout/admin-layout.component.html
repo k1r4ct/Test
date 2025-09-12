@@ -1,0 +1,21 @@
+<div class="wrapper" [@pageTransition]="state" #wrapper>
+
+    <!-- Navbar posizionata al di sopra di tutto -->
+    <app-navbar></app-navbar>
+
+    <!-- data-color="white" -->
+    <div class="sidebar" data-color="sfondo" data-active-color="danger">
+
+      <app-sidebar></app-sidebar>
+
+    </div>
+
+    <div class="main-panel">
+        <div class="content">
+            <router-outlet></router-outlet>
+            <div id="finepagina"></div>
+        </div>
+
+    </div>
+
+</div>

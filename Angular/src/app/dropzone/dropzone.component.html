@@ -1,0 +1,21 @@
+<div class="" [hidden]="isHidden">
+  <input type="hidden" name="idContratto" [value]="contrattoID" />
+  <dropzone #myDropzone accept="image/*,application/pdf"
+    [config]="config" 
+    (error)="onUploadError($event)"
+    (success)="onUploadSuccess($event)"
+    (addedFile)="onFileSelected($event)"
+    (removedFile)="RimuoviFile($event)">
+      <ng-template #dzMessage class="stileDrop">
+        Trascina i file qui per caricarli o clicca per selezionare i file.
+      </ng-template>
+  </dropzone>
+</div>
+
+<div *ngIf="uploadProgress">
+  Progresso di caricamento: {{ uploadProgress }}%
+</div>
+
+<!-- <button (click)="cancelUpload()" *ngIf="uploadProgress">
+  Annulla caricamento
+</button> -->

@@ -1,0 +1,597 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="button-container">
+        <button
+          mat-raised-button
+          color="primary"
+          class="square-button"
+          (click)="showLeads()"
+        >
+          <div class="button-content">
+            <mat-icon class="button-icon">supervisor_account</mat-icon>
+            <span *ngIf="ruoloUtente == 'Cliente'" class="button-text"
+              >Vedi Amici Invitati</span
+            >
+            <span *ngIf="ruoloUtente != 'Cliente'" class="button-text"
+              >Vedi Leads</span
+            >
+          </div>
+        </button>
+
+        <button
+          mat-raised-button
+          color="accent"
+          class="square-button"
+          (click)="ShowCrealeads()"
+        >
+          <div class="button-content">
+            <mat-icon class="button-icon">person_add</mat-icon>
+            <span *ngIf="ruoloUtente == 'Cliente'" class="button-text"
+              >Nuovo invito</span
+            >
+            <span *ngIf="ruoloUtente != 'Cliente'" class="button-text"
+              >Nuovo Leads</span
+            >
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="container-fluid"
+  [@pageTransition]="state"
+  id="allDivCard"
+  [@fadeAnimation]="allDivCard ? 'visible' : 'hidden'"
+>
+  <div class="row justify-content-start">
+    <div
+      class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-10 col-xl-10 m-1 card"
+      [@fadeAnimation]="showleadsTable ? 'visible' : 'hidden'"
+      id="tableLead"
+    >
+      <div class="card-header">
+        <h1 *ngIf="ruoloUtente == 'Cliente'">AMICI INVITATI</h1>
+        <br />
+        <h1 *ngIf="ruoloUtente != 'Cliente'">LEAD PERSONALI</h1>
+        <br />
+
+        <ng-container *ngIf="!showDettagli">
+          <p-multiSelect
+            [options]="Leads"
+            [(ngModel)]="leadsSelected"
+            optionLabel="nominativoLead"
+            display="chip"
+            placeholder="Seleziona Lead"
+            appendTo="body"
+            (onChange)="applyFilter()"
+            class="m-2"
+          />
+        </ng-container>
+
+        <ng-container *ngIf="showDettagli">
+          <p-multiSelect
+            [options]="Leads"
+            [(ngModel)]="leadsSelected"
+            optionLabel="nominativoLead"
+            display="chip"
+            placeholder="Seleziona Cliente"
+            appendTo="body"
+            (onChange)="applyFilter()"
+            class="m-2"
+          />
+        </ng-container>
+
+        <p-multiSelect
+          [options]="statiUnivoci"
+          [(ngModel)]="statusSelected"
+          optionLabel="label"
+          display="chip"
+          placeholder="Seleziona Stato"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="m-2"
+        />
+
+        <ng-container *ngIf="!showDettagli">
+          <p-multiSelect
+            [options]="seuUnivoci"
+            [(ngModel)]="seuSelected"
+            optionLabel="nome"
+            display="chip"
+            placeholder="Inserito da"
+            appendTo="body"
+            (onChange)="applyFilter()"
+            class="m-2"
+          />
+        </ng-container>
+
+        <p-datepicker
+          [(ngModel)]="DTRGinseritoil"
+          [iconDisplay]="'input'"
+          [showIcon]="true"
+          inputId="icondisplay"
+          appendTo="body"
+          dateFormat="dd/mm/yy"
+          (onSelect)="applyFilter()"
+          class="m-2"
+          selectionMode="range"
+        />
+
+        <p-button label="Cancella" (onClick)="clearFilter()" />
+      </div>
+      <div class="lead-container table-responsive">
+        <table
+          mat-table
+          [dataSource]="dataSource"
+          class="mat-elevation-z8 card-body"
+        >
+          <ng-container matColumnDef="nominativo">
+            <th mat-header-cell *matHeaderCellDef style="width: 9%">
+              Nominativo
+            </th>
+            <td mat-cell *matCellDef="let lead">{{ lead.nominativoLead }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef style="width: 9%">Email</th>
+            <td mat-cell *matCellDef="let lead">
+              <a href="mailto:{{ lead.email }}">{{ lead.email }}</a>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="telefono">
+            <th mat-header-cell *matHeaderCellDef style="width: 5%">
+              Telefono
+            </th>
+            <td mat-cell *matCellDef="let lead">
+              <a href="tel:{{ lead.telefono }}">{{ lead.telefono }}</a>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="inserito_il">
+            <th mat-header-cell *matHeaderCellDef style="width: 9%">
+              inserito il
+            </th>
+            <td mat-cell *matCellDef="let lead">
+              {{ lead.inserito_il }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="assegnato_a">
+            <th mat-header-cell *matHeaderCellDef style="width: 9%">
+              Inserito da
+            </th>
+            <td mat-cell *matCellDef="let lead">
+              {{ lead.assegnato_a }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="microstato">
+            <th mat-header-cell *matHeaderCellDef style="width: 7%">Stato</th>
+            <td mat-cell *matCellDef="let lead">{{ lead.microstato }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="azioni">
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              style="width: 5%"
+              [hidden]="showDettagli"
+            >
+              Azioni 3
+            </th>
+            <td mat-cell *matCellDef="let lead" [hidden]="showDettagli">
+              <div class="button-row">
+                <button
+                  mat-mini-fab
+                  aria-label="Gestisci"
+                  title="Gestisci"
+                  color="warn"
+                  (click)="dettagliLead(lead, 'leads')"
+                >
+                  <mat-icon>info</mat-icon>
+                </button>
+
+                <!-- <ng-container *ngIf="!showDettagli"> -->
+                <button
+                  mat-mini-fab
+                  aria-label="Converti"
+                  title="Converti in cliente"
+                  color="primary"
+                  [disabled]="lead.is_converted"
+                  (click)="converti(lead)"
+                >
+                  <mat-icon>how_to_reg</mat-icon>
+                </button>
+                <!-- </ng-container> -->
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            [appLeadRowColor]="row"
+          ></tr>
+        </table>
+        <hr />
+        <mat-paginator
+          #paginator
+          class="w-100 text-center"
+          [pageSizeOptions]="[5, 10, 20]"
+          showFirstLastButtons
+        ></mat-paginator>
+      </div>
+    </div>
+
+    <ng-container *ngIf="!showDettagli">
+      <div
+        class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-10 col-xl-10 m-1 card"
+        [@fadeAnimation]="showleadsTable ? 'visible' : 'hidden'"
+        id="tableLead"
+      >
+        <div class="card-header">
+          <h1>LEAD SQUADRA</h1>
+          <br />
+
+          <p-multiSelect
+            [options]="LeadsSquad"
+            [(ngModel)]="leadsSelectedSquad"
+            optionLabel="nominativoLead"
+            display="chip"
+            placeholder="Seleziona Lead"
+            appendTo="body"
+            (onChange)="applyFilterSquad()"
+            class="m-2"
+          />
+
+          <p-multiSelect
+            [options]="statiUnivociSquad"
+            [(ngModel)]="statusSelectedSquad"
+            optionLabel="label"
+            display="chip"
+            placeholder="Seleziona Stato"
+            appendTo="body"
+            (onChange)="applyFilterSquad()"
+            class="m-2"
+          />
+
+          <p-multiSelect
+            [options]="seuUnivociSquad"
+            [(ngModel)]="seuSelectedSquad"
+            optionLabel="nome"
+            display="chip"
+            placeholder="Seleziona Seu"
+            appendTo="body"
+            (onChange)="applyFilterSquad()"
+            class="m-2"
+          />
+
+          <p-datepicker
+            [(ngModel)]="DTRGinseritoilSquad"
+            [iconDisplay]="'input'"
+            [showIcon]="true"
+            inputId="icondisplay"
+            appendTo="body"
+            dateFormat="dd/mm/yy"
+            (onSelect)="applyFilterSquad()"
+            class="m-2"
+            selectionMode="range"
+            class="m-2"
+          />
+
+          <p-button label="Cancella" (onClick)="clearFilterSquad()" />
+        </div>
+
+        <div class="lead-container table-responsive">
+          <table
+            mat-table
+            [dataSource]="dataSourceSquad"
+            class="mat-elevation-z8 card-body"
+          >
+            <ng-container matColumnDef="nominativo">
+              <th mat-header-cell *matHeaderCellDef style="width: 9%">
+                Nominativo
+              </th>
+              <td mat-cell *matCellDef="let leadSquad">
+                {{ leadSquad.nominativoLead }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="email">
+              <th mat-header-cell *matHeaderCellDef style="width: 9%">Email</th>
+              <td mat-cell *matCellDef="let leadSquad">
+                <a href="mailto:{{ leadSquad.email }}">{{ leadSquad.email }}</a>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="telefono">
+              <th mat-header-cell *matHeaderCellDef style="width: 5%">
+                Telefono
+              </th>
+              <td mat-cell *matCellDef="let leadSquad">
+                <a href="tel:{{ leadSquad.telefono }}">{{
+                  leadSquad.telefono
+                }}</a>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="inserito_il">
+              <th mat-header-cell *matHeaderCellDef style="width: 9%">
+                inserito il
+              </th>
+              <td mat-cell *matCellDef="let lead">
+                {{ lead.inserito_il }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="assegnato_a">
+              <th mat-header-cell *matHeaderCellDef style="width: 9%">
+                Assegnato a
+              </th>
+              <td mat-cell *matCellDef="let leadSquad">
+                {{ leadSquad.assegnato_a }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="microstato">
+              <th mat-header-cell *matHeaderCellDef style="width: 7%">Stato</th>
+              <td mat-cell *matCellDef="let leadSquad">
+                {{ leadSquad.microstato }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="azioni">
+              <th mat-header-cell *matHeaderCellDef style="width: 5%">
+                Azioni 2
+              </th>
+              <td mat-cell *matCellDef="let leadSquad">
+                <div class="button-row">
+                  <button
+                    mat-mini-fab
+                    aria-label="Gestisci"
+                    title="Gestisci"
+                    color="warn"
+                    (click)="dettagliLead(leadSquad, 'leads')"
+                  >
+                    <mat-icon>info</mat-icon>
+                  </button>
+                  <button
+                    mat-mini-fab
+                    aria-label="Converti"
+                    title="Converti in cliente"
+                    color="primary"
+                    [disabled]="leadSquad.is_converted"
+                    (click)="converti(leadSquad)"
+                  >
+                    <mat-icon>how_to_reg</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              [appLeadRowColor]="row"
+            ></tr>
+          </table>
+          <hr />
+          <mat-paginator
+            #paginatorSquad
+            class="w-100 text-center"
+            [pageSizeOptions]="[5, 10, 20]"
+            showFirstLastButtons
+          ></mat-paginator>
+        </div>
+      </div>
+    </ng-container>
+
+    <div
+      class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12 m-1 card leadCard"
+      [@fadeAnimation]="showleadsCard ? 'visible' : 'hidden'"
+      id="cardLead"
+    >
+      <div class="card-header">
+        <h1>LEAD DEL GIORNO</h1>
+      </div>
+      <form [formGroup]="leadSingleForm">
+        <div class="lead-container text-start">
+          <div class="lead-item text-start" *ngFor="let lead of Leads">
+            <h3>Nominativo:</h3>
+            <span> {{ lead.nome }} {{ lead.cognome }}</span
+            ><br />
+            <p>
+              Email: <a href="mailto:{{ lead.email }}">{{ lead.email }}</a>
+            </p>
+            <br />
+            <p>
+              Telefono:
+              <a href="tel:{{ lead.telefono }}"> {{ lead.telefono }} </a>
+            </p>
+            <br />
+            <p>Assegnato a: {{ lead.assegnato_a }}</p>
+            <br />
+            <div class="button-row">
+              <button
+                mat-mini-fab
+                aria-label="Gestisci"
+                color="warn"
+                (click)="dettagliLead(lead, 'leads')"
+              >
+                <mat-icon>info</mat-icon>
+              </button>
+              <button
+                mat-mini-fab
+                aria-label="Converti"
+                color="primary"
+                [disabled]="lead.is_converted"
+                (click)="converti(lead)"
+              >
+                <mat-icon>how_to_reg</mat-icon>
+              </button>
+            </div>
+            <!-- <div class="submenu d-flex text-center">
+                            <div class="container-fluid">
+                                <div class="row justify-content-center">
+                                    <div class="col-12 text-center">
+                                        <button mat-raised-button color="primary" class="text-center" type="submit"
+                                            (click)="dettagliLead(lead,'leads')">Gestisci</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> -->
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12 mt-2">
+      <div
+        class="card card-user"
+        [@fadeAnimation]="showCreateLead ? 'visible' : 'hidden'"
+        id="newLead"
+      >
+        <div class="row card-header">
+          <div class="col-12">
+            <h2 *ngIf="ruoloUtente != 'Cliente'" class="card-title">
+              Crea Nuovo Lead
+            </h2>
+            <h2 *ngIf="ruoloUtente == 'Cliente'" class="card-title">
+              Aggiungi Nuovo Contatto
+            </h2>
+          </div>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="leadForm" (ngSubmit)="creaLead()">
+            <div class="row">
+              <div class="col-md-12">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Nome</mat-label>
+                  <input matInput formControlName="nome" required />
+                  <mat-error *ngIf="leadForm.get('nome')?.hasError('required')"
+                    >Il nome è obbligatorio</mat-error
+                  >
+                </mat-form-field>
+              </div>
+
+              <div class="col-md-12">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Cognome</mat-label>
+                  <input matInput formControlName="cognome" required />
+                  <mat-error
+                    *ngIf="leadForm.get('cognome')?.hasError('required')"
+                    >Il cognome è obbligatorio</mat-error
+                  >
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-12">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Telefono</mat-label>
+                  <input matInput formControlName="telefono" required />
+                  <mat-error
+                    *ngIf="leadForm.get('telefono')?.hasError('required')"
+                    >Il telefono è obbligatorio</mat-error
+                  >
+                </mat-form-field>
+              </div>
+
+              <div class="col-md-12">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Email</mat-label>
+                  <input
+                    matInput
+                    type="email"
+                    formControlName="email"
+                    required
+                  />
+                  <mat-error *ngIf="leadForm.get('email')?.hasError('required')"
+                    >L'email è obbligatoria</mat-error
+                  >
+                  <mat-error *ngIf="leadForm.get('email')?.hasError('email')"
+                    >L'email non è valida</mat-error
+                  >
+                </mat-form-field>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <div class="w-100">
+                  <h3>
+                    Creando questo contatto ti prendi la responsabilità di
+                    autorizzare Semprechiaro ad utilizzare i dati da te inseriti
+                    per contattare il tuo amico/conoscente
+                  </h3>
+                  <mat-slide-toggle
+                    formControlName="consenso"
+                    [(ngModel)]="checked"
+                    (change)="onConsensoChange($event)"
+                  >
+                    Acconsento al trattamento dei dati
+                  </mat-slide-toggle>
+                  <mat-error
+                    *ngIf="leadForm.get('consenso')?.hasError('requiredTrue')"
+                    >Il consenso è obbligatorio</mat-error
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12 d-flex justify-content-center">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  type="submit"
+                  [disabled]="!leadForm.valid"
+                  class="p-3"
+                >
+                  {{ ruoloUtente == "Cliente" ? "Crea Contatto" : "Crea Lead" }}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-converti-lead
+  class="w-75"
+  [hidden]="nuovocliente"
+  [lead]="lead"
+></app-converti-lead>
+
+<!-- <section [@pageTransition]="state" class="w-75 mt-5 card"  >
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-12 text-center p-2">
+            </div>
+        </div>
+    </div>
+</section> -->
+
+<section
+  [@pageTransition]="state"
+  class="w-75 mt-5 card"
+  [hidden]="showCalendario"
+>
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-12 text-center p-2">
+        <app-calendar
+          (arrayidLeadChange)="onArrayidLeadChange($event)"
+        ></app-calendar>
+      </div>
+    </div>
+  </div>
+</section>

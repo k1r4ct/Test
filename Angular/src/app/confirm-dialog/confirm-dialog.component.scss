@@ -1,0 +1,49 @@
+::ng-deep.custom-dialog-container .mat-mdc-dialog-surface {
+  width: 400px;
+  margin: 10px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  background-color: rgb(233, 233, 233);
+  backdrop-filter: blur(20px);
+  -webkit-box-shadow: 0px 24px 18px -11px #6d9ebc; 
+  box-shadow: 0px 24px 18px -11px #6d9ebc;
+  border-radius: 20px;
+  }
+  
+  .custom-dialog-container .mat-dialog-title,
+  .custom-dialog-container .mat-dialog-content {
+    color: white; /* Testo bianco per contrasto */
+  }
+  .button_left{
+    border-top: 1px solid grey;
+    border-right: 1px solid grey;
+  }
+
+  .button_right{
+    border-top: 1px solid grey;
+    border-left: 1px solid grey;
+  }
+
+  .modal-default-button {
+  background-color: transparent;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+  transition: 0.3s ease;
+  font-size: 14px;
+  color: #007AFF;
+  padding: 15px 0;
+  border-right: 0.5px solid rgba(60, 60, 68, 0.36);
+  outline: none;
+}
+.modal-default-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+.modal-default-button:last-child {
+  border-right: none;
+  border-bottom-right-radius: 14px;
+}
+.modal-default-button:first-child {
+  border-bottom-left-radius: 14px;
+}

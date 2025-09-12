@@ -1,0 +1,61 @@
+@import "../../assets/sass/general-dashboard/variabili";
+/* @import "../../assets/sass/general-dashboard/mixin"; */
+
+dropzone ::ng-deep .dropzone {
+  background: #f8f8f8;
+  border-radius: 5px;
+  border: 2px dashed rgb(215, 215, 215);
+  margin-bottom: 20px;
+  width: 100% !important;
+
+  .dz-message {
+    background-color: transparent !important;
+    opacity: 1;
+    text-align: center;
+    font-weight: bold;
+    border: none !important;
+    color: white;
+    border-radius: 15px;
+    height: 250px;
+    font-size: 1.2rem;
+    span {
+      background-color: #fff;
+      position: relative;
+      top: -100px;
+      padding: 30px;
+      border-radius: 5px;
+      text-align: center;
+      font-size: 1.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .text-8xl {
+      font-size: 6rem !important;
+    }
+    .border-circle {
+      border-radius: 50% !important;
+    }
+    .border-2 {
+      border-width: 2px !important;
+      border-style: solid;
+    }
+    .p-5 {
+      padding: 2rem !important;
+    }
+    .border-400 {
+      border-color: #9ca3af !important;
+    }
+
+    .text-400 {
+      color: #9ca3af!important;
+    }
+  }
+
+  .dz-preview.dz-success .dz-success-mark svg path {
+    fill: green !important;
+  }
+  .dz-preview .dz-progress .dz-upload {
+    background: #4079b6;
+    background: linear-gradient(to right, #6a88a9, #4079b6);
+  }
+}

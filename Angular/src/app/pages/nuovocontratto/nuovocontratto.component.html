@@ -1,0 +1,124 @@
+
+<!-- <p> Dettagli contratto sul componente NUOVOCONTRATTO</p>
+<p> stato: {{stato}}</p>
+<p> utente: {{idute}}</p>
+<p> cliente: {{idcli}}</p>
+<p> tipoCLI: {{tipCl}}</p>
+<p> idContraente: {{idCont}}</p>
+<p> tipoContraente: {{typeCont}}</p>
+<p> tipoProdotto: {{typeProduct}}</p>
+<p> nomeProdotto: {{nameProduct}}</p>
+<p> optProdotto: {{optProduct}}</p>
+<p> idContratto: {{idContratto}}</p>
+<p> stepper1: {{stepperDis1}}</p>
+<p> stepper2: {{stepperDis2}}</p>
+<p> stepper3: {{stepperDis3}}</p>
+<p> stepper4: {{stepperDis4}}</p> -->
+
+<br>
+
+<div class="card" @pageTransition >
+  <div class="card-header">
+    <h4 class="card-title"> </h4>
+  </div>
+  <div class="card-body">
+
+  <mat-stepper linear #stepper (selectionChange)="onStepChange($event)">
+
+    <mat-step [stepControl]="firstFormGroup" >
+      <form [formGroup]="firstFormGroup">
+        <ng-template matStepLabel>Inserisci il tipo di contratto / Inserisci i dati del contraente</ng-template>
+
+         <app-nuovocontraente></app-nuovocontraente>
+
+        <div>
+          <button mat-button matStepperNext [disabled]="stepperDis1"><i class="fa-solid fa-arrow-right" [ngClass]="{'btnStepperDis': stepperDis1, 'btnStepperEna': !stepperDis1}"></i></button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="secondFormGroup" >
+      <form [formGroup]="secondFormGroup">
+        <ng-template matStepLabel>Scegli il tipo di prodotto</ng-template>
+
+        <app-prodotti></app-prodotti>
+
+        <div>
+          <button mat-button matStepperPrevious><i class="fa-solid fa-arrow-left" style="border-radius: 50%;background-color: #ccd54f; padding:1rem;color:white"></i></button>
+          <button mat-button matStepperNext [disabled]="stepperDis2"><i class="fa-solid fa-arrow-right" [ngClass]="{'btnStepperDis': stepperDis2, 'btnStepperEna': !stepperDis2}"></i></button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="thirdFormGroup" >
+      <!-- [optional]="!stepperDis3" -->
+      <form [formGroup]="thirdFormGroup">
+        <ng-template matStepLabel>Insierisci i dati per il contratto</ng-template>
+
+        <app-dettagli-contratto-prodotto></app-dettagli-contratto-prodotto>
+
+        <div>
+          <button mat-button matStepperPrevious><i class="fa-solid fa-arrow-left" style="border-radius: 50%;background-color: #ccd54f; padding:1rem;"></i></button>
+          <button mat-button matStepperNext [disabled]="stepperDis3"><i class="fa-solid fa-arrow-right" [ngClass]="{'btnStepperDis': stepperDis3, 'btnStepperEna': !stepperDis3}"></i></button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="fourFormGroup">
+      <form [formGroup]="fourFormGroup">
+        <ng-template matStepLabel>Definisci il sistema di pagamento</ng-template>
+
+        <app-pagamento></app-pagamento>
+
+        <div>
+          <button mat-button matStepperPrevious><i class="fa-solid fa-arrow-left" style="border-radius: 50%;background-color: #ccd54f; padding:1rem;"></i></button>
+          <button mat-button matStepperNext [disabled]="stepperDis4"><i class="fa-solid fa-arrow-right" [ngClass]="{'btnStepperDis': stepperDis4, 'btnStepperEna': !stepperDis4}"></i></button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="fiveFormGroup" >
+      <form [formGroup]="fiveFormGroup">
+        <ng-template matStepLabel>Carica i documenti</ng-template>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Il contratto è stato memorizzato correttamente! Finalizzare caricando i documenti. </h3>
+          </div>
+          <div class="card-body">
+              Premi sul pulsante o trascina i documenti da associare al contratto <br>
+              (formati file consentiti .pdf .jpg .png con dimennsioni inferiore a 5MB)
+          </div>
+        </div>
+
+
+        <app-dropzone uploadType="document"></app-dropzone>
+        
+        <div class="container">
+          <div class="row justify-content-center">
+            <div class="col-12 text-center">
+              <button mat-button class="btn btn-info" (click)="salvadocumenti()">Finalizza Contratto</button>
+
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <button mat-button matStepperPrevious><i class="fa-solid fa-arrow-left" style="border-radius: 50%;background-color: #ccd54f; padding:1rem;"></i></button>
+        </div>
+      </form>
+    </mat-step>
+
+    <!-- <mat-step>
+      <ng-template matStepLabel>Fine</ng-template>
+      <div>
+        <button mat-button matStepperPrevious><i class="fa-solid fa-arrow-left" [class]="ClassStepEna"></i></button>
+      </div>
+    </mat-step> -->
+
+  </mat-stepper>
+
+  </div>
+</div>
+<br>
+

@@ -1,0 +1,41 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import "bootstrap/dist/css/bootstrap.css";
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+/* Importing Bootstrap SCSS file. */
+@import 'bootstrap/scss/bootstrap';
+
+/* Importing Bootstrap SCSS file. */
+@import 'bootstrap/scss/bootstrap';
+
+/* Importing Bootstrap SCSS file. */
+@import 'bootstrap/scss/bootstrap';
+
+/* Fix globale per i backdrop problematici di Angular Material */
+.cdk-overlay-transparent-backdrop.cdk-overlay-backdrop-showing {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* Assicuriamoci che le select Material abbiano z-index appropriato */
+.mat-mdc-select-panel {
+  z-index: 10000 !important;
+}
+
+.cdk-overlay-pane:has(.mat-mdc-select-panel) {
+  z-index: 10000 !important;
+}
+
+/* Fix per backdrop residui */
+.cdk-overlay-backdrop:not([class*="custom"]):not([class*="dialog"]) {
+  &.cdk-overlay-transparent-backdrop {
+    display: none !important;
+    pointer-events: none !important;
+  }
+}

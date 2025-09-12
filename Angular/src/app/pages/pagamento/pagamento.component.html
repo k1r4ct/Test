@@ -1,0 +1,103 @@
+<div class="row">
+  <div @pageTransition>
+    <div class="modern-card" id="tipopagamento">
+      <div class="modern-card-header">
+        <div class="header-content">
+          <mat-icon class="header-icon">payment</mat-icon>
+          <div class="header-text">
+            <h2 class="header-title">Metodo di Pagamento</h2>
+            <p class="header-subtitle">Indica la data di stipula e il metodo di pagamento</p>
+          </div>
+        </div>
+      </div>
+      <div class="modern-card-body">
+        <form [formGroup]="SetOpt" ngNativeValidate class="payment-form">
+
+          <!-- Campo Data Stipula -->
+          <div class="form-field-container">
+            <div class="form-field-wrapper">
+              <div class="field-icon">
+                <mat-icon>event</mat-icon>
+              </div>
+              <div class="field-content">
+                <label class="field-label">Data Stipula Contratto</label>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Seleziona la data</mat-label>
+                  <input matInput 
+                         [matDatepicker]="picker" 
+                         formControlName="data_Pagamento_mat" 
+                         placeholder="gg/mm/aaaa"
+                         readonly
+                         [ngClass]="{'input-error': SetOpt.get('data_Pagamento_mat')?.errors && showError}">
+                  <mat-datepicker-toggle matSuffix [for]="picker">
+                    <mat-icon matDatepickerToggleIcon>calendar_today</mat-icon>
+                  </mat-datepicker-toggle>
+                  <mat-datepicker #picker></mat-datepicker>
+                </mat-form-field>
+                <div *ngIf="SetOpt.get('data_Pagamento_mat')?.hasError('required') && showError" 
+                     class="error-message">
+                  <mat-icon class="error-icon">error</mat-icon>
+                  Questo campo è obbligatorio.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Campo Tipo Pagamento -->
+          <div class="form-field-container">
+            <div class="form-field-wrapper">
+              <div class="field-icon">
+                <mat-icon>credit_card</mat-icon>
+              </div>
+              <div class="field-content">
+                <label class="field-label">Tipo di Pagamento</label>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Seleziona il metodo di pagamento</mat-label>
+                  <mat-select formControlName="Tipo_pagamento" 
+                              [ngClass]="{'input-error': SetOpt.get('Tipo_pagamento')?.errors && showError}">
+                    <mat-option value="">-- Seleziona --</mat-option>
+                    <mat-option *ngFor="let tipo of tipiDiPagamento" 
+                                [value]="tipo.id">
+                      <div class="payment-option">
+                        <mat-icon class="payment-icon">payment</mat-icon>
+                        {{ tipo.tipo_pagamento }}
+                      </div>
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <div *ngIf="SetOpt.get('Tipo_pagamento')?.hasError('required') && showError" 
+                     class="error-message">
+                  <mat-icon class="error-icon">error</mat-icon>
+                  Questo campo è obbligatorio.
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+
+
+
+          <div class="form-actions">
+            <button type="submit" 
+                    (click)="storeOpt()" 
+                    class="btn-modern-primary" 
+                    [disabled]="buttonStoreOpt">
+              <mat-icon>save</mat-icon>
+              <span>Salva Opzioni</span>
+              <div *ngIf="buttonStoreOpt" class="button-loader">
+                <mat-spinner diameter="20"></mat-spinner>
+              </div>
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div [hidden]="matspinner">
+  <mat-spinner  class="centered-element-spinner large-spinner" ></mat-spinner>
+</div>

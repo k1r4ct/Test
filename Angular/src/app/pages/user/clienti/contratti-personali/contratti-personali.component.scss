@@ -1,0 +1,351 @@
+// Modern Contracts Component Styles
+.contracts-container {
+  padding: 20px;
+  //min-height: 100vh;
+  //background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.loading-spinner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.contracts-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Modern Header
+.modern-header {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  color: white;
+  padding: 24px 32px;
+  border: none;
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .header-icon {
+      width: 56px;
+      height: 56px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+
+      .material-icons {
+        font-size: 28px;
+        color: white;
+      }
+    }
+
+    .header-text {
+      flex: 1;
+
+      .card-title {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.2;
+      }
+
+      .card-subtitle {
+        font-size: 14px;
+        opacity: 0.9;
+        margin: 4px 0 0 0;
+        font-weight: 400;
+      }
+    }
+  }
+}
+
+// Modern Body
+.modern-body {
+  padding: 0;
+  background: white;
+}
+
+// Table Container
+.table-container {
+  overflow-x: auto;
+  border-radius: 0 0 20px 20px;
+}
+
+// Modern Table
+.modern-table {
+  width: 100%;
+  background: white;
+  box-shadow: none;
+
+  // Header Row
+  .modern-header-row {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+
+    th {
+      border-bottom: none;
+      padding: 16px 20px;
+      font-weight: 600;
+      color: #4a5568;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+
+      .header-text {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+    }
+  }
+
+  // Data Rows
+  .modern-row {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f1f5f9;
+
+    &:hover {
+      background: #f8fafc;
+      transform: translateY(-1px);
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    td {
+      border-bottom: none;
+      padding: 16px 20px;
+      font-size: 14px;
+      color: #2d3748;
+    }
+  }
+
+  // Column Specific Styles
+  .id-cell {
+    width: 80px;
+
+    .id-badge {
+      //background: linear-gradient(180deg,#268730 10%,#027cad);
+      background: linear-gradient(180deg,#268730 10%,#027cad);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+    }
+  }
+
+  .name-cell, .tax-cell, .date-cell, .product-cell, .seu-cell {
+    .client-info, .tax-info, .date-info, .product-info, .seu-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .material-icons {
+        font-size: 18px;
+        color: #718096;
+      }
+
+      .client-name, .tax-code, .date-text, .product-name, .seu-name {
+        font-weight: 500;
+      }
+    }
+  }
+
+  // Status Badges
+  .status-cell {
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+
+      &.status-attivo, &.status-active {
+        background: #c6f6d5;
+        color: #22543d;
+      }
+
+      &.status-sospeso, &.status-suspended {
+        background: #fed7d7;
+        color: #742a2a;
+      }
+
+      &.status-in-attesa, &.status-pending {
+        background: #feebc8;
+        color: #7b341e;
+      }
+
+      &.status-completato, &.status-completed {
+        background: #bee3f8;
+        color: #2c5282;
+      }
+
+      // Default status
+      &:not([class*="status-"]) {
+        background: #e2e8f0;
+        color: #4a5568;
+      }
+    }
+  }
+}
+
+// Pagination
+.pagination-container {
+  padding: 20px 32px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+
+  .modern-paginator {
+    background: transparent;
+    border: none;
+
+    ::ng-deep {
+      .mat-paginator-container {
+        min-height: 56px;
+        padding: 0;
+      }
+
+      .mat-paginator-page-size {
+        color: #4a5568;
+      }
+
+      .mat-paginator-range-label {
+        color: #4a5568;
+        margin: 0 24px;
+      }
+
+      .mat-icon-button {
+        color: #667eea;
+
+        &:disabled {
+          color: #cbd5e0;
+        }
+      }
+
+      .mat-paginator-page-size-select {
+        .mat-select-trigger {
+          color: #4a5568;
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .contracts-container {
+    padding: 16px;
+  }
+
+  .modern-header {
+    padding: 20px 24px;
+
+    .header-content {
+      .header-icon {
+        width: 48px;
+        height: 48px;
+
+        .material-icons {
+          font-size: 24px;
+        }
+      }
+
+      .header-text {
+        .card-title {
+          font-size: 20px;
+        }
+
+        .card-subtitle {
+          font-size: 13px;
+        }
+      }
+    }
+  }
+
+  .modern-table {
+    .modern-header-row th {
+      padding: 12px 16px;
+      font-size: 12px;
+    }
+
+    .modern-row td {
+      padding: 12px 16px;
+      font-size: 13px;
+    }
+
+    .name-cell, .tax-cell, .date-cell, .product-cell, .seu-cell {
+      .client-info, .tax-info, .date-info, .product-info, .seu-info {
+        .material-icons {
+          font-size: 16px;
+        }
+      }
+    }
+  }
+
+  .pagination-container {
+    padding: 16px 24px;
+  }
+}
+
+// Loading State
+.mat-spinner {
+  ::ng-deep circle {
+    stroke: #667eea;
+  }
+}
+
+// Animation for rows
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modern-row {
+  animation: slideInUp 0.3s ease-out;
+}
+
+// Scrollbar styling for table container
+.table-container {
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 4px;
+
+    &:hover {
+      background: #a0aec0;
+    }
+  }
+}

@@ -1,0 +1,382 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.lead-conversion-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 
+      0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+  }
+}
+
+.chart-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.5rem;
+  gap: 1.5rem;
+}
+
+.chart-header {
+  text-align: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+
+  .chart-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 0.5rem 0;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.025em;
+  }
+
+  .chart-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+    font-weight: 400;
+    line-height: 1.4;
+  }
+}
+
+.chart-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+// Stati di caricamento ed errore
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 1rem;
+  padding: 2rem;
+
+  i {
+    font-size: 2.5rem;
+    opacity: 0.6;
+  }
+
+  span {
+    font-size: 0.875rem;
+    font-weight: 500;
+    opacity: 0.8;
+  }
+}
+
+.loading-container {
+  i {
+    color: #3b82f6;
+    animation: spin 1s linear infinite;
+  }
+
+  .loading-text {
+    color: #6b7280;
+  }
+}
+
+.error-container {
+  i {
+    color: #ef4444;
+  }
+
+  .error-text {
+    color: #dc2626;
+  }
+}
+
+.chart-display {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 1.5rem;
+}
+
+.chart-component {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+  padding: 1rem;
+
+  ::ng-deep {
+    canvas {
+      max-height: 300px !important;
+      transition: all 0.3s ease;
+    }
+
+    .p-chart {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  }
+}
+
+.stats-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(229, 231, 235, 0.6);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.75rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    line-height: 1.2;
+  }
+}
+
+// Responsive design - OTTIMIZZATO
+@media (max-width: 1200px) {
+  .chart-wrapper {
+    padding: 1.25rem;
+    gap: 1.25rem;
+  }
+  
+  .chart-component {
+    min-height: 220px;
+    
+    ::ng-deep canvas {
+      max-height: 250px !important;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .lead-conversion-container {
+    &:hover {
+      transform: none; // Disabilita hover su mobile
+    }
+  }
+  
+  .chart-wrapper {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .chart-header {
+    padding-bottom: 0.75rem;
+    
+    .chart-title {
+      font-size: 1.25rem;
+      line-height: 1.3;
+    }
+
+    .chart-subtitle {
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+  }
+
+  .stats-summary {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .stat-item {
+    padding: 0.5rem;
+
+    .stat-value {
+      font-size: 1.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      line-height: 1.1;
+    }
+    
+    &:hover {
+      transform: none; // Disabilita hover su tablet
+    }
+  }
+
+  .chart-component {
+    min-height: 180px;
+    padding: 0.5rem;
+
+    ::ng-deep canvas {
+      max-height: 180px !important;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .chart-wrapper {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  .chart-header {
+    .chart-title {
+      font-size: 1.125rem;
+    }
+  }
+
+  .stats-summary {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .stat-item {
+    padding: 0.75rem;
+    
+    .stat-value {
+      font-size: 1.375rem;
+    }
+    
+    .stat-label {
+      font-size: 0.75rem;
+    }
+  }
+  
+  .chart-component {
+    min-height: 160px;
+    padding: 0.25rem;
+
+    ::ng-deep canvas {
+      max-height: 160px !important;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-wrapper {
+    padding: 0.5rem;
+  }
+  
+  .chart-header {
+    text-align: left;
+    
+    .chart-title {
+      font-size: 1rem;
+    }
+    
+    .chart-subtitle {
+      font-size: 0.75rem;
+    }
+  }
+
+  .stat-item {
+    .stat-value {
+      font-size: 1.25rem;
+    }
+    
+    .stat-label {
+      font-size: 0.7rem;
+    }
+  }
+}
+
+// Animazioni
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .lead-conversion-container {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.3),
+      0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  }
+
+  .chart-header {
+    border-bottom-color: rgba(75, 85, 99, 0.6);
+
+    .chart-title {
+      color: #f9fafb;
+    }
+
+    .chart-subtitle {
+      color: #d1d5db;
+    }
+  }
+
+  .stats-summary {
+    background: rgba(31, 41, 55, 0.8);
+    border-color: rgba(75, 85, 99, 0.6);
+  }
+
+  .stat-item {
+    background: #374151;
+
+    .stat-value {
+      color: #f9fafb;
+    }
+
+    .stat-label {
+      color: #d1d5db;
+    }
+  }
+
+  .loading-container .loading-text,
+  .error-container .error-text {
+    color: #d1d5db;
+  }
+}

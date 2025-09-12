@@ -1,0 +1,154 @@
+<div class="contacts-container">
+  <div class="contacts-card">
+    <div class="card-header modern-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="material-icons">contacts</i>
+        </div>
+        <div class="header-text">
+          <h1 class="card-title">
+            <span *ngIf="ruoloUtente == 'Cliente'">Amici</span>
+            <span *ngIf="ruoloUtente != 'Cliente'">Leads</span>
+            Personali Invitati
+          </h1>
+          <p class="card-subtitle">Gestisci i tuoi contatti</p>
+        </div>
+      </div>
+      
+      <div class="filters-container">
+        <p-multiSelect
+          [options]="Leads"
+          [(ngModel)]="leadsSelected"
+          optionLabel="nominativoLead"
+          display="chip"
+          placeholder="Seleziona Lead"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
+
+        <p-multiSelect
+          [options]="statiUnivoci"
+          [(ngModel)]="statusSelected"
+          optionLabel="label"
+          display="chip"
+          placeholder="Seleziona Stato"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
+
+        <p-multiSelect
+          *ngIf="ruoloUtente != 'Cliente'"
+          [options]="seuUnivoci"
+          [(ngModel)]="seuSelected"
+          optionLabel="nome"
+          display="chip"
+          placeholder="Seleziona Seu"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
+
+        <p-datepicker
+          [(ngModel)]="DTRGinseritoil"
+          [iconDisplay]="'input'"
+          [showIcon]="true"
+          inputId="icondisplay"
+          appendTo="body"
+          dateFormat="dd/mm/yy"
+          (onSelect)="applyFilter()"
+          selectionMode="range"
+          class="modern-filter"
+        />
+
+        <p-button label="Cancella" (onClick)="clearFilter()" class="clear-button" />
+      </div>
+    </div>
+    
+    <div class="card-body modern-body">
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" class="modern-table">
+          
+          <ng-container matColumnDef="nominativo">
+            <th mat-header-cell *matHeaderCellDef class="name-column">
+              <span class="header-text">Nominativo</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="name-cell">
+              <div class="contact-info">
+                <i class="material-icons contact-icon">person</i>
+                <span class="contact-name">{{ lead.nominativoLead }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef class="email-column">
+              <span class="header-text">Email</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="email-cell">
+              <div class="email-info">
+                <i class="material-icons email-icon">email</i>
+                <a href="mailto:{{ lead.email }}" class="email-link">{{ lead.email }}</a>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="telefono">
+            <th mat-header-cell *matHeaderCellDef class="phone-column">
+              <span class="header-text">Telefono</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="phone-cell">
+              <div class="phone-info">
+                <i class="material-icons phone-icon">phone</i>
+                <a href="tel:{{ lead.telefono }}" class="phone-link">{{ lead.telefono }}</a>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="inserito">
+            <th mat-header-cell *matHeaderCellDef class="date-column">
+              <span class="header-text">Inserito</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="date-cell">
+              <div class="date-info">
+                <i class="material-icons date-icon">event</i>
+                <span class="date-text">{{ lead.inserito }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="assegnato_a">
+            <th mat-header-cell *matHeaderCellDef class="assigned-column">
+              <span class="header-text">Assegnato a</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="assigned-cell">
+              <div class="assigned-info">
+                <i class="material-icons assigned-icon">assignment_ind</i>
+                <span class="assigned-name">{{ lead.assegnato_a }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="microstato">
+            <th mat-header-cell *matHeaderCellDef class="status-column">
+              <span class="header-text">Stato</span>
+            </th>
+            <td mat-cell *matCellDef="let lead" class="status-cell">
+              <span class="status-badge" [class]="'status-' + lead.microstato?.toLowerCase()">
+                {{ lead.microstato }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns" [appLeadRowColor]="row" class="modern-row"></tr>
+        </table>
+      </div>
+      
+      <div class="pagination-container">
+        <mat-paginator #paginator class="modern-paginator" [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+      </div>
+    </div>
+  </div>
+</div>

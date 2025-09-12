@@ -1,0 +1,30 @@
+<div class="widget center">
+    <div class="blur"></div>
+    <div class="text center">
+        <h2 mat-dialog-title >Conferma Eliminazione</h2>
+
+        <div mat-dialog-content *ngIf="data.reparto == 'domande'">
+            <h1>Sei sicuro di voler eliminare questa domanda?</h1>
+        </div>
+        <div mat-dialog-content *ngIf="data.reparto == 'prodotti'">
+            <h1 *ngIf="data.bloccatoDaContratti">Il Prodotto è presente in uno o piu contratti, non è possibile eliminarlo, puoi renderlo inattivo, procedere? </h1>
+            <h1 *ngIf="!data.bloccatoDaContratti">Sei sicuro di voler eliminare questo prodotto? <span style="color:red;font-weight: 900;">{{data.descrizione}}</span></h1>
+        </div>
+        <div mat-dialog-content *ngIf="data.reparto == 'allegatocontratto'">
+            <h1>Sei sicuro di voler eliminare questo allegato?</h1>
+        </div>
+    </div>
+        <div mat-dialog-actions>
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-6 text-center button_left p-1 modal-default-button">
+                        <button  mat-button [mat-dialog-close]="false">Annulla</button>
+                    </div>
+                    <div class="col-6 text-center button_right p-1 modal-default-button">
+                        <button  *ngIf="!data.bloccatoDaContratti" mat-button [mat-dialog-close]="true">Elimina</button>
+                        <button  *ngIf="data.bloccatoDaContratti" mat-button [mat-dialog-close]="true">Disabilita</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+</div>

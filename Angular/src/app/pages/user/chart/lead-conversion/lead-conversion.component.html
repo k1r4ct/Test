@@ -1,0 +1,47 @@
+<div class="lead-conversion-container">
+  <div class="chart-wrapper">
+    <div class="chart-header">
+      <h3 class="chart-title">Conversione Lead</h3>
+      <p class="chart-subtitle">Analisi delle conversioni dei lead in contratti</p>
+    </div>
+    
+    <div class="chart-content">
+      @if (isLoading()) {
+        <div class="loading-container">
+          <i class="pi pi-spinner pi-spin" aria-label="Caricamento..."></i>
+          <span class="loading-text">Caricamento dati...</span>
+        </div>
+      } @else if (hasError()) {
+        <div class="error-container">
+          <i class="pi pi-exclamation-triangle" aria-label="Errore"></i>
+          <span class="error-text">Errore nel caricamento dei dati</span>
+        </div>
+      } @else {
+        <div class="chart-display">
+          <p-chart 
+            type="doughnut" 
+            [data]="chartData()" 
+            [options]="chartOptions()" 
+            class="chart-component"
+            [ariaLabel]="'Grafico conversione lead: ' + chartSummary()"
+          />
+          
+          <div class="stats-summary">
+            <div class="stat-item">
+              <span class="stat-value">{{ totalLeads() }}</span>
+              <span class="stat-label">Lead Totali</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ convertedLeads() }}</span>
+              <span class="stat-label">Lead Convertiti</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ conversionRate() }}%</span>
+              <span class="stat-label">Tasso Conversione</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

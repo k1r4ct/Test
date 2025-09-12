@@ -1,0 +1,65 @@
+// @import "general-dashboard/card";
+
+@import "general-dashboard/variabili";
+@import "general-dashboard/mixins";
+@import "general-dashboard/mixins/buttons";
+@import "general-dashboard/mixins/vendor-prefixes";
+@import "general-dashboard/mixins/inputs";
+@import "general-dashboard/mixins/page-header";
+@import "general-dashboard/mixins/dropdown";
+@import "general-dashboard/mixins/cards";
+@import "general-dashboard/mixins/transparency";
+
+
+// Core CSS
+@import "general-dashboard/misc";
+
+@import "general-dashboard/navbar";
+@import "general-dashboard/nucleo-outline";
+@import "general-dashboard/sidebar-panel";
+
+
+@import "general-dashboard/card/card-first";
+
+@import "general-dashboard/responsive";
+
+@import "general-dashboard/_inputs";
+@import "general-dashboard/_alerts";
+@import "general-dashboard/_animated-buttons";
+@import "general-dashboard/_buttons";
+// @import "general-dashboard/_checkboxes-radio";
+@import "general-dashboard/_dropdown";
+@import "general-dashboard/_fixed-plugin";
+@import "general-dashboard/_footers";
+@import "general-dashboard/_images";
+@import "general-dashboard/_mixins";
+@import "general-dashboard/_page-header";
+@import "general-dashboard/_typography";
+// CARDS
+@import "general-dashboard/card/card-plain";
+@import "general-dashboard/card/card-chart";
+@import "general-dashboard/card/card-user";
+@import "general-dashboard/card/card-map";
+@import "general-dashboard/card/card-stats";
+@import "general-dashboard/card";
+@import "general-dashboard/tables";
+
+@import "general-dashboard/angular/plugin-ngx-toastr";
+@import "general-dashboard/angular/sidebar-and-main-panel";
+@import "general-dashboard/angular/dropdown";
+@import "general-dashboard/angular/inputs";
+@import "general-dashboard/angular/fixed-plugin";
+
+//TABLE
+@import "general-dashboard/table/table";
+//TIMER
+@import "general-dashboard/timer.scss";
+//calendar
+@import "../../../node_modules/angular-calendar/css/angular-calendar.css";
+
+//NOTIFICATIONS
+@import "general-dashboard/notifications.scss";
+
+//ICON PRIME
+@import "primeicons/primeicons.css";
+

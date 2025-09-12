@@ -1,0 +1,75 @@
+
+<nav class="modern-navbar navbar-absolute fixed-top">
+  <div class="navbar-content">
+    
+    <!-- Sezione sinistra: Toggle sidebar + Branding con tutti i testi -->
+    <div class="navbar-start">
+      <!-- Pulsante menu sidebar (versione compatibile) -->
+      <div class="sidebar-toggle-wrapper navbar-toggle">
+        <button type="button" 
+                class="modern-sidebar-toggle" 
+                (click)="sidebarToggle()"
+                title="Apri/Chiudi menu">
+          <span class="toggle-bar bar1"></span>
+          <span class="toggle-bar bar2"></span>
+          <span class="toggle-bar bar3"></span>
+        </button>
+      </div>
+      
+      <!-- Branding con tutti i testi originali -->
+      <div class="navbar-brand-modern">
+        <span class="page-title">{{getTitle()}}</span>
+        <span class="separator">/</span>
+        <span class="user-name" style="color:#ccd54f">{{Nome}}</span>
+        <span class="separator">-</span>
+        <span class="user-role" style="color:#6d9ebc">{{Ruolo}}</span>
+      </div>
+    </div>
+    
+    <!-- Spaziatore flessibile -->
+    <span class="navbar-spacer"></span>
+    
+    <!-- Sezione destra: Notifiche + Menu mobile -->
+    <div class="navbar-end">
+      <!-- Notifiche (mantenuto componente originale) -->
+      <!-- <div class="notifications-section">
+        <app-message-notification></app-message-notification>
+      </div> -->
+
+      <!-- Pulsante menu mobile (versione compatibile) -->
+      <div class="mobile-toggle-wrapper">
+        <button type="button" 
+                class="modern-mobile-toggle"
+                (click)="collapse()"
+                [attr.aria-expanded]="!isCollapsed" 
+                aria-controls="collapseExample"
+                title="Menu mobile">
+          <span class="mobile-toggle-bar" [class.rotate]="!isCollapsed"></span>
+          <span class="mobile-toggle-bar" [class.hide]="!isCollapsed"></span>
+          <span class="mobile-toggle-bar" [class.rotate-alt]="!isCollapsed"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Menu mobile collassabile -->
+    <div class="mobile-menu-collapse" 
+         id="collapseExample"
+         [ngbCollapse]="isCollapsed">
+      <div class="mobile-menu-content">
+        <!-- Informazioni utente ripetute per mobile -->
+        <div class="mobile-user-info">
+          <div class="user-chips-mobile">
+            <div class="user-chip" *ngIf="Nome">
+              <i class="icon person-icon">👤</i>
+              {{Nome}}
+            </div>
+            <div class="role-chip" *ngIf="Ruolo">
+              <i class="icon badge-icon">🏷️</i>
+              {{Ruolo}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

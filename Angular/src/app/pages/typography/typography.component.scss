@@ -1,0 +1,4 @@
+:host * { 
+    position:relative;/* Seleziona tutti gli elementi discendenti del componente */
+    z-index: 10!important; /* Imposta lo z-index desiderato */
+  }

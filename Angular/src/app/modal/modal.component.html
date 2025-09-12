@@ -1,0 +1,358 @@
+<div *ngIf="data.reparto==='ricercaContratti'">
+  <div mat-dialog-content>
+    <div class="card contrattoselezionato">
+      <div class="card-body">
+        <div class="container ms-auto">
+          <div class="row justify-content-center">
+            <h2 mat-dialog-title>Dettagli Contratto</h2>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">ID</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.id}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">Cliente/Rag.Sociale</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.cliente}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">Contraente</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.contraente}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">Ragione Sociale</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.ragione_sociale}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div> -->
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">SEU</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.seu}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">Partita Iva</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.pivacf}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">Prodotto</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.prodotto}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">Macro Prodotto</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.macroprodotto}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">Macro Stato</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.macrostato}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">Data Inserimento Contratto</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.datains}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">Stato Contratto</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.row.stato}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <h2>Dettagli contraente</h2>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12"
+              *ngFor="let dettaglio of data.row.dettagli_contraente | keyvalue">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">{{ dettaglio.key }}</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="{{ dettaglio.key }}"
+                      value="{{ dettaglio.value }}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <h2>Dettagli Cliente</h2>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12"
+              *ngFor="let dettaglio of data.row.user | keyvalue">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">{{ dettaglio.key }}</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="{{ dettaglio.key }}"
+                      value="{{ dettaglio.value }}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <h2>Domande Contratto</h2>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12"
+              *ngFor="let risposta of data.row.specific_data">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">{{ risposta.domanda }}</label>
+                  </div>
+                  <div class="col-9">
+                    <input class="form-control" readonly *ngIf="risposta.tipo === 'number'" type="number"
+                      [value]="risposta.risposta">
+                    <input class="form-check-input form-check form-switch " disabled *ngIf="risposta.tipo === 'boolean'"
+                      type="checkbox" [checked]="risposta.risposta">
+                    <input class="form-control" readonly *ngIf="risposta.tipo === 'text'" type="text"
+                      [value]="risposta.risposta">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div mat-dialog-actions>
+    <button class="btn bottoniFormConferma float-end " mat-button (click)="onClose()">Chiudi</button>
+  </div>
+</div>
+<div *ngIf="data.reparto==='leads'">
+  <div mat-dialog-content>
+    <div class="card contrattoselezionato">
+      <div class="card-body">
+        <div class="container ms-auto">
+          <div class="row justify-content-center">
+            <h2 *ngIf="ruoloUserText=='Cliente'" mat-dialog-title>Dettagli Amico</h2>
+            <h2 *ngIf="ruoloUserText!='Cliente'" mat-dialog-title>Dettagli Lead</h2>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">NOME</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.lead.nome}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">COGNOME</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.lead.cognome}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">EMAIL</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.lead.email}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">TELEFONO</label>
+                  </div>
+                  <div class="col-9">
+                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                      value="{{data.lead.telefono}}" readonly>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
+              <div class="form-group">
+                <div class="row">
+                  <div class="col-3">
+                    <label class="uppercase">ASSEGNATO A</label>
+                  </div>
+                  <div class="col-8 d-flex align-items-center">
+                    <mat-form-field appearance="outline" style="flex: 1 0 auto;">
+                      <mat-label>{{data.lead.assegnato_a}}</mat-label>
+                      <mat-select (selectionChange)="cambiaAssegnazione($event.value,data.lead.id)" [disabled]="attivaRiassegnazione">
+                        <mat-option value="{{data.lead.assegnato_a}}" selected disabled>
+                          {{data.lead.assegnato_a}}</mat-option>
+                        <mat-option *ngFor="let user of userForLeads" [value]="{stato:user.id}">{{user.nome}}
+                          {{user.cognome}}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+                
+                <form [formGroup]="form" (ngSubmit)="salvaLead()">
+                  <div class="row">
+                    <div class="col-3">
+                      <label class="uppercase">STATO</label>
+                    </div>
+                    <div class="col-9">
+                      <mat-form-field appearance="outline" style="flex: 0 1 auto;">
+                        <mat-label>{{data.lead.microstato}}</mat-label>
+                        <mat-select formControlName="stato_id" (selectionChange)="cambiaStato($event,data)">
+                          <mat-option [value]="{ id: data.lead.stato, microstato: data.lead.microstato }" selected
+                            disabled> {{data.lead.microstato}}</mat-option>
+                          <mat-option *ngFor="let stato of statiLead"
+                            [value]="{stato:stato.stato,id:stato.id}">{{stato.stato}}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                  
+                  <div class="row" [hidden]="showCalendar">
+                    <div class="col-3">
+                      <label class="uppercase">Data Appuntamento</label>
+                    </div>
+                    <div class="col-9">
+
+                      <mat-form-field class="w-100">
+                        <!-- Input per la selezione della data -->
+                        <input matInput [matDatepicker]="picker" placeholder="Seleziona la data"
+                          formControlName="data_appuntamento_mat" (click)="picker.open()" />
+                        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                        <mat-datepicker #picker></mat-datepicker>
+                      </mat-form-field>
+
+                      <mat-form-field class="w-100">
+                        <!-- Input per la selezione dell'orario -->
+                        <input matInput type="time" placeholder="Seleziona l'ora"
+                          formControlName="ora_appuntamento_mat" />
+                      </mat-form-field>
+
+                      <div class="col-12 text-center">
+                      </div>
+
+                    </div>
+                  </div>
+                  <div class="row" *ngIf="data.lead.microstato=='Appuntamento Preso'">
+                    <div class="col-3">
+                      <label class="uppercase">DATA APPUNTAMENTO</label>
+                    </div>
+                    <div class="col-9">
+                      <input type="text" class="form-control input" Name="data_appuntamentoView" placeholder="Data Appuntamento"
+                        value="{{data.lead.data_appuntamento}} - {{data.lead.ora_appuntamento}}" readonly>
+                    </div>
+                  </div>
+                  <button mat-button [mat-dialog-close]="false">Chiudi</button>
+                  <button mat-raised-button color="warn" class="text-center" type="submit">
+                    Salva
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

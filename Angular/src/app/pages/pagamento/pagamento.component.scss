@@ -1,0 +1,478 @@
+// Modern Card Styles
+.modern-card {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.modern-card-header {
+  //background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg,#268730 10%,#027cad);
+  padding: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .header-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  .header-text {
+    flex: 1;
+  }
+
+  .header-title {
+    color: white;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .header-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+}
+
+.modern-card-body {
+  background: white;
+  padding: 2rem;
+  min-height: 400px;
+}
+
+// Payment Form
+.payment-form {
+  .form-field-container {
+    margin-bottom: 2rem;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border-color: rgba(102, 126, 234, 0.2);
+    }
+  }
+
+  .form-field-wrapper {
+    display: flex;
+    align-items: flex-start;
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+
+  .field-icon {
+    //background: linear-gradient(180deg,#268730 10%,#027cad);
+    background: linear-gradient(180deg,#268730 10%,#027cad);
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+
+    mat-icon {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+
+  .field-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .field-label {
+    display: block;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .full-width {
+    width: 100%;
+
+    .mat-mdc-form-field-flex {
+      background: #f8f9fa;
+      border-radius: 10px;
+      border: 2px solid #e9ecef;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: #6c757d;
+        background: white;
+      }
+    }
+
+    &.mat-focused .mat-mdc-form-field-flex {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      background: white;
+    }
+
+    .mat-mdc-input-element {
+      color: #495057;
+      font-weight: 500;
+
+      &::placeholder {
+        color: #6c757d;
+        font-style: italic;
+      }
+    }
+
+    // Datepicker icon styling
+    .mat-datepicker-toggle {
+      .mat-mdc-icon-button {
+        color: #667eea;
+        
+        &:hover {
+          background: rgba(102, 126, 234, 0.1);
+        }
+      }
+    }
+
+    .mat-mdc-select {
+      .mat-mdc-select-trigger {
+        .mat-mdc-select-value {
+          color: #495057;
+          font-weight: 500;
+        }
+
+        .mat-mdc-select-arrow {
+          color: #667eea;
+        }
+      }
+    }
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #dc3545;
+    font-size: 0.8rem;
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background: rgba(220, 53, 69, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid #dc3545;
+
+    .error-icon {
+      font-size: 1rem;
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+}
+
+// Payment Option Styling
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+
+  .payment-icon {
+    color: #667eea;
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+// Form Actions
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.btn-modern-primary {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(40, 167, 69, 0.4);
+    background: linear-gradient(135deg, #218838 0%, #1bb583 100%);
+  }
+
+  &:active {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .button-loader {
+    position: absolute;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+  }
+}
+
+// Spinner Styles
+.large-spinner {
+  width: 170px !important;
+  height: 170px !important;
+}
+
+.centered-element-spinner {
+  left: calc(50% - 85px) !important;
+  width: 170px !important;
+  z-index: 100 !important;
+  position: fixed !important;
+  top: 50% !important;
+  transform: translateY(-50%);
+}
+
+// Override Material Design styles
+::ng-deep {
+  .tipopagamentoload {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    filter: blur(10px);
+  }
+
+  .ngb-datepicker {
+    z-index: 9999 !important;
+  }
+
+  // Material Form Field overrides
+  .payment-form .full-width {
+    .mat-mdc-form-field-subscript-wrapper {
+      display: none !important;
+    }
+
+    .mat-mdc-form-field-bottom-align::before {
+      display: none !important;
+    }
+
+    .mat-mdc-form-field-outline {
+      display: none !important;
+    }
+
+    .mat-mdc-form-field-outline-start,
+    .mat-mdc-form-field-outline-notch,
+    .mat-mdc-form-field-outline-end {
+      display: none !important;
+    }
+  }
+
+  // Material Select Panel styling
+  .mat-mdc-select-panel {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e9ecef;
+
+    .mat-mdc-option {
+      &:hover {
+        background: rgba(102, 126, 234, 0.1);
+      }
+
+      &.mat-mdc-option-active {
+        background: rgba(102, 126, 234, 0.15);
+      }
+    }
+  }
+
+  // Material Datepicker styling
+  .mat-datepicker-popup {
+    .mat-calendar {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+
+      .mat-calendar-header {
+        //background: linear-gradient(180deg,#268730 10%,#027cad);
+        background: linear-gradient(180deg,#268730 10%,#027cad);
+        color: white;
+        padding: 1rem;
+
+        .mat-calendar-controls {
+          color: white;
+        }
+
+        .mat-calendar-period-button,
+        .mat-calendar-previous-button,
+        .mat-calendar-next-button {
+          color: white;
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.1);
+          }
+        }
+      }
+
+      .mat-calendar-content {
+        padding: 1rem;
+
+        .mat-calendar-table {
+          .mat-calendar-body-cell {
+            &:hover {
+              background: rgba(102, 126, 234, 0.1);
+              border-radius: 50%;
+            }
+
+            &.mat-calendar-body-selected {
+              background: #667eea;
+              color: white;
+              border-radius: 50%;
+            }
+
+            &.mat-calendar-body-today:not(.mat-calendar-body-selected) {
+              border: 2px solid #667eea;
+              border-radius: 50%;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .modern-card-header {
+    padding: 1.5rem;
+
+    .header-content {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.75rem;
+    }
+
+    .header-icon {
+      font-size: 1.75rem;
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    .header-title {
+      font-size: 1.25rem;
+    }
+  }
+
+  .modern-card-body {
+    padding: 1.5rem;
+  }
+
+  .payment-form {
+    .form-field-wrapper {
+      padding: 1rem;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .field-icon {
+      align-self: center;
+    }
+  }
+
+  .btn-modern-primary {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-card-header {
+    padding: 1rem;
+
+    .header-title {
+      font-size: 1.1rem;
+    }
+
+    .header-subtitle {
+      font-size: 0.8rem;
+    }
+  }
+
+  .modern-card-body {
+    padding: 1rem;
+  }
+
+  .payment-form {
+    .form-field-container {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-field-wrapper {
+      padding: 0.75rem;
+    }
+
+    .field-icon {
+      width: 35px;
+      height: 35px;
+
+      mat-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+  }
+}

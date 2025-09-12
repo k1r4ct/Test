@@ -1,0 +1,89 @@
+<div class="card card-user">
+    <div class="card-header text-center">
+        <h2 class="card-title">Crea Nuovo Prodotto</h2>
+    </div>
+    <div class="card-body text-center">
+        <form [formGroup]="productForm" (ngSubmit)="submitForm()">
+            <div class="container">
+                <div class="row mb-4">
+                    <!-- <div class="col-md-4">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Categoria Fornitore</mat-label>
+                    <mat-select formControlName="supplierCategory">
+                      <mat-option *ngFor="let category of prodottiNew.supplier_category" [value]="category.id">{{ category.nome_categoria }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div> -->
+                    <div class="col-md-6">
+                        <mat-form-field appearance="outline" class="w-50">
+                            <mat-label>Fornitore</mat-label>
+                            <mat-select formControlName="supplier" (selectionChange)="fornitore($event.value)">
+                                <mat-option *ngFor="let supplier of prodottiNew.supplier" [value]="supplier.id">{{
+                                    supplier.nome_fornitore }}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                    <div class="col-md-6">
+                        <mat-form-field appearance="outline" class="w-50">
+                            <mat-label>Macro Prodotto</mat-label>
+                            <mat-select (click)="controllamacro()" formControlName="macroProduct">
+                                <mat-option  *ngFor="let macro of macroProduct" [value]="macro.id">{{ macro.descrizione }}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <mat-form-field appearance="outline" class="w-50">
+                            <mat-label>Descrizione</mat-label>
+                            <input matInput formControlName="descrizione" required>
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <mat-form-field appearance="outline" class="w-50">
+                            <mat-label>Gettone</mat-label>
+                            <input matInput formControlName="gettone">
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <mat-form-field appearance="outline" class="w-50">
+                            <mat-label>Inizio Offerta</mat-label>
+                            <mat-datepicker #inizioPicker></mat-datepicker>
+                            <input matInput class="w-50" formControlName="inizioOfferta" [matDatepicker]="inizioPicker" placeholder="gg-mm-aaaa" (click)="inizioPicker.open()" [ngClass]="{'input-error': productForm.get('inizioOfferta')?.errors && showError }"/>            
+
+                        </mat-form-field>
+                    </div>
+                    <div class="col-md-6">
+                        <mat-form-field appearance="outline" class="w-50">
+                            <mat-label>Fine Offerta</mat-label>
+                            <mat-datepicker #finePicker></mat-datepicker>
+                            <input matInput class="w-50" formControlName="fineOfferta" [matDatepicker]="finePicker" placeholder="gg-mm-aaaa" (click)="finePicker.open()" [ngClass]="{'input-error': productForm.get('fineOfferta')?.errors && showError }"/>            
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <!-- <mat-checkbox>Attivo</mat-checkbox> -->
+                        <mat-label>Prodotto Attivo</mat-label><br>
+                        <mat-slide-toggle class="example-margin mat-slide-toggle mt-2" formControlName="attivo">
+                        </mat-slide-toggle>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 d-flex justify-content-center"> <button mat-raised-button color="primary"
+                            type="submit">Crea Prodotto</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

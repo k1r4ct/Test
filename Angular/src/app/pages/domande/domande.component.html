@@ -1,0 +1,516 @@
+<!-- Header moderno con hero section -->
+<div class="modern-header">
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">
+        <mat-icon class="hero-icon">quiz</mat-icon>
+        Gestione Domande
+      </h1>
+      <p class="hero-subtitle">
+        Crea e gestisci le domande aggiuntive per tipologia di Contratto / Prodotto
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Sezione principale con design moderno -->
+<div class="main-content" [@pageTransition]="state">
+  
+  <!-- Form creazione domande con design card moderno -->
+  <mat-card class="modern-card create-question-card">
+    <mat-card-header class="card-header-modern">
+      <div mat-card-avatar class="card-avatar create-avatar">
+        <mat-icon>add_circle</mat-icon>
+      </div>
+      <mat-card-title class="card-title">CREA NUOVA DOMANDA</mat-card-title>
+      <mat-card-subtitle class="card-subtitle">
+        Configura una nuova domanda per la categoria selezionata
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <div class="form-container">
+      <div *ngIf="form">
+        <form [formGroup]="form" class="create-question-form" [hidden]="hideForm">
+          <div class="form-grid">
+            <!-- Selezione categoria -->
+            <div class="form-section">
+              <h3 class="section-title">
+                <mat-icon class="section-icon">category</mat-icon>
+                Categoria
+              </h3>
+              <div class="custom-select-wrapper">
+                <label class="custom-select-label">Seleziona Categoria</label>
+                <select 
+                  class="custom-select" 
+                  [value]="selectedCategory" 
+                  (change)="onCategorySelectNative($event)"
+                  *ngIf="categorie && categorie.length > 0"
+                >
+                  <option value="">-- Seleziona una categoria --</option>
+                  <option *ngFor="let categoria of categorie" [value]="categoria.id">
+                    {{ categoria.descrizione }}
+                  </option>
+                </select>
+                <mat-icon class="custom-select-icon">folder</mat-icon>
+              </div>
+            </div>
+
+            <!-- Configurazione domanda -->
+            <div *ngIf="selectedCategory" class="form-section">
+              <h3 class="section-title">
+                <mat-icon class="section-icon">help_outline</mat-icon>
+                Configurazione Domanda
+              </h3>
+              
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="modern-field">
+                  <mat-label>Testo Domanda</mat-label>
+                  <input matInput type="text" id="text" formControlName="text" placeholder="Inserisci il testo della domanda">
+                  <mat-icon matSuffix>edit</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <div class="custom-select-wrapper">
+                  <label class="custom-select-label">Tipo Risposta</label>
+                  <select class="custom-select" formControlName="type">
+                    <option value="text">Testo</option>
+                    <option value="boolean">Booleano</option>
+                    <option value="number">Numero</option>
+                    <option value="select">Select</option>
+                  </select>
+                  <mat-icon class="custom-select-icon">format_list_bulleted</mat-icon>
+                </div>
+
+                <div class="custom-select-wrapper">
+                  <label class="custom-select-label">Obbligatorio</label>
+                  <select class="custom-select" formControlName="obbligatorio">
+                    <option value="1">Sì</option>
+                    <option value="0">No</option>
+                  </select>
+                  <mat-icon class="custom-select-icon">priority_high</mat-icon>
+                </div>
+              </div>
+
+              <!-- Opzioni per select -->
+              <div *ngIf="form.get('type')?.value === 'select'" class="options-section">
+                <h4 class="subsection-title">
+                  <mat-icon class="subsection-icon">list_alt</mat-icon>
+                  Opzioni di Selezione
+                </h4>
+                
+                <div formArrayName="options" class="options-container">
+                  <div *ngFor="let option of options.controls; let i = index" class="option-item">
+                    <mat-form-field appearance="outline" class="option-field">
+                      <mat-label>Opzione {{ i + 1 }}</mat-label>
+                      <input matInput type="text" [formControlName]="i" placeholder="Inserisci opzione">
+                      <mat-icon matSuffix>label</mat-icon>
+                    </mat-form-field>
+                    <button mat-icon-button color="warn" (click)="removeOption(i)" class="remove-option-btn" matTooltip="Rimuovi opzione">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                  
+                  <button mat-stroked-button color="primary" (click)="addOption()" class="add-option-btn">
+                    <mat-icon>add</mat-icon>
+                    Aggiungi Opzione
+                  </button>
+                </div>
+              </div>
+
+              <!-- Pulsante salvataggio -->
+              <div class="submit-section">
+                <button mat-fab extended color="primary" (click)="createQuestion('new')" class="submit-button">
+                  <mat-icon>save</mat-icon>
+                  Crea Domanda
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <!-- Form modifica domande esistenti -->
+      <div *ngIf="form2">
+        <form [formGroup]="form2" class="edit-question-form" [hidden]="hideForm2">
+          <div class="form-grid">
+            <!-- Selezione categoria per modifica -->
+            <div class="form-section" [hidden]="hideDomandeCreate">
+              <h3 class="section-title">
+                <mat-icon class="section-icon">edit</mat-icon>
+                Modifica Categoria
+              </h3>
+              <div class="custom-select-wrapper">
+                <label class="custom-select-label">Seleziona Categoria</label>
+                <select class="custom-select" formControlName="questionId" (change)="onCategorySelectNative($event)">
+                  <option value="">-- Seleziona una categoria --</option>
+                  <option *ngFor="let categoria of categorie" [value]="categoria.id">
+                    {{ categoria.descrizione }}
+                  </option>
+                </select>
+                <mat-icon class="custom-select-icon">folder_open</mat-icon>
+              </div>
+            </div>
+
+            <!-- Configurazione domanda esistente -->
+            <div class="form-section">
+              <h3 class="section-title">
+                <mat-icon class="section-icon">help_outline</mat-icon>
+                Modifica Domanda
+              </h3>
+              
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="modern-field">
+                  <mat-label>Testo Domanda</mat-label>
+                  <input matInput type="text" id="text" formControlName="domanda" placeholder="Inserisci il testo della domanda">
+                  <mat-icon matSuffix>edit</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <div class="custom-select-wrapper">
+                  <label class="custom-select-label">Tipo Risposta</label>
+                  <select class="custom-select" formControlName="tipo_risposta">
+                    <option value="text">Testo</option>
+                    <option value="boolean">Booleano</option>
+                    <option value="number">Numero</option>
+                    <option value="select">Select</option>
+                  </select>
+                  <mat-icon class="custom-select-icon">format_list_bulleted</mat-icon>
+                </div>
+
+                <div class="custom-select-wrapper">
+                  <label class="custom-select-label">Obbligatorio</label>
+                  <select class="custom-select" formControlName="obbligatorio">
+                    <option value="1">Sì</option>
+                    <option value="0">No</option>
+                  </select>
+                  <mat-icon class="custom-select-icon">priority_high</mat-icon>
+                </div>
+              </div>
+
+              <!-- Opzioni esistenti per select -->
+              <div *ngIf="form2.get('tipo_risposta')?.value === 'select'" class="options-section">
+                <h4 class="subsection-title">
+                  <mat-icon class="subsection-icon">list_alt</mat-icon>
+                  Opzioni Esistenti
+                </h4>
+                
+                <div formArrayName="options" class="options-container">
+                  <div *ngFor="let option of options2.controls; let i = index" [formGroupName]="i" class="option-item">
+                    <mat-form-field appearance="outline" class="option-field">
+                      <mat-label>Opzione {{ i + 1 }}</mat-label>
+                      <input matInput type="text" formControlName="opt" [(ngModel)]="option.value.opt" placeholder="Inserisci opzione">
+                      <input matInput formControlName="id" [value]="option.value.id" hidden />
+                      <mat-icon matSuffix>label</mat-icon>
+                    </mat-form-field>
+                    <button mat-icon-button color="warn" (click)="removeOption2(i,option.value.id)" class="remove-option-btn" matTooltip="Rimuovi opzione">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                  
+                  <button mat-stroked-button color="primary" (click)="addOption2()" class="add-option-btn">
+                    <mat-icon>add</mat-icon>
+                    Aggiungi Opzione
+                  </button>
+                </div>
+
+                <!-- Opzioni aggiuntive -->
+                <h4 class="subsection-title">
+                  <mat-icon class="subsection-icon">add_circle_outline</mat-icon>
+                  Nuove Opzioni
+                </h4>
+                
+                <div formArrayName="opzioniAggiuntive" class="options-container">
+                  <div *ngFor="let option of options3.controls; let i = index" class="option-item">
+                    <mat-form-field appearance="outline" class="option-field">
+                      <mat-label>Nuova Opzione {{ i + 1 }}</mat-label>
+                      <input matInput type="text" [formControlName]="i" placeholder="Inserisci nuova opzione">
+                      <mat-icon matSuffix>fiber_new</mat-icon>
+                    </mat-form-field>
+                    <button mat-icon-button color="warn" (click)="removeOption3(i)" class="remove-option-btn" matTooltip="Rimuovi opzione">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pulsante salvataggio modifica -->
+              <div class="submit-section">
+                <button mat-fab extended color="accent" (click)="createQuestion('exist')" class="submit-button">
+                  <mat-icon>save</mat-icon>
+                  Modifica Domanda
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Domande create con design moderno -->
+  <mat-card class="modern-card questions-list-card" [hidden]="hideDomandeCreate">
+    <mat-card-header class="card-header-modern">
+      <div mat-card-avatar class="card-avatar list-avatar">
+        <mat-icon>format_list_bulleted</mat-icon>
+      </div>
+      <mat-card-title class="card-title">DOMANDE CREATE</mat-card-title>
+      <mat-card-subtitle class="card-subtitle">
+        Revisiona e gestisci le domande create per questa sessione
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <div class="questions-container">
+      <!-- Domande nuove create -->
+      <div *ngIf="createdQuestions" class="questions-section">
+        <div class="question-item" *ngFor="let question of createdQuestions; let i = index">
+          <div class="question-card">
+            <div class="question-header">
+              <div class="question-number">
+                <mat-icon class="question-icon">help_outline</mat-icon>
+                <span class="number">{{ i + 1 }}</span>
+              </div>
+              <div class="question-content">
+                <h4 class="question-text">{{ question.text }}</h4>
+                <div class="question-meta">
+                  <mat-chip class="type-chip">
+                    <mat-icon>help_outline</mat-icon>
+                    {{ question.type }}
+                  </mat-chip>
+                  <mat-chip class="required-chip">
+                    <mat-icon>help_outline</mat-icon>
+                    Domanda
+                  </mat-chip>
+                </div>
+              </div>
+              <div class="question-actions">
+                <button mat-icon-button color="primary" (click)="editQuestion(i,'new')" matTooltip="Modifica domanda">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="deleteQuestion(i)" matTooltip="Elimina domanda">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Opzioni per domande select -->
+            <div *ngIf="question.type === 'select'" class="question-options">
+              <h5 class="options-title">
+                <mat-icon class="options-icon">list</mat-icon>
+                Opzioni disponibili:
+              </h5>
+              <div class="options-list">
+                <div class="option-item" *ngFor="let option of question.options; let optIndex = index">
+                  <mat-icon class="option-bullet">radio_button_unchecked</mat-icon>
+                  <span class="option-text">{{ option }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Domande esistenti in modifica -->
+      <div *ngIf="editQuest" class="questions-section">
+        <div class="question-item" *ngFor="let question of editQuest; let i = index">
+          <div class="question-card edit-mode">
+            <div class="question-header">
+              <div class="question-number">
+                <mat-icon class="question-icon">edit</mat-icon>
+                <span class="number">{{ i + 1 }}</span>
+              </div>
+              <div class="question-content">
+                <h4 class="question-text">{{ question.domanda }}</h4>
+                <div class="question-meta">
+                  <mat-chip class="type-chip">
+                    <mat-icon>help_outline</mat-icon>
+                    {{ question.tipo_risposta }}
+                  </mat-chip>
+                  <mat-chip class="required-chip" [class.required]="question.obbligatorio === '1'">
+                    <mat-icon>{{ question.obbligatorio === '1' ? 'check_circle' : 'cancel' }}</mat-icon>
+                    {{ question.obbligatorio === '1' ? 'Obbligatorio' : 'Opzionale' }}
+                  </mat-chip>
+                </div>
+              </div>
+              <div class="question-actions">
+                <button mat-icon-button color="primary" (click)="editQuestion(question,'exist')" matTooltip="Modifica domanda">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="deleteQuestion(i)" matTooltip="Elimina domanda">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Opzioni per domande select esistenti -->
+            <div *ngIf="question.tipo_risposta === 'select'" class="question-options">
+              <h5 class="options-title">
+                <mat-icon class="options-icon">list</mat-icon>
+                Opzioni disponibili:
+              </h5>
+              <div class="options-list">
+                <div class="option-item" *ngFor="let option of question.options; let optIndex = index">
+                  <mat-icon class="option-bullet">radio_button_unchecked</mat-icon>
+                  <span class="option-text">{{ option }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messaggio se non ci sono domande -->
+      <div *ngIf="!createdQuestions?.length && !editQuest?.length" class="no-questions-message">
+        <mat-icon class="no-questions-icon">help_outline</mat-icon>
+        <h3>Nessuna domanda creata</h3>
+        <p>Inizia creando la tua prima domanda utilizzando il form sopra.</p>
+      </div>
+    </div>
+
+    <!-- Pulsante invio domande -->
+    <div class="card-actions">
+      <button 
+        mat-fab 
+        extended 
+        color="primary" 
+        (click)="submitQuestions()" 
+        [disabled]="createdQuestions.length === 0"
+        class="submit-all-button"
+      >
+        <mat-icon>send</mat-icon>
+        Invia Domande
+      </button>
+    </div>
+  </mat-card>
+</div>
+
+<!-- Lista domande generate con design moderno -->
+<div class="main-content">
+  <mat-card class="modern-card generated-questions-card">
+    <mat-card-header class="card-header-modern">
+      <div mat-card-avatar class="card-avatar generated-avatar">
+        <mat-icon>assignment</mat-icon>
+      </div>
+      <mat-card-title class="card-title">LISTA DOMANDE GENERATE</mat-card-title>
+      <mat-card-subtitle class="card-subtitle">
+        <span *ngIf="!selectedFilterCategory">Tutte le domande esistenti organizzate per macro prodotto</span>
+        <span *ngIf="selectedFilterCategory" class="filter-active">
+          <mat-icon class="filter-indicator">filter_list</mat-icon>
+          Filtro attivo: {{ getSelectedFilterCategoryName() }}
+          <button mat-icon-button (click)="selectedFilterCategory = null" matTooltip="Rimuovi filtro" class="clear-filter-mini">
+            <mat-icon>clear</mat-icon>
+          </button>
+        </span>
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <!-- Controllo filtro separato -->
+    <div class="filter-section">
+      <div class="custom-select-wrapper">
+        <label class="custom-select-label">Filtra per Categoria</label>
+        <select 
+          class="custom-select" 
+          [value]="selectedFilterCategory || ''" 
+          (change)="onFilterCategorySelectNative($event)"
+          *ngIf="categorie && categorie.length > 0"
+        >
+          <option value="">Tutte le categorie</option>
+          <option *ngFor="let categoria of categorie" [value]="categoria.id">
+            {{ categoria.descrizione }}
+          </option>
+        </select>
+        <mat-icon class="custom-select-icon">filter_list</mat-icon>
+      </div>
+    </div>
+
+    <div class="generated-questions-container">
+      <div class="product-section" *ngFor="let domanda of getFilteredQuestions();">
+        
+        <!-- Header macro prodotto -->
+        <ng-container *ngIf="(getCodiceProd() != domanda.macro_product.id)">
+          <div class="product-header">
+            <mat-divider></mat-divider>
+            <div class="product-title">
+              <mat-icon class="product-icon">inventory</mat-icon>
+              <h3 class="product-name">{{ domanda.macro_product.descrizione }}</h3>
+            </div>
+          </div>
+        </ng-container>
+
+        {{ setCodiceProd(domanda.macro_product.id) }}
+
+        <!-- Card domanda -->
+        <div class="generated-question-card">
+          <div class="question-indicator">
+            <mat-icon class="indicator-icon">quiz</mat-icon>
+          </div>
+          
+          <div class="question-main-content">
+            <div class="question-text-section">
+              <h4 class="question-title">{{ domanda.domanda }}</h4>
+              
+              <div class="question-details">
+                <div class="detail-item">
+                  <mat-icon class="detail-icon">category</mat-icon>
+                  <span class="detail-label">Tipo Risposta:</span>
+                  <mat-chip class="detail-chip">{{ domanda.tipo_risposta }}</mat-chip>
+                </div>
+                
+                <div class="detail-item" *ngIf="domanda.detail_question.length > 0">
+                  <mat-icon class="detail-icon">list</mat-icon>
+                  <span class="detail-label">Opzioni Selezionabili:</span>
+                  <div class="options-preview">
+                    <div class="preview-option" *ngFor="let option of domanda.detail_question; let i = index">
+                      <span class="option-number">{{ i + 1 }}.</span>
+                      <span class="option-value">{{ option.opzione }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="question-actions-section">
+              <button 
+                mat-icon-button 
+                color="primary" 
+                (click)="click(domanda)"
+                matTooltip="Modifica domanda"
+                class="action-button"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button 
+                mat-icon-button 
+                color="warn" 
+                (click)="deletequestionExist(domanda,'domande')"
+                matTooltip="Elimina domanda"
+                class="action-button"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Messaggio se non ci sono domande generate -->
+            <!-- Messaggio se non ci sono domande generate -->
+      <div *ngIf="!listaDomande?.length" class="no-generated-questions">
+        <mat-icon class="no-questions-icon">assignment</mat-icon>
+        <h3>Nessuna domanda disponibile</h3>
+        <p>Non sono ancora state create domande nel sistema.</p>
+      </div>
+      
+      <!-- Messaggio se il filtro categoria è attivo ma non ci sono risultati -->
+      <div *ngIf="selectedFilterCategory && !getFilteredQuestions()?.length && listaDomande?.length" class="filtered-no-results">
+        <mat-icon class="filter-icon">filter_list</mat-icon>
+        <h3>Nessuna domanda per questa categoria</h3>
+        <p>Non sono presenti domande per la categoria selezionata.</p>
+        <button mat-stroked-button color="primary" (click)="selectedFilterCategory = null" class="clear-filter-btn">
+          <mat-icon>clear</mat-icon>
+          Mostra tutte le domande
+        </button>
+      </div>
+    </div>
+  </mat-card>
+</div>

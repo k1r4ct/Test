@@ -1,0 +1,100 @@
+<div class="login-page">
+  <div class="container-fluid">
+    <div class="row min-vh-100 justify-content-center align-items-center">
+      
+      <!-- Form di login centrato -->
+      <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+        <div class="login-container">
+          
+          <!-- Header con brand -->
+          <div class="brand-header">
+            <div class="logo-container">
+              <mat-icon class="brand-icon">visibility</mat-icon>
+            </div>
+            <h1 class="brand-name">Semprechiaro</h1>
+            
+          </div>
+
+          <!-- Form di login -->
+          <div class="login-form-container">
+            <div class="form-header">
+              <h1>Accesso al portale</h1>
+              <p>Inserisci le tue credenziali per continuare</p>
+            </div>
+
+            <form class="login-form" [formGroup]="loginForm" (ngSubmit)="submit()">
+              <!-- Campo Email -->
+              <div class="form-group">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Indirizzo email</mat-label>
+                  <input matInput 
+                         type="email" 
+                         id="mail" 
+                         name="email" 
+                         formControlName="email" 
+                         placeholder="esempio@company.com" 
+                         required>
+                  <mat-icon matPrefix>mail_outline</mat-icon>
+                </mat-form-field>
+              </div>
+              
+              <!-- Campo Password -->
+              <div class="form-group">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Password</mat-label>
+                  <input matInput 
+                         [type]="hide ? 'password' : 'text'" 
+                         id="pass" 
+                         name="password" 
+                         formControlName="password" 
+                         placeholder="Inserisci la tua password" 
+                         required>
+                  <mat-icon matPrefix>lock_outline</mat-icon>
+                  <mat-icon matSuffix 
+                            (click)="showpass()" 
+                            class="password-toggle">
+                    {{hide ? 'visibility_off' : 'visibility'}}
+                  </mat-icon>
+                </mat-form-field>
+              </div>
+
+              <!-- Opzioni aggiuntive -->
+              <div class="form-options">
+                <div class="remember-me">
+                  <mat-checkbox color="primary">Ricordami</mat-checkbox>
+                </div>
+                <a [routerLink]="['/forgot-password']" class="forgot-password" (click)="gotoResetPwd()">Password dimenticata?</a>
+              </div>
+
+              <!-- Messaggio di errore -->
+              <div class="error-alert" [class.show]="!incorrectPassw">
+                <mat-icon>error_outline</mat-icon>
+                <span>Credenziali non valide. Riprova.</span>
+              </div>
+
+              <!-- Pulsante di accesso -->
+              <button type="submit" 
+                      mat-raised-button 
+                      color="primary" 
+                      class="login-button"
+                      [disabled]="!loginForm.valid">
+                Accedi al portale
+              </button>
+
+              <!-- Link di supporto -->
+              <div class="support-section">
+                <p>Hai bisogno di aiuto? <a href="#" class="support-link">Contatta il supporto</a></p>
+              </div>
+            </form>
+          </div>
+
+          <!-- Footer -->
+          <div class="login-footer">
+            <p>&copy; 2025 Semprechiaro. Tutti i diritti riservati.</p>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>

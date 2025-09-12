@@ -1,0 +1,10 @@
+.sidebar .sidebar-wrapper{
+  overflow-x: hidden;
+  overflow-y: hidden;
+  height: 97vh;
+  margin:10px!important;
+  border-radius: 10px;
+  .active-pro{
+    bottom: 22px;
+  }
+}

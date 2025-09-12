@@ -1,0 +1,194 @@
+<div class="modern-card" [@pageTransition]="state">
+  <div class="modern-card-header">
+    <div class="header-content">
+      <mat-icon class="header-icon">inventory_2</mat-icon>
+      <div class="header-text">
+        <h2 class="header-title">Selezione Prodotto</h2>
+        <p class="header-subtitle">Scegli il prodotto dall'elenco disponibile</p>
+      </div>
+    </div>
+  </div>
+  <div class="modern-card-body">
+
+
+    <!-- Sezione Prodotto Selezionato -->
+    <div [hidden]="show_product" class="selected-product-card">
+      <div class="selected-product-header">
+        <mat-icon class="selected-icon">check_circle</mat-icon>
+        <h4>Prodotto Selezionato</h4>
+      </div>
+      <div class="selected-product-content">
+        <h3 class="selected-product-name">{{descrizione_prodotto_sel}}</h3>
+      </div>
+    </div>
+
+    <!-- Tabella Prodotti -->
+    <div class="table-container">
+      <table mat-table [dataSource]="dataSource" matSort>
+        <!-- [dataSource]="dataSource"  -->
+
+        <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+        <ng-container [matColumnDef]="displayedColumns[0]">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header class="id-column">
+            <div class="column-header">
+              <span class="column-title">ID</span>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row"> {{row.id}} </td>
+        </ng-container>
+
+
+        <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+        <ng-container [matColumnDef]="displayedColumns[1]">
+          <th mat-header-cell *matHeaderCellDef class="description-column">
+            <div class="column-header">
+              <span class="column-title">DESCRIZIONE</span>
+              <mat-form-field>
+                <mat-label>Filtra per descrizione</mat-label>
+                <input matInput (keyup)="selectValue(displayedColumns[1],$event)" 
+                       placeholder="Cerca descrizione" #input>
+                <mat-icon matSuffix>search</mat-icon>
+              </mat-form-field>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row"> {{row.descrizione}} </td>
+        </ng-container>
+
+        <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+        <ng-container [matColumnDef]="displayedColumns[2]">
+          <th mat-header-cell *matHeaderCellDef class="macro-column">
+            <div class="column-header">
+              <span class="column-title">MACRO PRO</span>
+              <mat-form-field>
+                <mat-label>Filtra macro prodotto</mat-label>
+                <!--INIZIO SEZIONE FILTRO COLONNA -->
+                <mat-select [formControl]="mpdToppings" multiple>
+                  <mat-select-trigger>
+                    {{mpdToppings.value?.[0] || 'Seleziona...'}}
+                    @if ((mpdToppings.value?.length || 0) > 1) {
+                    <span class="span-additional-selection">
+                      (+{{(mpdToppings.value?.length || 0) - 1}} {{mpdToppings.value?.length === 2 ? 'selezionato' :
+                      'selezionati'}})
+                    </span>
+                    }
+                  </mat-select-trigger>
+                  @for (topping of MacroDescrizione; track topping) {
+                  <mat-option [value]="topping"
+                    (click)="selectOpt(displayedColumns[2],this.mpdToppings.value)">{{topping}}</mat-option>
+                  }
+                </mat-select>
+                <!--FINE SEZIONE FILTRO COLONNA -->
+              </mat-form-field>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row"> {{row.macro_descrizione}} </td>
+        </ng-container>
+
+        <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+        <ng-container [matColumnDef]="displayedColumns[3]">
+          <th mat-header-cell *matHeaderCellDef class="macro-code-column">
+            <div class="column-header">
+              <span class="column-title">CODICE MACRO PRO</span>
+              <mat-form-field>
+                <mat-label>Filtra codice macro</mat-label>
+                <!--INIZIO SEZIONE FILTRO COLONNA -->
+                <mat-select [formControl]="mprToppings" multiple>
+                  <mat-select-trigger>
+                    {{mprToppings.value?.[0] || 'Seleziona...'}}
+                    @if ((mprToppings.value?.length || 0) > 1) {
+                    <span class="span-additional-selection">
+                      (+{{(mprToppings.value?.length || 0) - 1}} {{mprToppings.value?.length === 2 ? 'selezionato' :
+                      'selezionati'}})
+                    </span>
+                    }
+                  </mat-select-trigger>
+                  @for (topping of MacroProList; track topping) {
+                  <mat-option [value]="topping"
+                    (click)="selectOpt(displayedColumns[3],this.mprToppings.value)">{{topping}}</mat-option>
+                  }
+                </mat-select>
+                <!--FINE SEZIONE FILTRO COLONNA -->
+              </mat-form-field>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row"> {{row.macro_product?.codice_macro || row.macro_product}} </td>
+        </ng-container>
+
+        <!-- COLONNA CAMPO TABELLA COME DA VARIABILE displayedColumns -->
+        <ng-container [matColumnDef]="displayedColumns[4]">
+          <th mat-header-cell *matHeaderCellDef class="supplier-column">
+            <div class="column-header">
+              <span class="column-title">FORNITORE</span>
+              <mat-form-field>
+                <mat-label>Filtra fornitore</mat-label>
+                <!--INIZIO SEZIONE FILTRO COLONNA -->
+                <mat-select [formControl]="forToppings" multiple>
+                  <mat-select-trigger>
+                    {{forToppings.value?.[0] || 'Seleziona...'}}
+                    @if ((forToppings.value?.length || 0) > 1) {
+                    <span class="span-additional-selection">
+                      (+{{(forToppings.value?.length || 0) - 1}} {{forToppings.value?.length === 2 ? 'selezionato' :
+                      'selezionati'}})
+                    </span>
+                    }
+                  </mat-select-trigger>
+                  @for (topping of fornitoriList; track topping) {
+                  <mat-option [value]="topping"
+                    (click)="selectOpt(displayedColumns[4],this.forToppings.value)">{{topping}}</mat-option>
+                  }
+                </mat-select>
+                <!--FINE SEZIONE FILTRO COLONNA -->
+              </mat-form-field>
+            </div>
+          </th>
+          <td mat-cell *matCellDef="let row"> {{row.nome_fornitore}} </td>
+        </ng-container>
+
+        <!-- SEZIONE RIGHE VISUALIZZATE -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="clickedRows(row)"></tr>
+
+
+        <!-- MESSAGGIO RIGHE NON TROVATE -->
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="4">Nessun dato corrispondente alla ricerca</td>
+        </tr>
+
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[ 10, 25, 100]" aria-label="Select page of users"></mat-paginator>
+    </div>
+
+  </div>
+</div>
+
+
+
+
+<!-- <ng-container [matColumnDef]="displayedColumns[1]">
+            <th mat-header-cell *matHeaderCellDef>
+              <mat-form-field>
+                <mat-label>DESCRIZIONE</mat-label>
+
+                <mat-select [formControl]="prdToppings" multiple>
+
+                  <mat-select-trigger>
+                    {{prdToppings.value?.[0] || ''}}
+                    @if ((prdToppings.value?.length || 0) > 1) {
+                    <span class="span-additional-selection">
+                      (+{{(prdToppings.value?.length || 0) - 1}} {{prdToppings.value?.length === 2 ? 'selezionato' :
+                      'selezionati'}})
+                    </span>
+                    }
+                  </mat-select-trigger>
+
+                  @for (topping of prodottiList; track topping) {
+                  <mat-option [value]="topping"
+                    (click)="selectOpt(displayedColumns[1],this.prdToppings.value)">{{topping}}</mat-option>
+                  }
+                </mat-select>
+
+              </mat-form-field>
+            </th>
+            <td mat-cell *matCellDef="let row"> {{row.descrizione}} </td>
+          </ng-container> -->

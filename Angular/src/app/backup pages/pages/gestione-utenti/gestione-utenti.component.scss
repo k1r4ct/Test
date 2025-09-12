@@ -1,0 +1,79 @@
+.button-container {
+  display: flex;
+  justify-content: start;
+  margin-top: 20px;
+}
+
+.square-button {
+  width: 120px; /* Larghezza desiderata */
+  height: 120px; /* Altezza uguale alla larghezza per renderlo quadrato */
+  display: flex;
+  flex-direction: column; /* Icona in alto, testo in basso */
+  align-items: center; /* Centra orizzontalmente */
+  justify-content: center; /* Centra verticalmente */
+  margin: 2rem;
+  border-radius: 10%;
+  transition: all 0.8s;
+  z-index: 1 !important;
+}
+.square-button:hover {
+  animation: pulse 2s infinite;
+  border-radius: 20%;
+}
+.button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.button-icon {
+  font-size: 45px;
+  margin-bottom: 0.5rem;
+  padding: 3rem;
+  justify-content: center;
+  display: flex;
+  margin-top: -3rem;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(3, 168, 124, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(3, 168, 124, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(3, 168, 124, 0);
+  }
+}
+
+::ng-deep .custom-multiselect .p-multiselect-token {
+  flex: 0 0 calc(36.66% - 8px); /* Imposta ogni token al 16.66% (circa 1/6) meno i margini */
+  margin: 4px; /* Margine per separare i token */
+  box-sizing: border-box;
+}
+
+::ng-deep .custom-multiselect .p-multiselect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+::ng-deep .custom-multiselect .p-multiselect-items-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 100%;
+  width: 100%;
+}
+
+::ng-deep .custom-multiselect .p-multiselect-label-container {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+::ng-deep .form-check-input[type="checkbox"] {
+  width: 23px;
+  height: 23px;
+}

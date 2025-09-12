@@ -1,0 +1,139 @@
+<div class="form-container">
+  <div class="form-content">
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="company-logo">
+        <div class="logo-placeholder">
+          <!-- Qui puoi inserire il logo di Semprechiaro -->
+          <div class="logo-cube"></div>
+          <span class="company-name">SEMPRECHIARO</span>
+          <span class="company-tagline">CONVIENE SEMPRE DAVVERO</span>
+        </div>
+      </div>
+
+      <div class="form-header">
+        <div class="decorative-circle"></div>
+        <!-- Debug: User ID (rimuovere in produzione) -->
+        <!-- <div class="debug-info" *ngIf="userId">ID Utente: {{ userId }}</div> -->
+        <h2 class="main-title">Complimenti per averci scelto</h2>
+        <p class="subtitle">Compila i tuoi dati per essere contattato da un nostro esperto</p>
+      </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="form-section">
+      <form (ngSubmit)="onSubmit()" #contactForm="ngForm" [class.submitted]="isSubmitted">
+        
+        <!-- Success Message -->
+        <div class="success-message" *ngIf="isSubmitted">
+          <i class="success-icon">✓</i>
+          <h3>Grazie per averci contattato!</h3>
+          <p>Un nostro esperto ti contatterà presto.</p>
+        </div>
+
+        <!-- Form Fields -->
+        <div class="form-fields" *ngIf="!isSubmitted">
+          <div class="form-group">
+            <label for="nome">Nome</label>
+            <input 
+              type="text" 
+              id="nome" 
+              name="nome"
+              [(ngModel)]="nome"
+              required
+              class="form-input"
+              [class.error]="errorMessage && !nome.trim()"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="cognome">Cognome</label>
+            <input 
+              type="text" 
+              id="cognome" 
+              name="cognome"
+              [(ngModel)]="cognome"
+              required
+              class="form-input"
+              [class.error]="errorMessage && !cognome.trim()"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="telefono">Telefono</label>
+            <input 
+              type="tel" 
+              id="telefono" 
+              name="telefono"
+              [(ngModel)]="telefono"
+              required
+              class="form-input"
+              [class.error]="errorMessage && !telefono.trim()"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Mail</label>
+            <input 
+              type="email" 
+              id="email" 
+              name="email"
+              [(ngModel)]="email"
+              required
+              class="form-input"
+              [class.error]="errorMessage && !email.trim()"
+            />
+          </div>
+
+          <!-- Privacy Checkbox -->
+          <div class="privacy-section">
+            <div class="privacy-text">
+              <p>Inserendo i tuoi dati sei consapevole di autorizzare Semprechiaro ad utilizzare i tuoi dati solo ed esclusivamente per essere contattato</p>
+            </div>
+            <div class="checkbox-container">
+              <input 
+                type="checkbox" 
+                id="privacy" 
+                name="privacy"
+                [(ngModel)]="privacy"
+                required
+                class="privacy-checkbox"
+              />
+              <label for="privacy" class="checkbox-label"></label>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          <div class="error-message" *ngIf="errorMessage">
+            <i class="error-icon">⚠</i>
+            {{ errorMessage }}
+          </div>
+
+          <!-- Submit Button -->
+          <button 
+            type="submit" 
+            class="submit-button"
+            [disabled]="isSubmitting"
+            [class.loading]="isSubmitting"
+          >
+            <span *ngIf="!isSubmitting">INVIA</span>
+            <span *ngIf="isSubmitting">
+              <span class="loading-spinner"></span>
+              Invio in corso...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Decorative Background -->
+  <div class="decorative-background">
+    <div class="wave-pattern"></div>
+    <div class="color-circles">
+      <div class="circle circle-1"></div>
+      <div class="circle circle-2"></div>
+      <div class="circle circle-3"></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,350 @@
+
+  ::ng-deep {
+    
+      
+  
+  :root {
+    --off: #6d9ebc;
+    --on: #ccd54f;
+    --dark: #bbbbbb;
+    --cl: var(--off);
+    --link: #53859b;
+    --strong: #6d6e6f;
+  }
+
+::-webkit-scrollbar {
+  width: 10px; 
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f100; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccd54f; 
+  border-radius: 5px; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ccd54f; 
+}
+
+scrollbar-width: thin; 
+scrollbar-color: #ccd54f #f1f1f100;
+
+
+  .notification {
+    width: 40px; 
+    height: 40px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed; 
+    top: 24px; 
+    right: 100px!important; 
+    z-index: 1000; 
+  }
+  
+  label[for="btn"] {
+    width: 100px; 
+    height: 100px; 
+    background: transparent;
+    position: relative;
+    cursor: pointer;
+    transform: scale(0.6);
+    transition: all 0.5s ease 0s;
+    top:177px;
+    --cl: var(--dark);
+    filter: drop-shadow(20px 20px 10px #0008);
+}
+  
+  #btn:checked + label[for="btn"] {
+
+    top: 180px;
+  }
+  
+  @keyframes bell-bounce-up {
+    0% {
+      margin-top: 0;
+    }
+    30% {
+      margin-top: -450px; 
+    }
+    60% {
+      margin-top: -420px; 
+    }
+    100% {
+      margin-top: 0px; 
+    }
+}
+  
+@keyframes bell-bounce-down {
+    0%,
+    20% {
+      margin-top: -480px; 
+    }
+    50% {
+      margin-top: -30px; 
+    }
+    80% {
+      margin-top: -60px; 
+    }
+    100% {
+      margin-top: 0px;
+    }
+}
+  
+  label[for="btn"]:before {
+    content: "";
+    position: absolute;
+    width: 50px;
+    height: 40px;
+    left: 49px;
+    background: conic-gradient(from 125deg at 50% 50%, var(--cl) 0 109deg, rgba(255, 255, 255, 0) 0 100%), linear-gradient(90deg, rgba(255, 255, 255, 0) 0 10px, var(--cl) 10px calc(100% - 10px), rgba(255, 255, 255, 0) calc(100% - 10px + 1px) 100%);
+    border-radius: 50% 50% 50% 50% / 100% 100% 10% 10%;
+    transform-origin: 50% 10px;
+    top: -284px;
+}
+
+label[for="btn"]:after {
+  content: "";
+  position: absolute;
+  width: 13px;
+  height: 53px;
+  left: 67px;
+  top: -291px;
+  background: radial-gradient(circle at 50% 100%, var(--cl) 0 15px, rgba(255, 255, 255, 0) 16px 100%), radial-gradient(circle at 50% 10px, rgba(255, 255, 255, 0) 0 4px, var(--cl) 5px 10px, rgba(255, 255, 255, 0) 11px 100%);
+  border-radius: 50px;
+  background-repeat: no-repeat;
+  background-size: 100% 12px, 100% 100%;
+  background-position: 0px 100%, 0px -2px;
+  z-index: -1;
+  animation: bell-move 1s ease-out 1.2s 1 reverse, bell-color 1s linear 1s 1;
+  animation-fill-mode: forwards;
+  transform-origin: 50% 10px;
+}
+  
+  @keyframes bell-move {
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+    20%,
+    60% {
+      transform: rotate(10deg);
+    }
+    40%,
+    80% {
+      transform: rotate(-10deg);
+    }
+  }
+  
+  @keyframes bell-color {
+    0%,
+    100% {
+      --cl: var(--on);
+    }
+  }
+  
+  #btn:checked + label[for="btn"]:before,
+#btn:checked + label[for="btn"]:after {
+    animation: none;
+    --cl: var(--on);
+    content: "";
+    color: #0b0d12;
+    font-size: 70px; 
+    line-height: 100px; 
+    text-align: center;
+}
+  
+  label[for="btn"]:hover:before,
+  label[for="btn"]:hover:after,
+  #btn:checked + label[for="btn"]:hover:before,
+  #btn:checked + label[for="btn"]:hover:after {
+    --cl: var(--off) !important;
+  }
+  
+  .counter {
+    background: #6d9ebc;
+    color: #fff;
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    border-radius: 100%;
+    font-size: 19px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    right: -15px;
+    top: -295px;
+    border: 2px solid #ccd54f;
+    box-sizing: border-box;
+  }
+  
+  @keyframes counter-ball {
+    0% {
+      transform: scale(0);
+    }
+    40%,
+    80%,
+    100% {
+      transform: scale(1);
+    }
+    20%,
+    60% {
+      transform: scale(1.25);
+    }
+    0%,
+    11% {
+      opacity: 0;
+    }
+    12%,
+    100% {
+      opacity: 1;
+    }
+  }
+  
+  #btn:checked + label .counter {
+  }
+  
+  @keyframes hide-counter-ball {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(0);
+      opacity: 0;
+    }
+  }
+  
+  .panel {
+    position: absolute;
+    border-radius: 5px; 
+    width: 500px; 
+    height: 460px; 
+    margin-top: 150px;
+    padding-top: 20px;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.5s ease 0s;
+    filter: drop-shadow(20px 20px 10px #0008);
+    z-index: 1000;
+    background-color: transparent;
+    top:-38px;
+    right:-19px;
+}
+  
+  input#btn,
+  input#uro {
+    position: absolute;
+    z-index: -3;
+    opacity: 0;
+  }
+  
+
+#btn:checked + label[for="btn"] + .panel {
+    max-height: 460px; 
+    margin-top: 100px; 
+    overflow-y: auto;
+}
+#btn:not(:checked) + label[for="btn"] + .panel ul {
+  display: none;
+  transition: all 0.5s ease 0s;
+}
+
+#btn:checked + label[for="btn"] + .panel ul:before {
+    top: -20px; 
+}
+
+.panel ul {
+    margin: 10px;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    background: #00000069;
+    border-radius: 10px 10px 10px 10px; 
+    overflow: hidden;
+}
+
+.panel ul li {
+    width: 100%;
+    height: 100px; 
+    color: white;
+    border-bottom: 1px solid var(--dark);
+    padding: 17.5px 12.5px; 
+    box-sizing: border-box;
+    font-size: 17.5px; 
+    position: relative;
+}
+
+.panel ul li:last-child {
+    border-bottom: 0;
+}
+
+.panel ul li img {
+    border-radius: 100%;
+    margin-right: 20px;
+    float: left;
+    width: 60px; 
+    height: 60px;
+}
+
+  
+  .panel ul li a {
+    text-decoration: none;
+    font-weight: bold;
+    color: var(--link);
+  }
+  
+  .panel ul li.read img {
+    filter: sepia(1) hue-rotate(150deg) contrast(0.75) brightness(0.65)
+      saturate(0.75);
+  }
+  
+  .panel ul li.unread {
+    --link: #3eb0e3;
+  }
+  
+  .panel ul li strong {
+    color: var(--strong);
+  }
+  .panel ul li.unread strong {
+    --strong: #216a8d;
+  }
+  
+.panel ul li.read:after {
+    border-color: var(--dark);
+}
+
+
+
+label[for="uro"]:before {
+    content: "";
+    position: absolute;
+    width: 20px; 
+    height: 20px;
+    background: #e7e7e7;
+    border-radius: 100%;
+    transition: all 0.5s ease 0s;
+    cursor: pointer;
+    right: 40px; 
+    
+    margin-top: -1px;
+}
+
+input#uro:checked ~ .panel label[for="uro"]:before {
+    background: #3eb0e3;
+    right: 20px;
+}
+
+  
+  input#uro:checked ~ .panel .unread-only {
+    color: var(--link);
+  }
+  
+  input#uro:checked ~ .panel ul li.read {
+    display: none;
+  }
+}
