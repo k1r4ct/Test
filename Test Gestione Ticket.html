@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contratti - Semprechiaro CRM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        /* Header principale */
+        .main-header {
+            background: linear-gradient(180deg, #268730 10%, #027cad);
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .user-info {
+            color: rgba(255,255,255,0.8);
+            font-weight: 300;
+        }
+
+        /* Container principale */
+        .container {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Card principale */
+        .contracts-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* Tabella contratti */
+        .contracts-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table-header {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table-header th {
+            padding: 16px 12px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table-row {
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s;
+        }
+
+        .table-row:hover {
+            background-color: #d3d3d3;
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgb(117 121 123 / 30%);
+        }
+
+        .table-row td {
+            padding: 16px 12px;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        /* ID contratto */
+        .contract-id {
+            font-weight: 600;
+            color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .contract-id:hover {
+            text-decoration: underline;
+        }
+
+        /* Nome cliente */
+        .client-name {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        /* Codice fiscale */
+        .fiscal-code {
+            font-family: 'Courier New', monospace;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        /* Celle data */
+        .date-cell {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        /* Badge prodotto */
+        .product-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff3e0;
+            color: #f57c00;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid #ffcc02;
+            transition: all 0.2s ease;
+        }
+
+        /* Nome SEU */
+        .seu-name {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        /* Badge stato */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        /* Colonna documenti */
+        .documents-cell {
+            text-align: center;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        /* Colonna azioni */
+        .actions-cell {
+            text-align: center;
+        }
+
+        .actions-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .action-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .action-icon:hover {
+            background: #e2e8f0;
+            color: #374151;
+            transform: translateY(-1px);
+        }
+
+        /* Icona email Jira speciale */
+        .email-jira-btn {
+            background: #268730;
+            color: white;
+        }
+
+        .email-jira-btn:hover {
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Container Modale */
+        .modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-container.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        /* Modale Creazione Ticket */
+        .create-ticket-modal {
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transform: translate(-50px, 0) scale(0.9);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-container.show .create-ticket-modal {
+            transform: translate(0, 0) scale(1);
+            opacity: 1;
+        }
+
+        /* Modale Chat Ticket */
+        .ticket-chat-modal {
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 700px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-container.show .ticket-chat-modal {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        /* Animazioni sliding modali */
+        .create-ticket-modal.slide-out {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+
+        .ticket-chat-modal.slide-in {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        /* Header modale */
+        .modal-header {
+            background: linear-gradient(180deg, #268730 10%, #027cad);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Body modale */
+        .modal-body {
+            padding: 24px;
+        }
+
+        .contract-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .detail-field {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #35c743;
+        }
+
+        .detail-field.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .jira-section {
+            border-top: 2px solid #f1f5f9;
+            padding-top: 24px;
+        }
+
+        .jira-section h3 {
+            color: #027cad;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .create-jira-btn {
+            background: #268730;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .create-jira-btn:hover {
+            background: #027cad;
+        }
+
+        /* Overlay Successo */
+        .success-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: linear-gradient(135deg, #268730, #027cad);
+            color: white;
+            padding: 24px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .success-overlay.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .success-overlay.hide {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+
+        .success-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .success-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: checkmark 0.5s ease-in-out;
+        }
+
+        @keyframes checkmark {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .success-text h3 {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .success-text p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Stili Chat Ticket */
+        .ticket-info {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        /* Area chat */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: #ffffff;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .message-author {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .message-author.jira {
+            color: #027cad;
+        }
+
+        .message-author.seu {
+            color: #268730;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .message-content {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .message.jira .message-content {
+            background: #e0f2fe;
+            border-left: 3px solid #027cad;
+        }
+
+        .message.seu .message-content {
+            background: #f0fdf4;
+            border-left: 3px solid #268730;
+        }
+
+        /* Input chat */
+        .chat-input-container {
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #027cad;
+        }
+
+        .send-btn {
+            background: #268730;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .send-btn:hover {
+            background: #027cad;
+        }
+
+        .send-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        /* Spinner caricamento */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+            
+            .contract-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .ticket-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .contracts-table {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header principale -->
+    <div class="main-header">
+        <span class="header-title">Contratti / Nome Utente</span>
+        <span class="user-info">- Gruppo Utente</span>
+    </div>
+
+    <!-- Container principale -->
+    <div class="container">
+        <div class="contracts-card">
+
+            <!-- Tabella contratti -->
+            <table class="contracts-table">
+                <thead class="table-header">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome Cognome</th>
+                        <th>P.Iva / Cod. Fis.</th>
+                        <th>Data Ins.</th>
+                        <th>Stipula</th>
+                        <th>Prodotto</th>
+                        <th>Nome SEU</th>
+                        <th>Stato</th>
+                        <th>Documenti</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Riga 1 -->
+                    <tr class="table-row">
+                        <td><span class="contract-id">1771</span></td>
+                        <td class="client-name">LA FIURA ANTONINA</td>
+                        <td class="fiscal-code">LFRNNNN41D69G273C</td>
+                        <td class="date-cell">12/09/2025</td>
+                        <td class="date-cell">12/09/2025</td>
+                        <td>
+                            <span class="product-badge">Iren Consumer</span>
+                        </td>
+                        <td class="seu-name">Savettieri Adriano</td>
+                        <td>
+                            <span class="status-badge">PROPOSTA INSERITA</span>
+                        </td>
+                        <td class="documents-cell">Nessun file</td>
+                        <td class="actions-cell">
+                            <div class="actions-buttons">
+                                <button class="action-icon email-jira-btn" onclick="openJiraModal('1771', 'LA FIURA ANTONINA', 'LFRNNNN41D69G273C', '12/09/2025', 'Iren Consumer', 'Savettieri Adriano', 'PROPOSTA INSERITA')" title="Crea Ticket Jira">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                                    </svg>
+                                </button>
+                                <button class="action-icon" title="Visualizza">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                                <button class="action-icon" title="Modifica">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Riga 2 -->
+                    <tr class="table-row">
+                        <td><span class="contract-id">1770</span></td>
+                        <td class="client-name">fenice srl la</td>
+                        <td class="fiscal-code">06955770828</td>
+                        <td class="date-cell">11/09/2025</td>
+                        <td class="date-cell">11/09/2025</td>
+                        <td>
+                            <span class="product-badge">CONSULENZA VALUE</span>
+                        </td>
+                        <td class="seu-name">Savettieri Adriano</td>
+                        <td>
+                            <span class="status-badge">PROPOSTA INSERITA</span>
+                        </td>
+                        <td class="documents-cell">Nessun file</td>
+                        <td class="actions-cell">
+                            <div class="actions-buttons">
+                                <button class="action-icon email-jira-btn" onclick="openJiraModal('1770', 'fenice srl la', '06955770828', '11/09/2025', 'CONSULENZA VALUE', 'Savettieri Adriano', 'PROPOSTA INSERITA')" title="Crea Ticket Jira">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                                    </svg>
+                                </button>
+                                <button class="action-icon" title="Visualizza">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                                <button class="action-icon" title="Modifica">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Riga 3 -->
+                    <tr class="table-row">
+                        <td><span class="contract-id">1769</span></td>
+                        <td class="client-name">CICERO MARMI SRL LO</td>
+                        <td class="fiscal-code">06741280827</td>
+                        <td class="date-cell">11/09/2025</td>
+                        <td class="date-cell">11/09/2025</td>
+                        <td>
+                            <span class="product-badge">CONSULENZA VALUE</span>
+                        </td>
+                        <td class="seu-name">Savettieri Adriano</td>
+                        <td>
+                            <span class="status-badge">PROPOSTA INSERITA</span>
+                        </td>
+                        <td class="documents-cell">Nessun file</td>
+                        <td class="actions-cell">
+                            <div class="actions-buttons">
+                                <button class="action-icon email-jira-btn" onclick="openJiraModal('1769', 'CICERO MARMI SRL LO', '06741280827', '11/09/2025', 'CONSULENZA VALUE', 'Savettieri Adriano', 'PROPOSTA INSERITA')" title="Crea Ticket Jira">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                                    </svg>
+                                </button>
+                                <button class="action-icon" title="Visualizza">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                                <button class="action-icon" title="Modifica">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Overlay Successo -->
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-content">
+            <div class="success-icon">
+                <svg width="28" height="28" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div class="success-text">
+                <h3 id="successTitle">Ticket Creato!</h3>
+                <p id="successMessage">Ticket #12345 aperto con successo</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Modale -->
+    <div class="modal-container" id="modalContainer">
+        <div class="modal-backdrop" onclick="closeModal()"></div>
+        
+        <!-- Modale Creazione Ticket -->
+        <div class="create-ticket-modal" id="createTicketModal" style="display: none;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Crea Ticket Jira - Contratto #</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="contract-details" id="contractDetails">
+                    <!-- I dettagli verranno popolati dinamicamente -->
+                </div>
+                
+                <div class="jira-section">
+                    <h3>📋 Creazione Ticket</h3>
+                    <p style="color: #027cad; margin-bottom: 16px;">
+                        Vuoi aprire un ticket con tutti i dettagli del contratto? Controlla i dati, modificali dove necessario e clicca su "Crea Ticket" per procedere.
+                    </p>
+                    <button class="create-jira-btn" onclick="createJiraTicket()">
+                        Crea Ticket
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modale Chat Ticket -->
+        <div class="ticket-chat-modal" id="ticketChatModal" style="display: none;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="chatModalTitle">Ticket #12345 - Contratto #1771</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; padding: 0;">
+                <div style="padding: 20px;">
+                    <div class="ticket-info" id="ticketInfo">
+                        <div class="info-item">
+                            <span class="info-label">ID Ticket</span>
+                            <span class="info-value" id="ticketId">#12345</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Assegnato a</span>
+                            <span class="info-value" id="assignedTo">Mario Rossi (Backoffice)</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">ID Contratto</span>
+                            <span class="info-value" id="contractIdInfo">#1771</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chat-container" style="flex: 1; margin: 0 20px 20px 20px;">
+                    <div class="chat-header">
+                        💬 Commenti Jira - Comunicazione Asincrona
+                    </div>
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- I messaggi verranno aggiunti qui -->
+                    </div>
+                    <div class="chat-input-container">
+                        <div class="chat-input-wrapper">
+                            <textarea 
+                                class="chat-input" 
+                                id="chatInput" 
+                                placeholder="Scrivi il tuo commento..."
+                                onkeypress="handleEnterKey(event)"
+                            ></textarea>
+                            <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                                <span>Invia</span>
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Memorizza i dati del contratto corrente
+        let currentContractData = {};
+        let currentTicketId = null;
+        
+        // Database simulato dei messaggi
+        const messageHistory = {};
+
+        function openJiraModal(id, cliente, codice, dataIns, prodotto, seu, stato) {
+            currentContractData = { id, cliente, codice, dataIns, prodotto, seu, stato };
+            
+            // Aggiorna il titolo del modale
+            document.getElementById('modalTitle').textContent = `Crea Ticket Jira - Contratto #${id}`;
+            
+            // Popola i dettagli del contratto
+            const detailsContainer = document.getElementById('contractDetails');
+            detailsContainer.innerHTML = `
+                <div class="detail-field">
+                    <div class="detail-label">ID Contratto</div>
+                    <div class="detail-value">${id}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">Nome e Cognome Contraente</div>
+                    <div class="detail-value">${cliente}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">P.IVA / Cod. Fiscale</div>
+                    <div class="detail-value">${codice}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">Data Inserimento</div>
+                    <div class="detail-value">${dataIns}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">Nome Prodotto</div>
+                    <div class="detail-value">${prodotto}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-label">Nome SEU</div>
+                    <div class="detail-value">${seu}</div>
+                </div>
+                <div class="detail-field full-width">
+                    <div class="detail-label">Stato Contratto</div>
+                    <div class="detail-value">${stato}</div>
+                </div>
+            `;
+            
+            // Mostra il modale creazione ticket
+            document.getElementById('createTicketModal').style.display = 'block';
+            document.getElementById('ticketChatModal').style.display = 'none';
+            document.getElementById('modalContainer').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function createJiraTicket() {
+            // Genera ID ticket
+            const ticketId = 'JIRA-' + Math.floor(Math.random() * 90000 + 10000);
+            currentTicketId = ticketId;
+            
+            // Inizializza lo storico messaggi per questo ticket
+            if (!messageHistory[ticketId]) {
+                messageHistory[ticketId] = [
+                    {
+                        author: 'Sistema',
+                        type: 'jira',
+                        content: `Ticket creato per Contratto #${currentContractData.id}\nCliente: ${currentContractData.cliente}\nProdotto: ${currentContractData.prodotto}`,
+                        time: formatTime(new Date())
+                    }
+                ];
+            }
+            
+            // Mostra overlay successo
+            showSuccessOverlay(ticketId);
+            
+            // Dopo un ritardo, transizione al modale chat
+            setTimeout(() => {
+                transitionToChat(ticketId);
+            }, 2000);
+        }
+
+        function showSuccessOverlay(ticketId) {
+            const overlay = document.getElementById('successOverlay');
+            document.getElementById('successTitle').textContent = 'Ticket Creato!';
+            document.getElementById('successMessage').textContent = `Ticket ${ticketId} aperto con successo`;
+            
+            overlay.classList.add('show');
+            
+            // Nascondi dopo 3 secondi
+            setTimeout(() => {
+                overlay.classList.remove('show');
+                overlay.classList.add('hide');
+                setTimeout(() => {
+                    overlay.classList.remove('hide');
+                }, 300);
+            }, 3000);
+        }
+
+        function transitionToChat(ticketId) {
+            // Aggiorna le info del modale chat
+            document.getElementById('chatModalTitle').textContent = `Ticket ${ticketId} - Contratto #${currentContractData.id}`;
+            document.getElementById('ticketId').textContent = ticketId;
+            document.getElementById('assignedTo').textContent = 'Mario Rossi (Backoffice)';
+            document.getElementById('contractIdInfo').textContent = `#${currentContractData.id}`;
+            
+            // Carica i messaggi
+            loadMessages(ticketId);
+            
+            // Slide out modale creazione e slide in modale chat
+            const createModal = document.getElementById('createTicketModal');
+            const chatModal = document.getElementById('ticketChatModal');
+            
+            createModal.classList.add('slide-out');
+            
+            setTimeout(() => {
+                createModal.style.display = 'none';
+                createModal.classList.remove('slide-out');
+                chatModal.style.display = 'flex';
+                
+                setTimeout(() => {
+                    chatModal.classList.add('slide-in');
+                }, 50);
+            }, 400);
+            
+            // Simula ricezione commento Jira dopo 3 secondi
+            setTimeout(() => {
+                receiveJiraComment(ticketId);
+            }, 3000);
+        }
+
+        function loadMessages(ticketId) {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = '';
+            
+            if (messageHistory[ticketId]) {
+                messageHistory[ticketId].forEach(msg => {
+                    addMessageToChat(msg);
+                });
+            }
+        }
+
+        function addMessageToChat(message) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.type}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="message-author ${message.type}">${message.author}</span>
+                    <span class="message-time">${message.time}</span>
+                </div>
+                <div class="message-content">${message.content}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message && currentTicketId) {
+                // Aggiungi messaggio allo storico
+                const newMessage = {
+                    author: 'Advisor SEU',
+                    type: 'seu',
+                    content: message,
+                    time: formatTime(new Date())
+                };
+                
+                if (!messageHistory[currentTicketId]) {
+                    messageHistory[currentTicketId] = [];
+                }
+                messageHistory[currentTicketId].push(newMessage);
+                
+                // Aggiungi alla chat
+                addMessageToChat(newMessage);
+                
+                // Pulisci input
+                input.value = '';
+                
+                // Simula invio a Jira
+                const sendBtn = document.getElementById('sendBtn');
+                sendBtn.disabled = true;
+                sendBtn.innerHTML = '<span class="loading-spinner"></span> Invio a Jira...';
+                
+                setTimeout(() => {
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = `
+                        <span>Invia</span>
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                        </svg>
+                    `;
+                    
+                    // Possibilità casuale di ricevere risposta
+                    if (Math.random() > 0.3) {
+                        setTimeout(() => {
+                            receiveJiraComment(currentTicketId);
+                        }, 1000 + Math.random() * 2000);
+                    }
+                }, 1500);
+            }
+        }
+
+        function receiveJiraComment(ticketId) {
+            const risposte = [
+                "Sto controllando i dettagli del contratto ora. Tutto sembra in ordine.",
+                "Ho verificato la documentazione. Procedo con la richiesta.",
+                "Le informazioni del cliente sono state confermate. Passo alla fase successiva.",
+                "Ho bisogno di informazioni aggiuntive sulla configurazione del prodotto.",
+                "Il ticket è stato inoltrato al team tecnico.",
+                "Documentazione ricevuta e validata. Procedo con l'attivazione."
+            ];
+            
+            const rispostaRandom = risposte[Math.floor(Math.random() * risposte.length)];
+            
+            const messaggioJira = {
+                author: 'Mario Rossi (Backoffice)',
+                type: 'jira',
+                content: rispostaRandom,
+                time: formatTime(new Date())
+            };
+            
+            if (messageHistory[ticketId]) {
+                messageHistory[ticketId].push(messaggioJira);
+                
+                // Aggiungi alla chat solo se è il ticket corrente
+                if (ticketId === currentTicketId) {
+                    addMessageToChat(messaggioJira);
+                    
+                    // Mostra notifica
+                    showNotification('Nuovo commento da Jira');
+                }
+            }
+        }
+
+        function showNotification(text) {
+            // Potresti implementare una piccola notifica popup qui
+            console.log('Notifica:', text);
+        }
+
+        function handleEnterKey(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modalContainer');
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+            
+            // Reset modali
+            setTimeout(() => {
+                document.getElementById('createTicketModal').style.display = 'none';
+                document.getElementById('ticketChatModal').style.display = 'none';
+                document.getElementById('ticketChatModal').classList.remove('slide-in');
+            }, 300);
+        }
+
+        function formatTime(date) {
+            return date.toLocaleTimeString('it-IT', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+            });
+        }
+
+        // Chiudi modale con tasto ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Auto-resize textarea
+        document.getElementById('chatInput')?.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+    </script>
+</body>
+</html>

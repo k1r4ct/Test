@@ -522,7 +522,7 @@ class AuthController extends Controller
             $updateUser->update(['user_id_padre'=>$request->seu]);
         }
 
-        if ($request->resetpwd == "true") {
+        if ($request->resetpwd == "true" || $request->resetpwd == 1) {
             $updateUser->update(['password'=>'$2y$10$8fzMmLsdHiSm.70tmlkBN.f8e6LtDnnTLJ8t61MK/ak3MrA.eeo3W']);
         }
 
@@ -567,7 +567,7 @@ class AuthController extends Controller
             }
         }
 
-        return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" =>"Utente modificato ! " . $request->cod_Utente ]]);
+        return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" =>"Utente modificato ! " . $updateUser]]);
 
     }
 

@@ -1,0 +1,9 @@
+**/apikey-*.json
+**/*key*.json
+.env
+.env.local
+.env.production
+*.pem
+*.key
+**/service-account*.json
+**/credentials*.json
