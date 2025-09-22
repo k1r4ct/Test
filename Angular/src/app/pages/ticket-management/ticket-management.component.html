@@ -1,0 +1,332 @@
+<!-- ticket-management.component.html -->
+<div class="ticket-management-container" *ngIf="canManageTickets()">
+  
+  <!-- Header -->
+  <div class="top-header">
+    <div class="header-title">
+      <i class="fas fa-ticket-alt"></i>
+      <div>
+        <h2>Gestione Ticket</h2>
+        <p>Gestisci e monitora tutti i ticket di supporto</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-new-ticket" (click)="createNewTicket()">
+        <i class="fas fa-plus"></i>
+        Nuovo Ticket
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filter-header">
+      <h3><i class="fas fa-filter"></i> Filtri di Ricerca</h3>
+      <button class="btn-filter" (click)="toggleFilters()">
+        <i class="fas" [class.fa-chevron-up]="showFilters" [class.fa-chevron-down]="!showFilters"></i>
+      </button>
+    </div>
+    
+    <div class="filters-grid" [style.display]="showFilters ? 'grid' : 'none'">
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-hashtag"></i> ID Contratto
+        </label>
+        <input 
+          type="text" 
+          class="filter-input" 
+          [(ngModel)]="filters.contractId"
+          (input)="applyFilters()"
+          placeholder="Inserisci ID contratto">
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-box"></i> Prodotto
+        </label>
+        <select class="filter-input" [(ngModel)]="filters.product" (change)="applyFilters()">
+          <option value="">Seleziona prodotto</option>
+          <option *ngFor="let product of products" [value]="product">{{product}}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-exclamation-triangle"></i> Priorità
+        </label>
+        <select class="filter-input" [(ngModel)]="filters.priority" (change)="applyFilters()">
+          <option value="">Tutte le priorità</option>
+          <option *ngFor="let priority of priorities" [value]="priority.value">{{priority.label}}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-tasks"></i> Stato
+        </label>
+        <select class="filter-input" [(ngModel)]="filters.status" (change)="applyFilters()">
+          <option value="">Tutti gli stati</option>
+          <option *ngFor="let column of columns" [value]="column.id">{{column.title}}</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-user"></i> Cliente
+        </label>
+        <input 
+          type="text" 
+          class="filter-input" 
+          [(ngModel)]="filters.customer"
+          (input)="applyFilters()"
+          placeholder="Nome cliente">
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-calendar"></i> Data Da
+        </label>
+        <input 
+          type="date" 
+          class="filter-input" 
+          [(ngModel)]="filters.dateFrom"
+          (change)="applyFilters()">
+      </div>
+    </div>
+    
+    <div class="filter-actions" [style.display]="showFilters ? 'flex' : 'none'">
+      <button class="btn-filter primary" (click)="applyFilters()">
+        <i class="fas fa-search"></i> Applica Filtri
+      </button>
+      <button class="btn-filter" (click)="clearFilters()">
+        <i class="fas fa-times"></i> Reset Filtri
+      </button>
+    </div>
+  </div>
+
+  <!-- Kanban Board -->
+  <div class="kanban-container">
+    <div class="kanban-board">
+      <div 
+        *ngFor="let column of columns" 
+        class="kanban-column"
+        [class]="'status-' + column.id"
+        (drop)="onTicketDrop($event, column.id)"
+        (dragover)="onDragOver($event)">
+        
+        <div class="column-header">
+          <div class="column-title">
+            <i [class]="column.icon" [style.color]="column.color"></i>
+            <span>{{column.title}}</span>
+          </div>
+          <span class="column-count">{{column.count}}</span>
+        </div>
+        
+        <div class="column-body">
+          <div 
+            *ngFor="let ticket of getTicketsForColumn(column.id)" 
+            class="ticket-card"
+            draggable="true"
+            (dragstart)="onTicketDragStart($event, ticket)"
+            (click)="openTicketModal(ticket)">
+            
+            <div class="ticket-header">
+              <span class="ticket-id">#{{ticket.ticket_number}}</span>
+              <span 
+                class="ticket-priority"
+                [class]="'priority-' + ticket.priority"
+                [style.background-color]="getPriorityColor(ticket.priority)">
+                {{getPriorityLabel(ticket.priority)}}
+              </span>
+            </div>
+            
+            <div class="ticket-contract-info">
+              <i class="fas fa-file-contract"></i>
+              <span>Contratto {{ticket.contract_code}}</span>
+            </div>
+            
+            <div class="ticket-title">{{ticket.title}}</div>
+            
+            <div class="ticket-meta">
+              <div class="ticket-customer">
+                <div class="customer-avatar" [style.background]="ticket.avatar_color">
+                  {{ticket.customer_initials}}
+                </div>
+                <span>{{ticket.customer_name}}</span>
+              </div>
+              <span class="ticket-date">{{getTimeAgo(ticket.created_at)}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ticket Detail Modal -->
+<div class="modal-overlay" *ngIf="showTicketModal" (click)="closeTicketModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fas fa-ticket-alt"></i>
+        <span>Ticket #{{selectedTicket?.ticket_number}}</span>
+        <span 
+          class="ticket-priority-badge"
+          [style.background-color]="getPriorityColor(selectedTicket?.priority || '')">
+          {{getPriorityLabel(selectedTicket?.priority || '')}}
+        </span>
+      </div>
+      <button class="modal-close" (click)="closeTicketModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="ticket-info">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Cliente:</label>
+            <span>{{selectedTicket?.customer_name}}</span>
+          </div>
+          <div class="info-item">
+            <label>Contratto:</label>
+            <span>{{selectedTicket?.contract_code}}</span>
+          </div>
+          <div class="info-item">
+            <label>Prodotto:</label>
+            <span>{{selectedTicket?.product_name}}</span>
+          </div>
+          <div class="info-item">
+            <label>Creato:</label>
+            <span>{{selectedTicket?.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
+          </div>
+        </div>
+        
+        <div class="ticket-description">
+          <h4>Descrizione:</h4>
+          <p>{{selectedTicket?.description}}</p>
+        </div>
+      </div>
+      
+      <div class="chat-section">
+        <h4>Chat Supporto</h4>
+        <div class="chat-messages" *ngIf="!isLoadingMessages">
+          <div 
+            *ngFor="let message of selectedTicket?.messages" 
+            class="message"
+            [class.sent]="message.user_id === currentUser?.id"
+            [class.received]="message.user_id !== currentUser?.id">
+            
+            <div class="message-avatar" 
+                 [style.background-color]="message.user_id === currentUser?.id ? '#28a745' : '#007bff'">
+              {{getInitials(message.user_name)}}
+            </div>
+            
+            <div class="message-content">
+              <div class="message-header">
+                <span class="message-author">{{message.user_name}} ({{message.user_role}})</span>
+                <span class="message-time">{{message.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
+              </div>
+              <div class="message-bubble">
+                {{message.message}}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="loading-messages" *ngIf="isLoadingMessages">
+          <i class="fas fa-spinner fa-spin"></i> Caricamento messaggi...
+        </div>
+        
+        <div class="chat-input">
+          <input 
+            type="text" 
+            [(ngModel)]="newMessage"
+            (keydown.enter)="sendMessage()"
+            placeholder="Scrivi un messaggio...">
+          <button class="chat-send" (click)="sendMessage()" [disabled]="!newMessage.trim()">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Ticket Modal -->
+<div class="modal-overlay" *ngIf="showNewTicketModal" (click)="closeNewTicketModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fas fa-plus-circle"></i>
+        <span>Nuovo Ticket</span>
+      </div>
+      <button class="modal-close" (click)="closeNewTicketModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <form class="new-ticket-form">
+        <div class="form-group">
+          <label>Contratto *</label>
+          <select [(ngModel)]="newTicket.contract_id" name="contract" required class="form-control">
+            <option value="">Seleziona contratto</option>
+            <option *ngFor="let contract of contracts" [value]="contract.id">
+              {{contract.codice_contratto}} - {{contract.customer_data?.nome_cognome}}
+            </option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Titolo *</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newTicket.title" 
+            name="title" 
+            required 
+            class="form-control"
+            placeholder="Inserisci titolo del ticket">
+        </div>
+        
+        <div class="form-group">
+          <label>Descrizione *</label>
+          <textarea 
+            [(ngModel)]="newTicket.description" 
+            name="description" 
+            required 
+            class="form-control" 
+            rows="4"
+            placeholder="Descrivi il problema o la richiesta..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Priorità</label>
+          <select [(ngModel)]="newTicket.priority" name="priority" class="form-control">
+            <option *ngFor="let priority of priorities" [value]="priority.value">
+              {{priority.label}}
+            </option>
+          </select>
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeNewTicketModal()">
+            Annulla
+          </button>
+          <button type="button" class="btn btn-primary" (click)="saveNewTicket()">
+            <i class="fas fa-save"></i> Crea Ticket
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Access Denied Message -->
+<div class="access-denied" *ngIf="!canManageTickets()">
+  <div class="access-denied-content">
+    <i class="fas fa-lock"></i>
+    <h2>Accesso Negato</h2>
+    <p>Solo gli amministratori e i membri del backoffice possono accedere alla gestione ticket.</p>
+  </div>
+</div>
