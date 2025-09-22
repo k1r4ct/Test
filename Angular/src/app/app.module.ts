@@ -126,6 +126,7 @@ import Aura  from '@primeng/themes/aura';
 import { QrcodeGeneratorComponent } from "./pages/qrcode-generator/qrcode-generator.component";
 import { TicketManagementComponent } from './pages/ticket-management/ticket-management.component';
 
+
 @NgModule({
   declarations: [
     TicketManagementComponent,
