@@ -32,6 +32,7 @@ use App\Http\Controllers\ContractTypeInformationController;
 
 
 Route::group(['middleware'=>'api'],function(){
+    
     //GESTIONE LOGIN
     Route::post('login', [AuthController::class,'login']);
     Route::post('logout', [AuthController::class,'logout']);
@@ -93,6 +94,7 @@ Route::group(['middleware'=>'api'],function(){
     Route::get('getStato', [StatusContractController::class, 'getStato'])->name('getStato');
     Route::post('getDomandeMacro/{id}', [ContractTypeInformationController::class, 'getDomandeMacro'])->name('getDomandeMacro');
     Route::post('getRisposteSelect/{id}', [ContractTypeInformationController::class, 'getRisposteSelect'])->name('getRisposteSelect');
+    
     //GESTIONE DOMANDE
     Route::get('getDomande{id}',[SpecificDataController::class,'getDomande'])->name('getDomande');
     Route::get('getListaDomande',[SpecificDataController::class, 'getListaDomande'])->name('getListaDomande');
@@ -129,5 +131,13 @@ Route::group(['middleware'=>'api'],function(){
     Route::get('recuperaCategorieFornitori',[SupplierCategoryController::class,'recuperaCategorieFornitori'])->name('recuperaCategorieFornitori');
     Route::post('nuovoFornitore',[SupplierController::class,'nuovoFornitore'])->name('nuovoFornitore');
 
+    //GESTIONE TICKET
+    Route::get('getTickets', [App\Http\Controllers\TicketController::class, 'getTickets'])->name('getTickets');
+    Route::post('createTicket', [App\Http\Controllers\TicketController::class, 'createTicket'])->name('createTicket');
+    Route::post('updateTicketStatus', [App\Http\Controllers\TicketController::class, 'updateTicketStatus'])->name('updateTicketStatus');
+    Route::get('getTicketMessages/{id}', [App\Http\Controllers\TicketController::class, 'getTicketMessages'])->name('getTicketMessages');
+    Route::post('sendTicketMessage', [App\Http\Controllers\TicketController::class, 'sendTicketMessage'])->name('sendTicketMessage');
+    Route::get('getTicketsByContract/{id}', [App\Http\Controllers\TicketController::class, 'getTicketsByContract'])->name('getTicketsByContract');
+    Route::get('getTicketStats', [App\Http\Controllers\TicketController::class, 'getTicketStats'])->name('getTicketStats');
 });
 

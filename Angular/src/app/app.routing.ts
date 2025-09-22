@@ -27,6 +27,7 @@ import { GestioneMacroprodottiComponent } from './pages/gestione-macroprodotti/g
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
 import { PasswordResetSuccessComponent } from './components/password-reset-success/password-reset-success.component';
 import { FormGeneraleComponent } from './pages/form-generale/form-generale.component';
+import { TicketManagementComponent } from './pages/ticket-management/ticket-management.component';
 
 export const AppRoutes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -58,7 +59,7 @@ export const AppRoutes: Routes = [
       { path: 'gestionedomande', component: DomandeComponent },
       { path: 'utenti', component: GestioneUtentiComponent },
       { path: 'schedapr', component: SchedaUtenteComponent },
-      // Aggiungi qui le altre rotte del tuo AdminLayoutModule
+      { path: 'ticket-management', component: TicketManagementComponent },
     ],
   },
   {
@@ -67,4 +68,5 @@ export const AppRoutes: Routes = [
     canDeactivate: [DropzoneDeactivateGuard],
   },
   { path: '**', redirectTo: 'dashboard' },
+  
 ];

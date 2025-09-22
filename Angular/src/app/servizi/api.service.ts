@@ -679,4 +679,53 @@ export class ApiService implements OnDestroy {
       .get(this.global.API_URL + "getStato", { headers })
       .pipe(takeUntil(this.destroy$));
   }
+
+  getTickets(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "getTickets", { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  createTicket(ticketData: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "createTicket", ticketData, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  updateTicketStatus(updateData: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "updateTicketStatus", updateData, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  getTicketMessages(ticketId: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "getTicketMessages/" + ticketId, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  sendTicketMessage(messageData: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "sendTicketMessage", messageData, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  getTicketsByContract(contractId: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "getTicketsByContract/" + contractId, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  getTicketStats(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "getTicketStats", { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
 }
