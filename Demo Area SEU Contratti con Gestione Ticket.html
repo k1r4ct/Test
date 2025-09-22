@@ -1,0 +1,2115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM - Ticket Management</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f6fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout Container */
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(255,255,255,0.1);
+            margin: 10px;
+            border-radius: 8px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #ff4757;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 20px 10px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin: 5px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .nav-item i {
+            width: 20px;
+            margin-right: 12px;
+            font-size: 16px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .top-header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-title i {
+            font-size: 24px;
+            color: #2196F3;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-new-ticket {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-new-ticket:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        /* Filters Section */
+        .filters-section {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .filter-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .filter-header h3 {
+            font-size: 16px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-header i {
+            color: #2196F3;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-filter {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-filter.primary {
+            background: #ffc107;
+            border-color: #ffc107;
+            color: #333;
+        }
+
+        .btn-filter.primary:hover {
+            background: #ffb300;
+        }
+
+        .btn-filter.success {
+            background: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+
+        /* Active Filters Badge */
+        .active-filters {
+            display: none;
+            padding: 10px 15px;
+            background: #e3f2fd;
+            border-left: 3px solid #2196F3;
+            margin-top: 10px;
+            border-radius: 4px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .active-filters.show {
+            display: flex;
+        }
+
+        .filter-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-badge {
+            background: #2196F3;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-badge i {
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        /* Kanban Board */
+        .kanban-container {
+            flex: 1;
+            overflow-x: auto;
+            padding: 20px 30px;
+        }
+
+        .kanban-board {
+            display: flex;
+            gap: 20px;
+            min-width: 100%;
+            height: 100%;
+        }
+
+        .kanban-column {
+            background: white;
+            border-radius: 12px;
+            min-width: 300px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .column-header {
+            padding: 15px;
+            border-bottom: 2px solid #f1f3f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .column-title {
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .column-count {
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .column-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        /* Status Colors */
+        .status-new { border-top: 3px solid #2196F3; }
+        .status-in-progress { border-top: 3px solid #ff9800; }
+        .status-waiting { border-top: 3px solid #9c27b0; }
+        .status-resolved { border-top: 3px solid #4caf50; }
+
+        /* Ticket Card */
+        .ticket-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .ticket-card.hidden {
+            display: none;
+        }
+
+        .ticket-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .ticket-id {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .ticket-priority {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-high {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .priority-medium {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .priority-low {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .ticket-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .ticket-attachments {
+            display: flex;
+            gap: 5px;
+            margin: 8px 0;
+        }
+
+        .attachment-indicator {
+            background: #f1f3f5;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .attachment-indicator i {
+            color: #2196F3;
+        }
+
+        .ticket-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .ticket-customer {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .customer-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .ticket-date {
+            font-size: 11px;
+            color: #999;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 1000px;
+            height: 85vh;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            overflow: hidden;
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .modal-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .modal-left {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #e9ecef;
+        }
+
+        .modal-right {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+
+        .contract-info {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 13px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        /* Attachments Section */
+        .attachments-section {
+            margin-top: 20px;
+        }
+
+        .attachments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .attachment-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .attachment-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .attachment-icon {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .attachment-icon.pdf { color: #dc3545; }
+        .attachment-icon.doc { color: #2196F3; }
+        .attachment-icon.img { color: #28a745; }
+        .attachment-icon.zip { color: #ffc107; }
+
+        .attachment-name {
+            font-size: 11px;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .attachment-size {
+            font-size: 10px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 15px;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: start;
+            gap: 10px;
+        }
+
+        .message.sent {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            max-width: 70%;
+        }
+
+        .message-bubble {
+            background: white;
+            padding: 10px 14px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .message.sent .message-bubble {
+            background: #2196F3;
+            color: white;
+        }
+
+        .message-attachment {
+            background: rgba(0,0,0,0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .message.sent .message-attachment {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .message-attachment:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .message.sent .message-attachment:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .message-attachment i {
+            font-size: 16px;
+        }
+
+        .message-attachment-info {
+            flex: 1;
+        }
+
+        .message-attachment-name {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .message-attachment-size {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .message.sent .message-time {
+            text-align: right;
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            outline: none;
+            resize: none;
+            font-family: inherit;
+            max-height: 100px;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .chat-btn {
+            background: none;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .chat-btn:hover {
+            background: #f1f3f5;
+            color: #333;
+        }
+
+        .chat-btn.send {
+            background: #2196F3;
+            color: white;
+        }
+
+        .chat-btn.send:hover {
+            background: #1976D2;
+            transform: scale(1.1);
+        }
+
+        .file-upload-preview {
+            display: none;
+            padding: 10px 0;
+            border-top: 1px solid #e9ecef;
+            margin-top: 10px;
+        }
+
+        .file-upload-preview.show {
+            display: block;
+        }
+
+        .upload-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .upload-item i {
+            color: #2196F3;
+            font-size: 20px;
+        }
+
+        .upload-info {
+            flex: 1;
+        }
+
+        .upload-name {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .upload-size {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .upload-remove {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Hidden file input */
+        .file-input-hidden {
+            display: none;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .ticket-card {
+            animation: slideIn 0.3s ease;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(33, 150, 243, 0.3);
+            border-radius: 50%;
+            border-top-color: #2196F3;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+
+            .nav-item span,
+            .user-profile span,
+            .sidebar-header h2 {
+                display: none;
+            }
+
+            .modal-content {
+                width: 95%;
+                height: 90vh;
+            }
+
+            .modal-body {
+                flex-direction: column;
+            }
+
+            .modal-right {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>SEMPRECHIARO</h2>
+            </div>
+            <div class="user-profile">
+                <div class="user-avatar">A</div>
+                <span>Administrator</span>
+            </div>
+            <nav class="nav-menu">
+                <div class="nav-item">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Gestione Domande</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Leads</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Clienti</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-file-contract"></i>
+                    <span>Contratti</span>
+                </div>
+                <div class="nav-item active">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Gestione Ticket</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-box"></i>
+                    <span>Gestione Prodotti</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-boxes"></i>
+                    <span>Gestione MacroProdotti</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Gestione Utenti</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>LogOut</span>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="top-header">
+                <div class="header-title">
+                    <i class="fas fa-ticket-alt"></i>
+                    <div>
+                        <h2 style="margin: 0; font-size: 22px;">Gestione Ticket</h2>
+                        <p style="margin: 0; color: #666; font-size: 14px;">Gestisci e monitora tutti i ticket di supporto</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-new-ticket" onclick="createNewTicket()">
+                        <i class="fas fa-plus"></i>
+                        Nuovo Ticket
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="filters-section">
+                <div class="filter-header">
+                    <h3><i class="fas fa-filter"></i> Filtri di Ricerca</h3>
+                    <button class="btn-filter" onclick="toggleFilters()">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="filters-grid" id="filtersGrid">
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-hashtag"></i> ID Contratto
+                        </label>
+                        <input type="text" class="filter-input" id="filterContractId" placeholder="Inserisci ID (separati da virgola)">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-box"></i> Prodotto
+                        </label>
+                        <select class="filter-input" id="filterProduct">
+                            <option value="">Seleziona prodotto</option>
+                            <option value="energia">CONTRATTO ENERGIA LUCE/GAS CONSUMER</option>
+                            <option value="5g">5G LUCE PRO X</option>
+                            <option value="iren">Iren Consumer</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-user"></i> Cliente
+                        </label>
+                        <input type="text" class="filter-input" id="filterCustomer" placeholder="Nome Cognome Cliente">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-building"></i> SEU
+                        </label>
+                        <select class="filter-input" id="filterSEU">
+                            <option value="">Seleziona SEU</option>
+                            <option value="adriano">Adriano Savettieri</option>
+                            <option value="mario">Mario Rossi</option>
+                            <option value="giuseppe">Giuseppe Verdi</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-flag"></i> Priorità
+                        </label>
+                        <select class="filter-input" id="filterPriority">
+                            <option value="">Tutte le priorità</option>
+                            <option value="high">Alta</option>
+                            <option value="medium">Media</option>
+                            <option value="low">Bassa</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-tasks"></i> Stato
+                        </label>
+                        <select class="filter-input" id="filterStatus">
+                            <option value="">Tutti gli stati</option>
+                            <option value="new">Nuovo</option>
+                            <option value="in-progress">In Lavorazione</option>
+                            <option value="waiting">In Attesa</option>
+                            <option value="resolved">Risolto</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn-filter primary" onclick="resetFilters()">
+                        <i class="fas fa-redo"></i> Reset Filtri
+                    </button>
+                    <button class="btn-filter success" onclick="applyFilters()">
+                        <i class="fas fa-search"></i> Applica Filtri
+                    </button>
+                </div>
+                <div class="active-filters" id="activeFilters">
+                    <div class="filter-badges" id="filterBadges"></div>
+                    <button class="btn-filter" onclick="resetFilters()">Cancella tutto</button>
+                </div>
+            </div>
+
+            <!-- Kanban Board -->
+            <div class="kanban-container">
+                <div class="kanban-board">
+                    <!-- Columns will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="ticketModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fas fa-ticket-alt" style="color: #2196F3;"></i>
+                    <span id="modalTicketId">Ticket #TK-001</span>
+                    <span class="ticket-priority priority-high" id="modalPriority">Alta</span>
+                </div>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-left">
+                    <h3 style="margin-bottom: 15px; color: #333;">
+                        <i class="fas fa-file-contract" style="color: #2196F3;"></i> Informazioni Contratto
+                    </h3>
+                    <div class="contract-info" id="contractInfo">
+                        <!-- Contract info will be populated dynamically -->
+                    </div>
+
+                    <h3 style="margin-bottom: 15px; color: #333;">
+                        <i class="fas fa-box" style="color: #2196F3;"></i> Informazioni Prodotto
+                    </h3>
+                    <div class="contract-info" id="productInfo">
+                        <!-- Product info will be populated dynamically -->
+                    </div>
+
+                    <h3 style="margin-bottom: 15px; color: #333;">
+                        <i class="fas fa-tasks" style="color: #2196F3;"></i> Stato Contratto
+                    </h3>
+                    <div class="contract-info" id="contractStatus">
+                        <!-- Contract status will be populated dynamically -->
+                    </div>
+
+                    <h3 style="margin-bottom: 15px; color: #333;">
+                        <i class="fas fa-user-tie" style="color: #2196F3;"></i> Dettagli Cliente
+                    </h3>
+                    <div class="contract-info" id="customerDetails">
+                        <!-- Customer details will be populated dynamically -->
+                    </div>
+
+                    <div class="attachments-section">
+                        <h3 style="margin-bottom: 15px; color: #333;">
+                            <i class="fas fa-paperclip" style="color: #2196F3;"></i> Allegati Ticket
+                        </h3>
+                        <div class="attachments-grid" id="attachmentsGrid">
+                            <!-- Attachments will be populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-right">
+                    <div class="chat-container">
+                        <div class="chat-header">
+                            <i class="fas fa-comments" style="margin-right: 8px; color: #2196F3;"></i>
+                            <span id="chatHeaderText">Chat con SEU</span>
+                        </div>
+                        <div class="chat-messages" id="chatMessages">
+                            <!-- Messages will be populated dynamically -->
+                        </div>
+                        <div class="chat-input-container">
+                            <div class="file-upload-preview" id="fileUploadPreview"></div>
+                            <div class="chat-input-wrapper">
+                                <textarea class="chat-input" id="chatInput" placeholder="Scrivi un messaggio..." rows="1"></textarea>
+                                <div class="chat-actions">
+                                    <input type="file" class="file-input-hidden" id="fileInput" multiple accept="*">
+                                    <button class="chat-btn" onclick="document.getElementById('fileInput').click()">
+                                        <i class="fas fa-paperclip"></i>
+                                    </button>
+                                    <button class="chat-btn send" onclick="sendMessage()">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ticket data
+        const ticketsData = [
+            {
+                id: 'TK-001',
+                contractId: '#1771',
+                priority: 'high',
+                priorityLabel: 'Alta',
+                title: 'Problema fatturazione contratto energia',
+                customer: 'Antonina La Fiura',
+                customerInitials: 'AF',
+                avatarColor: '#ff6b6b',
+                status: 'new',
+                date: '2 ore fa',
+                product: 'energia',
+                seu: 'adriano',
+                attachments: ['Fattura_Errata.pdf', 'Screenshot_Errore.png'],
+                // Additional contract details
+                piva: 'LFRNNN41D69G273C',
+                dataInserimento: '12-09-2025',
+                macroProduct: 'CONTRATTO ENERGIA LUCE/GAS CONSUMER',
+                microProduct: 'Iren Consumer',
+                contractStatus: 'Proposta Inserita',
+                cap: '90135',
+                city: 'PALERMO',
+                email: 'antonina.lafiura@hotmail.it',
+                phone: '320 072 9923',
+                address: 'Via Carlo Del Prete 10A 90135 PALERMO PA'
+            },
+            {
+                id: 'TK-002',
+                contractId: '#1758',
+                priority: 'medium',
+                priorityLabel: 'Media',
+                title: 'Richiesta modifica dati contratto',
+                customer: 'Mario Rossi',
+                customerInitials: 'MR',
+                avatarColor: '#4ecdc4',
+                status: 'new',
+                date: '5 ore fa',
+                product: 'iren',
+                seu: 'mario',
+                attachments: [],
+                // Additional contract details
+                piva: 'RSSMRA80A01H501Z',
+                dataInserimento: '10-09-2025',
+                macroProduct: 'CONTRATTO ENERGIA LUCE/GAS CONSUMER',
+                microProduct: 'Iren Consumer',
+                contractStatus: 'Proposta Inserita',
+                cap: '20100',
+                city: 'MILANO',
+                email: 'mario.rossi@gmail.com',
+                phone: '338 123 4567',
+                address: 'Via Dante 15 20100 MILANO MI'
+            },
+            {
+                id: 'TK-003',
+                contractId: '#1759',
+                priority: 'low',
+                priorityLabel: 'Bassa',
+                title: 'Informazioni su nuovo prodotto 5G',
+                customer: 'Giuseppe Verdi',
+                customerInitials: 'GV',
+                avatarColor: '#95afc0',
+                status: 'new',
+                date: '1 giorno fa',
+                product: '5g',
+                seu: 'giuseppe',
+                attachments: ['Brochure_Richiesta.docx'],
+                // Additional contract details
+                piva: 'VRDGPP75L01F205K',
+                dataInserimento: '08-09-2025',
+                macroProduct: 'CONSULENZA VALUE',
+                microProduct: '5G LUCE PRO X',
+                contractStatus: 'Proposta Inserita',
+                cap: '10100',
+                city: 'TORINO',
+                email: 'giuseppe.verdi@email.it',
+                phone: '347 888 9999',
+                address: 'Corso Francia 100 10100 TORINO TO'
+            },
+            {
+                id: 'TK-004',
+                contractId: '#1758',
+                priority: 'high',
+                priorityLabel: 'Alta',
+                title: 'Attivazione servizio non completata',
+                customer: 'Fontanazza Girolama',
+                customerInitials: 'FG',
+                avatarColor: '#f368e0',
+                status: 'in-progress',
+                date: '3 giorni fa',
+                product: 'energia',
+                seu: 'adriano',
+                attachments: ['Contratto_Firmato.pdf', 'Documento_Identita.pdf'],
+                // Additional contract details
+                piva: 'FNTGLM65L69G273C',
+                dataInserimento: '10-09-2025',
+                macroProduct: 'CONTRATTO ENERGIA LUCE/GAS CONSUMER',
+                microProduct: 'Iren Consumer',
+                contractStatus: 'In Lavorazione',
+                cap: '90100',
+                city: 'PALERMO',
+                email: 'girolama.fontanazza@libero.it',
+                phone: '091 123 4567',
+                address: 'Via Libertà 50 90100 PALERMO PA'
+            },
+            {
+                id: 'TK-005',
+                contractId: '#1757',
+                priority: 'medium',
+                priorityLabel: 'Media',
+                title: 'Richiesta cambio piano tariffario',
+                customer: 'Sud Di La Manna Salvatore',
+                customerInitials: 'SS',
+                avatarColor: '#00d2d3',
+                status: 'in-progress',
+                date: '4 giorni fa',
+                product: '5g',
+                seu: 'mario',
+                attachments: [],
+                // Additional contract details
+                piva: '07195170829',
+                dataInserimento: '10-09-2025',
+                macroProduct: 'CONSULENZA VALUE',
+                microProduct: 'E-like Pro',
+                contractStatus: 'In Lavorazione',
+                cap: '90100',
+                city: 'PALERMO',
+                email: 'salvatore.suddilamanna@pec.it',
+                phone: '091 555 6666',
+                address: 'Via Roma 200 90100 PALERMO PA'
+            },
+            {
+                id: 'TK-006',
+                contractId: '#1790',
+                priority: 'medium',
+                priorityLabel: 'Media',
+                title: 'Documentazione mancante per attivazione',
+                customer: 'Alioto Vincenzo',
+                customerInitials: 'AV',
+                avatarColor: '#feca57',
+                status: 'waiting',
+                date: '1 settimana fa',
+                product: 'energia',
+                seu: 'giuseppe',
+                attachments: ['Modulo_Incompleto.pdf'],
+                // Additional contract details
+                piva: 'LTAVNC83152738R',
+                dataInserimento: '10-09-2025',
+                macroProduct: 'CONTRATTO ENERGIA LUCE/GAS CONSUMER',
+                microProduct: 'Iren Consumer',
+                contractStatus: 'In Attesa Documentazione',
+                cap: '95100',
+                city: 'CATANIA',
+                email: 'vincenzo.alioto@email.it',
+                phone: '095 333 4444',
+                address: 'Via Etnea 100 95100 CATANIA CT'
+            },
+            {
+                id: 'TK-007',
+                contractId: '#1759',
+                priority: 'low',
+                priorityLabel: 'Bassa',
+                title: 'Aggiornamento dati anagrafici completato',
+                customer: 'Forbici e Caramelle',
+                customerInitials: 'FC',
+                avatarColor: '#48dbfb',
+                status: 'resolved',
+                date: '2 settimane fa',
+                product: 'iren',
+                seu: 'adriano',
+                attachments: [],
+                // Additional contract details
+                piva: '06337670829',
+                dataInserimento: '01-09-2025',
+                macroProduct: 'CONTRATTO ENERGIA LUCE/GAS CONSUMER',
+                microProduct: 'Iren Consumer',
+                contractStatus: 'Completato',
+                cap: '90100',
+                city: 'PALERMO',
+                email: 'info@forbiciecaramelle.it',
+                phone: '091 777 8888',
+                address: 'Via Notarbartolo 20 90100 PALERMO PA'
+            }
+        ];
+
+        // Chat messages for each ticket
+        const chatMessages = {
+            'TK-001': [
+                {
+                    sender: 'seu',
+                    avatar: 'AS',
+                    message: 'Buongiorno, il cliente segnala un problema con la fatturazione del contratto energia. Non risultano applicate le tariffe concordate.',
+                    time: '10:30',
+                    attachments: []
+                },
+                {
+                    sender: 'backoffice',
+                    avatar: 'BO',
+                    message: 'Grazie per la segnalazione. Sto verificando i dettagli del contratto. Puoi confermare quale tariffa era stata concordata?',
+                    time: '10:35',
+                    attachments: []
+                },
+                {
+                    sender: 'seu',
+                    avatar: 'AS',
+                    message: 'Il cliente dovrebbe avere la tariffa "Iren Consumer Base" con sconto del 10% per i primi 12 mesi.',
+                    time: '10:37',
+                    attachments: [{name: 'Contratto_Originale.pdf', size: '2.4 MB', icon: 'fa-file-pdf'}]
+                }
+            ],
+            'TK-002': [
+                {
+                    sender: 'seu',
+                    avatar: 'MR',
+                    message: 'Il cliente vuole modificare l\'indirizzo di fatturazione.',
+                    time: '14:20',
+                    attachments: []
+                }
+            ]
+        };
+
+        // Columns configuration
+        const columns = [
+            { id: 'new', title: 'Nuovo', icon: 'fa-plus-circle', color: '#2196F3' },
+            { id: 'in-progress', title: 'In Lavorazione', icon: 'fa-spinner', color: '#ff9800' },
+            { id: 'waiting', title: 'In Attesa', icon: 'fa-clock', color: '#9c27b0' },
+            { id: 'resolved', title: 'Risolto', icon: 'fa-check-circle', color: '#4caf50' }
+        ];
+
+        // Active filters
+        let activeFilters = {};
+        let pendingFiles = [];
+
+        // Initialize the board
+        function initializeBoard() {
+            const board = document.querySelector('.kanban-board');
+            board.innerHTML = '';
+            
+            columns.forEach(column => {
+                const columnElement = createColumn(column);
+                board.appendChild(columnElement);
+            });
+            
+            renderTickets();
+        }
+
+        // Create column element
+        function createColumn(column) {
+            const div = document.createElement('div');
+            div.className = `kanban-column status-${column.id}`;
+            div.innerHTML = `
+                <div class="column-header">
+                    <div class="column-title">
+                        <i class="fas ${column.icon}" style="color: ${column.color};"></i>
+                        <span>${column.title}</span>
+                    </div>
+                    <span class="column-count">0</span>
+                </div>
+                <div class="column-body" data-status="${column.id}"></div>
+            `;
+            return div;
+        }
+
+        // Render tickets
+        function renderTickets() {
+            // Clear all columns
+            document.querySelectorAll('.column-body').forEach(col => col.innerHTML = '');
+            
+            // Filter and render tickets
+            const filteredTickets = filterTickets(ticketsData);
+            
+            filteredTickets.forEach(ticket => {
+                const ticketElement = createTicketCard(ticket);
+                const columnBody = document.querySelector(`.column-body[data-status="${ticket.status}"]`);
+                if (columnBody) {
+                    columnBody.appendChild(ticketElement);
+                }
+            });
+            
+            updateColumnCounts();
+        }
+
+        // Create ticket card
+        function createTicketCard(ticket) {
+            const div = document.createElement('div');
+            div.className = 'ticket-card';
+            div.onclick = () => openTicketModal(ticket.id);
+            
+            const attachmentHtml = ticket.attachments.length > 0 
+                ? `<div class="ticket-attachments">
+                     <div class="attachment-indicator">
+                       <i class="fas fa-paperclip"></i>
+                       <span>${ticket.attachments.length} files</span>
+                     </div>
+                   </div>` 
+                : '';
+            
+            div.innerHTML = `
+                <div class="ticket-header">
+                    <span class="ticket-id">#${ticket.id}</span>
+                    <span class="ticket-priority priority-${ticket.priority}">${ticket.priorityLabel}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                    <i class="fas fa-file-contract" style="color: #666; font-size: 11px;"></i>
+                    <span style="color: #666; font-size: 12px; font-weight: 600;">Contratto ${ticket.contractId}</span>
+                </div>
+                <div class="ticket-title">${ticket.title}</div>
+                ${attachmentHtml}
+                <div class="ticket-meta">
+                    <div class="ticket-customer">
+                        <div class="customer-avatar" style="background: ${ticket.avatarColor};">${ticket.customerInitials}</div>
+                        <span>${ticket.customer}</span>
+                    </div>
+                    <span class="ticket-date">${ticket.date}</span>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        // Filter tickets based on active filters
+        function filterTickets(tickets) {
+            return tickets.filter(ticket => {
+                // Contract ID filter
+                if (activeFilters.contractId) {
+                    const ids = activeFilters.contractId.split(',').map(id => id.trim().toLowerCase());
+                    if (!ids.some(id => ticket.contractId.toLowerCase().includes(id))) {
+                        return false;
+                    }
+                }
+                
+                // Product filter
+                if (activeFilters.product && ticket.product !== activeFilters.product) {
+                    return false;
+                }
+                
+                // Customer filter
+                if (activeFilters.customer) {
+                    if (!ticket.customer.toLowerCase().includes(activeFilters.customer.toLowerCase())) {
+                        return false;
+                    }
+                }
+                
+                // SEU filter
+                if (activeFilters.seu && ticket.seu !== activeFilters.seu) {
+                    return false;
+                }
+                
+                // Priority filter
+                if (activeFilters.priority && ticket.priority !== activeFilters.priority) {
+                    return false;
+                }
+                
+                // Status filter
+                if (activeFilters.status && ticket.status !== activeFilters.status) {
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+
+        // Apply filters
+        function applyFilters() {
+            activeFilters = {};
+            
+            const contractId = document.getElementById('filterContractId').value;
+            const product = document.getElementById('filterProduct').value;
+            const customer = document.getElementById('filterCustomer').value;
+            const seu = document.getElementById('filterSEU').value;
+            const priority = document.getElementById('filterPriority').value;
+            const status = document.getElementById('filterStatus').value;
+            
+            if (contractId) activeFilters.contractId = contractId;
+            if (product) activeFilters.product = product;
+            if (customer) activeFilters.customer = customer;
+            if (seu) activeFilters.seu = seu;
+            if (priority) activeFilters.priority = priority;
+            if (status) activeFilters.status = status;
+            
+            updateFilterBadges();
+            renderTickets();
+        }
+
+        // Update filter badges
+        function updateFilterBadges() {
+            const badgesContainer = document.getElementById('filterBadges');
+            const activeFiltersContainer = document.getElementById('activeFilters');
+            
+            badgesContainer.innerHTML = '';
+            
+            const hasFilters = Object.keys(activeFilters).length > 0;
+            activeFiltersContainer.classList.toggle('show', hasFilters);
+            
+            if (hasFilters) {
+                Object.entries(activeFilters).forEach(([key, value]) => {
+                    const label = getFilterLabel(key, value);
+                    const badge = document.createElement('div');
+                    badge.className = 'filter-badge';
+                    badge.innerHTML = `
+                        ${label}
+                        <i class="fas fa-times" onclick="removeFilter('${key}')"></i>
+                    `;
+                    badgesContainer.appendChild(badge);
+                });
+            }
+        }
+
+        // Get filter label
+        function getFilterLabel(key, value) {
+            const labels = {
+                contractId: `ID: ${value}`,
+                product: `Prodotto: ${getProductName(value)}`,
+                customer: `Cliente: ${value}`,
+                seu: `SEU: ${getSEUName(value)}`,
+                priority: `Priorità: ${getPriorityName(value)}`,
+                status: `Stato: ${getStatusName(value)}`
+            };
+            return labels[key] || value;
+        }
+
+        // Helper functions for labels
+        function getProductName(value) {
+            const products = {
+                'energia': 'CONTRATTO ENERGIA',
+                '5g': '5G LUCE PRO X',
+                'iren': 'Iren Consumer'
+            };
+            return products[value] || value;
+        }
+
+        function getSEUName(value) {
+            const seus = {
+                'adriano': 'Adriano Savettieri',
+                'mario': 'Mario Rossi',
+                'giuseppe': 'Giuseppe Verdi'
+            };
+            return seus[value] || value;
+        }
+
+        function getPriorityName(value) {
+            const priorities = {
+                'high': 'Alta',
+                'medium': 'Media',
+                'low': 'Bassa'
+            };
+            return priorities[value] || value;
+        }
+
+        function getStatusName(value) {
+            const statuses = {
+                'new': 'Nuovo',
+                'in-progress': 'In Lavorazione',
+                'waiting': 'In Attesa',
+                'resolved': 'Risolto'
+            };
+            return statuses[value] || value;
+        }
+
+        // Remove single filter
+        function removeFilter(key) {
+            delete activeFilters[key];
+            
+            // Reset the input field
+            switch(key) {
+                case 'contractId':
+                    document.getElementById('filterContractId').value = '';
+                    break;
+                case 'product':
+                    document.getElementById('filterProduct').value = '';
+                    break;
+                case 'customer':
+                    document.getElementById('filterCustomer').value = '';
+                    break;
+                case 'seu':
+                    document.getElementById('filterSEU').value = '';
+                    break;
+                case 'priority':
+                    document.getElementById('filterPriority').value = '';
+                    break;
+                case 'status':
+                    document.getElementById('filterStatus').value = '';
+                    break;
+            }
+            
+            updateFilterBadges();
+            renderTickets();
+        }
+
+        // Reset all filters
+        function resetFilters() {
+            activeFilters = {};
+            
+            document.getElementById('filterContractId').value = '';
+            document.getElementById('filterProduct').value = '';
+            document.getElementById('filterCustomer').value = '';
+            document.getElementById('filterSEU').value = '';
+            document.getElementById('filterPriority').value = '';
+            document.getElementById('filterStatus').value = '';
+            
+            updateFilterBadges();
+            renderTickets();
+        }
+
+        // Open ticket modal
+        function openTicketModal(ticketId) {
+            const modal = document.getElementById('ticketModal');
+            const ticket = ticketsData.find(t => t.id === ticketId);
+            
+            if (!ticket) return;
+            
+            // Update modal header
+            document.getElementById('modalTicketId').textContent = `Ticket #${ticket.id}`;
+            document.getElementById('modalPriority').className = `ticket-priority priority-${ticket.priority}`;
+            document.getElementById('modalPriority').textContent = ticket.priorityLabel;
+            
+            // Update contract info
+            document.getElementById('contractInfo').innerHTML = `
+                <div class="info-row">
+                    <span class="info-label">ID Contratto:</span>
+                    <span class="info-value">${ticket.contractId}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Cliente/Rag. Sociale:</span>
+                    <span class="info-value">${ticket.customer.toUpperCase()}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">P.IVA/CF:</span>
+                    <span class="info-value">${ticket.piva}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Data Inserimento:</span>
+                    <span class="info-value">${ticket.dataInserimento}</span>
+                </div>
+            `;
+            
+            // Update product info
+            document.getElementById('productInfo').innerHTML = `
+                <div class="info-row">
+                    <span class="info-label">Macro Prodotto:</span>
+                    <span class="info-value">${ticket.macroProduct}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Micro Prodotto:</span>
+                    <span class="info-value">${ticket.microProduct}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">SEU Assegnato:</span>
+                    <span class="info-value">${getSEUName(ticket.seu)}</span>
+                </div>
+            `;
+            
+            // Update contract status
+            document.getElementById('contractStatus').innerHTML = `
+                <div class="info-row">
+                    <span class="info-label">Stato Avanzamento:</span>
+                    <span class="info-value" style="color: ${ticket.contractStatus === 'Completato' ? '#28a745' : '#ff9800'};">${ticket.contractStatus}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Data Apertura Ticket:</span>
+                    <span class="info-value">${ticket.date}</span>
+                </div>
+            `;
+            
+            // Update customer details
+            document.getElementById('customerDetails').innerHTML = `
+                <div class="info-row">
+                    <span class="info-label">Cap:</span>
+                    <span class="info-value">${ticket.cap}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Città:</span>
+                    <span class="info-value">${ticket.city}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">${ticket.email}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Telefono:</span>
+                    <span class="info-value">${ticket.phone}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Indirizzo:</span>
+                    <span class="info-value">${ticket.address}</span>
+                </div>
+            `;
+            
+            // Update attachments
+            const attachmentsGrid = document.getElementById('attachmentsGrid');
+            if (ticket.attachments.length > 0) {
+                attachmentsGrid.innerHTML = ticket.attachments.map(file => {
+                    const icon = getFileIcon(file);
+                    const size = Math.floor(Math.random() * 5000) / 1000 + ' MB';
+                    return `
+                        <div class="attachment-item" onclick="downloadAttachment('${file}')">
+                            <i class="fas ${icon.class} attachment-icon ${icon.type}"></i>
+                            <div class="attachment-name">${file}</div>
+                            <div class="attachment-size">${size}</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                attachmentsGrid.innerHTML = '<p style="color: #999; text-align: center; font-size: 14px;">Nessun allegato presente</p>';
+            }
+            
+            // Update chat header
+            document.getElementById('chatHeaderText').textContent = `Chat con SEU - ${getSEUName(ticket.seu)}`;
+            
+            // Load chat messages
+            loadChatMessages(ticket.id);
+            
+            // Show modal
+            modal.classList.add('show');
+        }
+
+        // Load chat messages
+        function loadChatMessages(ticketId) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messages = chatMessages[ticketId] || [];
+            
+            messagesContainer.innerHTML = messages.map(msg => {
+                const messageClass = msg.sender === 'seu' ? '' : 'sent';
+                const avatarColor = msg.sender === 'seu' ? '#2196F3' : '#28a745';
+                
+                let attachmentsHtml = '';
+                if (msg.attachments && msg.attachments.length > 0) {
+                    attachmentsHtml = msg.attachments.map(att => `
+                        <div class="message-attachment" onclick="downloadAttachment('${att.name}')">
+                            <i class="fas ${att.icon}"></i>
+                            <div class="message-attachment-info">
+                                <div class="message-attachment-name">${att.name}</div>
+                                <div class="message-attachment-size">${att.size}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                return `
+                    <div class="message ${messageClass}">
+                        <div class="message-avatar" style="background: ${avatarColor};">${msg.avatar}</div>
+                        <div class="message-content">
+                            <div class="message-bubble">
+                                ${msg.message}
+                                ${attachmentsHtml}
+                            </div>
+                            <div class="message-time">${msg.time}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Scroll to bottom
+            setTimeout(() => {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 100);
+        }
+
+        // Send message
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message || pendingFiles.length > 0) {
+                const messagesContainer = document.getElementById('chatMessages');
+                const now = new Date();
+                const time = now.getHours() + ':' + now.getMinutes().toString().padStart(2, '0');
+                
+                let attachmentsHtml = '';
+                if (pendingFiles.length > 0) {
+                    attachmentsHtml = pendingFiles.map(file => `
+                        <div class="message-attachment" onclick="downloadAttachment('${file.name}')">
+                            <i class="fas ${file.icon}"></i>
+                            <div class="message-attachment-info">
+                                <div class="message-attachment-name">${file.name}</div>
+                                <div class="message-attachment-size">${file.size}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message sent';
+                messageDiv.innerHTML = `
+                    <div class="message-avatar" style="background: #28a745;">BO</div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            ${message}
+                            ${attachmentsHtml}
+                        </div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+                
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                // Clear input and files
+                input.value = '';
+                pendingFiles = [];
+                document.getElementById('fileUploadPreview').classList.remove('show');
+                document.getElementById('fileUploadPreview').innerHTML = '';
+                document.getElementById('fileInput').value = '';
+            }
+        }
+
+        // File input handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const chatInput = document.getElementById('chatInput');
+            
+            fileInput.addEventListener('change', function(e) {
+                const files = Array.from(e.target.files);
+                const preview = document.getElementById('fileUploadPreview');
+                
+                files.forEach(file => {
+                    const fileObj = {
+                        name: file.name,
+                        size: formatFileSize(file.size),
+                        icon: getFileIconClass(file.name)
+                    };
+                    
+                    pendingFiles.push(fileObj);
+                    
+                    const uploadItem = document.createElement('div');
+                    uploadItem.className = 'upload-item';
+                    uploadItem.innerHTML = `
+                        <i class="fas ${fileObj.icon}"></i>
+                        <div class="upload-info">
+                            <div class="upload-name">${fileObj.name}</div>
+                            <div class="upload-size">${fileObj.size}</div>
+                        </div>
+                        <button class="upload-remove" onclick="removePendingFile('${fileObj.name}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    
+                    preview.appendChild(uploadItem);
+                });
+                
+                if (pendingFiles.length > 0) {
+                    preview.classList.add('show');
+                }
+            });
+            
+            // Enter key handler
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Auto-resize textarea
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+            });
+        });
+
+        // Remove pending file
+        function removePendingFile(fileName) {
+            pendingFiles = pendingFiles.filter(f => f.name !== fileName);
+            
+            const preview = document.getElementById('fileUploadPreview');
+            const items = preview.querySelectorAll('.upload-item');
+            
+            items.forEach(item => {
+                if (item.querySelector('.upload-name').textContent === fileName) {
+                    item.remove();
+                }
+            });
+            
+            if (pendingFiles.length === 0) {
+                preview.classList.remove('show');
+            }
+        }
+
+        // Get file icon
+        function getFileIcon(fileName) {
+            const ext = fileName.split('.').pop().toLowerCase();
+            const icons = {
+                pdf: { class: 'fa-file-pdf', type: 'pdf' },
+                doc: { class: 'fa-file-word', type: 'doc' },
+                docx: { class: 'fa-file-word', type: 'doc' },
+                xls: { class: 'fa-file-excel', type: 'xls' },
+                xlsx: { class: 'fa-file-excel', type: 'xls' },
+                png: { class: 'fa-file-image', type: 'img' },
+                jpg: { class: 'fa-file-image', type: 'img' },
+                jpeg: { class: 'fa-file-image', type: 'img' },
+                zip: { class: 'fa-file-archive', type: 'zip' },
+                rar: { class: 'fa-file-archive', type: 'zip' }
+            };
+            return icons[ext] || { class: 'fa-file', type: '' };
+        }
+
+        // Get file icon class
+        function getFileIconClass(fileName) {
+            const icon = getFileIcon(fileName);
+            return icon.class;
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Download attachment (placeholder)
+        function downloadAttachment(fileName) {
+            alert(`Download di: ${fileName}\n\nIn una implementazione reale, questo scaricherebbe il file dal server.`);
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('ticketModal');
+            modal.classList.remove('show');
+            
+            // Clear pending files
+            pendingFiles = [];
+            document.getElementById('fileUploadPreview').classList.remove('show');
+            document.getElementById('fileUploadPreview').innerHTML = '';
+            document.getElementById('fileInput').value = '';
+        }
+
+        // Toggle filters visibility
+        function toggleFilters() {
+            const filtersGrid = document.getElementById('filtersGrid');
+            const filterActions = document.querySelector('.filter-actions');
+            const activeFiltersDiv = document.getElementById('activeFilters');
+            const icon = document.querySelector('.filter-header button i');
+            
+            if (filtersGrid.style.display === 'none') {
+                filtersGrid.style.display = 'grid';
+                filterActions.style.display = 'flex';
+                if (Object.keys(activeFilters).length > 0) {
+                    activeFiltersDiv.style.display = 'flex';
+                }
+                icon.className = 'fas fa-chevron-up';
+            } else {
+                filtersGrid.style.display = 'none';
+                filterActions.style.display = 'none';
+                activeFiltersDiv.style.display = 'none';
+                icon.className = 'fas fa-chevron-down';
+            }
+        }
+
+        // Update column counts
+        function updateColumnCounts() {
+            columns.forEach(column => {
+                const columnBody = document.querySelector(`.column-body[data-status="${column.id}"]`);
+                const count = columnBody ? columnBody.querySelectorAll('.ticket-card').length : 0;
+                const countElement = document.querySelector(`.status-${column.id} .column-count`);
+                if (countElement) {
+                    countElement.textContent = count;
+                }
+            });
+        }
+
+        // Create new ticket (placeholder)
+        function createNewTicket() {
+            alert('Funzionalità per creare un nuovo ticket - Da implementare nel sistema completo');
+        }
+
+        // Modal click outside to close
+        document.getElementById('ticketModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeBoard();
+            
+            // Drag and drop
+            implementDragAndDrop();
+        });
+
+        // Implement drag and drop
+        function implementDragAndDrop() {
+            let draggedElement = null;
+            
+            document.addEventListener('dragstart', function(e) {
+                if (e.target.classList.contains('ticket-card')) {
+                    draggedElement = e.target;
+                    e.target.style.opacity = '0.5';
+                }
+            });
+            
+            document.addEventListener('dragend', function(e) {
+                if (e.target.classList.contains('ticket-card')) {
+                    e.target.style.opacity = '';
+                }
+            });
+            
+            document.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                const columnBody = e.target.closest('.column-body');
+                if (columnBody) {
+                    columnBody.style.backgroundColor = 'rgba(33, 150, 243, 0.05)';
+                }
+            });
+            
+            document.addEventListener('dragleave', function(e) {
+                const columnBody = e.target.closest('.column-body');
+                if (columnBody) {
+                    columnBody.style.backgroundColor = '';
+                }
+            });
+            
+            document.addEventListener('drop', function(e) {
+                e.preventDefault();
+                const columnBody = e.target.closest('.column-body');
+                
+                if (columnBody && draggedElement) {
+                    columnBody.style.backgroundColor = '';
+                    
+                    // Update ticket status in data
+                    const ticketId = draggedElement.querySelector('.ticket-id').textContent.replace('#', '');
+                    const newStatus = columnBody.dataset.status;
+                    const ticket = ticketsData.find(t => t.id === ticketId);
+                    
+                    if (ticket) {
+                        ticket.status = newStatus;
+                        columnBody.appendChild(draggedElement);
+                        updateColumnCounts();
+                    }
+                }
+                
+                draggedElement = null;
+            });
+            
+            // Make tickets draggable
+            setTimeout(() => {
+                document.querySelectorAll('.ticket-card').forEach(card => {
+                    card.draggable = true;
+                });
+            }, 100);
+        }
+    </script>
+</body>
+</html>
