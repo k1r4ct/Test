@@ -156,7 +156,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   loadInitialData() {
     // Load contracts
-    const contractsSub = this.apiService.getContratti().subscribe((response: any) => {
+    const contractsSub = this.apiService.getContratti(this.currentUser.id).subscribe((response: any) => {
       if (response.body && response.body.risposta && response.body.risposta.data) {
         this.contracts = response.body.risposta.data;
       }
@@ -164,7 +164,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.subscriptions.push(contractsSub);
 
     // Load products
-    const productsSub = this.apiService.PrendiProdotti().subscribe((response: any) => {
+    const productsSub = this.apiService.ListaProdotti().subscribe((response: any) => {
       if (response.body && response.body.risposta) {
         this.products = response.body.risposta.map((p: any) => p.descrizione);
       }
