@@ -137,7 +137,7 @@
                         <i class="material-icons">email</i>
                         Email
                       </label>
-                      <input type="email" class="modern-input" placeholder="Email" [value]="User.email">
+                      <input type="email" class="modern-input email" placeholder="Email" [value]="User.email">
                     </div>
 
                     <div class="form-field">
@@ -145,7 +145,7 @@
                         <i class="material-icons">person</i>
                         Nome
                       </label>
-                      <input type="text" class="modern-input" placeholder="Nome" [value]="User.nome">
+                      <input type="text" class="modern-input nome" placeholder="Nome" [value]="User.nome">
                     </div>
 
                     <div class="form-field">
@@ -153,7 +153,7 @@
                         <i class="material-icons">person_outline</i>
                         Cognome
                       </label>
-                      <input type="text" class="modern-input" placeholder="Cognome" [value]="User.cognome">
+                      <input type="text" class="modern-input cognome" placeholder="Cognome" [value]="User.cognome">
                     </div>
                   </div>
 
@@ -225,7 +225,7 @@
                       <i class="material-icons">home</i>
                       Indirizzo
                     </label>
-                    <input type="text" class="modern-input" placeholder="Indirizzo completo" [value]="User.indirizzo">
+                    <input type="text" class="modern-input indirizzo" placeholder="Indirizzo completo" [value]="User.indirizzo">
                   </div>
 
                   <div class="address-grid">
@@ -234,7 +234,7 @@
                         <i class="material-icons">location_city</i>
                         Città
                       </label>
-                      <input type="text" class="modern-input" placeholder="Città" [value]="User.citta">
+                      <input type="text" class="modern-input citta" placeholder="Città" [value]="User.citta">
                     </div>
                     
                     <div class="form-field">
@@ -242,7 +242,7 @@
                         <i class="material-icons">public</i>
                         Stato/Provincia
                       </label>
-                      <input type="text" class="modern-input" placeholder="Stato" [value]="User.stato">
+                      <input type="text" class="modern-input stato" placeholder="Stato" [value]="User.stato">
                     </div>
                     
                     <div class="form-field">
@@ -250,14 +250,14 @@
                         <i class="material-icons">markunread_mailbox</i>
                         CAP
                       </label>
-                      <input type="number" class="modern-input" placeholder="95121" [value]="User.cap">
+                      <input type="number" class="modern-input cap" placeholder="95121" [value]="User.cap">
                     </div>
                   </div>
                 </div>
 
                 <!-- Pulsante Salva -->
                 <div class="form-actions">
-                  <button type="submit" class="modern-button save-button" (click)="prova()">
+                  <button type="submit" class="modern-button save-button" (click)="prova(User.id)">
                     <i class="material-icons">save</i>
                     Salva Modifiche
                   </button>

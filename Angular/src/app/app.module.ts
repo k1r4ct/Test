@@ -124,12 +124,9 @@ import Lara  from '@primeng/themes/lara';
 import Material  from '@primeng/themes/lara';
 import Aura  from '@primeng/themes/aura';
 import { QrcodeGeneratorComponent } from "./pages/qrcode-generator/qrcode-generator.component";
-import { TicketManagementComponent } from './pages/ticket-management/ticket-management.component';
-
-
+import { TicketManagementComponent } from "./pages/ticket-management/ticket-management.component";
 @NgModule({
   declarations: [
-    TicketManagementComponent,
     AppComponent,
     AdminLayoutComponent,
     LoginComponent,
@@ -171,6 +168,7 @@ import { TicketManagementComponent } from './pages/ticket-management/ticket-mana
     CardStatisticComponentSeu,
     SchedaUtenteComponent,
     ContrattiPersonaliComponent,
+    TicketManagementComponent,
 
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],

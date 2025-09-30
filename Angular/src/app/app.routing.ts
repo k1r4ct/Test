@@ -59,7 +59,8 @@ export const AppRoutes: Routes = [
       { path: 'gestionedomande', component: DomandeComponent },
       { path: 'utenti', component: GestioneUtentiComponent },
       { path: 'schedapr', component: SchedaUtenteComponent },
-      { path: 'ticket-management', component: TicketManagementComponent },
+      { path: 'ticket', component: TicketManagementComponent },
+      // Aggiungi qui le altre rotte del tuo AdminLayoutModule
     ],
   },
   {
@@ -68,5 +69,4 @@ export const AppRoutes: Routes = [
     canDeactivate: [DropzoneDeactivateGuard],
   },
   { path: '**', redirectTo: 'dashboard' },
-  
 ];

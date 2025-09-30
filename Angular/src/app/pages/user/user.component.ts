@@ -115,7 +115,7 @@ export class UserComponent implements OnInit, OnDestroy {
   isHidden = false;
   DropEnable = true;
   urlImageProfile: any;
-  urlImageProfileUrl="https://clearportal.semprechiaro.com/storage/app/public/";
+  urlImageProfileUrl="https://clearportal.visinnova.it/storage/app/public/";
   //dati utente
   name: string | undefined;
   email: string | undefined;
@@ -244,9 +244,9 @@ export class UserComponent implements OnInit, OnDestroy {
   
         // Recupera l'immagine profilo
         this.urlImageProfile = users.immagine;
-        console.log(users.immagine);
+        //console.log(users.immagine);
         
-        console.log(users.immagine.split("/") );
+        //console.log(users.immagine.split("/") );
         let parts = users.immagine.split("/");
         this.urlImageProfileUrl = this.urlImageProfileUrl + parts[4]+"/"+parts[5]+"/"+parts[6]+"/"+parts[7];
       })
@@ -300,21 +300,61 @@ export class UserComponent implements OnInit, OnDestroy {
       life: 30000
     });
   }
-  prova() {
+  prova(id:any) {
     //console.log("verifica utente loggato: " + this.authService.isUserLogin());
-
+    console.log(id);
+    
     this.servzioAPI.LeggiQualifiche();
+    const idUser = id;
+    const formData2 = new FormData();
+    const Email = (
+      document.querySelector(".email") as HTMLInputElement
+    ).value;
+    const Nome = (
+      document.querySelector(".nome") as HTMLInputElement
+    ).value;
+    const Cognome = (
+      document.querySelector(".cognome") as HTMLInputElement
+    ).value;
+    const Indirizzo = (
+      document.querySelector(".indirizzo") as HTMLInputElement
+    ).value;
+    const Citta = (
+      document.querySelector(".citta") as HTMLInputElement
+    ).value;
+    const Stato = (
+      document.querySelector(".stato") as HTMLInputElement
+    ).value;
+    const Cap = (document.querySelector(".cap") as HTMLInputElement).value;
+    //console.log(Email);
+    //console.log(Nome);
+    //console.log(Cognome);
+    //console.log(Indirizzo);
+    //console.log(Citta);
+    //console.log(Stato);
+    //console.log(Cap);
+    formData2.append("emailUtente", Email);
+    formData2.append("nomeutente", Nome);
+    formData2.append("cognomeUtente", Cognome);
+    formData2.append("indirizzo", Indirizzo);
+    formData2.append("citta", Citta);
+    formData2.append("stato", Stato);
+    formData2.append("cap", Cap);
+    formData2.append("idUtente", idUser);
+    //console.log(formData2);
 
-    // this.servzioAPI.getData().subscribe( (data) => {
-    //   //this.datinelcomponente = data;
-    //   console.log("dal BehaviorSubject ");
-    //   console.log(data);
-    // });
 
-    // this.servzioAPI.LeggiQualifiche2().subscribe( result => {
-    //   console.log("da component ");
-    //   console.log(result);
-    // });
+    this.servzioAPI.updateUtente(formData2).subscribe((Risposta: any) => {
+      //console.log(Risposta);
+      if (Risposta.status==200) {
+        this.message="DATI AGGIORNATI";
+        this.showContrast(this.message,'success');
+      }else{
+        this.message="ERRORE DURANTE L'AGGIORNAMENTO DEI DATI";
+        this.showContrast(this.message,"error");
+      }
+    });
+
   }
   modificaPassword(id: any) {
     //console.log(id);

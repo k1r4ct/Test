@@ -17,10 +17,10 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
 /* Fix globale per i backdrop problematici di Angular Material */
 .cdk-overlay-transparent-backdrop.cdk-overlay-backdrop-showing {
-  display: none !important;
+  /* display: none !important;
   visibility: hidden !important;
-  pointer-events: none !important;
-  opacity: 0 !important;
+  pointer-events: auto !important;
+  opacity: 0 !important; */
 }
 
 /* Assicuriamoci che le select Material abbiano z-index appropriato */
@@ -35,7 +35,11 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 /* Fix per backdrop residui */
 .cdk-overlay-backdrop:not([class*="custom"]):not([class*="dialog"]) {
   &.cdk-overlay-transparent-backdrop {
-    display: none !important;
-    pointer-events: none !important;
+    /* display: none !important;
+    pointer-events: auto !important; */
   }
+}
+
+.mat-icon{
+  display:inline-table!important;
 }

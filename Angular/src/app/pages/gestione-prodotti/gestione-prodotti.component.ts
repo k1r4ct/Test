@@ -31,6 +31,10 @@ export interface ListaProdotti {
     descrizione: string;
   } | string; // Può essere sia oggetto che stringa per compatibilità
   nome_fornitore: string;
+  supplier: {
+    id: number;
+    nome_fornitore: string;
+  };
 }
 
 export interface DettaglioProdotto {
@@ -101,6 +105,7 @@ export class GestioneProdottiComponent {
   fornitoriList: string[] = [];
   MacroProList: string[] = [];
   MacroDescrizione: string[] = [];
+  ListaFornitori: string[] = [];
   NewProdotto: ProdottiNew[] = [];
   prodottoNeiContratti: any;
   messageProduct='';
@@ -121,11 +126,72 @@ export class GestioneProdottiComponent {
     this.listaprodotti = [];
   }
 
+  // ===== Helper semplici e riusabili =====
+  // Converte qualunque valore in stringa ripulita (senza spazi iniziali/finali)
+  private normalizza(val: any): string {
+    return (val ?? '').toString().trim();
+  }
+
+  // Come sopra ma in maiuscolo: utile per confronti insensibili a maiuscole/minuscole
+  private normalizzaUpper(val: any): string {
+    return this.normalizza(val).toUpperCase();
+  }
+
+  // Estrae il CODICE MACRO dal record (può essere già stringa oppure dentro macro_product.codice_macro)
+  private codiceMacroDa(rec: any): string {
+    const mp = rec?.macro_product;
+    const codice = (typeof mp === 'object' && mp?.codice_macro) ? mp.codice_macro : mp;
+    return this.normalizza(codice);
+  }
+
+  // Estrae la DESCRIZIONE macro prodotto, con fallback a macro_product.descrizione
+  private descrizioneMacroDa(rec: any): string {
+    const diretta = this.normalizza(rec?.macro_descrizione);
+    if (diretta) return diretta;
+    const mp = rec?.macro_product;
+    const fallback = (typeof mp === 'object') ? (mp?.descrizione || '') : '';
+    return this.normalizza(fallback);
+  }
+
+  // Estrae il NOME FORNITORE sia dal campo piatto che da supplier.nome_fornitore
+  private nomeFornitoreDa(rec: any): string {
+    return this.normalizza(rec?.nome_fornitore || rec?.supplier?.nome_fornitore || '');
+  }
+
+  // Aggiorna le opzioni visibili nelle select in base ai dati attualmente filtrati (effetto AND)
+  private aggiornaOpzioniDisponibili(dati: any[]): void {
+    // Codici macro
+    this.MacroProList = Array.from(new Set(
+      (dati || [])
+        .map((r) => this.codiceMacroDa(r))
+        .filter((v) => !!v)
+    )).sort();
+
+    // Macro prodotto (descrizione)
+    this.MacroDescrizione = Array.from(new Set(
+      (dati || [])
+        .map((r) => this.descrizioneMacroDa(r))
+        .filter((v) => !!v)
+    )).sort();
+
+    // Fornitori
+    this.ListaFornitori = Array.from(new Set(
+      (dati || [])
+        .map((r) => this.nomeFornitoreDa(r))
+        .filter((v) => !!v)
+    )).sort();
+  }
+
+
+  // Flag per eseguire scroll solo quando richiesto
+  private pendingScroll = false;
 
   ngAfterViewChecked () {
-    //console.log(this.nuovoprodottoHidden);
-    //console.log(this.nuovoFornitoreHidden);
-    this.srvScroll.triggerScroll();
+    // Esegui scroll solo quando esplicitamente settato
+    if (this.pendingScroll) {
+      this.pendingScroll = false;
+      this.srvScroll.triggerScroll();
+    }
   }
 
 
@@ -134,6 +200,8 @@ export class GestioneProdottiComponent {
     this.nuovoFornitoreHidden = false;
     this.nuovoprodottoHidden = true;
     this.prodottoselezionato = true;
+  // Richiedi scroll quando apro la sezione
+  this.pendingScroll = true;
   }
 
   nuovoprodotto() {
@@ -141,6 +209,8 @@ export class GestioneProdottiComponent {
     this.nuovoprodottoHidden = false;
     this.nuovoFornitoreHidden = true;
     this.prodottoselezionato = true;
+  // Richiedi scroll quando apro la sezione
+  this.pendingScroll = true;
   }
 
 
@@ -154,13 +224,15 @@ export class GestioneProdottiComponent {
       }
     })
     this.servizioApi.ListaProdotti().subscribe((response) => {
-      console.log(response.body.prodotti);
+      //console.log(response.body.prodotti);
       
       //console.clear();
       //console.log("carico lista prodotti");
       //console.log(response);
 
       this.listaprodotti = response.body.prodotti as ListaProdotti[];
+      //console.log(this.listaprodotti);
+      
       this.dataSource = new MatTableDataSource(this.listaprodotti);
 
       this.dataSource.paginator = this.paginator;
@@ -176,6 +248,8 @@ export class GestioneProdottiComponent {
       let prodottiDaFiltrare = this.listaprodotti.map(
         (prodotto) => prodotto.descrizione
       );
+      //console.log(prodottiDaFiltrare);
+      
       this.prodottiList = prodottiDaFiltrare.sort();
 
       let fornitoriDaFitrare = this.listaprodotti.map(
@@ -183,150 +257,104 @@ export class GestioneProdottiComponent {
       );
 
       fornitoriDaFitrare.sort();
-      this.fornitoriList = fornitoriDaFitrare.filter((str, index) => {
+      /* this.fornitoriList = fornitoriDaFitrare.filter((str, index) => {
         const set = new Set(fornitoriDaFitrare.slice(0, index));
         return !set.has(str);
-      });
+      }); */
 
-      let MacroPDaFitrare = this.listaprodotti.map((prodotto) => {
-        if (typeof prodotto.macro_product === 'object' && prodotto.macro_product?.codice_macro) {
-          return prodotto.macro_product.codice_macro;
-        }
-        return prodotto.macro_product as string;
-      });
+      // Codice Macro: usa codice_macro se oggetto, altrimenti la stringa; normalizza, filtra vuoti e deduplica
+      const MacroPDaFitrare = this.listaprodotti
+        .map((prodotto) => {
+          if (typeof prodotto.macro_product === 'object' && prodotto.macro_product?.codice_macro) {
+            return (prodotto.macro_product.codice_macro || '').toString().trim();
+          }
+          return ((prodotto.macro_product as string) || '').toString().trim();
+        })
+        .filter((v) => !!v);
+      this.MacroProList = Array.from(new Set(MacroPDaFitrare)).sort();
 
-      MacroPDaFitrare.sort();
-      this.MacroProList = MacroPDaFitrare.filter((str, index) => {
-        const set = new Set(MacroPDaFitrare.slice(0, index));
-        return !set.has(str);
-      });
+      // Macro Prodotto (descrizione): usa macro_descrizione, fallback a macro_product.descrizione; normalizza, filtra vuoti e deduplica
+      const MacroDescri = this.listaprodotti
+        .map((prodotto) => {
+          const md = (prodotto.macro_descrizione as unknown as string) || '';
+          if (typeof md === 'string' && md.trim()) return md.trim();
+          const mp: any = prodotto.macro_product as any;
+          const fallback = mp && typeof mp === 'object' ? (mp.descrizione || '') : '';
+          return fallback.toString().trim();
+        })
+        .filter((v) => !!v);
 
-      let MacroDescri = this.listaprodotti.map(
-        (prodotto) => prodotto.macro_descrizione
-      );
+      // Fornitore: usa campo flat o supplier.nome_fornitore; normalizza, filtra vuoti e deduplica
+      const ListaProd = this.listaprodotti
+        .map((prodotto) => {
+          const flat = (prodotto.nome_fornitore || '') as string;
+          const nested = (prodotto.supplier?.nome_fornitore || '') as string;
+          return (flat || nested).toString().trim();
+        })
+        .filter((v) => !!v);
 
-      MacroDescri.sort();
-      this.MacroDescrizione = MacroDescri.filter((str, index) => {
-        const set = new Set(MacroDescri.slice(0, index));
-        return !set.has(str);
-      });
+      this.MacroDescrizione = Array.from(new Set(MacroDescri)).sort();
+      // Fallback: se per qualche motivo la lista è vuota, prova da macro_product.descrizione o, in ultima istanza, da descrizione prodotto
+      if (!this.MacroDescrizione.length) {
+        const fallbackMacroDescr = this.listaprodotti
+          .map((p: any) => {
+            const fromMp = p?.macro_product && typeof p.macro_product === 'object' ? (p.macro_product.descrizione || '') : '';
+            const fromMacro = (p?.macro_descrizione || '') as string;
+            const fromDesc = (p?.descrizione || '') as string;
+            return (fromMp || fromMacro || fromDesc).toString().trim();
+          })
+          .filter((v: string) => !!v);
+        this.MacroDescrizione = Array.from(new Set(fallbackMacroDescr)).sort();
+      }
 
-      // FUNZIONE DI FILTRO STRUTTURATA PER FAR APPARIRE LE RIGHE PER LA QUALE
-      // CAMPO TABELLA CONTIENE I VALORI PASSATI SU FILTER
-      // ["NOMECAMPOTABELLA" , ["VALORE1","VALORE2",..]]
-      // FILTER VIENE COSTRUITO NELLA FUNZIONE selectOpt()
-      this.dataSource.filterPredicate = function (record, filter) {
-        //console.log(filter,record);
+  this.ListaFornitori = Array.from(new Set(ListaProd)).sort();
+      // Filtro "tutti insieme" (AND): ogni filtro attivo deve essere rispettato
+      // Nota: usiamo una funzione freccia per poter usare i metodi helper di questa classe
+      this.dataSource.filterPredicate = (record, filter) => {
+        const voci: any[] = JSON.parse(filter || '[]');
+        if (!voci || voci.length === 0) return true;
 
-        const obj = JSON.parse(filter);
-        let isMatch = false;
-        let isMatch_nome_fornitore = false;
-        let isMatch_macro_product = false;
-        let isMatch_macro_descriz = false;
+        for (const [campo, valoriGrezzi] of voci) {
+          // Raccogli i valori del filtro ripuliti (array garantito)
+          const valori: string[] = Array.isArray(valoriGrezzi)
+            ? valoriGrezzi.map((v) => this.normalizzaUpper(v)).filter((v) => !!v)
+            : [this.normalizzaUpper(valoriGrezzi)].filter((v) => !!v);
+          if (valori.length === 0) continue; // niente da verificare per questo campo
 
-        let nome_fornitore = false;
-        let macro_product = false;
-        let macro_descriz = false;
-
-        let statoField: boolean[] = [];
-        let cicli = 0;
-        let stringEleArray: any;
-
-        for (const item of obj) {
-          const field = item[0];
-          const valori = item[1];
-          isMatch = false;
-
-          //console.log(item);
-
-          if (field == "nome_fornitore") {
-            for (const valore of valori) {
-              nome_fornitore = true;
-              //console.log(valore);
-              cicli++;
-              stringEleArray = record[field as keyof ListaProdotti];
-              if (stringEleArray == valore) {
-                isMatch_nome_fornitore = true;
-              }
+          // Verifica corrispondenza in base al campo
+          let corrisponde = true;
+          switch (campo) {
+            case 'nome_fornitore': {
+              const nome = this.normalizzaUpper(this.nomeFornitoreDa(record));
+              corrisponde = valori.includes(nome);
+              break;
             }
+            case 'macro_product': { // Codice Macro
+              const codice = this.normalizzaUpper(this.codiceMacroDa(record));
+              corrisponde = valori.includes(codice);
+              break;
+            }
+            case 'macro_descrizione': { // Macro Prodotto (descrizione)
+              const descr = this.normalizzaUpper(this.descrizioneMacroDa(record));
+              corrisponde = valori.includes(descr);
+              break;
+            }
+            case 'descrizione': {
+              const testo = this.normalizzaUpper((record as any)?.descrizione);
+              const ago = valori[0] || '';
+              corrisponde = testo.includes(ago);
+              break;
+            }
+            default:
+              corrisponde = true;
           }
 
-          if (field == "macro_product") {
-            for (const valore of valori) {
-              macro_product = true;
-              //console.log(valore);
-              cicli++;
-              stringEleArray = record[field as keyof ListaProdotti];
-              // Gestisci sia oggetto che stringa per macro_product
-              const macroProductValue = typeof stringEleArray === 'object' && stringEleArray?.codice_macro 
-                ? stringEleArray.codice_macro 
-                : stringEleArray;
-              if (macroProductValue == valore) {
-                isMatch_macro_product = true;
-              }
-            }
-          }
-
-          if (field == "macro_descrizione") {
-            for (const valore of valori) {
-              macro_descriz = true;
-              //console.log(valore);
-              cicli++;
-              stringEleArray = record[field as keyof ListaProdotti];
-              if (stringEleArray == valore) {
-                isMatch_macro_descriz = true;
-              }
-            }
-          }
-
-          if (field == "descrizione") {
-            cicli++;
-            stringEleArray = record[field as keyof ListaProdotti];
-            if (stringEleArray.includes(valori)) {
-              isMatch = true;
-            }
-          } else {
-            //console.log("nessuna descrizione");
-            isMatch = true;
-          }
-
-          if (nome_fornitore && macro_product && macro_descriz) {
-            if (
-              isMatch_nome_fornitore &&
-              isMatch_macro_product &&
-              isMatch_macro_descriz
-            ) {
-              isMatch = true;
-            }
-          } else if (nome_fornitore && macro_product) {
-            if (isMatch_nome_fornitore && isMatch_macro_product) {
-              isMatch = true;
-            }
-          } else if (nome_fornitore && macro_descriz) {
-            if (isMatch_nome_fornitore && isMatch_macro_descriz) {
-              isMatch = true;
-            }
-          } else if (macro_product && macro_descriz) {
-            if (isMatch_macro_product && isMatch_macro_descriz) {
-              isMatch = true;
-            }
-          } else if (nome_fornitore) {
-            isMatch = isMatch_nome_fornitore;
-          } else if (macro_product) {
-            isMatch = isMatch_macro_product;
-          } else if (macro_descriz) {
-            isMatch = isMatch_macro_descriz;
-          }
-
-          statoField.push(isMatch);
+          // Logica AND: se un solo filtro non corrisponde, la riga è esclusa
+          if (!corrisponde) return false;
         }
 
-        if (cicli == 0) {
-          return true;
-        }
-
-        statoField = [];
-        return isMatch;
+        // Tutti i filtri sono rispettati
+        return true;
       };
     });
 
@@ -351,7 +379,7 @@ export class GestioneProdottiComponent {
 
   selectOpt(fieldTable: string, value: any) {
     //console.log("sono su selectOpt");
-    //console.log(fieldTable);
+    
     //console.log(value);
 
     let jsonString: string = "";
@@ -361,27 +389,16 @@ export class GestioneProdottiComponent {
     } else {
       this.filterDictionary.set(fieldTable, value!);
     }
-
+    console.log(this.filterDictionary);
     jsonString = JSON.stringify(Array.from(this.filterDictionary.entries()));
 
-    //console.log(jsonString);
-
+    console.log("json string"+jsonString);
+    console.log(this.dataSource);
+    
     this.dataSource.filter = jsonString;
 
-    let FilterListaProdotti: any[] = [];
-    let FilterListaFornitori: any[] = [];
-    this.dataSource.filteredData.forEach((element) => {
-      //console.log(element);
-      //FilterListaFornitori.push(element["nome_fornitore"]);
-      FilterListaProdotti.push(element["descrizione"]);
-    });
-    this.prodottiList = FilterListaProdotti.sort();
-
-    // FilterListaFornitori.sort();
-    // this.fornitoriList = FilterListaFornitori.filter((str, index) => {
-    //   const set = new Set(FilterListaFornitori.slice(0, index));
-    //   return !set.has(str);
-    // });
+    // Aggiorna le opzioni degli altri filtri in base ai dati attualmente visibili
+    this.aggiornaOpzioniDisponibili(this.dataSource.filteredData as any[]);
 
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage();
@@ -389,7 +406,7 @@ export class GestioneProdottiComponent {
   }
 
   selectValue(fieldTable: string, event: any) {
-    //console.log("sono su selectValue");
+    console.log("sono su selectValue");
 
     const filterValue = (event.target as HTMLInputElement).value;
     let value = filterValue.toUpperCase();
@@ -407,21 +424,8 @@ export class GestioneProdottiComponent {
     //console.log(jsonString);
 
     this.dataSource.filter = jsonString;
-
-    let FilterListaProdotti: any[] = [];
-    let FilterListaFornitori: any[] = [];
-    this.dataSource.filteredData.forEach((element) => {
-      //console.log(element);
-      //FilterListaFornitori.push(element["nome_fornitore"]);
-      FilterListaProdotti.push(element["descrizione"]);
-    });
-    this.prodottiList = FilterListaProdotti.sort();
-
-    // FilterListaFornitori.sort();
-    // this.fornitoriList = FilterListaFornitori.filter((str, index) => {
-    //   const set = new Set(FilterListaFornitori.slice(0, index));
-    //   return !set.has(str);
-    // });
+    // Aggiorna le opzioni anche per la ricerca testuale
+    this.aggiornaOpzioniDisponibili(this.dataSource.filteredData as any[]);
 
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage();

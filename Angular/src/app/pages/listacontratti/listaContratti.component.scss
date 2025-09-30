@@ -205,9 +205,20 @@
         border-radius: 12px;
       }
 
-      &.id-textarea textarea {
+      /* Textarea ID: assicurati che stia dentro al contenitore */
+      textarea.id-textarea {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
         resize: vertical;
-        min-height: 80px;
+        min-height: 96px;
+        line-height: 1.4;
+      }
+
+      /* Evita che l'interno del campo limiti la larghezza */
+      .mat-mdc-form-field-infix {
+        width: 100%;
       }
 
       .selection-display {
@@ -1790,9 +1801,10 @@
   font-size: 0.7rem;
 }
 textarea {
+  height: 26px!important; /* Altezza iniziale */
   resize: vertical!important; /* Permette all'utente di ridimensionare verticalmente */
   overflow: auto!important; /* Aggiunge una scrollbar quando il contenuto eccede l'area visibile */
-  min-height: 100px!important; /* Altezza minima */
+  min-height: auto!important; /* Altezza minima */
 }
 
 /* === PAGINAZIONE PERSONALIZZATA === */

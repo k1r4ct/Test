@@ -92,7 +92,7 @@ export class TabellacontattiComponent implements OnInit {
           assegnato_a: Lead.user.name + ' ' + Lead.user.cognome,
           id_assegnato: Lead.user.id,
           stato: Lead.lead_status_id,
-          colore: Lead.leadstatus.colors.colore,
+          colore: Lead.leadstatus.color_id,
           microstato:
             this.ruoloUtente == 'Cliente' &&
             Lead.leadstatus.micro_stato == 'Lead inserito'

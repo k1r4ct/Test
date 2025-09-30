@@ -273,7 +273,7 @@
           <select [(ngModel)]="newTicket.contract_id" name="contract" required class="form-control">
             <option value="">Seleziona contratto</option>
             <option *ngFor="let contract of contracts" [value]="contract.id">
-              {{contract.codice_contratto}} - {{contract.customer_data?.nome_cognome}}
+              {{contract.codice_contratto}} - {{contract.customer_data?.nome}} {{contract.customer_data?.cognome}} - {{contract.id}}
             </option>
           </select>
         </div>

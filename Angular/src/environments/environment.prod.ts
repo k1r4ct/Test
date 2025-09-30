@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://127.0.0.1:8000/api/',
-  passwdUrl: 'http://127.0.0.1:8000/web/',
+  apiUrl: 'https://clearportal.semprechiaro.com/api/',
+  passwdUrl: 'https://clearportal.semprechiaro.com/web/',
+
 };

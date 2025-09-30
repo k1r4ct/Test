@@ -82,7 +82,7 @@ export class GestioneUtentiComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('attivoUser') attivoUser: any;
-  @ViewChild('reetPasswd') resetPasswd: any;
+  @ViewChild('resetpasswd') resetPasswd: any;
   displayedColumns: string[] = [
     "id",
     "nominativo/Rag.Sociale",
@@ -312,8 +312,10 @@ export class GestioneUtentiComponent implements OnInit {
     const activeUserValue = activeUser?.value; */
     const formData = new FormData();
     const activeUser=this.attivoUser.checked? '1' : '0';
-    const resetpwd=this.resetPasswd? '1' : '0';
-
+    const resetpwd=this.resetPasswd.checked? '1' : '0';
+    console.log('Reset Password:', resetpwd);
+    console.log('Active User:', activeUser);
+    
     formData.append('idUtente',idUtente)
     formData.append('nomeutente',nomeutente)
     formData.append('cognomeUtente',cognomeUtente)

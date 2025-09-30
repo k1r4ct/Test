@@ -680,6 +680,10 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
+  // -------------------- TICKET MANAGEMENT API --------------------
+  /**
+   * Recupera la lista dei ticket
+   */
   getTickets(): Observable<any> {
     let headers = this.headers;
     return this.http
@@ -687,20 +691,19 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
-  createTicket(ticketData: any): Observable<any> {
+  /**
+   * Crea un nuovo ticket
+   */
+  createTicket(form: any): Observable<any> {
     let headers = this.headers;
     return this.http
-      .post(this.global.API_URL + "createTicket", ticketData, { headers })
+      .post(this.global.API_URL + "createTicket", form, { headers })
       .pipe(takeUntil(this.destroy$));
   }
 
-  updateTicketStatus(updateData: any): Observable<any> {
-    let headers = this.headers;
-    return this.http
-      .post(this.global.API_URL + "updateTicketStatus", updateData, { headers })
-      .pipe(takeUntil(this.destroy$));
-  }
-
+  /**
+   * Recupera i messaggi di un ticket
+   */
   getTicketMessages(ticketId: number): Observable<any> {
     let headers = this.headers;
     return this.http
@@ -708,24 +711,23 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
-  sendTicketMessage(messageData: any): Observable<any> {
+  /**
+   * Invia un messaggio per un ticket
+   */
+  sendTicketMessage(form: any): Observable<any> {
     let headers = this.headers;
     return this.http
-      .post(this.global.API_URL + "sendTicketMessage", messageData, { headers })
+      .post(this.global.API_URL + "sendTicketMessage", form, { headers })
       .pipe(takeUntil(this.destroy$));
   }
 
-  getTicketsByContract(contractId: number): Observable<any> {
+  /**
+   * Aggiorna lo stato di un ticket (drag & drop)
+   */
+  updateTicketStatus(form: any): Observable<any> {
     let headers = this.headers;
     return this.http
-      .get(this.global.API_URL + "getTicketsByContract/" + contractId, { headers })
-      .pipe(takeUntil(this.destroy$));
-  }
-
-  getTicketStats(): Observable<any> {
-    let headers = this.headers;
-    return this.http
-      .get(this.global.API_URL + "getTicketStats", { headers })
+      .post(this.global.API_URL + "updateTicketStatus", form, { headers })
       .pipe(takeUntil(this.destroy$));
   }
 }

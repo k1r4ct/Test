@@ -30,17 +30,16 @@ export const ROUTES_ADMIN: RouteInfo[] = [
   { path: '/leads', title: 'Leads', icon: 'nc-send', class: '' },
   { path: '/clienti', title: 'Clienti', icon: 'nc-vector', class: '' },
   { path: '/contratti', title: 'Contratti', icon: 'nc-paper', class: '' },
-  { path: '/ticket-management', title: 'Gestione Ticket', icon: 'nc-support-17', class: '' },
   { path: '/table', title: 'Gestione Prodotti', icon: 'nc-tile-56', class: '' },
   { path: '/macroprodotti', title: 'Gestione MacroProdotti', icon: 'nc-tile-56', class: '' },
   { path: '/utenti', title: 'Gestione Utenti', icon: 'nc-circle-10', class: '' },
+  { path: '/ticket', title: 'Gestione Ticket', icon: 'nc-circle-10', class: '' },
 ];
 
 export const ROUTES_BKOFF: RouteInfo[] = [
   { path: '/dashboard', title: 'Dashboard', icon: 'nc-chart-bar-32', class: '' },
   { path: '/clienti', title: 'Clienti', icon: 'nc-vector', class: '' },
   { path: '/contratti', title: 'Contratti', icon: 'nc-paper', class: '' },
-  { path: '/ticket-management', title: 'Gestione Ticket', icon: 'nc-support-17', class: '' },
   { path: '/table', title: 'Gestione Prodotti', icon: 'nc-tile-56', class: '' },
 ];
 

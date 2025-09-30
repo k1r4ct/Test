@@ -52,7 +52,10 @@ export interface TicketFilters {
 @Component({
   selector: 'app-ticket-management',
   templateUrl: './ticket-management.component.html',
-  styleUrls: ['./ticket-management.component.css']
+  styleUrls: ['./ticket-management.component.css'],
+  standalone: false,
+  // If using standalone components, import necessary modules here
+  // imports: [CommonModule, FormsModule, ReactiveFormsModule, DragDropModule, MatDialogModule, MatSnackBarModule, ...]
 })
 export class TicketManagementComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = [];
@@ -138,7 +141,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadCurrentUser();
-    this.loadInitialData();
+    //this.loadInitialData(); //SPOSTATO DENTRO loadCurrentUser per evitare chiamate multiple . CurrentUser non viene riempito in tempo
   }
 
   ngOnDestroy() {
@@ -149,24 +152,31 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     const userSub = this.apiService.PrendiUtente().subscribe((userData: any) => {
       this.currentUser = userData.user;
       this.userRole = userData.user.role.id;
+      this.loadInitialData(); //SPOSTATO QUI 
       this.loadTickets();
     });
+    
     this.subscriptions.push(userSub);
+    console.log(userSub);
   }
 
   loadInitialData() {
     // Load contracts
     const contractsSub = this.apiService.getContratti(this.currentUser.id).subscribe((response: any) => {
+      //console.log(response);
       if (response.body && response.body.risposta && response.body.risposta.data) {
         this.contracts = response.body.risposta.data;
       }
     });
+    
     this.subscriptions.push(contractsSub);
 
     // Load products
     const productsSub = this.apiService.ListaProdotti().subscribe((response: any) => {
-      if (response.body && response.body.risposta) {
-        this.products = response.body.risposta.map((p: any) => p.descrizione);
+      console.log(response);
+      
+      if (response.body && response.body.prodotti) { //CAMBIATA LETTURA DI RESPONSE CHE HA NEL BODY "prodotti" E NON "risposta"
+        this.products = response.body.prodotti.map((p: any) => p.descrizione);
       }
     });
     this.subscriptions.push(productsSub);
@@ -207,8 +217,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       contract_code: ticket.contract?.codice_contratto || 'N/A',
       created_by_user_id: ticket.created_by_user_id,
       assigned_to_user_id: ticket.assigned_to_user_id,
-      customer_name: ticket.contract?.customer_data?.nome_cognome || 'N/A',
-      customer_initials: this.getInitials(ticket.contract?.customer_data?.nome_cognome || 'N/A'),
+      customer_name: ticket.contract?.customer_data?.nome + ' ' + ticket.contract?.customer_data?.cognome || 'N/A',
+      customer_initials: this.getInitials(ticket.contract?.customer_data?.nome + ' ' + ticket.contract?.customer_data?.cognome || 'N/A'),
       avatar_color: this.getRandomColor(),
       created_at: ticket.created_at,
       updated_at: ticket.updated_at,

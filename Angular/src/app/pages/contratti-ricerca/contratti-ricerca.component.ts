@@ -347,7 +347,7 @@ export class ContrattiRicercaComponent implements OnInit {
       if (backdrop instanceof HTMLElement && backdrop.classList.contains('cdk-overlay-transparent-backdrop')) {
         backdrop.style.display = 'none';
         backdrop.style.visibility = 'hidden';
-        backdrop.style.pointerEvents = 'none';
+        backdrop.style.pointerEvents = 'auto';
       }
     });
   }

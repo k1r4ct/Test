@@ -85,7 +85,7 @@ export class TabellacontrattiComponent implements OnInit {
   ngOnInit(): void {
       this.currentUrl=window.location.href;
       this.ApiService.PrendiUtente().subscribe((oggetto: any) => {
-      this.User = oggetto.user.qualification.descrizione;
+      this.User = oggetto.user;
       this.ApiService.getContratti(this.User.id).subscribe((contratti: any) => {
       this.LeadsContract=contratti.body.risposta.data.map((contratto: any) => ({
         id: contratto.id,

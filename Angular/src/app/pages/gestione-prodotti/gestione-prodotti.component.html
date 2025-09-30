@@ -104,7 +104,7 @@
             <div class="filter-select-wrapper">
               <mat-form-field appearance="outline" class="modern-filter-field">
                 <mat-label>Filtra Macro Prodotto</mat-label>
-                <mat-select [formControl]="mpdToppings" multiple>
+                <mat-select [formControl]="mpdToppings" multiple (selectionChange)="selectOpt(displayedColumns[2], mpdToppings.value)">
                   <mat-select-trigger>
                     {{mpdToppings.value?.[0] || ''}}
                     @if ((mpdToppings.value?.length || 0) > 1) {
@@ -115,7 +115,7 @@
                     }
                   </mat-select-trigger>
                   @for (topping of MacroDescrizione; track topping) {
-                  <mat-option [value]="topping" (click)="selectOpt(displayedColumns[2],this.mpdToppings.value)">
+                  <mat-option [value]="topping">
                     {{topping}}
                   </mat-option>
                   }
@@ -125,7 +125,7 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let row" class="table-cell">
-            <span class="macro-badge">{{row.macro_descrizione}}</span>
+            <span class="macro-badge">{{row.descrizione}}</span>
           </td>
         </ng-container>
 
@@ -139,7 +139,7 @@
             <div class="filter-select-wrapper">
               <mat-form-field appearance="outline" class="modern-filter-field">
                 <mat-label>Filtra Codice</mat-label>
-                <mat-select [formControl]="mprToppings" multiple>
+                <mat-select [formControl]="mprToppings" multiple (selectionChange)="selectOpt(displayedColumns[3], mprToppings.value)">
                   <mat-select-trigger>
                     {{mprToppings.value?.[0] || ''}}
                     @if ((mprToppings.value?.length || 0) > 1) {
@@ -150,7 +150,7 @@
                     }
                   </mat-select-trigger>
                   @for (topping of MacroProList; track topping) {
-                  <mat-option [value]="topping" (click)="selectOpt(displayedColumns[3],this.mprToppings.value)">
+                  <mat-option [value]="topping">
                     {{topping}}
                   </mat-option>
                   }
@@ -174,7 +174,7 @@
             <div class="filter-select-wrapper">
               <mat-form-field appearance="outline" class="modern-filter-field">
                 <mat-label>Filtra Fornitore</mat-label>
-                <mat-select [formControl]="forToppings" multiple>
+                <mat-select [formControl]="forToppings" multiple (selectionChange)="selectOpt(displayedColumns[4], forToppings.value)">
                   <mat-select-trigger>
                     {{forToppings.value?.[0] || ''}}
                     @if ((forToppings.value?.length || 0) > 1) {
@@ -184,8 +184,8 @@
                     </span>
                     }
                   </mat-select-trigger>
-                  @for (topping of fornitoriList; track topping) {
-                  <mat-option [value]="topping" (click)="selectOpt(displayedColumns[4],this.forToppings.value)">
+                  @for (topping of ListaFornitori; track topping) {
+                  <mat-option [value]="topping">
                     {{topping}}
                   </mat-option>
                   }
@@ -195,7 +195,7 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let row" class="table-cell">
-            <span class="supplier-cell">{{row.nome_fornitore}}</span>
+            <span class="supplier-cell">{{row.supplier.nome_fornitore}}</span>
           </td>
         </ng-container>
 

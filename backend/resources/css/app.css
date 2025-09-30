@@ -1,0 +1,13 @@
+@import'bootstrap/dist/css/bootstrap';
+@import'./navbar.css';
+@import'./dashboard.css';
+@import'./pagination.css';
+@import'./swup.css';
+@import'./form.css';
+@import'./select.css';
+@import'./datepicker.css';
+@import'./filter.css';
+@import'./fullcalendar.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

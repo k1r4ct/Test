@@ -78,20 +78,20 @@ class ContractController extends Controller
 
         // Decodifica il JSON se è una stringa, altrimenti usa direttamente l'array
         $optProdottoArray = is_string($opt_prodotto) ? json_decode($opt_prodotto, true) : $opt_prodotto;
-        
+
         // Debug: Log per vedere cosa arriva dal frontend
         Log::info('Dati ricevuti dal frontend:', ['opt_prodotto' => $optProdottoArray]);
-        
+
         foreach ($optProdottoArray as $item) {
             // Estrai i dati dal nuovo formato strutturato
             $domanda = $item['domanda'];
             $tipo_risposta = $item['tipo_risposta']; // usa il tipo già determinato dal frontend
-            
+
             // Usa i valori già mappati dal frontend
             $risposta_tipo_stringa = $item['risposta_tipo_stringa'];
             $risposta_tipo_numero = $item['risposta_tipo_numero'];
             $risposta_tipo_bool = $item['risposta_tipo_bool'];
-            
+
             // Aggiungi anche le informazioni aggiuntive se servono
             $obbligatorio = isset($item['obbligatorio']) ? $item['obbligatorio'] : false;
             $opzioni_disponibili = isset($item['opzioni']) ? json_encode($item['opzioni']) : null;
@@ -116,7 +116,7 @@ class ContractController extends Controller
                 // "obbligatorio" => $obbligatorio,
                 // "opzioni_disponibili" => $opzioni_disponibili,
             ]);
-            
+
             // Debug: Log per confermare il salvataggio
             Log::info('Record salvato:', ['id' => $specific_datas->id, 'tipo_risposta' => $specific_datas->tipo_risposta]);
         }
@@ -201,7 +201,22 @@ class ContractController extends Controller
             "body" => ["risposta" => $contrattiUtente, "dati_request" => $request->all()]
         ]);
     }
+    private function getTeamMemberIds(int $userId): array
+    {
+        $ids = [$userId];
+        $stack = [$userId];
 
+        while (!empty($stack)) {
+            $current = array_pop($stack);
+            $children = User::where('user_id_padre', $current)->pluck('id')->all();
+            if (!empty($children)) {
+                $ids = array_merge($ids, $children);
+                $stack = array_merge($stack, $children);
+            }
+        }
+        Log::info('Team Member IDs (including self): ' . implode(', ', $ids));
+        return array_values(array_unique($ids));
+    }
 
     public function getContratti(Request $request, $id)
     {
@@ -235,18 +250,8 @@ class ContractController extends Controller
             //     return $ids;
             // }
 
-            function getTeamMemberIds($userId, $ids = [])
-            {
-                $users = User::where('user_id_padre', $userId)->get();
-                $ids[] = (int)$userId;
-                foreach ($users as $user) {
-                    $ids = array_merge(getTeamMemberIds($user->id, $ids));
-                }
-                return $ids;
-            }
-
-            $teamMemberIds = getTeamMemberIds($id); // Ottieni gli ID di tutti i membri della squadra
-
+            $teamMemberIds = array_values(array_unique($this->getTeamMemberIds((int)$id))); // deduplica // Ottieni gli ID di tutti i membri della squadra
+            //Log::info('Team Member IDs: ' . implode(', ', $teamMemberIds));
             $contrattiUtente = Contract::with([
                 'User',
                 'UserSeu',
@@ -338,7 +343,7 @@ class ContractController extends Controller
 
         // Controlla se la query è stata eseguita correttamente e ha metodi di paginazione
         $hasPagination = is_object($contrattiUtente) && method_exists($contrattiUtente, 'currentPage');
-        
+
         // Formattazione delle date - gestisce sia collection paginata che normale
         if ($hasPagination && $contrattiUtente->count() > 0) {
             $items = $contrattiUtente->getCollection();
@@ -347,7 +352,7 @@ class ContractController extends Controller
         } else {
             $items = collect(); // Collection vuota
         }
-        
+
         foreach ($items as $contratto) {
             // Ottieni un oggetto Carbon per ogni data
             $data_inserimento = \Carbon\Carbon::parse($contratto->data_inserimento);
@@ -555,7 +560,7 @@ class ContractController extends Controller
                 $updateContraente = customer_data::where('id', $idContraente)->update(["telefono" => $request->telefono_contraente]);
             }
         }
-        
+
         // Gestione aggiornamento specific_data
         Log::info('Dati specifici ricevuti:', ['specific_data' => $request->specific_data]);
         if ($request->specific_data) {
@@ -563,7 +568,7 @@ class ContractController extends Controller
             if ($specificDataArray && is_array($specificDataArray)) {
                 // Raccogli gli ID delle righe che devono rimanere
                 $idsToKeep = [];
-                
+
                 foreach ($specificDataArray as $item) {
                     if (isset($item['id']) && $item['id'] !== null) {
                         // Riga esistente: aggiorna
@@ -576,7 +581,7 @@ class ContractController extends Controller
                                 'risposta_tipo_bool' => $item['risposta_tipo_bool'],
                                 'tipo_risposta' => $item['tipo'],
                             ]);
-                        
+
                         $idsToKeep[] = $item['id'];
                     } else {
                         // Nuova riga: inserisci
@@ -588,11 +593,11 @@ class ContractController extends Controller
                             'tipo_risposta' => $item['tipo_risposta'],
                             'contract_id' => $request->idContratto,
                         ]);
-                        
+
                         $idsToKeep[] = $newRecord->id;
                     }
                 }
-                
+
                 // Elimina le righe che non sono più presenti (se ci sono ID da mantenere)
                 if (!empty($idsToKeep)) {
                     Specific_data::where('contract_id', $request->idContratto)
@@ -601,7 +606,7 @@ class ContractController extends Controller
                 }
             }
         }
-        
+
         if ($statoContrattoNew != "") {
             $log = ModelsLog::create([
                 'tipo_di_operazione' => "l'utente " . Auth::user()->name . " ha modificato lo stato di avanzamento del contratto con id " . $request->idContratto . " da " . $statoContrattoOld . " a " . $statoContrattoNew . " in data " . Carbon::now()->format("Y-m-d") . "",
@@ -871,12 +876,8 @@ class ContractController extends Controller
             ]);
         } elseif (Auth::user()->role_id == 2 || Auth::user()->role_id == 4) {
             // Manager/Supervisor - può vedere i contratti del suo team
-            $teamMemberIds = [];
-            $users = User::where('user_id_padre', $id)->get();
-            $teamMemberIds[] = (int)$id;
-            foreach ($users as $user) {
-                $teamMemberIds[] = $user->id;
-            }
+            $teamMemberIds = array_values(array_unique($this->getTeamMemberIds((int)$id))); // deduplica // Ottieni gli ID di tutti i membri della squadra
+
 
             $query = contract::with([
                 'User',
@@ -1139,7 +1140,7 @@ class ContractController extends Controller
             // Filtro per data inserimento
             if (isset($filterParams['datains'])) {
                 $datains = $filterParams['datains'];
-                
+
                 Log::info('Filtro data inserimento ricevuto:', ['datains' => $datains]);
 
                 if (is_array($datains) && count($datains) >= 2) {
@@ -1157,7 +1158,7 @@ class ContractController extends Controller
                         ]);
 
                         $query->whereDate('data_inserimento', '>=', $startDate)
-                              ->whereDate('data_inserimento', '<=', $endDate);
+                            ->whereDate('data_inserimento', '<=', $endDate);
                     } catch (\Exception $e) {
                         Log::error('Errore conversione data inserimento:', [
                             'error' => $e->getMessage(),
@@ -1170,7 +1171,7 @@ class ContractController extends Controller
             // Filtro per data stipula
             if (isset($filterParams['datastipula'])) {
                 $datastipula = $filterParams['datastipula'];
-                
+
                 Log::info('Filtro data stipula ricevuto:', ['datastipula' => $datastipula]);
 
                 if (is_array($datastipula) && count($datastipula) >= 2) {
@@ -1188,7 +1189,7 @@ class ContractController extends Controller
                         ]);
 
                         $query->whereDate('data_stipula', '>=', $startDate)
-                              ->whereDate('data_stipula', '<=', $endDate);
+                            ->whereDate('data_stipula', '<=', $endDate);
                     } catch (\Exception $e) {
                         Log::error('Errore conversione data stipula:', [
                             'error' => $e->getMessage(),

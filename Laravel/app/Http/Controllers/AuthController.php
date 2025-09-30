@@ -477,8 +477,9 @@ class AuthController extends Controller
     public function updateUtente(Request $request){
 
         Log::info('Aggiornamento utente: ' . json_encode($request->all()));
-        //return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" =>"Utente modificato ! " ]]);
         $updateUser=User::find($request->idUtente);
+        Log::info('Utente trovato: ' . json_encode($updateUser));
+        //return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" =>"Utente modificato ! " ]]);
 
         if ($updateUser->name!=$request->nomeutente) {
             $updateUser->update(['name'=>$request->nomeutente]);
@@ -488,7 +489,7 @@ class AuthController extends Controller
             $updateUser->update(['cognome'=>$request->cognomeUtente]);
         }
 
-        if (strlen($request->cod_fPivaUtente)>11) {
+        if (isset($request->cod_fPivaUtente) && strlen($request->cod_fPivaUtente)>11) {
             if ($updateUser->codice_fiscale!=$request->cod_fPivaUtente) {
                 $updateUser->update(['codice_fiscale'=>$request->cod_fPivaUtente]);
             }
@@ -506,19 +507,19 @@ class AuthController extends Controller
             $updateUser->update(['ragione_sociale'=>$request->ragione_soc]);
         }
 
-        if ($updateUser->role_id!=$request->ruolo) {
+        if (isset($request->ruolo) && $updateUser->role_id!=$request->ruolo) {
             $updateUser->update(['role_id'=>$request->ruolo]);
         }
 
-        if ($updateUser->qualification_id!=$request->qualifica) {
+        if (isset($request->qualifica) && $updateUser->qualification_id!=$request->qualifica) {
             $updateUser->update(['qualification_id'=>$request->qualifica]);
         }
 
-        if ($updateUser->codice!=$request->cod_Utente) {
+        if (isset($request->cod_Utente) && $updateUser->codice!=$request->cod_Utente) {
             $updateUser->update(['codice'=>$request->cod_Utente]);
         }
 
-        if ($updateUser->user_id_padre!=$request->seu) {
+        if (isset($request->seu) && $updateUser->user_id_padre!=$request->seu) {
             $updateUser->update(['user_id_padre'=>$request->seu]);
         }
 
@@ -526,7 +527,7 @@ class AuthController extends Controller
             $updateUser->update(['password'=>'$2y$10$8fzMmLsdHiSm.70tmlkBN.f8e6LtDnnTLJ8t61MK/ak3MrA.eeo3W']);
         }
 
-        if ($request->activeUser) {
+        if (isset($request->activeUser)) {
             $updateUser->update(['stato_user'=>$request->activeUser]);
         }
 
@@ -574,11 +575,32 @@ class AuthController extends Controller
     public function recuperaSEU(){
 
         //$seu=User::where('role_id',2)->get();
+        Log::info("utente loggato : Ruolo=>" . Auth::user()->role_id);
+        if (Auth::user()->role_id == 1 || Auth::user()->role_id == 5) {
+            $seu=User::where('role_id', 2)->orWhere('role_id', 5)->get();
+        }else{
+            $userId = Auth::user()->id;
+            //Log::info('Utente non Admin, ID utente: ' . $userId);
+            //return response()->json(["response" => "ok", "status" => "200", "body" => [" risp. pers. " =>$userId]]);
+            // Funzione ricorsiva per estrarre tutti gli ID da una struttura annidata di utenti
+            function extractIds($users)
+            {
+                $ids = [];
+                foreach ($users as $user) {
+                    $ids[] = $user->id;
+                    if (isset($user->children) && !empty($user->children)) {
+                        $ids = array_merge($ids, extractIds($user->children));
+                    }
+                }
+                return $ids;
+            }
 
-        //$userId = Auth::user()->id;
-        //return response()->json(["response" => "ok", "status" => "200", "body" => [" risp. pers. " =>$userId]]);
-
-        $seu=User::where('role_id', 2)->orWhere('role_id', 5)->get();
+            $seuSub = $this->getTeamMembers($userId);
+            // Log::info('Sottoposti trovati: ' . json_encode($seuSub));
+            $ids = extractIds($seuSub);
+            // Log::info('IDs estratti: ' . json_encode($ids));
+            $seu = User::whereIn('id', $ids)->where('role_id', 2)->get();
+        }
 
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" =>$seu]]);
 

@@ -229,7 +229,7 @@ class LeadController extends Controller
         // Ottieni gli ID dei sottoposti dell'utente loggato (ricorsivamente)
         $teamMemberIds = User::where('user_id_padre', $userId)->pluck('id')->toArray();
         $allTeamMemberIds = $teamMemberIds;
-
+        
         function getSubordinateIds($parentId, &$allTeamMemberIds)
         {
             $subordinateIds = User::where('user_id_padre', $parentId)->pluck('id')->toArray();
@@ -243,7 +243,7 @@ class LeadController extends Controller
 
         // Crea un array con l'ID dell'utente loggato e gli ID di tutti i suoi sottoposti
         $userIds = array_merge([$userId], $allTeamMemberIds);
-
+        Log::info('Team Member IDs: ' . implode(',', $userIds));
         // Ottieni i lead 
         $getLeads = Lead::with([
             'leadstatus' => function ($query) {
