@@ -45,7 +45,7 @@
           <i class="fas fa-box"></i> Prodotto
         </label>
         <select class="filter-input" [(ngModel)]="filters.product" (change)="applyFilters()">
-          <option value="">Seleziona prodotto</option>
+          <option value="">Tutti i prodotti</option>
           <option *ngFor="let product of products" [value]="product">{{product}}</option>
         </select>
       </div>
@@ -69,6 +69,38 @@
           <option *ngFor="let column of columns" [value]="column.id">{{column.title}}</option>
         </select>
       </div>
+
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-user-tie"></i> SEU
+        </label>
+        <select class="filter-input" [(ngModel)]="filters.seu" (change)="applyFilters()">
+          <option value="">Tutti i SEU</option>
+          <option *ngFor="let seu of seuList" [value]="seu.id">{{seu.name}}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-user-edit"></i> Generato da
+        </label>
+        <select class="filter-input" [(ngModel)]="filters.generatedBy" (change)="applyFilters()">
+          <option value="">Tutti gli utenti</option>
+          <option *ngFor="let generator of generatorsList" [value]="generator.id">{{generator.name}}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-user-check"></i> Assegnato a
+        </label>
+        <select class="filter-input" [(ngModel)]="filters.assignedTo" (change)="applyFilters()">
+          <option value="">Tutti gli utenti</option>
+          <option *ngFor="let user of users" [value]="user.id">
+            {{user.name}} {{user.cognome}}
+          </option>
+        </select>
+      </div>
       
       <div class="filter-group">
         <label class="filter-label">
@@ -84,13 +116,14 @@
       
       <div class="filter-group">
         <label class="filter-label">
-          <i class="fas fa-calendar"></i> Data Da
+          <i class="fas fa-calendar-alt"></i> Data Apertura Ticket
         </label>
         <input 
-          type="date" 
+          type="text" 
           class="filter-input" 
-          [(ngModel)]="filters.dateFrom"
-          (change)="applyFilters()">
+          [(ngModel)]="filters.dateRange"
+          (change)="applyFilters()"
+          placeholder="gg/mm/aaaa - gg/mm/aaaa">
       </div>
     </div>
     
@@ -101,6 +134,9 @@
       <button class="btn-filter" (click)="clearFilters()">
         <i class="fas fa-times"></i> Reset Filtri
       </button>
+      <div style="margin-left: auto; color: #666; font-size: 14px;">
+        <i class="fas fa-ticket-alt"></i> {{filteredTickets.length}} ticket trovati
+      </div>
     </div>
   </div>
 
@@ -143,6 +179,16 @@
             <div class="ticket-contract-info">
               <i class="fas fa-file-contract"></i>
               <span>Contratto {{ticket.contract_code}}</span>
+            </div>
+
+            <div class="ticket-info-row" *ngIf="ticket.product_name !== 'N/A'">
+              <i class="fas fa-box"></i>
+              <span>{{ticket.product_name}}</span>
+            </div>
+
+            <div class="ticket-info-row" *ngIf="ticket.seu_name !== 'N/A'">
+              <i class="fas fa-user-tie"></i>
+              <span>SEU: {{ticket.seu_name}}</span>
             </div>
             
             <div class="ticket-title">{{ticket.title}}</div>
@@ -195,6 +241,14 @@
           <div class="info-item">
             <label>Prodotto:</label>
             <span>{{selectedTicket?.product_name}}</span>
+          </div>
+          <div class="info-item" *ngIf="selectedTicket?.seu_name !== 'N/A'">
+            <label>SEU:</label>
+            <span>{{selectedTicket?.seu_name}}</span>
+          </div>
+          <div class="info-item" *ngIf="selectedTicket?.created_by_user_name">
+            <label>Generato da:</label>
+            <span>{{selectedTicket?.created_by_user_name}}</span>
           </div>
           <div class="info-item">
             <label>Creato:</label>
@@ -255,7 +309,7 @@
 
 <!-- New Ticket Modal -->
 <div class="modal-overlay" *ngIf="showNewTicketModal" (click)="closeNewTicketModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
+  <div class="modal-container" [class.shake]="showValidationError" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title">
         <i class="fas fa-plus-circle"></i>
@@ -269,33 +323,40 @@
     <div class="modal-body">
       <form class="new-ticket-form">
         <div class="form-group">
-          <label>Contratto *</label>
-          <select [(ngModel)]="newTicket.contract_id" name="contract" required class="form-control">
+          <label>Contratto <span class="required">*</span></label>
+          <select 
+            [(ngModel)]="newTicket.contract_id" 
+            name="contract" 
+            required 
+            class="form-control"
+            [class.error]="showValidationError && !newTicket.contract_id">
             <option value="">Seleziona contratto</option>
             <option *ngFor="let contract of contracts" [value]="contract.id">
-              {{contract.codice_contratto}} - {{contract.customer_data?.nome}} {{contract.customer_data?.cognome}} - {{contract.id}}
+              {{contract.codice_contratto}} - {{contract.customer_data?.nome}} {{contract.customer_data?.cognome}} {{contract.customer_data?.ragione_sociale}} - {{contract.id}}
             </option>
           </select>
         </div>
         
         <div class="form-group">
-          <label>Titolo *</label>
+          <label>Titolo <span class="required">*</span></label>
           <input 
             type="text" 
             [(ngModel)]="newTicket.title" 
             name="title" 
             required 
             class="form-control"
+            [class.error]="showValidationError && !newTicket.title"
             placeholder="Inserisci titolo del ticket">
         </div>
         
         <div class="form-group">
-          <label>Descrizione *</label>
+          <label>Descrizione <span class="required">*</span></label>
           <textarea 
             [(ngModel)]="newTicket.description" 
             name="description" 
             required 
-            class="form-control" 
+            class="form-control"
+            [class.error]="showValidationError && !newTicket.description"
             rows="4"
             placeholder="Descrivi il problema o la richiesta..."></textarea>
         </div>
@@ -307,6 +368,11 @@
               {{priority.label}}
             </option>
           </select>
+        </div>
+
+        <div class="validation-message" *ngIf="showValidationError">
+          <i class="fas fa-exclamation-triangle"></i>
+          Compila tutti i campi obbligatori contrassegnati con *
         </div>
         
         <div class="form-actions">

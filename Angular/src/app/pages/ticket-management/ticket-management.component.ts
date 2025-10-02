@@ -10,11 +10,12 @@ export interface Ticket {
   ticket_number: string;
   title: string;
   description: string;
-  status: 'new' | 'in-progress' | 'waiting' | 'resolved';
+  status: 'new' | 'waiting' | 'resolved';
   priority: 'low' | 'medium' | 'high';
   contract_id: number;
   contract_code: string;
   created_by_user_id: number;
+  created_by_user_name?: string;
   assigned_to_user_id?: number;
   customer_name: string;
   customer_initials: string;
@@ -22,6 +23,7 @@ export interface Ticket {
   created_at: string;
   updated_at: string;
   product_name?: string;
+  seu_name?: string;
   messages?: TicketMessage[];
 }
 
@@ -45,8 +47,9 @@ export interface TicketFilters {
   status: string;
   assignedTo: string;
   customer: string;
-  dateFrom: string;
-  dateTo: string;
+  seu: string;
+  generatedBy: string;
+  dateRange: string;
 }
 
 @Component({
@@ -54,8 +57,6 @@ export interface TicketFilters {
   templateUrl: './ticket-management.component.html',
   styleUrls: ['./ticket-management.component.css'],
   standalone: false,
-  // If using standalone components, import necessary modules here
-  // imports: [CommonModule, FormsModule, ReactiveFormsModule, DragDropModule, MatDialogModule, MatSnackBarModule, ...]
 })
 export class TicketManagementComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = [];
@@ -72,14 +73,16 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     status: '',
     assignedTo: '',
     customer: '',
-    dateFrom: '',
-    dateTo: ''
+    seu: '',
+    generatedBy: '',
+    dateRange: ''
   };
 
   showFilters: boolean = true;
   selectedTicket: Ticket | null = null;
   showTicketModal: boolean = false;
   showNewTicketModal: boolean = false;
+  showValidationError: boolean = false;
   
   newTicket = {
     title: '',
@@ -91,20 +94,12 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   newMessage: string = '';
   isLoadingMessages: boolean = false;
 
-  // Kanban columns configuration
   columns = [
     {
       id: 'new',
       title: 'Nuovo',
       icon: 'fas fa-plus-circle',
       color: '#2196F3',
-      count: 0
-    },
-    {
-      id: 'in-progress', 
-      title: 'In Lavorazione',
-      icon: 'fas fa-spinner',
-      color: '#ff9800',
       count: 0
     },
     {
@@ -124,6 +119,9 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   ];
 
   products: string[] = [];
+  seuList: any[] = [];
+  generatorsList: any[] = [];
+  
   priorities = [
     { value: 'low', label: 'Bassa', color: '#28a745' },
     { value: 'medium', label: 'Media', color: '#ffc107' },
@@ -141,7 +139,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadCurrentUser();
-    //this.loadInitialData(); //SPOSTATO DENTRO loadCurrentUser per evitare chiamate multiple . CurrentUser non viene riempito in tempo
   }
 
   ngOnDestroy() {
@@ -152,48 +149,76 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     const userSub = this.apiService.PrendiUtente().subscribe((userData: any) => {
       this.currentUser = userData.user;
       this.userRole = userData.user.role.id;
-      this.loadInitialData(); //SPOSTATO QUI 
+      this.loadInitialData();
       this.loadTickets();
     });
     
     this.subscriptions.push(userSub);
-    console.log(userSub);
   }
 
   loadInitialData() {
-    // Load contracts
-    const contractsSub = this.apiService.getContratti(this.currentUser.id).subscribe((response: any) => {
-      //console.log(response);
-      if (response.body && response.body.risposta && response.body.risposta.data) {
-        this.contracts = response.body.risposta.data;
-      }
-    });
-    
-    this.subscriptions.push(contractsSub);
+    // Load contracts - Fix per Admin
+    if (this.userRole === 1) {
+      const contractsSub = this.apiService.getContratti(null).subscribe((response: any) => {
+        if (response.body && response.body.risposta) {
+          this.contracts = response.body.risposta.data || response.body.risposta;
+        }
+      }, error => {
+        this.apiService.getContratti(0).subscribe((response: any) => {
+          if (response.body && response.body.risposta) {
+            this.contracts = response.body.risposta.data || response.body.risposta;
+          }
+        }, error2 => {
+          this.apiService.getContratti(this.currentUser.id).subscribe((response: any) => {
+            if (response.body && response.body.risposta && response.body.risposta.data) {
+              this.contracts = response.body.risposta.data;
+            }
+          });
+        });
+      });
+      this.subscriptions.push(contractsSub);
+    } else {
+      const contractsSub = this.apiService.getContratti(this.currentUser.id).subscribe((response: any) => {
+        if (response.body && response.body.risposta && response.body.risposta.data) {
+          this.contracts = response.body.risposta.data;
+        }
+      });
+      this.subscriptions.push(contractsSub);
+    }
 
     // Load products
     const productsSub = this.apiService.ListaProdotti().subscribe((response: any) => {
-      console.log(response);
-      
-      if (response.body && response.body.prodotti) { //CAMBIATA LETTURA DI RESPONSE CHE HA NEL BODY "prodotti" E NON "risposta"
+      if (response.body && response.body.prodotti) {
         this.products = response.body.prodotti.map((p: any) => p.descrizione);
       }
     });
     this.subscriptions.push(productsSub);
 
-    // Load users for assignment (only backoffice and admins)
+    // Load users e SEU
     const usersSub = this.apiService.getAllUser().subscribe((response: any) => {
       if (response.body && response.body.risposta) {
         this.users = response.body.risposta.filter((user: any) => 
-          user.role.id === 1 || user.role.id === 5 // Admin or BackOffice
+          user.role.id === 1 || user.role.id === 5
         );
+        
+        const seuUsers = response.body.risposta.filter((user: any) => 
+          user.role.id === 2 || user.role.id === 4
+        );
+        this.seuList = seuUsers.map((user: any) => ({
+          id: user.id,
+          name: `${user.name || ''} ${user.cognome || ''}`.trim() || user.email
+        }));
+        
+        this.generatorsList = response.body.risposta.map((user: any) => ({
+          id: user.id,
+          name: `${user.name || ''} ${user.cognome || ''}`.trim() || user.email
+        }));
       }
     });
     this.subscriptions.push(usersSub);
   }
 
   loadTickets() {
-    // Extended ApiService call for tickets
     const ticketsSub = this.apiService.getTickets().subscribe((response: any) => {
       if (response && response.body && response.body.risposta) {
         this.tickets = this.processTicketsData(response.body.risposta);
@@ -216,13 +241,24 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       contract_id: ticket.contract_id,
       contract_code: ticket.contract?.codice_contratto || 'N/A',
       created_by_user_id: ticket.created_by_user_id,
+      created_by_user_name: ticket.created_by?.name ? 
+        `${ticket.created_by.name} ${ticket.created_by.cognome || ''}`.trim() : 
+        ticket.created_by?.email || 'N/A',
       assigned_to_user_id: ticket.assigned_to_user_id,
-      customer_name: ticket.contract?.customer_data?.nome + ' ' + ticket.contract?.customer_data?.cognome || 'N/A',
-      customer_initials: this.getInitials(ticket.contract?.customer_data?.nome + ' ' + ticket.contract?.customer_data?.cognome || 'N/A'),
+      customer_name: ticket.contract?.customer_data?.nome && ticket.contract?.customer_data?.cognome ?
+        `${ticket.contract.customer_data.nome} ${ticket.contract.customer_data.cognome}` :
+        ticket.contract?.customer_data?.ragione_sociale || 'N/A',
+      customer_initials: this.getInitials(
+        ticket.contract?.customer_data?.nome && ticket.contract?.customer_data?.cognome ?
+        `${ticket.contract.customer_data.nome} ${ticket.contract.customer_data.cognome}` :
+        ticket.contract?.customer_data?.ragione_sociale || 'N/A'
+      ),
       avatar_color: this.getRandomColor(),
       created_at: ticket.created_at,
       updated_at: ticket.updated_at,
       product_name: ticket.contract?.product?.descrizione || 'N/A',
+      seu_name: ticket.contract?.user_seu ? 
+        `${ticket.contract.user_seu.name || ''} ${ticket.contract.user_seu.cognome || ''}`.trim() : 'N/A',
       messages: ticket.messages || []
     }));
   }
@@ -268,6 +304,33 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         return false;
       }
       
+      // SEU filter
+      if (this.filters.seu) {
+        const seuUser = this.seuList.find(s => s.id.toString() === this.filters.seu);
+        if (seuUser && ticket.seu_name && !ticket.seu_name.toLowerCase().includes(seuUser.name.toLowerCase())) {
+          return false;
+        }
+      }
+      
+      // Generated by filter
+      if (this.filters.generatedBy && 
+          ticket.created_by_user_id?.toString() !== this.filters.generatedBy) {
+        return false;
+      }
+      
+      // Date range filter
+      if (this.filters.dateRange) {
+        const dates = this.filters.dateRange.split(' - ');
+        if (dates.length === 2) {
+          const dateFrom = new Date(dates[0]);
+          const dateTo = new Date(dates[1]);
+          const ticketDate = new Date(ticket.created_at);
+          if (ticketDate < dateFrom || ticketDate > dateTo) {
+            return false;
+          }
+        }
+      }
+      
       return true;
     });
 
@@ -296,8 +359,9 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       status: '',
       assignedTo: '',
       customer: '',
-      dateFrom: '',
-      dateTo: ''
+      seu: '',
+      generatedBy: '',
+      dateRange: ''
     };
     this.applyFilters();
   }
@@ -308,7 +372,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   saveNewTicket() {
     if (!this.newTicket.title || !this.newTicket.description || !this.newTicket.contract_id) {
-      this.toastr.error('Compilare tutti i campi obbligatori', 'Errore');
+      this.showValidationError = true;
+      setTimeout(() => {
+        this.showValidationError = false;
+      }, 3000);
       return;
     }
 
@@ -385,6 +452,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   closeNewTicketModal() {
     this.showNewTicketModal = false;
+    this.showValidationError = false;
     this.newTicket = {
       title: '',
       description: '',
@@ -470,7 +538,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   }
 
   canManageTickets(): boolean {
-    // Only Admin (1) and BackOffice (5) can manage tickets
     return this.userRole === 1 || this.userRole === 5;
   }
 }
