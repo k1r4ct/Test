@@ -12,7 +12,7 @@ class TicketMessage extends Model
         'ticket_id',
         'user_id',
         'message',
-        'message_type',
+        'message_type',       
         'attachment_path',
         'attachment_name',
         'attachment_size',
@@ -38,7 +38,7 @@ class TicketMessage extends Model
         if ($this->user) {
             if ($this->user->nome && $this->user->cognome) {
                 return $this->user->nome . ' ' . $this->user->cognome;
-            } elseif ($this->user->rag_soc) {
+            } elseif (!empty($this->user->rag_soc)) {
                 return $this->user->rag_soc;
             }
         }
@@ -47,8 +47,9 @@ class TicketMessage extends Model
 
     public function getUserRoleAttribute()
     {
-        return $this->user && $this->user->role ? 
-               $this->user->role->descrizione : 'N/A';
+        return $this->user && $this->user->role
+            ? $this->user->role->descrizione
+            : 'N/A';
     }
 
     public function getFormattedSizeAttribute()
@@ -59,14 +60,15 @@ class TicketMessage extends Model
 
         $bytes = $this->attachment_size;
         $units = ['B', 'KB', 'MB', 'GB'];
-        
+
         for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
-        
+
         return round($bytes, 2) . ' ' . $units[$i];
     }
 
+    // Scopes
     public function scopeByTicket($query, $ticketId)
     {
         return $query->where('ticket_id', $ticketId);
@@ -85,6 +87,11 @@ class TicketMessage extends Model
     public function scopeAttachments($query)
     {
         return $query->where('message_type', 'attachment');
+    }
+
+    public function scopeStatusChanges($query)
+    {
+        return $query->where('message_type', 'status_change');
     }
 
     public function scopeLatest($query)
