@@ -1,7 +1,6 @@
 // ticket-management.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ApiService } from 'src/app/servizi/api.service';
-import { ToastrService } from 'ngx-toastr';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subscription } from 'rxjs';
 
@@ -17,6 +16,7 @@ export interface Ticket {
   created_by_user_id: number;
   created_by_user_name?: string;
   assigned_to_user_id?: number;
+  assigned_to_user_name?: string;
   customer_name: string;
   customer_initials: string;
   avatar_color: string;
@@ -42,14 +42,15 @@ export interface TicketMessage {
 
 export interface TicketFilters {
   contractId: string;
+  contractCode: string;
   product: string;
   priority: string;
-  status: string;
+  status: string[];
   assignedTo: string;
   customer: string;
   seu: string;
   generatedBy: string;
-  dateRange: string;
+  openingDate: string;
 }
 
 @Component({
@@ -68,21 +69,26 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   
   filters: TicketFilters = {
     contractId: '',
+    contractCode: '',
     product: '',
     priority: '',
-    status: '',
+    status: ['new', 'waiting', 'resolved'], // All selected by default
     assignedTo: '',
     customer: '',
     seu: '',
     generatedBy: '',
-    dateRange: ''
+    openingDate: ''
   };
+
+  previousStatusSelection: string[] = ['new', 'waiting', 'resolved'];
+
 
   showFilters: boolean = true;
   selectedTicket: Ticket | null = null;
   showTicketModal: boolean = false;
   showNewTicketModal: boolean = false;
   showValidationError: boolean = false;
+  isShaking: boolean = false;
   
   newTicket = {
     title: '',
@@ -133,16 +139,25 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   constructor(
     private apiService: ApiService,
-    private toastr: ToastrService,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
+    this.previousStatusSelection = [...this.filters.status];
+
     this.loadCurrentUser();
+    this.adjustForMobile();
   }
 
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  adjustForMobile() {
+    // Adjust filters visibility on mobile
+    if (window.innerWidth < 768) {
+      this.showFilters = false;
+    }
   }
 
   loadCurrentUser() {
@@ -225,7 +240,16 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         this.applyFilters();
       }
     }, error => {
-      this.toastr.error('Errore nel caricamento dei ticket', 'Errore');
+      this.snackBar.open(
+        'Errore nel caricamento dei ticket',
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        }
+      );
     });
     this.subscriptions.push(ticketsSub);
   }
@@ -245,6 +269,9 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         `${ticket.created_by.name} ${ticket.created_by.cognome || ''}`.trim() : 
         ticket.created_by?.email || 'N/A',
       assigned_to_user_id: ticket.assigned_to_user_id,
+      assigned_to_user_name: ticket.assigned_to?.name ? 
+        `${ticket.assigned_to.name} ${ticket.assigned_to.cognome || ''}`.trim() : 
+        ticket.assigned_to?.email || null,
       customer_name: ticket.contract?.customer_data?.nome && ticket.contract?.customer_data?.cognome ?
         `${ticket.contract.customer_data.nome} ${ticket.contract.customer_data.cognome}` :
         ticket.contract?.customer_data?.ragione_sociale || 'N/A',
@@ -264,6 +291,9 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   }
 
   getInitials(fullName: string): string {
+    if (!fullName || fullName === 'N/A') {
+      return '??';
+    }
     return fullName.split(' ')
       .map(name => name.charAt(0).toUpperCase())
       .join('')
@@ -275,11 +305,73 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
+  toggleStatusFilter(statusId: string) {
+    const index = this.filters.status.indexOf(statusId);
+    
+    // Don't allow deselecting all statuses
+    if (index > -1 && this.filters.status.length > 1) {
+      this.filters.status.splice(index, 1);
+    }
+
+  onStatusDropdownChange(_event: Event) {
+    // Ensure at least one status remains selected
+    if (!this.filters.status || this.filters.status.length === 0) {
+      // Restore previous non-empty selection
+      this.filters.status = [...this.previousStatusSelection];
+    } else {
+      // Update previous selection snapshot
+      this.previousStatusSelection = [...this.filters.status];
+    }
+    this.applyFilters();
+  }
+ else if (index === -1) {
+      this.filters.status.push(statusId);
+    }
+    
+    this.applyFilters();
+  }
+
+  isColumnVisible(columnId: string): boolean {
+    return this.filters.status.includes(columnId);
+  }
+
+  getVisibleColumnsCount(): number {
+    return this.filters.status.length;
+  }
+
+  getColumnFlex(columnId: string): string {
+    if (!this.isColumnVisible(columnId)) {
+      return '0';
+    }
+    
+    const visibleCount = this.getVisibleColumnsCount();
+    if (visibleCount === 1) {
+      return '1 1 100%';
+    } else if (visibleCount === 2) {
+      return '1 1 50%';
+    }
+    return '1';
+  }
+
+  getColumnPosition(columnId: string): number {
+    const visibleColumns = this.columns.filter(c => this.isColumnVisible(c.id));
+    return visibleColumns.findIndex(c => c.id === columnId);
+  }
+
   applyFilters() {
     this.filteredTickets = this.tickets.filter(ticket => {
       // Contract ID filter
-      if (this.filters.contractId && 
-          !ticket.contract_code.toLowerCase().includes(this.filters.contractId.toLowerCase())) {
+      if (this.filters.contractId) {
+        const ticketIdStr = ticket.contract_id.toString();
+        const filterIdStr = this.filters.contractId.toString();
+        if (!ticketIdStr.startsWith(filterIdStr)) {
+          return false;
+        }
+      }
+      
+      // Contract Code filter
+      if (this.filters.contractCode && 
+          !ticket.contract_code.toLowerCase().includes(this.filters.contractCode.toLowerCase())) {
         return false;
       }
       
@@ -293,8 +385,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         return false;
       }
       
-      // Status filter
-      if (this.filters.status && ticket.status !== this.filters.status) {
+      // Status filter - multi-select
+      if (this.filters.status.length > 0 && !this.filters.status.includes(ticket.status)) {
         return false;
       }
       
@@ -318,16 +410,32 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         return false;
       }
       
-      // Date range filter
-      if (this.filters.dateRange) {
-        const dates = this.filters.dateRange.split(' - ');
-        if (dates.length === 2) {
-          const dateFrom = new Date(dates[0]);
-          const dateTo = new Date(dates[1]);
-          const ticketDate = new Date(ticket.created_at);
-          if (ticketDate < dateFrom || ticketDate > dateTo) {
+      // Assigned to filter
+      if (this.filters.assignedTo) {
+        if (this.filters.assignedTo === '0') {
+          if (ticket.status !== 'new' && ticket.assigned_to_user_id) {
             return false;
           }
+        } else {
+          if (ticket.status === 'new') {
+            return false;
+          }
+          if (ticket.assigned_to_user_id?.toString() !== this.filters.assignedTo) {
+            return false;
+          }
+        }
+      }
+      
+      // Opening date filter
+      if (this.filters.openingDate) {
+        const filterDate = new Date(this.filters.openingDate);
+        const ticketDate = new Date(ticket.created_at);
+        
+        const filterDateString = filterDate.toISOString().split('T')[0];
+        const ticketDateString = ticketDate.toISOString().split('T')[0];
+        
+        if (filterDateString !== ticketDateString) {
+          return false;
         }
       }
       
@@ -354,14 +462,15 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   clearFilters() {
     this.filters = {
       contractId: '',
+      contractCode: '',
       product: '',
       priority: '',
-      status: '',
+      status: ['new', 'waiting', 'resolved'], // Reset to all selected
       assignedTo: '',
       customer: '',
       seu: '',
       generatedBy: '',
-      dateRange: ''
+      openingDate: ''
     };
     this.applyFilters();
   }
@@ -373,9 +482,16 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   saveNewTicket() {
     if (!this.newTicket.title || !this.newTicket.description || !this.newTicket.contract_id) {
       this.showValidationError = true;
+      this.isShaking = true;
+      
+      setTimeout(() => {
+        this.isShaking = false;
+      }, 300);
+      
       setTimeout(() => {
         this.showValidationError = false;
-      }, 3000);
+      }, 2000);
+      
       return;
     }
 
@@ -390,14 +506,41 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
     const createSub = this.apiService.createTicket(ticketData).subscribe((response: any) => {
       if (response.response === 'ok') {
-        this.toastr.success('Ticket creato con successo', 'Successo');
+        this.snackBar.open(
+          'Ticket creato con successo',
+          'Chiudi',
+          { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          }
+        );
         this.closeNewTicketModal();
         this.loadTickets();
       } else {
-        this.toastr.error('Errore nella creazione del ticket', 'Errore');
+        this.snackBar.open(
+          'Errore nella creazione del ticket',
+          'Chiudi',
+          { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          }
+        );
       }
     }, error => {
-      this.toastr.error('Errore nella creazione del ticket', 'Errore');
+      this.snackBar.open(
+        'Errore nella creazione del ticket',
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        }
+      );
     });
     this.subscriptions.push(createSub);
   }
@@ -436,10 +579,28 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         this.newMessage = '';
         this.loadTicketMessages(this.selectedTicket!.id);
       } else {
-        this.toastr.error('Errore nell\'invio del messaggio', 'Errore');
+        this.snackBar.open(
+          'Errore nell\'invio del messaggio',
+          'Chiudi',
+          { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          }
+        );
       }
     }, error => {
-      this.toastr.error('Errore nell\'invio del messaggio', 'Errore');
+      this.snackBar.open(
+        'Errore nell\'invio del messaggio',
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        }
+      );
     });
     this.subscriptions.push(messageSub);
   }
@@ -453,6 +614,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   closeNewTicketModal() {
     this.showNewTicketModal = false;
     this.showValidationError = false;
+    this.isShaking = false;
     this.newTicket = {
       title: '',
       description: '',
@@ -482,26 +644,60 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   updateTicketStatus(ticket: Ticket, newStatus: string) {
     const updateData = {
       ticket_id: ticket.id,
-      status: newStatus
+      status: newStatus,
+      assigned_to_user_id: this.currentUser.id
     };
 
     const updateSub = this.apiService.updateTicketStatus(updateData).subscribe((response: any) => {
       if (response.response === 'ok') {
         ticket.status = newStatus as any;
+        ticket.assigned_to_user_id = this.currentUser.id;
+        ticket.assigned_to_user_name = `${this.currentUser.name || ''} ${this.currentUser.cognome || ''}`.trim() || this.currentUser.email;
+        
         this.updateColumnCounts();
         
         this.snackBar.open(
-          `Ticket ${ticket.ticket_number} spostato in ${this.getStatusLabel(newStatus)}`,
+          `Ticket ${ticket.ticket_number} spostato in ${this.getStatusLabel(newStatus)} e assegnato a te`,
           'Chiudi',
-          { duration: 3000 }
+          { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          }
         );
       } else {
-        this.toastr.error('Errore nell\'aggiornamento dello stato', 'Errore');
+        this.snackBar.open(
+          'Errore nell\'aggiornamento dello stato',
+          'Chiudi',
+          { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          }
+        );
       }
     }, error => {
-      this.toastr.error('Errore nell\'aggiornamento dello stato', 'Errore');
+      this.snackBar.open(
+        'Errore nell\'aggiornamento dello stato',
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        }
+      );
     });
     this.subscriptions.push(updateSub);
+  }
+
+  getAssignedUserName(ticket: Ticket): string {
+    if (ticket.status === 'new') {
+      return 'Non assegnato';
+    }
+    return ticket.assigned_to_user_name || 'Non assegnato';
   }
 
   getStatusLabel(status: string): string {

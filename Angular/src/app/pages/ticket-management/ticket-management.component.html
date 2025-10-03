@@ -7,13 +7,13 @@
       <i class="fas fa-ticket-alt"></i>
       <div>
         <h2>Gestione Ticket</h2>
-        <p>Gestisci e monitora tutti i ticket di supporto</p>
+        <p class="header-subtitle">Gestisci e monitora tutti i ticket di supporto</p>
       </div>
     </div>
     <div class="header-actions">
       <button class="btn-new-ticket" (click)="createNewTicket()">
         <i class="fas fa-plus"></i>
-        Nuovo Ticket
+        <span class="btn-text">Nuovo Ticket</span>
       </button>
     </div>
   </div>
@@ -22,7 +22,7 @@
   <div class="filters-section">
     <div class="filter-header">
       <h3><i class="fas fa-filter"></i> Filtri di Ricerca</h3>
-      <button class="btn-filter" (click)="toggleFilters()">
+      <button class="btn-filter-toggle" (click)="toggleFilters()">
         <i class="fas" [class.fa-chevron-up]="showFilters" [class.fa-chevron-down]="!showFilters"></i>
       </button>
     </div>
@@ -33,11 +33,23 @@
           <i class="fas fa-hashtag"></i> ID Contratto
         </label>
         <input 
-          type="text" 
+          type="number" 
           class="filter-input" 
           [(ngModel)]="filters.contractId"
           (input)="applyFilters()"
           placeholder="Inserisci ID contratto">
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-file-contract"></i> Codice Contratto
+        </label>
+        <input 
+          type="text" 
+          class="filter-input" 
+          [(ngModel)]="filters.contractCode"
+          (input)="applyFilters()"
+          placeholder="Inserisci codice contratto">
       </div>
       
       <div class="filter-group">
@@ -61,13 +73,18 @@
       </div>
       
       <div class="filter-group">
-        <label class="filter-label">
-          <i class="fas fa-tasks"></i> Stato
-        </label>
-        <select class="filter-input" [(ngModel)]="filters.status" (change)="applyFilters()">
-          <option value="">Tutti gli stati</option>
-          <option *ngFor="let column of columns" [value]="column.id">{{column.title}}</option>
-        </select>
+  <label class="filter-label">
+    <i class="fas fa-tasks"></i> Stato
+  </label>
+  <!-- Desktop: dropdown multiselect, Mobile: hidden via CSS (we keep the wrapper class) -->
+  <div class="status-multiselect">
+    <select class="filter-input" multiple size="3"
+            [(ngModel)]="filters.status"
+            (change)="onStatusDropdownChange($event)">
+      <option *ngFor="let column of columns" [ngValue]="column.id">{{column.title}}</option>
+    </select>
+  </div>
+</div>
       </div>
 
       <div class="filter-group">
@@ -96,6 +113,7 @@
         </label>
         <select class="filter-input" [(ngModel)]="filters.assignedTo" (change)="applyFilters()">
           <option value="">Tutti gli utenti</option>
+          <option value="0">Non assegnato</option>
           <option *ngFor="let user of users" [value]="user.id">
             {{user.name}} {{user.cognome}}
           </option>
@@ -116,37 +134,53 @@
       
       <div class="filter-group">
         <label class="filter-label">
-          <i class="fas fa-calendar-alt"></i> Data Apertura Ticket
+          <i class="fas fa-calendar-alt"></i> Data Apertura
         </label>
         <input 
-          type="text" 
+          type="date" 
           class="filter-input" 
-          [(ngModel)]="filters.dateRange"
-          (change)="applyFilters()"
-          placeholder="gg/mm/aaaa - gg/mm/aaaa">
+          [(ngModel)]="filters.openingDate"
+          (change)="applyFilters()">
       </div>
     </div>
     
     <div class="filter-actions" [style.display]="showFilters ? 'flex' : 'none'">
       <button class="btn-filter primary" (click)="applyFilters()">
-        <i class="fas fa-search"></i> Applica Filtri
+        <i class="fas fa-search"></i> <span>Applica</span>
       </button>
       <button class="btn-filter" (click)="clearFilters()">
-        <i class="fas fa-times"></i> Reset Filtri
+        <i class="fas fa-times"></i> <span>Reset</span>
       </button>
-      <div style="margin-left: auto; color: #666; font-size: 14px;">
+      <div class="filter-results-count">
         <i class="fas fa-ticket-alt"></i> {{filteredTickets.length}} ticket trovati
       </div>
     </div>
   </div>
 
+  <!-- Mobile Status Pills (visible only on mobile) -->
+  <div class="mobile-status-pills">
+    <div class="status-pill" 
+         *ngFor="let column of columns"
+         [class.active]="filters.status.includes(column.id)"
+         (click)="toggleStatusFilter(column.id)">
+      <i [class]="column.icon" [style.color]="column.color"></i>
+      <span>{{column.title}}</span>
+      <span class="pill-count">{{getTicketsForColumn(column.id).length}}</span>
+    </div>
+  </div>
+
   <!-- Kanban Board -->
   <div class="kanban-container">
-    <div class="kanban-board">
+    <div class="kanban-board" [attr.data-visible-columns]="getVisibleColumnsCount()">
       <div 
         *ngFor="let column of columns" 
         class="kanban-column"
         [class]="'status-' + column.id"
+        [class.column-hidden]="!isColumnVisible(column.id)"
+        [class.column-full]="getVisibleColumnsCount() === 1"
+        [class.column-half]="getVisibleColumnsCount() === 2"
+        [style.flex]="getColumnFlex(column.id)"
+        [attr.data-position]="getColumnPosition(column.id)"
         (drop)="onTicketDrop($event, column.id)"
         (dragover)="onDragOver($event)">
         
@@ -155,13 +189,14 @@
             <i [class]="column.icon" [style.color]="column.color"></i>
             <span>{{column.title}}</span>
           </div>
-          <span class="column-count">{{column.count}}</span>
+          <span class="column-count">{{getTicketsForColumn(column.id).length}}</span>
         </div>
         
         <div class="column-body">
           <div 
             *ngFor="let ticket of getTicketsForColumn(column.id)" 
             class="ticket-card"
+            [class]="'ticket-status-' + column.id"
             draggable="true"
             (dragstart)="onTicketDragStart($event, ticket)"
             (click)="openTicketModal(ticket)">
@@ -176,29 +211,37 @@
               </span>
             </div>
             
-            <div class="ticket-contract-info">
-              <i class="fas fa-file-contract"></i>
-              <span>Contratto {{ticket.contract_code}}</span>
+            <div class="ticket-info-row">
+              <i class="fas fa-hashtag"></i>
+              <span><strong>ID Contratto:</strong> {{ticket.contract_id}}</span>
             </div>
 
-            <div class="ticket-info-row" *ngIf="ticket.product_name !== 'N/A'">
+            <div class="ticket-info-row">
               <i class="fas fa-box"></i>
-              <span>{{ticket.product_name}}</span>
+              <span><strong>Prodotto:</strong> {{ticket.product_name}}</span>
+            </div>
+            
+            <div class="ticket-title" [class]="'title-' + ticket.status">{{ticket.title}}</div>
+            
+            <div class="ticket-info-row">
+              <i class="fas fa-user"></i>
+              <span><strong>Cliente:</strong> {{ticket.customer_name}}</span>
             </div>
 
-            <div class="ticket-info-row" *ngIf="ticket.seu_name !== 'N/A'">
-              <i class="fas fa-user-tie"></i>
-              <span>SEU: {{ticket.seu_name}}</span>
+            <div class="ticket-info-row mobile-hide">
+              <i class="fas fa-user-edit"></i>
+              <span><strong>Da:</strong> {{ticket.created_by_user_name || 'N/A'}}</span>
             </div>
-            
-            <div class="ticket-title">{{ticket.title}}</div>
-            
+
+            <div class="ticket-info-row mobile-hide">
+              <i class="fas fa-user-tie"></i>
+              <span><strong>SEU:</strong> {{ticket.seu_name}}</span>
+            </div>
+
             <div class="ticket-meta">
-              <div class="ticket-customer">
-                <div class="customer-avatar" [style.background]="ticket.avatar_color">
-                  {{ticket.customer_initials}}
-                </div>
-                <span>{{ticket.customer_name}}</span>
+              <div class="ticket-assigned">
+                <i class="fas fa-user-check"></i>
+                <span>{{getAssignedUserName(ticket)}}</span>
               </div>
               <span class="ticket-date">{{getTimeAgo(ticket.created_at)}}</span>
             </div>
@@ -235,7 +278,11 @@
             <span>{{selectedTicket?.customer_name}}</span>
           </div>
           <div class="info-item">
-            <label>Contratto:</label>
+            <label>ID Contratto:</label>
+            <span>{{selectedTicket?.contract_id}}</span>
+          </div>
+          <div class="info-item">
+            <label>Codice Contratto:</label>
             <span>{{selectedTicket?.contract_code}}</span>
           </div>
           <div class="info-item">
@@ -254,8 +301,12 @@
             <label>Creato:</label>
             <span>{{selectedTicket?.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
           </div>
+          <div class="info-item">
+            <label>Assegnato a:</label>
+            <span>{{selectedTicket ? getAssignedUserName(selectedTicket) : 'Non assegnato'}}</span>
+          </div>
         </div>
-        
+
         <div class="ticket-description">
           <h4>Descrizione:</h4>
           <p>{{selectedTicket?.description}}</p>
@@ -273,12 +324,12 @@
             
             <div class="message-avatar" 
                  [style.background-color]="message.user_id === currentUser?.id ? '#28a745' : '#007bff'">
-              {{getInitials(message.user_name)}}
+              {{getInitials(message.user_name || 'User')}}
             </div>
             
             <div class="message-content">
               <div class="message-header">
-                <span class="message-author">{{message.user_name}} ({{message.user_role}})</span>
+                <span class="message-author">{{message.user_name || 'Utente'}} ({{message.user_role || 'User'}})</span>
                 <span class="message-time">{{message.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
               </div>
               <div class="message-bubble">
@@ -309,7 +360,7 @@
 
 <!-- New Ticket Modal -->
 <div class="modal-overlay" *ngIf="showNewTicketModal" (click)="closeNewTicketModal()">
-  <div class="modal-container" [class.shake]="showValidationError" (click)="$event.stopPropagation()">
+  <div class="modal-container" [class.shake]="isShaking" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title">
         <i class="fas fa-plus-circle"></i>
