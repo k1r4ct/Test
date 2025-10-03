@@ -33,11 +33,23 @@
           <i class="fas fa-hashtag"></i> ID Contratto
         </label>
         <input 
-          type="text" 
+          type="number" 
           class="filter-input" 
           [(ngModel)]="filters.contractId"
           (input)="applyFilters()"
           placeholder="Inserisci ID contratto">
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-file-contract"></i> Codice Contratto
+        </label>
+        <input 
+          type="text" 
+          class="filter-input" 
+          [(ngModel)]="filters.contractCode"
+          (input)="applyFilters()"
+          placeholder="Inserisci codice contratto">
       </div>
       
       <div class="filter-group">
@@ -52,10 +64,10 @@
       
       <div class="filter-group">
         <label class="filter-label">
-          <i class="fas fa-exclamation-triangle"></i> Priorità
+          <i class="fas fa-exclamation-triangle"></i> Priorità 
         </label>
         <select class="filter-input" [(ngModel)]="filters.priority" (change)="applyFilters()">
-          <option value="">Tutte le priorità</option>
+          <option value="">Tutte le Priorità </option>
           <option *ngFor="let priority of priorities" [value]="priority.value">{{priority.label}}</option>
         </select>
       </div>
@@ -96,6 +108,7 @@
         </label>
         <select class="filter-input" [(ngModel)]="filters.assignedTo" (change)="applyFilters()">
           <option value="">Tutti gli utenti</option>
+          <option value="0">Non assegnato</option>
           <option *ngFor="let user of users" [value]="user.id">
             {{user.name}} {{user.cognome}}
           </option>
@@ -119,11 +132,10 @@
           <i class="fas fa-calendar-alt"></i> Data Apertura Ticket
         </label>
         <input 
-          type="text" 
+          type="date" 
           class="filter-input" 
-          [(ngModel)]="filters.dateRange"
-          (change)="applyFilters()"
-          placeholder="gg/mm/aaaa - gg/mm/aaaa">
+          [(ngModel)]="filters.openingDate"
+          (change)="applyFilters()">
       </div>
     </div>
     
@@ -162,6 +174,7 @@
           <div 
             *ngFor="let ticket of getTicketsForColumn(column.id)" 
             class="ticket-card"
+            [class]="'ticket-status-' + column.id"
             draggable="true"
             (dragstart)="onTicketDragStart($event, ticket)"
             (click)="openTicketModal(ticket)">
@@ -176,29 +189,37 @@
               </span>
             </div>
             
-            <div class="ticket-contract-info">
-              <i class="fas fa-file-contract"></i>
-              <span>Contratto {{ticket.contract_code}}</span>
+            <div class="ticket-info-row">
+              <i class="fas fa-hashtag"></i>
+              <span><strong>ID Contratto:</strong> {{ticket.contract_id}}</span>
             </div>
 
-            <div class="ticket-info-row" *ngIf="ticket.product_name !== 'N/A'">
+            <div class="ticket-info-row">
               <i class="fas fa-box"></i>
-              <span>{{ticket.product_name}}</span>
+              <span><strong>Prodotto:</strong> {{ticket.product_name}}</span>
+            </div>
+            
+            <div class="ticket-title" [class]="'title-' + ticket.status">{{ticket.title}}</div>
+            
+            <div class="ticket-info-row">
+              <i class="fas fa-user"></i>
+              <span><strong>Cliente:</strong> {{ticket.customer_name}}</span>
             </div>
 
-            <div class="ticket-info-row" *ngIf="ticket.seu_name !== 'N/A'">
-              <i class="fas fa-user-tie"></i>
-              <span>SEU: {{ticket.seu_name}}</span>
+            <div class="ticket-info-row">
+              <i class="fas fa-user-edit"></i>
+              <span><strong>Generato Da:</strong> {{ticket.created_by_user_name || 'N/A'}}</span>
             </div>
-            
-            <div class="ticket-title">{{ticket.title}}</div>
-            
+
+            <div class="ticket-info-row">
+              <i class="fas fa-user-tie"></i>
+              <span><strong>SEU:</strong> {{ticket.seu_name}}</span>
+            </div>
+
             <div class="ticket-meta">
-              <div class="ticket-customer">
-                <div class="customer-avatar" [style.background]="ticket.avatar_color">
-                  {{ticket.customer_initials}}
-                </div>
-                <span>{{ticket.customer_name}}</span>
+              <div class="ticket-assigned">
+                <i class="fas fa-user-check"></i>
+                <span><strong>Assegnato A:</strong> {{getAssignedUserName(ticket)}}</span>
               </div>
               <span class="ticket-date">{{getTimeAgo(ticket.created_at)}}</span>
             </div>
@@ -235,7 +256,11 @@
             <span>{{selectedTicket?.customer_name}}</span>
           </div>
           <div class="info-item">
-            <label>Contratto:</label>
+            <label>ID Contratto:</label>
+            <span>{{selectedTicket?.contract_id}}</span>
+          </div>
+          <div class="info-item">
+            <label>Codice Contratto:</label>
             <span>{{selectedTicket?.contract_code}}</span>
           </div>
           <div class="info-item">
@@ -254,8 +279,12 @@
             <label>Creato:</label>
             <span>{{selectedTicket?.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
           </div>
+          <div class="info-item">
+            <label>Assegnato a:</label>
+            <span>{{selectedTicket ? getAssignedUserName(selectedTicket) : 'Non assegnato'}}</span>
+          </div>
         </div>
-        
+
         <div class="ticket-description">
           <h4>Descrizione:</h4>
           <p>{{selectedTicket?.description}}</p>
@@ -273,12 +302,12 @@
             
             <div class="message-avatar" 
                  [style.background-color]="message.user_id === currentUser?.id ? '#28a745' : '#007bff'">
-              {{getInitials(message.user_name)}}
+              {{getInitials(message.user_name || 'User')}}
             </div>
             
             <div class="message-content">
               <div class="message-header">
-                <span class="message-author">{{message.user_name}} ({{message.user_role}})</span>
+                <span class="message-author">{{message.user_name || 'Utente'}} ({{message.user_role || 'User'}})</span>
                 <span class="message-time">{{message.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
               </div>
               <div class="message-bubble">
@@ -309,7 +338,7 @@
 
 <!-- New Ticket Modal -->
 <div class="modal-overlay" *ngIf="showNewTicketModal" (click)="closeNewTicketModal()">
-  <div class="modal-container" [class.shake]="showValidationError" (click)="$event.stopPropagation()">
+  <div class="modal-container" [class.shake]="isShaking" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title">
         <i class="fas fa-plus-circle"></i>
@@ -362,7 +391,7 @@
         </div>
         
         <div class="form-group">
-          <label>Priorità</label>
+          <label>Priorità </label>
           <select [(ngModel)]="newTicket.priority" name="priority" class="form-control">
             <option *ngFor="let priority of priorities" [value]="priority.value">
               {{priority.label}}
