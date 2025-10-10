@@ -134,7 +134,6 @@
   box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
 }
 
-/* Specific style for date input */
 .filter-input[type="date"] {
   cursor: pointer;
 }
@@ -167,15 +166,211 @@
 }
 
 .btn-filter.primary:hover {
-    background: white;
-    border-color: #28a745;
-    color: #28a745;
-    transition: all 0.1s;
+  background: white;
+  border-color: #28a745;
+  color: #28a745;
+  transition: all 0.1s;
 }
 
 .btn-filter:hover:not(.primary) {
   border-color: #28a745;
   color: #28a745;
+}
+
+/* Multi-Select Container Styles */
+.multi-select-container {
+  position: relative;
+  width: 100%;
+}
+
+.multi-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.multi-select-trigger::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #2196F3, #9C27B0, #4CAF50);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.multi-select-trigger:hover::before {
+  transform: translateX(0);
+}
+
+.multi-select-trigger:hover {
+  border-color: #28a745;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.15);
+}
+
+.multi-select-trigger:focus {
+  outline: none;
+  border-color: #28a745;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+}
+
+.multi-select-label {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.multi-select-trigger i {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #666;
+  margin-left: 8px;
+}
+
+.multi-select-trigger i.fa-chevron-up {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Styles */
+.multi-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  max-height: 240px;
+  overflow-y: auto;
+  animation: fadeInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top center;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.multi-select-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.multi-select-dropdown::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.multi-select-dropdown::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #28a745, #20c997);
+  border-radius: 3px;
+}
+
+.multi-select-dropdown::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #20c997, #28a745);
+}
+
+.multi-select-option {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.multi-select-option:last-child {
+  border-bottom: none;
+}
+
+.multi-select-option::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(40, 167, 69, 0.1) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+  border-radius: 50%;
+}
+
+.multi-select-option:hover::before {
+  width: 200%;
+  height: 200%;
+}
+
+.multi-select-option:hover {
+  background-color: rgba(40, 167, 69, 0.05);
+}
+
+.custom-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #dee2e6;
+  border-radius: 4px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.custom-checkbox i {
+  color: white;
+  font-size: 12px;
+  opacity: 0;
+  transform: scale(0) rotate(-180deg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-checkbox[style*="background-color"] i {
+  opacity: 1;
+  transform: scale(1) rotate(0);
+  animation: checkmarkPop 0.3s ease;
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: scale(0) rotate(-45deg);
+  }
+  50% {
+    transform: scale(1.3) rotate(0deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.multi-select-option span {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  user-select: none;
 }
 
 /* Kanban Board */
@@ -200,6 +395,29 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: all 0.5s ease;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.kanban-column.column-hidden {
+  opacity: 0;
+  transform: scale(0.95);
+  flex: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.kanban-board[data-visible-columns="1"] .kanban-column:not(.column-hidden) {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.kanban-board[data-visible-columns="2"] .kanban-column:not(.column-hidden) {
+  max-width: calc(50% - 10px);
 }
 
 .column-header {
@@ -235,7 +453,6 @@
   min-height: 200px;
 }
 
-/* Status Colors */
 .status-new {
   border-top: 3px solid #2196F3;
 }
@@ -263,7 +480,6 @@
   gap: 6px;
 }
 
-/* Column-specific hover colors */
 .ticket-status-new:hover {
   border-color: #2196F3;
   box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
@@ -310,7 +526,7 @@
 
 .priority-medium {
   background-color: #ffc107 !important;
-  color: #333 !important;
+  color: #ffffff !important;
 }
 
 .priority-high {
@@ -350,7 +566,6 @@
   transition: background-color 0.3s ease;
 }
 
-/* Title background colors based on ticket status */
 .ticket-title.title-new {
   background: rgba(33, 150, 243, 0.08);
   color: #1976d2;
@@ -366,7 +581,6 @@
   color: #388e3c;
 }
 
-/* Hover effect on title when hovering the card */
 .ticket-card:hover .ticket-title.title-new {
   background: rgba(33, 150, 243, 0.15);
 }
@@ -463,7 +677,6 @@
   }
 }
 
-/* Animazione shake per validazione */
 .modal-container.shake {
   animation: shake 0.2s ease-in-out;
 }
@@ -496,29 +709,26 @@
   color: #28a745;
 }
 
-.ticket-priority-badge {
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: white;
-  margin-left: 10px;
-}
-
-.modal-close {
+.close-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 20px;
   color: #666;
   cursor: pointer;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.3s ease;
 }
 
-.modal-close:hover {
+.close-btn:hover {
   background: #e9ecef;
   color: #333;
+  transform: rotate(90deg);
 }
 
 .modal-body {
@@ -530,11 +740,12 @@
   gap: 25px;
 }
 
-/* Ticket Info */
-.ticket-info {
+/* Ticket Detail Info */
+.ticket-detail-info {
   background: #f8f9fa;
   padding: 20px;
   border-radius: 8px;
+  margin-bottom: 20px;
 }
 
 .info-grid {
@@ -562,42 +773,95 @@
   font-weight: 500;
 }
 
-.ticket-description h4 {
-  margin-bottom: 10px;
-  color: #333;
-  font-size: 14px;
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
   font-weight: 600;
+  color: white !important;
+  text-transform: uppercase;
+  display: inline-block;
+  margin-right: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.ticket-description p {
+.priority-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white !important;
+  text-transform: uppercase;
+  display: inline-block;
+  margin-right: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.description-section {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+}
+
+.description-section label {
+  display: block;
+  font-weight: 600;
   color: #666;
-  line-height: 1.5;
-  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
 
-/* Chat Section */
-.chat-section {
+.description-section p {
+  color: #333;
+  line-height: 1.6;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Messages Section */
+.messages-section {
   flex: 1;
   display: flex;
   flex-direction: column;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
 }
 
-.chat-section h4 {
-  margin-bottom: 15px;
+.messages-section h3 {
+  margin: 0 0 15px 0;
   color: #333;
   font-size: 16px;
   font-weight: 600;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f1f3f5;
 }
 
-.chat-messages {
+.messages-container {
   flex: 1;
-  max-height: 300px;
+  max-height: 400px;
   overflow-y: auto;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
   padding: 15px;
-  margin-bottom: 15px;
   background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.loading-messages {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.loading-messages i {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .message {
@@ -618,7 +882,7 @@
   }
 }
 
-.message.sent {
+.message.message-own {
   flex-direction: row-reverse;
 }
 
@@ -640,7 +904,7 @@
   max-width: 70%;
 }
 
-.message.sent .message-content {
+.message.message-own .message-content {
   text-align: right;
 }
 
@@ -652,7 +916,7 @@
   font-size: 12px;
 }
 
-.message.sent .message-header {
+.message.message-own .message-header {
   flex-direction: row-reverse;
 }
 
@@ -675,72 +939,141 @@
   line-height: 1.4;
 }
 
-.message.sent .message-bubble {
+.message.message-own .message-bubble {
   background: #28a745;
   color: white;
   border-color: #28a745;
 }
 
-.loading-messages {
+/* Status Change Messages */
+.message.status-change-message {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.message-content.status-change-content {
+  max-width: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.message-bubble.status-change-bubble {
+  background: linear-gradient(135deg, #2196F3 0%, #9C27B0 100%);
+  color: white;
+  padding: 14px 20px;
+  border-radius: 20px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 500px;
   text-align: center;
-  padding: 20px;
-  color: #666;
+  transition: all 0.3s ease;
+  animation: statusChangeSlide 0.5s ease;
 }
 
-.loading-messages i {
-  animation: spin 1s linear infinite;
+@keyframes statusChangeSlide {
+  from {
+    transform: scale(0.9) translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.message-bubble.status-change-bubble:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
-.chat-input {
+.status-change-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  animation: rotateIcon 0.6s ease;
+}
+
+@keyframes rotateIcon {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.status-change-text {
+  flex: 1;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.status-change-time {
+  font-size: 11px;
+  opacity: 0.9;
+  font-weight: 400;
+  flex-shrink: 0;
+  margin-left: 10px;
+  font-style: italic;
+}
+
+/* Message Input Container */
+.message-input-container {
   display: flex;
   gap: 10px;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
 }
 
-.chat-input input {
+.message-input {
   flex: 1;
   padding: 12px;
   border: 1px solid #dee2e6;
   border-radius: 8px;
   font-size: 14px;
+  transition: all 0.3s ease;
 }
 
-.chat-input input:focus {
+.message-input:focus {
   outline: none;
   border-color: #28a745;
   box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
 }
 
-.chat-send {
-  background: #28a745;
+.send-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
   color: white;
   border: none;
-  padding: 12px 16px;
+  padding: 12px 20px;
   border-radius: 8px;
   cursor: pointer;
+  font-size: 16px;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
 }
 
-.chat-send:hover:not(:disabled) {
-  background: #218838;
+.send-btn:hover {
+  background: linear-gradient(135deg, #20c997, #28a745);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
-.chat-send:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.send-btn:active {
+  transform: translateY(0);
 }
 
 /* New Ticket Form */
-.new-ticket-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
 .form-group {
   display: flex;
   flex-direction: column;
@@ -894,6 +1227,49 @@
   font-size: 16px;
 }
 
+/* Custom SnackBar Styles */
+::ng-deep .mat-mdc-snack-bar-container {
+  border-radius: 12px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+  font-family: inherit !important;
+}
+
+::ng-deep .success-snackbar {
+  --mdc-snackbar-container-color: linear-gradient(135deg, #28a745, #20c997) !important;
+  --mdc-snackbar-supporting-text-color: white !important;
+}
+
+::ng-deep .success-snackbar .mat-mdc-snack-bar-container {
+  background: linear-gradient(135deg, #28a745, #20c997) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+::ng-deep .error-snackbar {
+  --mdc-snackbar-container-color: linear-gradient(135deg, #dc3545, #c82333) !important;
+  --mdc-snackbar-supporting-text-color: white !important;
+}
+
+::ng-deep .error-snackbar .mat-mdc-snack-bar-container {
+  background: linear-gradient(135deg, #dc3545, #c82333) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+::ng-deep .mat-mdc-snack-bar-container .mat-mdc-button {
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px !important;
+  padding: 4px 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+}
+
+::ng-deep .mat-mdc-snack-bar-container .mat-mdc-button:hover {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .top-header {
@@ -924,97 +1300,7 @@
   .modal-body {
     padding: 20px;
   }
-}
-
-/* Messaggio di status change - centrato e senza avatar */
-.message.status-change-message {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin: 20px 0;
-}
-
-/* Content del messaggio status_change */
-.message-content.status-change-content {
-  max-width: 100%;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-/* Bubble speciale per status change con gradiente */
-.message-bubble.status-change-bubble {
-  background: linear-gradient(135deg, #2196F3 0%, #9C27B0 100%);
-  color: white;
-  padding: 14px 20px;
-  border-radius: 20px;
-  border: none;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.5;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: 500px;
-  text-align: center;
-  transition: all 0.3s ease;
-  animation: statusChangeSlide 0.5s ease;
-}
-
-/* Animazione per i messaggi di status change */
-@keyframes statusChangeSlide {
-  from {
-    transform: scale(0.9) translateY(10px);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1) translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Hover effect per status change bubble */
-.message-bubble.status-change-bubble:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-/* Icona per status change */
-.status-change-icon {
-  font-size: 16px;
-  flex-shrink: 0;
-  animation: rotateIcon 0.6s ease;
-}
-
-@keyframes rotateIcon {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Testo del messaggio di status change */
-.status-change-text {
-  flex: 1;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-/* Timestamp per messaggi di status change */
-.status-change-time {
-  font-size: 11px;
-  opacity: 0.9;
-  font-weight: 400;
-  flex-shrink: 0;
-  margin-left: 10px;
-  font-style: italic;
-}
-
-/* Responsive adjustments per status change messages */
-@media (max-width: 768px) {
+  
   .message-bubble.status-change-bubble {
     flex-direction: column;
     gap: 8px;
@@ -1026,202 +1312,24 @@
     margin-left: 0;
     margin-top: 4px;
   }
-}
-
-/* Override per evitare che i messaggi di status_change abbiano gli stili dei messaggi normali */
-.message.status-change-message .message-bubble {
-  background: none;
-}
-
-/* Esempi specifici di gradienti (opzionali, dato che ora sono dinamici) */
-.status-change-new-to-waiting {
-  background: linear-gradient(135deg, #2196F3 0%, #9C27B0 100%) !important;
-}
-
-.status-change-waiting-to-resolved {
-  background: linear-gradient(135deg, #9C27B0 0%, #4CAF50 100%) !important;
-}
-
-.status-change-resolved-to-waiting {
-  background: linear-gradient(135deg, #4CAF50 0%, #9C27B0 100%) !important;
-}
-
-.status-change-waiting-to-new {
-  background: linear-gradient(135deg, #9C27B0 0%, #2196F3 100%) !important;
-}
-
-/* Custom SnackBar Styles - Theme aligned */
-::ng-deep .mat-mdc-snack-bar-container {
-  border-radius: 12px !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
-  font-family: inherit !important;
-}
-
-/* Success SnackBar - Verde del tema */
-::ng-deep .success-snackbar {
-  --mdc-snackbar-container-color: linear-gradient(135deg, #28a745, #20c997) !important;
-  --mdc-snackbar-supporting-text-color: white !important;
-}
-
-::ng-deep .success-snackbar .mat-mdc-snack-bar-container {
-  background: linear-gradient(135deg, #28a745, #20c997) !important;
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-::ng-deep .success-snackbar .mdc-snackbar__surface {
-  background: linear-gradient(135deg, #28a745, #20c997) !important;
-}
-
-::ng-deep .success-snackbar .mdc-snackbar__label {
-  color: white !important;
-}
-
-/* Error SnackBar - Rosso */
-::ng-deep .error-snackbar {
-  --mdc-snackbar-container-color: linear-gradient(135deg, #dc3545, #c82333) !important;
-  --mdc-snackbar-supporting-text-color: white !important;
-}
-
-::ng-deep .error-snackbar .mat-mdc-snack-bar-container {
-  background: linear-gradient(135deg, #dc3545, #c82333) !important;
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-::ng-deep .error-snackbar .mdc-snackbar__surface {
-  background: linear-gradient(135deg, #dc3545, #c82333) !important;
-}
-
-::ng-deep .error-snackbar .mdc-snackbar__label {
-  color: white !important;
-}
-
-/* Pulsante Chiudi per tutti gli snackbar */
-::ng-deep .mat-mdc-snack-bar-container .mat-mdc-button {
-  color: white !important;
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  border-radius: 8px !important;
-  padding: 4px 12px !important;
-  font-weight: 600 !important;
-  transition: all 0.3s ease !important;
-}
-
-::ng-deep .mat-mdc-snack-bar-container .mat-mdc-button .mdc-button__label {
-  color: white !important;
-}
-
-::ng-deep .mat-mdc-snack-bar-container .mat-mdc-button:hover {
-  background-color: rgba(255, 255, 255, 0.3) !important;
-  transform: translateY(-1px) !important;
-}
-
-::ng-deep .mat-mdc-snack-bar-container .mdc-snackbar__label {
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  letter-spacing: 0.3px !important;
-}
-
-/* Animation for SnackBar entrance */
-::ng-deep .mat-mdc-snack-bar-container {
-  animation: slideInUp 0.3s ease-out !important;
-}
-
-@keyframes slideInUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
+  
+  .multi-select-dropdown {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0;
+    max-height: 50vh;
+    animation: slideUp 0.3s ease-out;
   }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Custom SnackBar Styles - Theme aligned */
-::ng-deep .mat-mdc-snack-bar-container {
-  border-radius: 12px !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
-  font-family: inherit !important;
-}
-
-/* Success SnackBar - Verde del tema */
-::ng-deep .success-snackbar {
-  --mdc-snackbar-container-color: linear-gradient(135deg, #28a745, #20c997) !important;
-  --mdc-snackbar-supporting-text-color: white !important;
-}
-
-::ng-deep .success-snackbar .mat-mdc-snack-bar-container {
-  background: linear-gradient(135deg, #28a745, #20c997) !important;
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-::ng-deep .success-snackbar .mdc-snackbar__surface {
-  background: linear-gradient(135deg, #28a745, #20c997) !important;
-}
-
-::ng-deep .success-snackbar .mdc-snackbar__label {
-  color: white !important;
-}
-
-/* Error SnackBar - Rosso */
-::ng-deep .error-snackbar {
-  --mdc-snackbar-container-color: linear-gradient(135deg, #dc3545, #c82333) !important;
-  --mdc-snackbar-supporting-text-color: white !important;
-}
-
-::ng-deep .error-snackbar .mat-mdc-snack-bar-container {
-  background: linear-gradient(135deg, #dc3545, #c82333) !important;
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-::ng-deep .error-snackbar .mdc-snackbar__surface {
-  background: linear-gradient(135deg, #dc3545, #c82333) !important;
-}
-
-::ng-deep .error-snackbar .mdc-snackbar__label {
-  color: white !important;
-}
-
-/* Pulsante Chiudi per tutti gli snackbar */
-::ng-deep .mat-mdc-snack-bar-container .mat-mdc-button {
-  color: white !important;
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  border-radius: 8px !important;
-  padding: 4px 12px !important;
-  font-weight: 600 !important;
-  transition: all 0.3s ease !important;
-}
-
-::ng-deep .mat-mdc-snack-bar-container .mat-mdc-button .mdc-button__label {
-  color: white !important;
-}
-
-::ng-deep .mat-mdc-snack-bar-container .mat-mdc-button:hover {
-  background-color: rgba(255, 255, 255, 0.3) !important;
-  transform: translateY(-1px) !important;
-}
-
-::ng-deep .mat-mdc-snack-bar-container .mdc-snackbar__label {
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  letter-spacing: 0.3px !important;
-}
-
-/* Animation for SnackBar entrance */
-::ng-deep .mat-mdc-snack-bar-container {
-  animation: slideInUp 0.3s ease-out !important;
-}
-
-@keyframes slideInUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
   }
 }

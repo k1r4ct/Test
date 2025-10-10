@@ -1,5 +1,5 @@
 <!-- ticket-management.component.html -->
-<div class="ticket-management-container" *ngIf="canManageTickets()">
+<div class="ticket-management-container" *ngIf="canManageTickets()" (click)="closeStatusDropdown($event)">
   
   <!-- Header -->
   <div class="top-header">
@@ -67,7 +67,7 @@
           <i class="fas fa-exclamation-triangle"></i> Priorità 
         </label>
         <select class="filter-input" [(ngModel)]="filters.priority" (change)="applyFilters()">
-          <option value="">Tutte le Priorità </option>
+          <option value="">Tutte le Priorità</option>
           <option *ngFor="let priority of priorities" [value]="priority.value">{{priority.label}}</option>
         </select>
       </div>
@@ -76,10 +76,24 @@
         <label class="filter-label">
           <i class="fas fa-tasks"></i> Stato
         </label>
-        <select class="filter-input" [(ngModel)]="filters.status" (change)="applyFilters()">
-          <option value="">Tutti gli stati</option>
-          <option *ngFor="let column of columns" [value]="column.id">{{column.title}}</option>
-        </select>
+        <div class="multi-select-container">
+          <div class="multi-select-trigger" (click)="toggleStatusDropdown()">
+            <span class="multi-select-label">{{getSelectedStatusLabels()}}</span>
+            <i class="fas fa-chevron-down" [class.fa-chevron-up]="showStatusDropdown"></i>
+          </div>
+          <div class="multi-select-dropdown" *ngIf="showStatusDropdown">
+            <div class="multi-select-option" 
+                 *ngFor="let column of columns"
+                 (click)="toggleStatusFilter(column.id)">
+              <div class="custom-checkbox" 
+                   [style.background-color]="isStatusSelected(column.id) ? column.color : 'transparent'"
+                   [style.border-color]="column.color">
+                <i class="fas fa-check" *ngIf="isStatusSelected(column.id)"></i>
+              </div>
+              <span>{{column.title}}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="filter-group">
@@ -154,11 +168,13 @@
 
   <!-- Kanban Board -->
   <div class="kanban-container">
-    <div class="kanban-board">
+    <div class="kanban-board" [attr.data-visible-columns]="getVisibleColumnsCount()">
       <div 
         *ngFor="let column of columns" 
         class="kanban-column"
         [class]="'status-' + column.id"
+        [class.column-hidden]="!isColumnVisible(column.id)"
+        [style.flex]="isColumnVisible(column.id) ? '1' : '0'"
         (drop)="onTicketDrop($event, column.id)"
         (dragover)="onDragOver($event)">
         
@@ -236,107 +252,101 @@
     <div class="modal-header">
       <div class="modal-title">
         <i class="fas fa-ticket-alt"></i>
-        <span>Ticket #{{selectedTicket?.ticket_number}}</span>
-        <span 
-          class="ticket-priority-badge"
-          [style.background-color]="getPriorityColor(selectedTicket?.priority || '')">
-          {{getPriorityLabel(selectedTicket?.priority || '')}}
-        </span>
+        <span>Dettaglio Ticket #{{selectedTicket?.ticket_number}}</span>
       </div>
-      <button class="modal-close" (click)="closeTicketModal()">
+      <button class="close-btn" (click)="closeTicketModal()">
         <i class="fas fa-times"></i>
       </button>
     </div>
-    
-    <div class="modal-body">
-      <div class="ticket-info">
+
+    <div class="modal-body" *ngIf="selectedTicket">
+      <div class="ticket-detail-info">
         <div class="info-grid">
           <div class="info-item">
+            <label>Titolo:</label>
+            <span>{{selectedTicket.title}}</span>
+          </div>
+          <div class="info-item">
+            <label>Stato:</label>
+            <span class="status-badge" [style.background-color]="statusColorMap[selectedTicket.status]">
+              {{getColumnTitle(selectedTicket.status)}}
+            </span>
+          </div>
+          <div class="info-item">
+            <label>Priorità:</label>
+            <span class="priority-badge" [style.background-color]="getPriorityColor(selectedTicket.priority)">
+              {{getPriorityLabel(selectedTicket.priority)}}
+            </span>
+          </div>
+          <div class="info-item">
             <label>Cliente:</label>
-            <span>{{selectedTicket?.customer_name}}</span>
+            <span>{{selectedTicket.customer_name}}</span>
           </div>
           <div class="info-item">
-            <label>ID Contratto:</label>
-            <span>{{selectedTicket?.contract_id}}</span>
-          </div>
-          <div class="info-item">
-            <label>Codice Contratto:</label>
-            <span>{{selectedTicket?.contract_code}}</span>
-          </div>
-          <div class="info-item">
-            <label>Prodotto:</label>
-            <span>{{selectedTicket?.product_name}}</span>
-          </div>
-          <div class="info-item" *ngIf="selectedTicket?.seu_name !== 'N/A'">
-            <label>SEU:</label>
-            <span>{{selectedTicket?.seu_name}}</span>
-          </div>
-          <div class="info-item" *ngIf="selectedTicket?.created_by_user_name">
-            <label>Generato da:</label>
-            <span>{{selectedTicket?.created_by_user_name}}</span>
-          </div>
-          <div class="info-item">
-            <label>Creato:</label>
-            <span>{{selectedTicket?.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
+            <label>Contratto:</label>
+            <span>{{selectedTicket.contract_code}}</span>
           </div>
           <div class="info-item">
             <label>Assegnato a:</label>
-            <span>{{selectedTicket ? getAssignedUserName(selectedTicket) : 'Non assegnato'}}</span>
+            <span>{{getAssignedUserName(selectedTicket)}}</span>
           </div>
         </div>
 
-        <div class="ticket-description">
-          <h4>Descrizione:</h4>
-          <p>{{selectedTicket?.description}}</p>
+        <div class="description-section">
+          <label>Descrizione:</label>
+          <p>{{selectedTicket.description}}</p>
         </div>
       </div>
-      
-      <div class="chat-section">
-        <h4>Chat Supporto</h4>
-        <div class="chat-messages" *ngIf="!isLoadingMessages">
-          <div 
-            *ngFor="let message of selectedTicket?.messages" 
-            class="message"
-            [class.sent]="message.user_id === currentUser?.id"
-            [class.received]="message.user_id !== currentUser?.id">
-            
+
+      <div class="messages-section">
+        <h3>Conversazione</h3>
+        <div class="messages-container">
+          <div class="loading-messages" *ngIf="isLoadingMessages">
+            <i class="fas fa-spinner fa-spin"></i> Caricamento messaggi...
+          </div>
+          <div class="message" 
+               *ngFor="let message of selectedTicket.messages" 
+               [class.message-own]="message.user_id === currentUser.id"
+               [class.status-change-message]="isStatusChangeMessage(message)">
+            <!-- Avatar for regular messages only -->
             <div class="message-avatar" 
-              *ngIf="!isStatusChangeMessage(message)"
-                [style.background-color]="message.user_id === currentUser?.id ? '#28a745' : '#007bff'">
+                 *ngIf="!isStatusChangeMessage(message)"
+                 [style.background-color]="message.user_id === currentUser?.id ? '#28a745' : '#007bff'">
                 {{getInitials(message.user_name || 'User')}}
             </div>
             
-            <div class="message-content">
+            <div class="message-content" [class.status-change-content]="isStatusChangeMessage(message)">
+              <!-- Regular message header -->
               <div class="message-header" *ngIf="!isStatusChangeMessage(message)">
-                <span class="message-author">{{message.user_name || 'Utente'}} ({{message.user_role || 'User'}})</span>
-                <span class="message-time">{{message.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
+                <span class="message-author">{{message.user_name}}</span>
+                <span class="message-time">{{getTimeAgo(message.created_at)}}</span>
               </div>
+              
+              <!-- Regular message bubble -->
               <div class="message-bubble" *ngIf="!isStatusChangeMessage(message)">
                 {{message.message}}
               </div>
-              <div 
-                class="message-bubble status-change-bubble" 
-                *ngIf="isStatusChangeMessage(message)"
-                [ngStyle]="{'background': getStatusChangeGradient(message)}">
+              
+              <!-- Status change message bubble with gradient -->
+              <div class="message-bubble status-change-bubble" 
+                   *ngIf="isStatusChangeMessage(message)"
+                   [ngStyle]="{'background': getStatusChangeGradient(message)}">
                 <i class="fas fa-exchange-alt status-change-icon"></i>
                 <span class="status-change-text">{{message.message}}</span>
-                <span class="status-change-time">{{message.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
+                <span class="status-change-time">{{getTimeAgo(message.created_at)}}</span>
               </div>
             </div>
           </div>
         </div>
-        
-        <div class="loading-messages" *ngIf="isLoadingMessages">
-          <i class="fas fa-spinner fa-spin"></i> Caricamento messaggi...
-        </div>
-        
-        <div class="chat-input">
+
+        <div class="message-input-container">
           <input 
             type="text" 
-            [(ngModel)]="newMessage"
-            (keydown.enter)="sendMessage()"
-            placeholder="Scrivi un messaggio...">
-          <button class="chat-send" (click)="sendMessage()" [disabled]="!newMessage.trim()">
+            [(ngModel)]="newMessage" 
+            placeholder="Scrivi un messaggio..."
+            (keyup.enter)="sendMessage()"
+            class="message-input">
+          <button class="send-btn" (click)="sendMessage()">
             <i class="fas fa-paper-plane"></i>
           </button>
         </div>
@@ -353,24 +363,24 @@
         <i class="fas fa-plus-circle"></i>
         <span>Nuovo Ticket</span>
       </div>
-      <button class="modal-close" (click)="closeNewTicketModal()">
+      <button class="close-btn" (click)="closeNewTicketModal()">
         <i class="fas fa-times"></i>
       </button>
     </div>
     
     <div class="modal-body">
-      <form class="new-ticket-form">
+      <form>
         <div class="form-group">
           <label>Contratto <span class="required">*</span></label>
           <select 
             [(ngModel)]="newTicket.contract_id" 
-            name="contract" 
+            name="contractId" 
             required 
             class="form-control"
             [class.error]="showValidationError && !newTicket.contract_id">
-            <option value="">Seleziona contratto</option>
+            <option [value]="null" disabled>Seleziona un contratto</option>
             <option *ngFor="let contract of contracts" [value]="contract.id">
-              {{contract.codice_contratto}} - {{contract.customer_data?.nome}} {{contract.customer_data?.cognome}} {{contract.customer_data?.ragione_sociale}} - {{contract.id}}
+              {{contract.codice_contratto}} - {{contract.customer_data?.nome || contract.customer_data?.ragione_sociale}}
             </option>
           </select>
         </div>
@@ -384,7 +394,7 @@
             required 
             class="form-control"
             [class.error]="showValidationError && !newTicket.title"
-            placeholder="Inserisci titolo del ticket">
+            placeholder="Inserisci il titolo del ticket">
         </div>
         
         <div class="form-group">

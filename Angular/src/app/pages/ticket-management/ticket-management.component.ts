@@ -74,7 +74,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     contractCode: '',
     product: '',
     priority: '',
-    status: [],
+    status: ['new', 'waiting', 'resolved'],
     assignedTo: '',
     customer: '',
     seu: '',
@@ -82,13 +82,11 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     openingDate: ''
   };
 
-  // ============ MODIFICHE: Aggiunta mappa colori stati ============
   statusColorMap: Record<string, string> = {
     'new': '#2196F3',
     'waiting': '#9C27B0',
     'resolved': '#4CAF50'
   };
-  // ================================================================
 
   showFilters: boolean = true;
   showStatusDropdown: boolean = false;
@@ -166,6 +164,22 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Gets the column title for a given status
+   */
+  getColumnTitle(status: string): string {
+    const column = this.columns.find(c => c.id === status);
+    return column ? column.title : '';
+  }
+
+  /**
+   * Gets the column by status id
+   */
+  getColumnByStatus(status: string): any {
+    return this.columns.find(c => c.id === status);
+  }
+
+  
+  /**
    * Extracts old and new status from a status change message
    * Handles both cases: when old_status/new_status fields exist, or when we need to parse the message
    */
@@ -206,6 +220,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     const newColor = this.statusColorMap[newStatus] || this.statusColorMap['waiting'];
     
     return `linear-gradient(135deg, ${oldColor} 0%, ${newColor} 100%)`;
+  }
+
+  canManageTickets(): boolean {
+    return this.userRole === 1 || this.userRole === 5;
   }
 
   loadCurrentUser() {
@@ -355,7 +373,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   applyFilters() {
     this.filteredTickets = this.tickets.filter(ticket => {
-      // Contract ID filter (numeric) - Now searches for IDs that START WITH the input
+      // Contract ID filter
       if (this.filters.contractId) {
         const ticketIdStr = ticket.contract_id.toString();
         const filterIdStr = this.filters.contractId.toString();
@@ -364,7 +382,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         }
       }
       
-      // Contract Code filter (alphanumeric)
+      // Contract Code filter
       if (this.filters.contractCode && 
           !ticket.contract_code.toLowerCase().includes(this.filters.contractCode.toLowerCase())) {
         return false;
@@ -380,7 +398,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         return false;
       }
       
-      // Status filter - Changed for multi-select
+      // Status filter - Multi-select
       if (this.filters.status.length > 0 && !this.filters.status.includes(ticket.status)) {
         return false;
       }
@@ -405,33 +423,27 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         return false;
       }
       
-      // Assigned to filter - Fixed to handle new tickets as unassigned
+      // Assigned to filter
       if (this.filters.assignedTo) {
-        // Special case: if filtering for unassigned (value = "0")
         if (this.filters.assignedTo === '0') {
-          // Show only tickets that are in 'new' status OR don't have an assigned user
           if (ticket.status !== 'new' && ticket.assigned_to_user_id) {
             return false;
           }
         } else {
-          // For specific user filter
-          // Hide 'new' tickets (they're always unassigned)
           if (ticket.status === 'new') {
             return false;
           }
-          // Check if assigned to the selected user
           if (ticket.assigned_to_user_id?.toString() !== this.filters.assignedTo) {
             return false;
           }
         }
       }
       
-      // Opening date filter - Changed from date range to single date
+      // Opening date filter
       if (this.filters.openingDate) {
         const filterDate = new Date(this.filters.openingDate);
         const ticketDate = new Date(ticket.created_at);
         
-        // Compare only the date parts (ignore time)
         const filterDateString = filterDate.toISOString().split('T')[0];
         const ticketDateString = ticketDate.toISOString().split('T')[0];
         
@@ -466,7 +478,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       contractCode: '',
       product: '',
       priority: '',
-      status: [],  // Changed to empty array for multi-select
+      status: [],
       assignedTo: '',
       customer: '',
       seu: '',
@@ -499,7 +511,17 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
+  isStatusSelected(statusId: string): boolean {
+    return this.filters.status.includes(statusId);
+  }
+
   getSelectedStatusLabels(): string {
+    if (this.filters.status.length === 0) {
+      return 'Tutti gli stati';  // When nothing is selected, show all
+    }
+    if (this.filters.status.length === 3) {
+      return 'Tutti gli stati';
+    }
     return this.filters.status
       .map(statusId => {
         const column = this.columns.find(c => c.id === statusId);
@@ -531,6 +553,40 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     return visibleColumns.findIndex(c => c.id === columnId);
   }
 
+  getPriorityLabel(priority: string): string {
+    const priorityObj = this.priorities.find(p => p.value === priority);
+    return priorityObj ? priorityObj.label : priority;
+  }
+
+  getPriorityColor(priority: string): string {
+    const priorityObj = this.priorities.find(p => p.value === priority);
+    return priorityObj ? priorityObj.color : '#666';
+  }
+
+  getTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / 60000);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} min fa`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours} ore fa`;
+    } else {
+      return `${diffInDays} giorni fa`;
+    }
+  }
+
+  getAssignedUserName(ticket: Ticket): string {
+    if (ticket.status === 'new') {
+      return 'Non assegnato';
+    }
+    return ticket.assigned_to_user_name || 'Non assegnato';
+  }
+
   createNewTicket() {
     this.showNewTicketModal = true;
   }
@@ -540,12 +596,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       this.showValidationError = true;
       this.isShaking = true;
       
-      // Rimuovi lo shake dopo l'animazione (300ms)
       setTimeout(() => {
         this.isShaking = false;
       }, 300);
       
-      // Rimuovi il messaggio di errore dopo 2 secondi
       setTimeout(() => {
         this.showValidationError = false;
       }, 2000);
@@ -703,13 +757,12 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     const updateData = {
       ticket_id: ticket.id,
       status: newStatus,
-      assigned_to_user_id: this.currentUser.id  // Automatically assign to current user when moving
+      assigned_to_user_id: this.currentUser.id
     };
 
     const updateSub = this.apiService.updateTicketStatus(updateData).subscribe((response: any) => {
       if (response.response === 'ok') {
         ticket.status = newStatus as any;
-        // Update the assigned user locally
         ticket.assigned_to_user_id = this.currentUser.id;
         ticket.assigned_to_user_name = `${this.currentUser.name || ''} ${this.currentUser.cognome || ''}`.trim() || this.currentUser.email;
         
@@ -752,49 +805,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.subscriptions.push(updateSub);
   }
 
-  getAssignedUserName(ticket: Ticket): string {
-    // If ticket is in 'new' status, it's not assigned
-    if (ticket.status === 'new') {
-      return 'Non assegnato';
-    }
-    // Otherwise return the assigned user name or 'Non assegnato'
-    return ticket.assigned_to_user_name || 'Non assegnato';
-  }
-
   getStatusLabel(status: string): string {
     const column = this.columns.find(c => c.id === status);
     return column ? column.title : status;
-  }
-
-  getPriorityColor(priority: string): string {
-    const priorityObj = this.priorities.find(p => p.value === priority);
-    return priorityObj ? priorityObj.color : '#666';
-  }
-
-  getPriorityLabel(priority: string): string {
-    const priorityObj = this.priorities.find(p => p.value === priority);
-    return priorityObj ? priorityObj.label : priority;
-  }
-
-  getTimeAgo(date: string): string {
-    const now = new Date();
-    const ticketDate = new Date(date);
-    const diffInMs = now.getTime() - ticketDate.getTime();
-    const diffInHours = diffInMs / (1000 * 60 * 60);
-    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
-
-    if (diffInHours < 1) {
-      return 'Adesso';
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)} ore fa`;
-    } else if (diffInDays < 7) {
-      return `${Math.floor(diffInDays)} giorni fa`;
-    } else {
-      return `${Math.floor(diffInDays / 7)} settimane fa`;
-    }
-  }
-
-  canManageTickets(): boolean {
-    return this.userRole === 1 || this.userRole === 5;
   }
 }
