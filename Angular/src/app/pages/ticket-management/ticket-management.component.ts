@@ -34,9 +34,11 @@ export interface TicketMessage {
   user_name: string;
   user_role: string;
   message: string;
-  message_type: 'text' | 'attachment';
+  message_type: 'text' | 'attachment' | 'status_change';  
   attachment_path?: string;
   attachment_name?: string;
+  old_status?: string;  
+  new_status?: string;  
   created_at: string;
 }
 
@@ -45,7 +47,7 @@ export interface TicketFilters {
   contractCode: string;
   product: string;
   priority: string;
-  status: string[];  // Changed from string to string[] for multi-select
+  status: string[];
   assignedTo: string;
   customer: string;
   seu: string;
@@ -72,7 +74,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     contractCode: '',
     product: '',
     priority: '',
-    status: [],  // Changed to empty array for multi-select
+    status: [],
     assignedTo: '',
     customer: '',
     seu: '',
@@ -80,8 +82,16 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     openingDate: ''
   };
 
+  // ============ MODIFICHE: Aggiunta mappa colori stati ============
+  statusColorMap: Record<string, string> = {
+    'new': '#2196F3',
+    'waiting': '#9C27B0',
+    'resolved': '#4CAF50'
+  };
+  // ================================================================
+
   showFilters: boolean = true;
-  showStatusDropdown: boolean = false;  // Added for dropdown control
+  showStatusDropdown: boolean = false;
   selectedTicket: Ticket | null = null;
   showTicketModal: boolean = false;
   showNewTicketModal: boolean = false;
@@ -146,6 +156,56 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+  
+  /**
+   * Checks if a message is a status change message
+   */
+  isStatusChangeMessage(message: TicketMessage): boolean {
+    return message.message_type === 'status_change';
+  }
+
+  /**
+   * Extracts old and new status from a status change message
+   * Handles both cases: when old_status/new_status fields exist, or when we need to parse the message
+   */
+  getStatusFromMessage(message: TicketMessage): { oldStatus: string, newStatus: string } {
+    // If the message has explicit status fields, use them
+    if (message.old_status && message.new_status) {
+      return {
+        oldStatus: message.old_status,
+        newStatus: message.new_status
+      };
+    }
+
+    // Otherwise, parse the message text
+    // Expected format: "Stato cambiato da 'old_status' a 'new_status'"
+    const regex = /da ['"](\w+)['"] a ['"](\w+)['"]/i;
+    const match = message.message.match(regex);
+    
+    if (match) {
+      return {
+        oldStatus: match[1],
+        newStatus: match[2]
+      };
+    }
+
+    // Default fallback
+    return {
+      oldStatus: 'new',
+      newStatus: 'waiting'
+    };
+  }
+
+  /**
+   * Generates the gradient style for a status change message
+   */
+  getStatusChangeGradient(message: TicketMessage): string {
+    const { oldStatus, newStatus } = this.getStatusFromMessage(message);
+    const oldColor = this.statusColorMap[oldStatus] || this.statusColorMap['new'];
+    const newColor = this.statusColorMap[newStatus] || this.statusColorMap['waiting'];
+    
+    return `linear-gradient(135deg, ${oldColor} 0%, ${newColor} 100%)`;
   }
 
   loadCurrentUser() {

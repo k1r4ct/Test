@@ -301,17 +301,26 @@
             [class.received]="message.user_id !== currentUser?.id">
             
             <div class="message-avatar" 
-                 [style.background-color]="message.user_id === currentUser?.id ? '#28a745' : '#007bff'">
-              {{getInitials(message.user_name || 'User')}}
+              *ngIf="!isStatusChangeMessage(message)"
+                [style.background-color]="message.user_id === currentUser?.id ? '#28a745' : '#007bff'">
+                {{getInitials(message.user_name || 'User')}}
             </div>
             
             <div class="message-content">
-              <div class="message-header">
+              <div class="message-header" *ngIf="!isStatusChangeMessage(message)">
                 <span class="message-author">{{message.user_name || 'Utente'}} ({{message.user_role || 'User'}})</span>
                 <span class="message-time">{{message.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
               </div>
-              <div class="message-bubble">
+              <div class="message-bubble" *ngIf="!isStatusChangeMessage(message)">
                 {{message.message}}
+              </div>
+              <div 
+                class="message-bubble status-change-bubble" 
+                *ngIf="isStatusChangeMessage(message)"
+                [ngStyle]="{'background': getStatusChangeGradient(message)}">
+                <i class="fas fa-exchange-alt status-change-icon"></i>
+                <span class="status-change-text">{{message.message}}</span>
+                <span class="status-change-time">{{message.created_at | date:'dd/MM/yyyy HH:mm'}}</span>
               </div>
             </div>
           </div>

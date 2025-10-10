@@ -926,6 +926,130 @@
   }
 }
 
+/* Messaggio di status change - centrato e senza avatar */
+.message.status-change-message {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+/* Content del messaggio status_change */
+.message-content.status-change-content {
+  max-width: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Bubble speciale per status change con gradiente */
+.message-bubble.status-change-bubble {
+  background: linear-gradient(135deg, #2196F3 0%, #9C27B0 100%);
+  color: white;
+  padding: 14px 20px;
+  border-radius: 20px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 500px;
+  text-align: center;
+  transition: all 0.3s ease;
+  animation: statusChangeSlide 0.5s ease;
+}
+
+/* Animazione per i messaggi di status change */
+@keyframes statusChangeSlide {
+  from {
+    transform: scale(0.9) translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Hover effect per status change bubble */
+.message-bubble.status-change-bubble:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Icona per status change */
+.status-change-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  animation: rotateIcon 0.6s ease;
+}
+
+@keyframes rotateIcon {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Testo del messaggio di status change */
+.status-change-text {
+  flex: 1;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Timestamp per messaggi di status change */
+.status-change-time {
+  font-size: 11px;
+  opacity: 0.9;
+  font-weight: 400;
+  flex-shrink: 0;
+  margin-left: 10px;
+  font-style: italic;
+}
+
+/* Responsive adjustments per status change messages */
+@media (max-width: 768px) {
+  .message-bubble.status-change-bubble {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+    max-width: 90%;
+  }
+
+  .status-change-time {
+    margin-left: 0;
+    margin-top: 4px;
+  }
+}
+
+/* Override per evitare che i messaggi di status_change abbiano gli stili dei messaggi normali */
+.message.status-change-message .message-bubble {
+  background: none;
+}
+
+/* Esempi specifici di gradienti (opzionali, dato che ora sono dinamici) */
+.status-change-new-to-waiting {
+  background: linear-gradient(135deg, #2196F3 0%, #9C27B0 100%) !important;
+}
+
+.status-change-waiting-to-resolved {
+  background: linear-gradient(135deg, #9C27B0 0%, #4CAF50 100%) !important;
+}
+
+.status-change-resolved-to-waiting {
+  background: linear-gradient(135deg, #4CAF50 0%, #9C27B0 100%) !important;
+}
+
+.status-change-waiting-to-new {
+  background: linear-gradient(135deg, #9C27B0 0%, #2196F3 100%) !important;
+}
+
 /* Custom SnackBar Styles - Theme aligned */
 ::ng-deep .mat-mdc-snack-bar-container {
   border-radius: 12px !important;
