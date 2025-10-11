@@ -34,9 +34,11 @@ export interface TicketMessage {
   user_name: string;
   user_role: string;
   message: string;
-  message_type: 'text' | 'attachment';
+  message_type: 'text' | 'attachment' | 'status_change';  
   attachment_path?: string;
   attachment_name?: string;
+  old_status?: string;  
+  new_status?: string;  
   created_at: string;
 }
 
@@ -72,7 +74,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     contractCode: '',
     product: '',
     priority: '',
-    status: ['new', 'waiting', 'resolved'], // All selected by default
+    status: ['new', 'waiting', 'resolved'],
     assignedTo: '',
     customer: '',
     seu: '',
@@ -80,10 +82,14 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     openingDate: ''
   };
 
-  previousStatusSelection: string[] = ['new', 'waiting', 'resolved'];
-
+  statusColorMap: Record<string, string> = {
+    'new': '#2196F3',
+    'waiting': '#9C27B0',
+    'resolved': '#4CAF50'
+  };
 
   showFilters: boolean = true;
+  showStatusDropdown: boolean = false;
   selectedTicket: Ticket | null = null;
   showTicketModal: boolean = false;
   showNewTicketModal: boolean = false;
@@ -143,21 +149,81 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.previousStatusSelection = [...this.filters.status];
-
     this.loadCurrentUser();
-    this.adjustForMobile();
   }
 
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
+  
+  /**
+   * Checks if a message is a status change message
+   */
+  isStatusChangeMessage(message: TicketMessage): boolean {
+    return message.message_type === 'status_change';
+  }
 
-  adjustForMobile() {
-    // Adjust filters visibility on mobile
-    if (window.innerWidth < 768) {
-      this.showFilters = false;
+  /**
+   * Gets the column title for a given status
+   */
+  getColumnTitle(status: string): string {
+    const column = this.columns.find(c => c.id === status);
+    return column ? column.title : '';
+  }
+
+  /**
+   * Gets the column by status id
+   */
+  getColumnByStatus(status: string): any {
+    return this.columns.find(c => c.id === status);
+  }
+
+  
+  /**
+   * Extracts old and new status from a status change message
+   * Handles both cases: when old_status/new_status fields exist, or when we need to parse the message
+   */
+  getStatusFromMessage(message: TicketMessage): { oldStatus: string, newStatus: string } {
+    // If the message has explicit status fields, use them
+    if (message.old_status && message.new_status) {
+      return {
+        oldStatus: message.old_status,
+        newStatus: message.new_status
+      };
     }
+
+    // Otherwise, parse the message text
+    // Expected format: "Stato cambiato da 'old_status' a 'new_status'"
+    const regex = /da ['"](\w+)['"] a ['"](\w+)['"]/i;
+    const match = message.message.match(regex);
+    
+    if (match) {
+      return {
+        oldStatus: match[1],
+        newStatus: match[2]
+      };
+    }
+
+    // Default fallback
+    return {
+      oldStatus: 'new',
+      newStatus: 'waiting'
+    };
+  }
+
+  /**
+   * Generates the gradient style for a status change message
+   */
+  getStatusChangeGradient(message: TicketMessage): string {
+    const { oldStatus, newStatus } = this.getStatusFromMessage(message);
+    const oldColor = this.statusColorMap[oldStatus] || this.statusColorMap['new'];
+    const newColor = this.statusColorMap[newStatus] || this.statusColorMap['waiting'];
+    
+    return `linear-gradient(135deg, ${oldColor} 0%, ${newColor} 100%)`;
+  }
+
+  canManageTickets(): boolean {
+    return this.userRole === 1 || this.userRole === 5;
   }
 
   loadCurrentUser() {
@@ -305,59 +371,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
-  toggleStatusFilter(statusId: string) {
-    const index = this.filters.status.indexOf(statusId);
-    
-    // Don't allow deselecting all statuses
-    if (index > -1 && this.filters.status.length > 1) {
-      this.filters.status.splice(index, 1);
-    }
-
-  onStatusDropdownChange(_event: Event) {
-    // Ensure at least one status remains selected
-    if (!this.filters.status || this.filters.status.length === 0) {
-      // Restore previous non-empty selection
-      this.filters.status = [...this.previousStatusSelection];
-    } else {
-      // Update previous selection snapshot
-      this.previousStatusSelection = [...this.filters.status];
-    }
-    this.applyFilters();
-  }
- else if (index === -1) {
-      this.filters.status.push(statusId);
-    }
-    
-    this.applyFilters();
-  }
-
-  isColumnVisible(columnId: string): boolean {
-    return this.filters.status.includes(columnId);
-  }
-
-  getVisibleColumnsCount(): number {
-    return this.filters.status.length;
-  }
-
-  getColumnFlex(columnId: string): string {
-    if (!this.isColumnVisible(columnId)) {
-      return '0';
-    }
-    
-    const visibleCount = this.getVisibleColumnsCount();
-    if (visibleCount === 1) {
-      return '1 1 100%';
-    } else if (visibleCount === 2) {
-      return '1 1 50%';
-    }
-    return '1';
-  }
-
-  getColumnPosition(columnId: string): number {
-    const visibleColumns = this.columns.filter(c => this.isColumnVisible(c.id));
-    return visibleColumns.findIndex(c => c.id === columnId);
-  }
-
   applyFilters() {
     this.filteredTickets = this.tickets.filter(ticket => {
       // Contract ID filter
@@ -385,7 +398,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         return false;
       }
       
-      // Status filter - multi-select
+      // Status filter - Multi-select
       if (this.filters.status.length > 0 && !this.filters.status.includes(ticket.status)) {
         return false;
       }
@@ -465,7 +478,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       contractCode: '',
       product: '',
       priority: '',
-      status: ['new', 'waiting', 'resolved'], // Reset to all selected
+      status: [],
       assignedTo: '',
       customer: '',
       seu: '',
@@ -473,6 +486,105 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       openingDate: ''
     };
     this.applyFilters();
+  }
+
+  // Multi-select status methods
+  toggleStatusDropdown() {
+    this.showStatusDropdown = !this.showStatusDropdown;
+  }
+
+  closeStatusDropdown(event: MouseEvent) {
+    // Close dropdown when clicking outside
+    const target = event.target as HTMLElement;
+    if (!target.closest('.multi-select-container')) {
+      this.showStatusDropdown = false;
+    }
+  }
+
+  toggleStatusFilter(statusId: string) {
+    const index = this.filters.status.indexOf(statusId);
+    if (index > -1) {
+      this.filters.status.splice(index, 1);
+    } else {
+      this.filters.status.push(statusId);
+    }
+    this.applyFilters();
+  }
+
+  isStatusSelected(statusId: string): boolean {
+    return this.filters.status.includes(statusId);
+  }
+
+  getSelectedStatusLabels(): string {
+    if (this.filters.status.length === 0) {
+      return 'Tutti gli stati';  // When nothing is selected, show all
+    }
+    if (this.filters.status.length === 3) {
+      return 'Tutti gli stati';
+    }
+    return this.filters.status
+      .map(statusId => {
+        const column = this.columns.find(c => c.id === statusId);
+        return column ? column.title : '';
+      })
+      .filter(label => label)
+      .join(', ');
+  }
+
+  // Column visibility methods
+  isColumnVisible(columnId: string): boolean {
+    // If no filters applied, all columns are visible
+    if (this.filters.status.length === 0 || this.filters.status.length === 3) {
+      return true;
+    }
+    // Otherwise, only filtered columns are visible
+    return this.filters.status.includes(columnId);
+  }
+
+  getVisibleColumnsCount(): number {
+    if (this.filters.status.length === 0 || this.filters.status.length === 3) {
+      return 3;
+    }
+    return this.filters.status.length;
+  }
+
+  getColumnPosition(columnId: string): number {
+    const visibleColumns = this.columns.filter(c => this.isColumnVisible(c.id));
+    return visibleColumns.findIndex(c => c.id === columnId);
+  }
+
+  getPriorityLabel(priority: string): string {
+    const priorityObj = this.priorities.find(p => p.value === priority);
+    return priorityObj ? priorityObj.label : priority;
+  }
+
+  getPriorityColor(priority: string): string {
+    const priorityObj = this.priorities.find(p => p.value === priority);
+    return priorityObj ? priorityObj.color : '#666';
+  }
+
+  getTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / 60000);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} min fa`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours} ore fa`;
+    } else {
+      return `${diffInDays} giorni fa`;
+    }
+  }
+
+  getAssignedUserName(ticket: Ticket): string {
+    if (ticket.status === 'new') {
+      return 'Non assegnato';
+    }
+    return ticket.assigned_to_user_name || 'Non assegnato';
   }
 
   createNewTicket() {
@@ -693,47 +805,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.subscriptions.push(updateSub);
   }
 
-  getAssignedUserName(ticket: Ticket): string {
-    if (ticket.status === 'new') {
-      return 'Non assegnato';
-    }
-    return ticket.assigned_to_user_name || 'Non assegnato';
-  }
-
   getStatusLabel(status: string): string {
     const column = this.columns.find(c => c.id === status);
     return column ? column.title : status;
-  }
-
-  getPriorityColor(priority: string): string {
-    const priorityObj = this.priorities.find(p => p.value === priority);
-    return priorityObj ? priorityObj.color : '#666';
-  }
-
-  getPriorityLabel(priority: string): string {
-    const priorityObj = this.priorities.find(p => p.value === priority);
-    return priorityObj ? priorityObj.label : priority;
-  }
-
-  getTimeAgo(date: string): string {
-    const now = new Date();
-    const ticketDate = new Date(date);
-    const diffInMs = now.getTime() - ticketDate.getTime();
-    const diffInHours = diffInMs / (1000 * 60 * 60);
-    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
-
-    if (diffInHours < 1) {
-      return 'Adesso';
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)} ore fa`;
-    } else if (diffInDays < 7) {
-      return `${Math.floor(diffInDays)} giorni fa`;
-    } else {
-      return `${Math.floor(diffInDays / 7)} settimane fa`;
-    }
-  }
-
-  canManageTickets(): boolean {
-    return this.userRole === 1 || this.userRole === 5;
   }
 }
