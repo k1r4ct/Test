@@ -157,7 +157,7 @@ class TicketController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'ticket_id' => 'required|exists:tickets,id',
-                'status' => 'required|in:new,in-progress,waiting,resolved'
+                'status' => 'required|in:new,waiting,resolved'
             ]);
 
             if ($validator->fails()) {
@@ -191,7 +191,7 @@ class TicketController extends Controller
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
                 'message' => "Stato cambiato da '{$oldStatus}' a '{$request->status}'",
-                'message_type' => 'text'
+                'message_type' => 'status_change'
             ]);
 
             // Send notification

@@ -3,10 +3,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Ticket extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'ticket_number',
@@ -22,12 +23,13 @@ class Ticket extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     // Relationships
     public function contract()
     {
-        return $this->belongsTo(contract::class);
+        return $this->belongsTo(Contract::class);
     }
 
     public function createdBy()
@@ -71,13 +73,14 @@ class Ticket extends Model
         return $query->where('created_by_user_id', $userId);
     }
 
+    // Attributes
     public function getCustomerNameAttribute()
     {
         if ($this->contract && $this->contract->customer_data) {
             $customer = $this->contract->customer_data;
             if ($customer->nome && $customer->cognome) {
                 return $customer->nome . ' ' . $customer->cognome;
-            } elseif ($customer->ragione_sociale) {
+            } elseif (!empty($customer->ragione_sociale)) {
                 return $customer->ragione_sociale;
             }
         }
@@ -86,13 +89,40 @@ class Ticket extends Model
 
     public function getProductNameAttribute()
     {
-        return $this->contract && $this->contract->product ? 
-               $this->contract->product->descrizione : 'N/A';
+        return $this->contract && $this->contract->product
+            ? $this->contract->product->descrizione
+            : 'N/A';
+    }
+
+    public function getAssignedToNameAttribute()
+    {
+        if ($this->assignedTo) {
+            if ($this->assignedTo->nome && $this->assignedTo->cognome) {
+                return $this->assignedTo->nome . ' ' . $this->assignedTo->cognome;
+            } elseif (!empty($this->assignedTo->rag_soc)) {
+                return $this->assignedTo->rag_soc;
+            }
+            return $this->assignedTo->email;
+        }
+        return 'Non assegnato';
+    }
+
+    public function getCreatedByNameAttribute()
+    {
+        if ($this->createdBy) {
+            if ($this->createdBy->nome && $this->createdBy->cognome) {
+                return $this->createdBy->nome . ' ' . $this->createdBy->cognome;
+            } elseif (!empty($this->createdBy->rag_soc)) {
+                return $this->createdBy->rag_soc;
+            }
+            return $this->createdBy->email;
+        }
+        return 'N/A';
     }
 
     public static function generateTicketNumber()
     {
-        $lastTicket = self::orderBy('id', 'desc')->first();
+        $lastTicket = self::withTrashed()->orderBy('id', 'desc')->first();
         $nextNumber = $lastTicket ? $lastTicket->id + 1 : 1;
         return 'TK-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
@@ -100,19 +130,18 @@ class Ticket extends Model
     public static function getStatusOptions()
     {
         return [
-            'new' => 'Nuovo',
-            'in-progress' => 'In Lavorazione', 
+            'new'     => 'Nuovo',
             'waiting' => 'In Attesa',
-            'resolved' => 'Risolto'
+            'resolved'=> 'Risolto',
         ];
     }
 
     public static function getPriorityOptions()
     {
         return [
-            'low' => 'Bassa',
+            'low'    => 'Bassa',
             'medium' => 'Media',
-            'high' => 'Alta'
+            'high'   => 'Alta',
         ];
     }
 
