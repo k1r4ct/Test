@@ -1,5 +1,6 @@
 /* ticket-management.component.css */
 
+/* Main container for the entire ticket management page */
 .ticket-management-container {
   height: 100vh;
   display: flex;
@@ -8,7 +9,11 @@
   overflow: hidden;
 }
 
-/* Header Styles */
+/* ========================================
+    HEADER SECTION
+   ======================================== */
+
+/* Top header bar containing title and new ticket button */
 .top-header {
   background: white;
   padding: 20px 30px;
@@ -19,17 +24,20 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
+/* Container for header title and icon */
 .header-title {
   display: flex;
   align-items: center;
   gap: 15px;
 }
 
+/* Icon in the header */
 .header-title i {
   font-size: 28px;
   color: #28a745;
 }
 
+/* Main heading in the header */
 .header-title h2 {
   margin: 0;
   font-size: 22px;
@@ -37,12 +45,14 @@
   font-weight: 600;
 }
 
+/* Subtitle text in the header */
 .header-title p {
   margin: 0;
   color: #666;
   font-size: 14px;
 }
 
+/* Button to create a new ticket */
 .btn-new-ticket {
   background: linear-gradient(135deg, #28a745, #20c997);
   color: white;
@@ -59,18 +69,25 @@
   box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
 }
 
+/* Hover state for new ticket button */
 .btn-new-ticket:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
 }
 
-/* Filters Section */
+
+/* ========================================
+    FILTERS SECTION
+   ======================================== */
+
+/* Container for all filter controls */
 .filters-section {
   background: white;
   border-bottom: 1px solid #e9ecef;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
+/* Header bar for the filters section */
 .filter-header {
   padding: 15px 30px;
   display: flex;
@@ -79,6 +96,7 @@
   border-bottom: 1px solid #f1f3f5;
 }
 
+/* Title heading for filters section */
 .filter-header h3 {
   margin: 0;
   color: #333;
@@ -89,23 +107,70 @@
   gap: 8px;
 }
 
+/* Icon in the filter header */
 .filter-header h3 i {
   color: #28a745;
 }
 
+/* Grid layout for filter inputs with cascade animation */
 .filters-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
-  padding: 20px 30px;
+  padding: 0px 30px;
+  /* Cascade animation states */
+  transition: all 0.4s ease;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-10px);
 }
 
+/* Visible state for filters grid */
+.filters-grid-visible {
+  max-height: 1000px;
+  opacity: 1;
+  transform: translateY(0);
+  padding: 20px 30px;
+  overflow: visible;
+}
+
+/* Individual filter input group with cascade effect */
 .filter-group {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  /* Cascade animation */
+  animation: fadeInCascade 0.4s ease forwards;
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
+/* Cascade animation keyframes */
+@keyframes fadeInCascade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Progressive delay for cascade effect */
+.filter-group:nth-child(1) { animation-delay: 0s; }
+.filter-group:nth-child(2) { animation-delay: 0.05s; }
+.filter-group:nth-child(3) { animation-delay: 0.1s; }
+.filter-group:nth-child(4) { animation-delay: 0.15s; }
+.filter-group:nth-child(5) { animation-delay: 0.2s; }
+.filter-group:nth-child(6) { animation-delay: 0.25s; }
+.filter-group:nth-child(7) { animation-delay: 0.3s; }
+.filter-group:nth-child(8) { animation-delay: 0.35s; }
+.filter-group:nth-child(9) { animation-delay: 0.4s; }
+.filter-group:nth-child(10) { animation-delay: 0.45s; }
+
+/* Label for filter input */
 .filter-label {
   font-weight: 600;
   color: #333;
@@ -115,11 +180,13 @@
   gap: 6px;
 }
 
+/* Icon in the filter label */
 .filter-label i {
   color: #666;
   font-size: 12px;
 }
 
+/* Input field for filters */
 .filter-input {
   padding: 8px 12px;
   border: 1px solid #dee2e6;
@@ -128,24 +195,40 @@
   transition: all 0.3s ease;
 }
 
+/* Focus state for filter inputs */
 .filter-input:focus {
   outline: none;
   border-color: #28a745;
   box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
 }
 
+/* Date input cursor style */
 .filter-input[type="date"] {
   cursor: pointer;
 }
 
+/* Container for filter action buttons with fade animation */
 .filter-actions {
   display: flex;
   gap: 10px;
   align-items: center;
-  margin-top: 15px;
-  padding: 0 30px 20px;
+  padding: 0px 30px;
+  /* Fade animation for action buttons */
+  transition: all 0.3s ease;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
 }
 
+/* Visible state for filter actions */
+.filter-actions-visible {
+  max-height: 100px;
+  opacity: 1;
+  margin-top: 15px;
+  padding: 0px 30px 20px;
+}
+
+/* Filter action button */
 .btn-filter {
   padding: 8px 16px;
   border: 1px solid #dee2e6;
@@ -159,12 +242,14 @@
   gap: 6px;
 }
 
+/* Primary filter button variant */
 .btn-filter.primary {
   background: linear-gradient(135deg, #28a745, #20c997);
   box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
   color: white;
 }
 
+/* Hover state for primary filter button */
 .btn-filter.primary:hover {
   background: white;
   border-color: #28a745;
@@ -172,17 +257,25 @@
   transition: all 0.1s;
 }
 
+/* Hover state for non-primary filter buttons */
 .btn-filter:hover:not(.primary) {
   border-color: #28a745;
   color: #28a745;
 }
 
-/* Multi-Select Container Styles */
+
+/* ========================================
+    MULTI-SELECT SECTION
+   ======================================== */
+
+/* Container for multi-select dropdown */
 .multi-select-container {
   position: relative;
   width: 100%;
+  overflow: visible;
 }
 
+/* Trigger button for multi-select dropdown */
 .multi-select-trigger {
   display: flex;
   align-items: center;
@@ -198,6 +291,7 @@
   overflow: hidden;
 }
 
+/* Decorative gradient bar on hover */
 .multi-select-trigger::before {
   content: '';
   position: absolute;
@@ -210,21 +304,25 @@
   transition: transform 0.3s ease;
 }
 
+/* Show gradient bar on hover */
 .multi-select-trigger:hover::before {
   transform: translateX(0);
 }
 
+/* Hover state for multi-select trigger */
 .multi-select-trigger:hover {
   border-color: #28a745;
   box-shadow: 0 2px 8px rgba(40, 167, 69, 0.15);
 }
 
+/* Focus state for multi-select trigger */
 .multi-select-trigger:focus {
   outline: none;
   border-color: #28a745;
   box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
 }
 
+/* Label text in multi-select trigger */
 .multi-select-label {
   flex: 1;
   font-size: 14px;
@@ -234,17 +332,24 @@
   text-overflow: ellipsis;
 }
 
+/* Chevron icon in multi-select trigger */
 .multi-select-trigger i {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: #666;
   margin-left: 8px;
 }
 
+/* Rotate chevron icon when dropdown is open */
 .multi-select-trigger i.fa-chevron-up {
   transform: rotate(180deg);
 }
 
-/* Dropdown Styles */
+
+/* ========================================
+    DROPDOWN OPTIONS SECTION
+   ======================================== */
+
+/* Dropdown menu for multi-select */
 .multi-select-dropdown {
   position: absolute;
   top: calc(100% + 4px);
@@ -254,13 +359,14 @@
   border: 1px solid #dee2e6;
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  z-index: 1000;
+  z-index: 2000;
   max-height: 240px;
   overflow-y: auto;
   animation: fadeInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: top center;
 }
 
+/* Animation for dropdown appearance */
 @keyframes fadeInScale {
   from {
     opacity: 0;
@@ -272,24 +378,29 @@
   }
 }
 
+/* Scrollbar width for dropdown */
 .multi-select-dropdown::-webkit-scrollbar {
   width: 6px;
 }
 
+/* Scrollbar track styling */
 .multi-select-dropdown::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 3px;
 }
 
+/* Scrollbar thumb styling */
 .multi-select-dropdown::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #28a745, #20c997);
   border-radius: 3px;
 }
 
+/* Scrollbar thumb hover state */
 .multi-select-dropdown::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #20c997, #28a745);
 }
 
+/* Individual option in multi-select dropdown */
 .multi-select-option {
   display: flex;
   align-items: center;
@@ -301,10 +412,12 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
+/* Remove border from last option */
 .multi-select-option:last-child {
   border-bottom: none;
 }
 
+/* Ripple effect on hover */
 .multi-select-option::before {
   content: '';
   position: absolute;
@@ -318,15 +431,18 @@
   border-radius: 50%;
 }
 
+/* Expand ripple effect on hover */
 .multi-select-option:hover::before {
   width: 200%;
   height: 200%;
 }
 
+/* Background color on option hover */
 .multi-select-option:hover {
   background-color: rgba(40, 167, 69, 0.05);
 }
 
+/* Custom checkbox for multi-select options */
 .custom-checkbox {
   width: 20px;
   height: 20px;
@@ -340,6 +456,7 @@
   position: relative;
 }
 
+/* Checkmark icon in checkbox */
 .custom-checkbox i {
   color: white;
   font-size: 12px;
@@ -348,12 +465,14 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Show checkmark when checkbox is checked */
 .custom-checkbox[style*="background-color"] i {
   opacity: 1;
   transform: scale(1) rotate(0);
   animation: checkmarkPop 0.3s ease;
 }
 
+/* Animation for checkmark appearance */
 @keyframes checkmarkPop {
   0% {
     transform: scale(0) rotate(-45deg);
@@ -366,6 +485,7 @@
   }
 }
 
+/* Option label text */
 .multi-select-option span {
   font-size: 14px;
   color: #333;
@@ -373,13 +493,19 @@
   user-select: none;
 }
 
-/* Kanban Board */
+
+/* ========================================
+   KANBAN BOARD SECTION
+   ======================================== */
+
+/* Main container for kanban board */
 .kanban-container {
   flex: 1;
   overflow-x: auto;
   padding: 20px 30px;
 }
 
+/* Kanban board layout */
 .kanban-board {
   display: flex;
   gap: 20px;
@@ -387,6 +513,7 @@
   height: 100%;
 }
 
+/* Individual kanban column */
 .kanban-column {
   background: white;
   border-radius: 12px;
@@ -400,6 +527,7 @@
   transform: scale(1);
 }
 
+/* Hidden column state */
 .kanban-column.column-hidden {
   opacity: 0;
   transform: scale(0.95);
@@ -411,15 +539,18 @@
   pointer-events: none;
 }
 
+/* Single visible column layout */
 .kanban-board[data-visible-columns="1"] .kanban-column:not(.column-hidden) {
   max-width: 600px;
   margin: 0 auto;
 }
 
+/* Two visible columns layout */
 .kanban-board[data-visible-columns="2"] .kanban-column:not(.column-hidden) {
   max-width: calc(50% - 10px);
 }
 
+/* Column header section */
 .column-header {
   padding: 15px;
   border-bottom: 2px solid #f1f3f5;
@@ -428,6 +559,7 @@
   align-items: center;
 }
 
+/* Column title text */
 .column-title {
   font-weight: 600;
   color: #333;
@@ -437,6 +569,7 @@
   font-size: 16px;
 }
 
+/* Badge showing ticket count in column */
 .column-count {
   background: #e9ecef;
   padding: 4px 10px;
@@ -446,6 +579,7 @@
   color: #666;
 }
 
+/* Scrollable body of the column containing tickets */
 .column-body {
   flex: 1;
   overflow-y: auto;
@@ -453,14 +587,17 @@
   min-height: 200px;
 }
 
+/* Border color for "New" status column */
 .status-new {
   border-top: 3px solid #2196F3;
 }
 
+/* Border color for "Waiting" status column */
 .status-waiting {
   border-top: 3px solid #9c27b0;
 }
 
+/* Border color for "Resolved" status column */
 .status-resolved {
   border-top: 3px solid #4caf50;
 }
@@ -480,24 +617,28 @@
   gap: 6px;
 }
 
+/* Hover state for "New" status ticket */
 .ticket-status-new:hover {
   border-color: #2196F3;
   box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
   transform: translateY(-2px);
 }
 
+/* Hover state for "Waiting" status ticket */
 .ticket-status-waiting:hover {
   border-color: #9c27b0;
   box-shadow: 0 4px 12px rgba(156, 39, 176, 0.2);
   transform: translateY(-2px);
 }
 
+/* Hover state for "Resolved" status ticket */
 .ticket-status-resolved:hover {
   border-color: #4caf50;
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
   transform: translateY(-2px);
 }
 
+/* Header section of ticket card */
 .ticket-header {
   display: flex;
   justify-content: space-between;
@@ -505,12 +646,14 @@
   margin-bottom: 2px;
 }
 
+/* Ticket ID display */
 .ticket-id {
   font-weight: 700;
   color: #333;
   font-size: 13px;
 }
 
+/* Priority badge on ticket */
 .ticket-priority {
   padding: 2px 8px;
   border-radius: 12px;
@@ -520,19 +663,23 @@
   text-transform: uppercase;
 }
 
+/* Low priority badge color */
 .priority-low {
   background-color: #28a745 !important;
 }
 
+/* Medium priority badge color */
 .priority-medium {
   background-color: #ffc107 !important;
-  color: #333 !important;
+  color: #ffffff !important;
 }
 
+/* High priority badge color */
 .priority-high {
   background-color: #dc3545 !important;
 }
 
+/* Information row in ticket card */
 .ticket-info-row {
   display: flex;
   align-items: center;
@@ -542,6 +689,7 @@
   line-height: 1.3;
 }
 
+/* Icon in ticket info row */
 .ticket-info-row i {
   font-size: 10px;
   color: #999;
@@ -549,12 +697,14 @@
   flex-shrink: 0;
 }
 
+/* Bold text in ticket info row */
 .ticket-info-row strong {
   font-weight: 600;
   color: #555;
   margin-right: 4px;
 }
 
+/* Ticket title text */
 .ticket-title {
   font-weight: 600;
   color: #222;
@@ -566,33 +716,40 @@
   transition: background-color 0.3s ease;
 }
 
+/* Title styling for "New" status tickets */
 .ticket-title.title-new {
   background: rgba(33, 150, 243, 0.08);
   color: #1976d2;
 }
 
+/* Title styling for "Waiting" status tickets */
 .ticket-title.title-waiting {
   background: rgba(156, 39, 176, 0.08);
   color: #7b1fa2;
 }
 
+/* Title styling for "Resolved" status tickets */
 .ticket-title.title-resolved {
   background: rgba(76, 175, 80, 0.08);
   color: #388e3c;
 }
 
+/* Hover effect on "New" status ticket title */
 .ticket-card:hover .ticket-title.title-new {
   background: rgba(33, 150, 243, 0.15);
 }
 
+/* Hover effect on "Waiting" status ticket title */
 .ticket-card:hover .ticket-title.title-waiting {
   background: rgba(156, 39, 176, 0.15);
 }
 
+/* Hover effect on "Resolved" status ticket title */
 .ticket-card:hover .ticket-title.title-resolved {
   background: rgba(76, 175, 80, 0.15);
 }
 
+/* Metadata section of ticket card */
 .ticket-meta {
   display: flex;
   justify-content: space-between;
@@ -600,6 +757,7 @@
   margin-top: 2px;
 }
 
+/* Assigned user information */
 .ticket-assigned {
   display: flex;
   align-items: center;
@@ -609,18 +767,21 @@
   flex: 1;
 }
 
+/* Icon for assigned user */
 .ticket-assigned i {
   font-size: 10px;
   color: #999;
   width: 12px;
 }
 
+/* Bold text for assigned user */
 .ticket-assigned strong {
   font-weight: 600;
   color: #555;
   margin-right: 4px;
 }
 
+/* Ticket creation date display */
 .ticket-date {
   font-size: 10px;
   color: #999;
@@ -628,7 +789,9 @@
   white-space: nowrap;
 }
 
-/* Modal Styles con animazioni smooth */
+/* Modal Styles with smooth animations */
+
+/* Overlay background for modal */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -644,6 +807,7 @@
   animation: fadeIn 0.3s ease;
 }
 
+/* Fade in animation for modal overlay */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -653,6 +817,7 @@
   }
 }
 
+/* Main modal container */
 .modal-container {
   background: white;
   border-radius: 12px;
@@ -666,6 +831,7 @@
   animation: slideIn 0.3s ease;
 }
 
+/* Slide in animation for modal */
 @keyframes slideIn {
   from {
     transform: translateY(-30px);
@@ -677,16 +843,19 @@
   }
 }
 
+/* Shake animation class for validation errors */
 .modal-container.shake {
   animation: shake 0.2s ease-in-out;
 }
 
+/* Shake animation keyframes */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
   20%, 40%, 60%, 80% { transform: translateX(6px); }
 }
 
+/* Modal header section */
 .modal-header {
   padding: 20px 25px;
   border-bottom: 1px solid #e9ecef;
@@ -696,6 +865,7 @@
   background: #f8f9fa;
 }
 
+/* Modal title with icon */
 .modal-title {
   display: flex;
   align-items: center;
@@ -705,10 +875,12 @@
   font-size: 18px;
 }
 
+/* Icon in modal title */
 .modal-title i {
   color: #28a745;
 }
 
+/* Close button for modal */
 .close-btn {
   background: none;
   border: none;
@@ -725,12 +897,14 @@
   transition: all 0.3s ease;
 }
 
+/* Hover state for close button */
 .close-btn:hover {
   background: #e9ecef;
   color: #333;
   transform: rotate(90deg);
 }
 
+/* Modal body content area */
 .modal-body {
   flex: 1;
   overflow-y: auto;
@@ -741,6 +915,7 @@
 }
 
 /* Ticket Detail Info */
+/* Container for ticket detail information */
 .ticket-detail-info {
   background: #f8f9fa;
   padding: 20px;
@@ -748,6 +923,7 @@
   margin-bottom: 20px;
 }
 
+/* Grid layout for ticket information */
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -755,12 +931,14 @@
   margin-bottom: 20px;
 }
 
+/* Individual information item */
 .info-item {
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
 
+/* Label for information item */
 .info-item label {
   font-weight: 600;
   color: #666;
@@ -768,11 +946,13 @@
   text-transform: uppercase;
 }
 
+/* Value text for information item */
 .info-item span {
   color: #333;
   font-weight: 500;
 }
 
+/* Status badge in ticket details */
 .status-badge {
   padding: 4px 10px;
   border-radius: 12px;
@@ -785,6 +965,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Priority badge in ticket details */
 .priority-badge {
   padding: 4px 10px;
   border-radius: 12px;
@@ -797,12 +978,14 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Description section in ticket details */
 .description-section {
   margin-top: 20px;
   padding-top: 15px;
   border-top: 1px solid #e9ecef;
 }
 
+/* Label for description section */
 .description-section label {
   display: block;
   font-weight: 600;
@@ -812,6 +995,7 @@
   margin-bottom: 8px;
 }
 
+/* Description text content */
 .description-section p {
   color: #333;
   line-height: 1.6;
@@ -819,7 +1003,11 @@
   font-size: 14px;
 }
 
-/* Messages Section */
+/* ========================================
+   MESSAGES / CHAT SECTION
+   ======================================== */
+
+/* Container for messages/chat section */
 .messages-section {
   flex: 1;
   display: flex;
@@ -830,6 +1018,7 @@
   border: 1px solid #e9ecef;
 }
 
+/* Heading for messages section */
 .messages-section h3 {
   margin: 0 0 15px 0;
   color: #333;
@@ -839,6 +1028,7 @@
   border-bottom: 2px solid #f1f3f5;
 }
 
+/* Scrollable container for messages */
 .messages-container {
   flex: 1;
   max-height: 400px;
@@ -849,21 +1039,25 @@
   margin-bottom: 15px;
 }
 
+/* Loading state for messages */
 .loading-messages {
   text-align: center;
   padding: 20px;
   color: #666;
 }
 
+/* Spinning icon for loading state */
 .loading-messages i {
   animation: spin 1s linear infinite;
 }
 
+/* Spin animation for loading icon */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
+/* Individual message bubble */
 .message {
   display: flex;
   gap: 10px;
@@ -871,6 +1065,7 @@
   animation: messageSlide 0.3s ease;
 }
 
+/* Slide in animation for messages */
 @keyframes messageSlide {
   from {
     transform: translateX(-20px);
@@ -882,10 +1077,12 @@
   }
 }
 
+/* User's own message layout */
 .message.message-own {
   flex-direction: row-reverse;
 }
 
+/* Avatar circle for message author */
 .message-avatar {
   width: 36px;
   height: 36px;
@@ -899,15 +1096,18 @@
   flex-shrink: 0;
 }
 
+/* Content area of the message */
 .message-content {
   flex: 1;
   max-width: 70%;
 }
 
+/* Right-align own messages */
 .message.message-own .message-content {
   text-align: right;
 }
 
+/* Header of message showing author and time */
 .message-header {
   display: flex;
   justify-content: space-between;
@@ -916,20 +1116,24 @@
   font-size: 12px;
 }
 
+/* Reverse header layout for own messages */
 .message.message-own .message-header {
   flex-direction: row-reverse;
 }
 
+/* Author name in message */
 .message-author {
   font-weight: 600;
   color: #333;
 }
 
+/* Timestamp of message */
 .message-time {
   color: #666;
   font-size: 11px;
 }
 
+/* Message text bubble */
 .message-bubble {
   background: white;
   padding: 10px 15px;
@@ -939,6 +1143,7 @@
   line-height: 1.4;
 }
 
+/* Styling for user's own messages */
 .message.message-own .message-bubble {
   background: #28a745;
   color: white;
@@ -946,6 +1151,7 @@
 }
 
 /* Status Change Messages */
+/* Container for status change system messages */
 .message.status-change-message {
   flex-direction: column;
   align-items: center;
@@ -953,6 +1159,7 @@
   margin: 20px 0;
 }
 
+/* Content wrapper for status change messages */
 .message-content.status-change-content {
   max-width: 100%;
   width: 100%;
@@ -960,6 +1167,7 @@
   justify-content: center;
 }
 
+/* Bubble styling for status change messages */
 .message-bubble.status-change-bubble {
   background: linear-gradient(135deg, #2196F3 0%, #9C27B0 100%);
   color: white;
@@ -979,6 +1187,7 @@
   animation: statusChangeSlide 0.5s ease;
 }
 
+/* Slide in animation for status change messages */
 @keyframes statusChangeSlide {
   from {
     transform: scale(0.9) translateY(10px);
@@ -990,17 +1199,20 @@
   }
 }
 
+/* Hover effect for status change bubble */
 .message-bubble.status-change-bubble:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* Icon in status change message */
 .status-change-icon {
   font-size: 16px;
   flex-shrink: 0;
   animation: rotateIcon 0.6s ease;
 }
 
+/* Rotation animation for status change icon */
 @keyframes rotateIcon {
   from {
     transform: rotate(0deg);
@@ -1010,12 +1222,14 @@
   }
 }
 
+/* Text content in status change message */
 .status-change-text {
   flex: 1;
   font-weight: 600;
   letter-spacing: 0.3px;
 }
 
+/* Timestamp in status change message */
 .status-change-time {
   font-size: 11px;
   opacity: 0.9;
@@ -1033,6 +1247,7 @@
   border-top: 1px solid #e9ecef;
 }
 
+/* Text input for new messages */
 .message-input {
   flex: 1;
   padding: 12px;
@@ -1042,12 +1257,14 @@
   transition: all 0.3s ease;
 }
 
+/* Focus state for message input */
 .message-input:focus {
   outline: none;
   border-color: #28a745;
   box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
 }
 
+/* Send message button */
 .send-btn {
   background: linear-gradient(135deg, #28a745, #20c997);
   color: white;
@@ -1063,12 +1280,14 @@
   min-width: 50px;
 }
 
+/* Hover state for send button */
 .send-btn:hover {
   background: linear-gradient(135deg, #20c997, #28a745);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
+/* Active/pressed state for send button */
 .send-btn:active {
   transform: translateY(0);
 }
@@ -1080,18 +1299,21 @@
   gap: 8px;
 }
 
+/* Label for form inputs */
 .form-group label {
   font-weight: 600;
   color: #333;
   font-size: 14px;
 }
 
+/* Required field indicator */
 .required {
   color: #dc3545;
   font-weight: bold;
   margin-left: 3px;
 }
 
+/* General form control input styling */
 .form-control {
   padding: 12px;
   border: 1px solid #dee2e6;
@@ -1100,18 +1322,21 @@
   transition: all 0.3s ease;
 }
 
+/* Focus state for form controls */
 .form-control:focus {
   outline: none;
   border-color: #28a745;
   box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
 }
 
+/* Error state for form controls */
 .form-control.error {
   border-color: #dc3545 !important;
   background-color: rgba(220, 53, 69, 0.05);
   animation: errorPulse 0.5s ease;
 }
 
+/* Pulse animation for validation errors */
 @keyframes errorPulse {
   0% {
     box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
@@ -1124,6 +1349,7 @@
   }
 }
 
+/* Validation error message banner */
 .validation-message {
   background: linear-gradient(135deg, #ff6b6b, #dc3545);
   color: white;
@@ -1138,6 +1364,7 @@
   box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
+/* Slide down animation for validation message */
 @keyframes slideDown {
   from {
     transform: translateY(-10px);
@@ -1149,16 +1376,19 @@
   }
 }
 
+/* Warning icon in validation message */
 .validation-message i {
   font-size: 18px;
   animation: warningBlink 1s infinite;
 }
 
+/* Blinking animation for warning icon */
 @keyframes warningBlink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
 
+/* Container for form action buttons */
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -1166,6 +1396,7 @@
   margin-top: 20px;
 }
 
+/* Base button styling */
 .btn {
   padding: 10px 20px;
   border-radius: 6px;
@@ -1179,20 +1410,24 @@
   border: none;
 }
 
+/* Primary action button */
 .btn-primary {
   background: #28a745;
   color: white;
 }
 
+/* Hover state for primary button */
 .btn-primary:hover {
   background: #218838;
 }
 
+/* Secondary action button */
 .btn-secondary {
   background: #6c757d;
   color: white;
 }
 
+/* Hover state for secondary button */
 .btn-secondary:hover {
   background: #545b62;
 }
@@ -1206,67 +1441,80 @@
   background: #f8f9fa;
 }
 
+/* Content wrapper for access denied message */
 .access-denied-content {
   text-align: center;
   color: #666;
 }
 
+/* Error icon for access denied */
 .access-denied-content i {
   font-size: 64px;
   color: #dc3545;
   margin-bottom: 20px;
 }
 
+/* Heading for access denied message */
 .access-denied-content h2 {
   margin-bottom: 10px;
   color: #333;
 }
 
+/* Description text for access denied */
 .access-denied-content p {
   margin: 0;
   font-size: 16px;
 }
 
-/* Custom SnackBar Styles */
+
+/* ========================================
+   SNACKBAR SECTION
+   ======================================== */
+
+/* Base snackbar container styling */
 ::ng-deep .mat-mdc-snack-bar-container {
   border-radius: 12px !important;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
   font-family: inherit !important;
 }
 
-/* Success Snackbar - CONTENITORE */
+/* Success Snackbar - Container */
 ::ng-deep .success-snackbar .mat-mdc-snack-bar-container {
   background: linear-gradient(135deg, #28a745, #20c997) !important;
   color: white !important;
 }
 
+/* Success snackbar surface styling */
 ::ng-deep .success-snackbar .mdc-snackbar__surface {
   background: linear-gradient(135deg, #28a745, #20c997) !important;
   color: white !important;
 }
 
+/* Success snackbar text labels */
 ::ng-deep .success-snackbar .mdc-snackbar__label,
 ::ng-deep .success-snackbar .mat-mdc-snack-bar-label {
   color: white !important;
 }
 
-/* Error Snackbar - CONTENITORE */
+/* Error Snackbar - Container */
 ::ng-deep .error-snackbar .mat-mdc-snack-bar-container {
   background: linear-gradient(135deg, #dc3545, #c82333) !important;
   color: white !important;
 }
 
+/* Error snackbar surface styling */
 ::ng-deep .error-snackbar .mdc-snackbar__surface {
   background: linear-gradient(135deg, #dc3545, #c82333) !important;
   color: white !important;
 }
 
+/* Error snackbar text labels */
 ::ng-deep .error-snackbar .mdc-snackbar__label,
 ::ng-deep .error-snackbar .mat-mdc-snack-bar-label {
   color: white !important;
 }
 
-/* Pulsante Chiudi */
+/* Close Button */
 ::ng-deep .mat-mdc-snack-bar-container .mat-mdc-button {
   color: white !important;
   background-color: rgba(255, 255, 255, 0.2) !important;
@@ -1276,42 +1524,228 @@
   transition: all 0.3s ease !important;
 }
 
+/* Hover state for snackbar close button */
 ::ng-deep .mat-mdc-snack-bar-container .mat-mdc-button:hover {
   background-color: rgba(255, 255, 255, 0.3) !important;
   transform: translateY(-1px) !important;
 }
 
-/* Responsive */
+
+/* ========================================
+   TICKET MINIMIZATION
+   ======================================== */
+
+/* Ticket minimized - compact layout */
+.ticket-card.ticket-minimized {
+  min-height: auto !important;
+  padding: 8px 12px !important;
+  cursor: pointer;
+  transition: all 0.4s ease;
+}
+
+.ticket-minimized-view {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.ticket-id-mini {
+  font-weight: 700;
+  color: #000000;
+  font-size: 13px;
+  flex-shrink: 0;
+  min-width: 70px;
+}
+
+/* Title minimized with colored background like expanded view */
+.ticket-title-mini {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.4s ease;
+}
+
+/* Color based on ticket status - same as expanded view */
+.ticket-title-mini.title-new {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+}
+
+.ticket-title-mini.title-waiting {
+  background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+  box-shadow: 0 2px 4px rgba(156, 39, 176, 0.3);
+}
+
+.ticket-title-mini.title-resolved {
+  background: linear-gradient(135deg, #4CAF50, #388E3C);
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+
+.ticket-priority-mini {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Minimize/Expand buttons */
+.btn-minimize,
+.btn-expand {
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+  margin-left: 4px;
+}
+
+.btn-minimize:hover,
+.btn-expand:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.1);
+}
+
+.btn-minimize i,
+.btn-expand i {
+  font-size: 12px;
+  color: #666;
+  transition: transform 0.3s ease;
+}
+
+.btn-minimize:hover i,
+.btn-expand:hover i {
+  color: #333;
+}
+
+/* Arrow animation */
+.btn-expand:hover i {
+  transform: translateY(2px);
+}
+
+.btn-minimize:hover i {
+  transform: translateY(-2px);
+}
+
+/* Header with minimize button */
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ticket-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Venetian blind style transition */
+.ticket-card {
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  overflow: hidden;
+}
+
+/* Expanded view - blind opening */
+.ticket-expanded-view {
+  animation: blindOpen 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Minimized view - blind closing */
+.ticket-minimized-view {
+  animation: blindClose 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Blind opening animation with bounce */
+@keyframes blindOpen {
+  0% {
+    opacity: 0;
+    transform: perspective(400px) rotateX(-90deg);
+    transform-origin: top;
+  }
+  50% {
+    transform: perspective(400px) rotateX(-10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(400px) rotateX(0deg);
+  }
+}
+
+/* Blind closing animation with bounce */
+@keyframes blindClose {
+  0% {
+    opacity: 0;
+    transform: perspective(400px) rotateX(90deg);
+    transform-origin: top;
+  }
+  50% {
+    transform: perspective(400px) rotateX(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(400px) rotateX(0deg);
+  }
+}
+
+/* ========================================
+   RESPONSIVE STYLES SECTION
+   ======================================== */
+
 @media (max-width: 768px) {
+  /* Mobile header layout */
   .top-header {
     padding: 15px 20px;
     flex-direction: column;
     gap: 15px;
   }
   
+  /* Single column filter layout on mobile */
   .filters-grid {
     grid-template-columns: 1fr;
     padding: 15px 20px;
   }
   
+  /* Vertical kanban board on mobile */
   .kanban-board {
     flex-direction: column;
     height: auto;
   }
   
+  /* Full width columns on mobile */
   .kanban-column {
     min-width: auto;
   }
   
+  /* Larger modal on mobile */
   .modal-container {
     width: 95%;
     margin: 20px;
   }
   
+  /* Reduced padding in modal body on mobile */
   .modal-body {
     padding: 20px;
   }
   
+  /* Vertical layout for status change bubble on mobile */
   .message-bubble.status-change-bubble {
     flex-direction: column;
     gap: 8px;
@@ -1319,11 +1753,13 @@
     max-width: 90%;
   }
 
+  /* Adjusted timestamp spacing on mobile */
   .status-change-time {
     margin-left: 0;
     margin-top: 4px;
   }
   
+  /* Bottom sheet style dropdown on mobile */
   .multi-select-dropdown {
     position: fixed;
     top: auto;
@@ -1335,6 +1771,7 @@
     animation: slideUp 0.3s ease-out;
   }
   
+  /* Slide up animation for mobile dropdown */
   @keyframes slideUp {
     from {
       transform: translateY(100%);

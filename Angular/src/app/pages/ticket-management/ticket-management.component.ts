@@ -95,6 +95,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   showNewTicketModal: boolean = false;
   showValidationError: boolean = false;
   isShaking: boolean = false;
+  minimizedTickets: Set<number> = new Set<number>();
+
   
   newTicket = {
     title: '',
@@ -150,6 +152,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loadCurrentUser();
+    this.loadMinimizedTicketsFromStorage();
   }
 
   ngOnDestroy() {
@@ -193,7 +196,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     }
 
     // Otherwise, parse the message text
-    // Expected format: "Stato cambiato da 'old_status' a 'new_status'"
+    // Expected format: "Status changed from 'old_status' to 'new_status'"
     const regex = /da ['"](\w+)['"] a ['"](\w+)['"]/i;
     const match = message.message.match(regex);
     
@@ -238,7 +241,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   }
 
   loadInitialData() {
-    // Load contracts - Fix per Admin
+    // Load contracts - Admin fix
     if (this.userRole === 1) {
       const contractsSub = this.apiService.getContratti(null).subscribe((response: any) => {
         if (response.body && response.body.risposta) {
@@ -454,6 +457,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       
       return true;
     });
+    
+    this.sortTicketsByPriority();
 
     this.updateColumnCounts();
   }
@@ -805,8 +810,84 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.subscriptions.push(updateSub);
   }
 
+  /**
+  * Sorts tickets by priority (high -> medium -> low)
+  */
+  sortTicketsByPriority() {
+    const priorityWeight = {
+      'high': 3,
+      'medium': 2,
+      'low': 1
+    };
+    
+    this.filteredTickets.sort((a, b) => {
+      const weightA = priorityWeight[a.priority as keyof typeof priorityWeight] || 0;
+      const weightB = priorityWeight[b.priority as keyof typeof priorityWeight] || 0;
+      return weightB - weightA;
+    });
+  }
+
   getStatusLabel(status: string): string {
     const column = this.columns.find(c => c.id === status);
     return column ? column.title : status;
   }
+
+  /**
+   * Load minimized tickets state from localStorage
+   */
+  loadMinimizedTicketsFromStorage() {
+    try {
+      const saved = localStorage.getItem('minimizedTickets');
+      if (saved) {
+        const ticketIds = JSON.parse(saved);
+        this.minimizedTickets = new Set(ticketIds);
+      }
+    } catch (error) {
+      console.error('Error loading minimized tickets:', error);
+    }
+  }
+
+  /**
+   * Save minimized tickets state to localStorage
+   */
+  saveMinimizedTicketsToStorage() {
+    try {
+      const ticketIds = Array.from(this.minimizedTickets);
+      localStorage.setItem('minimizedTickets', JSON.stringify(ticketIds));
+    } catch (error) {
+      console.error('Error saving minimized tickets:', error);
+    }
+  }
+
+  /**
+   * Toggle minimize/expand ticket
+   */
+  toggleMinimizeTicket(ticketId: number, event: Event) {
+    event.stopPropagation();
+    
+    if (this.minimizedTickets.has(ticketId)) {
+      this.minimizedTickets.delete(ticketId);
+    } else {
+      this.minimizedTickets.add(ticketId);
+    }
+    this.saveMinimizedTicketsToStorage();
+  }
+
+  /**
+   * Check if ticket is minimized
+   */
+  isTicketMinimized(ticketId: number): boolean {
+    return this.minimizedTickets.has(ticketId);
+  }
+
+  /**
+   * Truncate text if too long
+   */
+  truncateText(text: string, maxLength: number = 30): string {
+    if (text.length <= maxLength) {
+      return text;
+    }
+    return text.substring(0, maxLength) + '...';
+  }
+  
 }
