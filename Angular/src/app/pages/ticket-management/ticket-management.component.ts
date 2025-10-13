@@ -354,13 +354,33 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   processTicketsData(ticketsData: any[]): Ticket[] {
     // Debug: log the first ticket to see the structure
     if (ticketsData.length > 0) {
-      console.log('Sample ticket data from API:', ticketsData[0]);
       if (ticketsData[0].contract) {
         console.log('Contract data:', ticketsData[0].contract);
-        console.log('User SEU in contract:', ticketsData[0].contract.user_seu);
+        console.log('Inserito da user ID (SEU):', ticketsData[0].contract.inserito_da_user_id);
       }
     }
-    return ticketsData.map(ticket => ({
+     
+    return ticketsData.map(ticket => {
+      // Try to find the SEU user based on inserito_da_user_id
+      let seuName = 'N/A';
+      if (ticket.contract?.inserito_da_user_id) {
+        // Find the user in the seuList by ID
+        const seuUser = this.seuList.find(seu => seu.id === ticket.contract.inserito_da_user_id);
+        if (seuUser) {
+          seuName = seuUser.name;
+        } else {
+          // If not in seuList, try to find in all users
+          const allUser = this.generatorsList.find(user => user.id === ticket.contract.inserito_da_user_id);
+          if (allUser) {
+            seuName = allUser.name;
+          } else {
+            // Fallback: show the user ID
+            seuName = `User ID: ${ticket.contract.inserito_da_user_id}`;
+          }
+        }
+      }
+      
+      return {      
       id: ticket.id,
       ticket_number: ticket.ticket_number || `TK-${ticket.id.toString().padStart(3, '0')}`,
       title: ticket.title,
@@ -389,16 +409,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       created_at: ticket.created_at,
       updated_at: ticket.updated_at,
       product_name: ticket.contract?.product?.descrizione || 'N/A',
-       // Check different possible field names for SEU
-      seu_name: ticket.contract?.user_seu ? 
-        `${ticket.contract.user_seu.name || ''} ${ticket.contract.user_seu.cognome || ''}`.trim() : 
-         (ticket.contract?.seu ? 
-            `${ticket.contract.seu.name || ''} ${ticket.contract.seu.cognome || ''}`.trim() :
-            (ticket.contract?.seu_user ?
-                `${ticket.contract.seu_user.name || ''} ${ticket.contract.seu_user.cognome || ''}`.trim() : 
-                'N/A')),
+      seu_name: seuName,
       messages: ticket.messages || []
-    }));
+     };
+   });
   }
 
   getInitials(fullName: string): string {

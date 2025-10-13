@@ -334,7 +334,7 @@
             <!-- MINIMIZED VIEW - Compact single row -->
             <div class="ticket-minimized-view" *ngIf="isTicketMinimized(ticket.id)">
               <span class="ticket-id-mini">#{{ticket.ticket_number}}</span>
-              <span class="ticket-code-mini" style="color: #666; font-size: 11px;">{{ticket.contract_code}}</span>
+              <span class="ticket-contract-id-mini" style="color: #666; font-size: 11px;">ID contratto:{{ticket.contract_id}}</span>
               <span class="ticket-title-mini" [class]="'title-' + ticket.status" [title]="ticket.title">
                 {{truncateText(ticket.title, 25)}}
               </span>
