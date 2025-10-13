@@ -28,6 +28,8 @@
     </div>
     
     <div class="filters-grid" [class.filters-grid-visible]="showFilters">
+      
+      <!-- ID Contratto -->
       <div class="filter-group">
         <label class="filter-label">
           <i class="fas fa-hashtag"></i> ID Contratto
@@ -40,6 +42,7 @@
           placeholder="Inserisci ID contratto">
       </div>
       
+      <!-- Codice Contratto -->
       <div class="filter-group">
         <label class="filter-label">
           <i class="fas fa-file-contract"></i> Codice Contratto
@@ -52,36 +55,79 @@
           placeholder="Inserisci codice contratto">
       </div>
       
+      <!-- Prodotto Multi-Select -->
       <div class="filter-group">
         <label class="filter-label">
           <i class="fas fa-box"></i> Prodotto
         </label>
-        <select class="filter-input" [(ngModel)]="filters.product" (change)="applyFilters()">
-          <option value="">Tutti i prodotti</option>
-          <option *ngFor="let product of products" [value]="product">{{product}}</option>
-        </select>
+        <div class="multi-select-container">
+          <div class="multi-select-trigger" (click)="toggleProductDropdown(); $event.stopPropagation()">
+            <span class="multi-select-label">{{getSelectedProductLabels()}}</span>
+            <i class="fas fa-chevron-down" [class.fa-chevron-up]="showProductDropdown"></i>
+          </div>
+          <div class="multi-select-dropdown" *ngIf="showProductDropdown" (click)="$event.stopPropagation()">
+            <div style="padding: 10px; border-bottom: 1px solid #e9ecef;">
+              <input 
+                type="text" 
+                class="filter-input" 
+                placeholder="Cerca prodotto..."
+                [(ngModel)]="productSearchQuery"
+                (input)="filterProducts()"
+                style="margin: 0; width: 100%;">
+            </div>
+            <div class="multi-select-option" 
+                 *ngFor="let product of filteredProducts"
+                 (click)="toggleProductFilter(product)">
+              <div class="custom-checkbox" 
+                   [style.background-color]="isProductSelected(product) ? '#28a745' : 'transparent'"
+                   [style.border-color]="isProductSelected(product) ? '#28a745' : '#dee2e6'">
+                <i class="fas fa-check" *ngIf="isProductSelected(product)"></i>
+              </div>
+              <span>{{product}}</span>
+            </div>
+            <div *ngIf="filteredProducts.length === 0" style="padding: 20px; text-align: center; color: #999;">
+              Nessun prodotto trovato
+            </div>
+          </div>
+        </div>
       </div>
       
+      <!-- Priorità Multi-Select -->
       <div class="filter-group">
         <label class="filter-label">
-          <i class="fas fa-exclamation-triangle"></i> Priorità 
+          <i class="fas fa-exclamation-triangle"></i> Priorità
         </label>
-        <select class="filter-input" [(ngModel)]="filters.priority" (change)="applyFilters()">
-          <option value="">Tutte le Priorità</option>
-          <option *ngFor="let priority of priorities" [value]="priority.value">{{priority.label}}</option>
-        </select>
+        <div class="multi-select-container">
+          <div class="multi-select-trigger" (click)="togglePriorityDropdown(); $event.stopPropagation()">
+            <span class="multi-select-label">{{getSelectedPriorityLabels()}}</span>
+            <i class="fas fa-chevron-down" [class.fa-chevron-up]="showPriorityDropdown"></i>
+          </div>
+          <div class="multi-select-dropdown" *ngIf="showPriorityDropdown" (click)="$event.stopPropagation()">
+            <div class="multi-select-option" 
+                 *ngFor="let priority of priorities"
+                 (click)="togglePriorityFilter(priority.value)">
+              <div class="custom-checkbox" 
+                   [style.background-color]="isPrioritySelected(priority.value) ? priority.color : 'transparent'"
+                   [style.border-color]="priority.color">
+                <i class="fas fa-check" *ngIf="isPrioritySelected(priority.value)"></i>
+              </div>
+              <span>{{priority.label}}</span>
+            </div>
+          </div>
+        </div>
       </div>
       
+      <!-- Stato Multi-Select -->
       <div class="filter-group">
         <label class="filter-label">
           <i class="fas fa-tasks"></i> Stato
         </label>
         <div class="multi-select-container">
-          <div class="multi-select-trigger" (click)="toggleStatusDropdown()">
+          <div class="multi-select-trigger" (click)="toggleStatusDropdown(); $event.stopPropagation()">
             <span class="multi-select-label">{{getSelectedStatusLabels()}}</span>
             <i class="fas fa-chevron-down" [class.fa-chevron-up]="showStatusDropdown"></i>
           </div>
-          <div class="multi-select-dropdown" *ngIf="showStatusDropdown">
+          <div class="multi-select-dropdown" *ngIf="showStatusDropdown" (click)="$event.stopPropagation()">
             <div class="multi-select-option" 
                  *ngFor="let column of columns"
                  (click)="toggleStatusFilter(column.id)">
@@ -96,39 +142,126 @@
         </div>
       </div>
 
+      <!-- SEU Multi-Select -->
       <div class="filter-group">
         <label class="filter-label">
           <i class="fas fa-user-tie"></i> SEU
         </label>
-        <select class="filter-input" [(ngModel)]="filters.seu" (change)="applyFilters()">
-          <option value="">Tutti i SEU</option>
-          <option *ngFor="let seu of seuList" [value]="seu.id">{{seu.name}}</option>
-        </select>
+        <div class="multi-select-container">
+          <div class="multi-select-trigger" (click)="toggleSeuDropdown(); $event.stopPropagation()">
+            <span class="multi-select-label">{{getSelectedSeuLabels()}}</span>
+            <i class="fas fa-chevron-down" [class.fa-chevron-up]="showSeuDropdown"></i>
+          </div>
+          <div class="multi-select-dropdown" *ngIf="showSeuDropdown" (click)="$event.stopPropagation()">
+            <div style="padding: 10px; border-bottom: 1px solid #e9ecef;">
+              <input 
+                type="text" 
+                class="filter-input" 
+                placeholder="Cerca SEU..."
+                [(ngModel)]="seuSearchQuery"
+                (input)="filterSeu()"
+                style="margin: 0; width: 100%;">
+            </div>
+            <div class="multi-select-option" 
+                 *ngFor="let seu of filteredSeuList"
+                 (click)="toggleSeuFilter(seu.id.toString())">
+              <div class="custom-checkbox" 
+                   [style.background-color]="isSeuSelected(seu.id.toString()) ? '#28a745' : 'transparent'"
+                   [style.border-color]="'#28a745'">
+                <i class="fas fa-check" *ngIf="isSeuSelected(seu.id.toString())"></i>
+              </div>
+              <span>{{seu.name}}</span>
+            </div>
+            <div *ngIf="filteredSeuList.length === 0" style="padding: 20px; text-align: center; color: #999;">
+              Nessun SEU trovato
+            </div>
+          </div>
+        </div>
       </div>
 
+      <!-- Generato da Multi-Select -->
       <div class="filter-group">
         <label class="filter-label">
           <i class="fas fa-user-edit"></i> Generato da
         </label>
-        <select class="filter-input" [(ngModel)]="filters.generatedBy" (change)="applyFilters()">
-          <option value="">Tutti gli utenti</option>
-          <option *ngFor="let generator of generatorsList" [value]="generator.id">{{generator.name}}</option>
-        </select>
+        <div class="multi-select-container">
+          <div class="multi-select-trigger" (click)="toggleGeneratedByDropdown(); $event.stopPropagation()">
+            <span class="multi-select-label">{{getSelectedGeneratedByLabels()}}</span>
+            <i class="fas fa-chevron-down" [class.fa-chevron-up]="showGeneratedByDropdown"></i>
+          </div>
+          <div class="multi-select-dropdown" *ngIf="showGeneratedByDropdown" (click)="$event.stopPropagation()">
+            <div style="padding: 10px; border-bottom: 1px solid #e9ecef;">
+              <input 
+                type="text" 
+                class="filter-input" 
+                placeholder="Cerca utente..."
+                [(ngModel)]="generatedBySearchQuery"
+                (input)="filterGenerators()"
+                style="margin: 0; width: 100%;">
+            </div>
+            <div class="multi-select-option" 
+                 *ngFor="let generator of filteredGeneratorsList"
+                 (click)="toggleGeneratedByFilter(generator.id.toString())">
+              <div class="custom-checkbox" 
+                   [style.background-color]="isGeneratedBySelected(generator.id.toString()) ? '#28a745' : 'transparent'"
+                   [style.border-color]="'#28a745'">
+                <i class="fas fa-check" *ngIf="isGeneratedBySelected(generator.id.toString())"></i>
+              </div>
+              <span>{{generator.name}}</span>
+            </div>
+            <div *ngIf="filteredGeneratorsList.length === 0" style="padding: 20px; text-align: center; color: #999;">
+              Nessun utente trovato
+            </div>
+          </div>
+        </div>
       </div>
 
+      <!-- Assegnato a Multi-Select -->
       <div class="filter-group">
         <label class="filter-label">
           <i class="fas fa-user-check"></i> Assegnato a
         </label>
-        <select class="filter-input" [(ngModel)]="filters.assignedTo" (change)="applyFilters()">
-          <option value="">Tutti gli utenti</option>
-          <option value="0">Non assegnato</option>
-          <option *ngFor="let user of users" [value]="user.id">
-            {{user.name}} {{user.cognome}}
-          </option>
-        </select>
+        <div class="multi-select-container">
+          <div class="multi-select-trigger" (click)="toggleAssignedToDropdown(); $event.stopPropagation()">
+            <span class="multi-select-label">{{getSelectedAssignedToLabels()}}</span>
+            <i class="fas fa-chevron-down" [class.fa-chevron-up]="showAssignedToDropdown"></i>
+          </div>
+          <div class="multi-select-dropdown" *ngIf="showAssignedToDropdown" (click)="$event.stopPropagation()">
+            <div style="padding: 10px; border-bottom: 1px solid #e9ecef;">
+              <input 
+                type="text" 
+                class="filter-input" 
+                placeholder="Cerca utente..."
+                [(ngModel)]="assignedToSearchQuery"
+                (input)="filterAssignedTo()"
+                style="margin: 0; width: 100%;">
+            </div>
+            <div class="multi-select-option" (click)="toggleAssignedToFilter('0')">
+              <div class="custom-checkbox" 
+                   [style.background-color]="isAssignedToSelected('0') ? '#6c757d' : 'transparent'"
+                   [style.border-color]="'#6c757d'">
+                <i class="fas fa-check" *ngIf="isAssignedToSelected('0')"></i>
+              </div>
+              <span>Non assegnato</span>
+            </div>
+            <div class="multi-select-option" 
+                 *ngFor="let user of filteredUsers"
+                 (click)="toggleAssignedToFilter(user.id.toString())">
+              <div class="custom-checkbox" 
+                   [style.background-color]="isAssignedToSelected(user.id.toString()) ? '#28a745' : 'transparent'"
+                   [style.border-color]="'#28a745'">
+                <i class="fas fa-check" *ngIf="isAssignedToSelected(user.id.toString())"></i>
+              </div>
+              <span>{{user.name}} {{user.cognome}}</span>
+            </div>
+            <div *ngIf="filteredUsers.length === 0 && assignedToSearchQuery" style="padding: 20px; text-align: center; color: #999;">
+              Nessun utente trovato
+            </div>
+          </div>
+        </div>
       </div>
       
+      <!-- Cliente -->
       <div class="filter-group">
         <label class="filter-label">
           <i class="fas fa-user"></i> Cliente
@@ -141,6 +274,7 @@
           placeholder="Nome cliente">
       </div>
       
+      <!-- Data Apertura Ticket -->
       <div class="filter-group">
         <label class="filter-label">
           <i class="fas fa-calendar-alt"></i> Data Apertura Ticket
@@ -200,6 +334,7 @@
             <!-- MINIMIZED VIEW - Compact single row -->
             <div class="ticket-minimized-view" *ngIf="isTicketMinimized(ticket.id)">
               <span class="ticket-id-mini">#{{ticket.ticket_number}}</span>
+              <span class="ticket-code-mini" style="color: #666; font-size: 11px;">{{ticket.contract_code}}</span>
               <span class="ticket-title-mini" [class]="'title-' + ticket.status" [title]="ticket.title">
                 {{truncateText(ticket.title, 25)}}
               </span>
@@ -209,7 +344,7 @@
                 [style.background-color]="getPriorityColor(ticket.priority)">
                 {{getPriorityLabel(ticket.priority)}}
               </span>
-              <button class="btn-expand" (click)="toggleMinimizeTicket(ticket.id, $event)" title="Expand ticket">
+              <button class="btn-expand" (click)="toggleMinimizeTicket(ticket.id, $event)" title="Espandi ticket">
                 <i class="fas fa-chevron-down"></i>
               </button>
             </div>
@@ -225,7 +360,7 @@
                     [style.background-color]="getPriorityColor(ticket.priority)">
                     {{getPriorityLabel(ticket.priority)}}
                   </span>
-                  <button class="btn-minimize" (click)="toggleMinimizeTicket(ticket.id, $event)" title="Minimize ticket">
+                  <button class="btn-minimize" (click)="toggleMinimizeTicket(ticket.id, $event)" title="Minimizza ticket">
                     <i class="fas fa-chevron-up"></i>
                   </button>
                 </div>
@@ -234,6 +369,11 @@
               <div class="ticket-info-row">
                 <i class="fas fa-hashtag"></i>
                 <span><strong>ID Contratto:</strong> {{ticket.contract_id}}</span>
+              </div>
+
+              <div class="ticket-info-row">
+                <i class="fas fa-file-contract"></i>
+                <span><strong>Codice:</strong> {{ticket.contract_code}}</span>
               </div>
 
               <div class="ticket-info-row">
@@ -310,8 +450,20 @@
             <span>{{selectedTicket.customer_name}}</span>
           </div>
           <div class="info-item">
-            <label>Contratto:</label>
+            <label>Prodotto:</label>
+            <span>{{selectedTicket.product_name}}</span>
+          </div>
+          <div class="info-item">
+            <label>ID contratto:</label>
+            <span>{{selectedTicket.contract_id}}</span>
+          </div>
+          <div class="info-item">
+            <label>Codice contratto:</label>
             <span>{{selectedTicket.contract_code}}</span>
+          </div>
+          <div class="info-item">
+            <label>Generato da:</label>
+            <span>{{selectedTicket.created_by_user_name || 'N/A'}}</span>
           </div>
           <div class="info-item">
             <label>Assegnato a:</label>
@@ -338,7 +490,7 @@
             <!-- Avatar for regular messages only -->
             <div class="message-avatar" 
                  *ngIf="!isStatusChangeMessage(message)"
-                 [style.background-color]="message.user_id === currentUser?.id ? '#28a745' : '#007bff'">
+                 [style.background-color]="getUserColor(message.user_id)">
                 {{getInitials(message.user_name || 'User')}}
             </div>
             
@@ -437,7 +589,7 @@
         </div>
         
         <div class="form-group">
-          <label>Priorità </label>
+          <label>Priorità</label>
           <select [(ngModel)]="newTicket.priority" name="priority" class="form-control">
             <option *ngFor="let priority of priorities" [value]="priority.value">
               {{priority.label}}

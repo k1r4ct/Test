@@ -1,5 +1,5 @@
 // ticket-management.component.ts
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewChecked, HostListener } from '@angular/core';
 import { ApiService } from 'src/app/servizi/api.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subscription } from 'rxjs';
@@ -45,13 +45,13 @@ export interface TicketMessage {
 export interface TicketFilters {
   contractId: string;
   contractCode: string;
-  product: string;
-  priority: string;
+  product: string[];
+  priority: string[];
   status: string[];
-  assignedTo: string;
+  assignedTo: string[];
   customer: string;
-  seu: string;
-  generatedBy: string;
+  seu: string[];
+  generatedBy: string[];
   openingDate: string;
 }
 
@@ -61,7 +61,7 @@ export interface TicketFilters {
   styleUrls: ['./ticket-management.component.css'],
   standalone: false,
 })
-export class TicketManagementComponent implements OnInit, OnDestroy {
+export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewChecked {
   private subscriptions: Subscription[] = [];
   
   tickets: Ticket[] = [];
@@ -72,13 +72,13 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   filters: TicketFilters = {
     contractId: '',
     contractCode: '',
-    product: '',
-    priority: '',
+    product: [],
+    priority: [],
     status: ['new', 'waiting', 'resolved'],
-    assignedTo: '',
+    assignedTo: [],
     customer: '',
-    seu: '',
-    generatedBy: '',
+    seu: [],
+    generatedBy: [],
     openingDate: ''
   };
 
@@ -90,6 +90,12 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   showFilters: boolean = true;
   showStatusDropdown: boolean = false;
+  showProductDropdown: boolean = false;
+  showPriorityDropdown: boolean = false;
+  showSeuDropdown: boolean = false;
+  showGeneratedByDropdown: boolean = false;
+  showAssignedToDropdown: boolean = false;
+  
   selectedTicket: Ticket | null = null;
   showTicketModal: boolean = false;
   showNewTicketModal: boolean = false;
@@ -97,6 +103,17 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   isShaking: boolean = false;
   minimizedTickets: Set<number> = new Set<number>();
 
+  // Search queries for filtering dropdown options
+  productSearchQuery: string = '';
+  seuSearchQuery: string = '';
+  generatedBySearchQuery: string = '';
+  assignedToSearchQuery: string = '';
+
+  // Filtered lists for dropdowns
+  filteredProducts: string[] = [];
+  filteredSeuList: any[] = [];
+  filteredGeneratorsList: any[] = [];
+  filteredUsers: any[] = [];
   
   newTicket = {
     title: '',
@@ -158,36 +175,48 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
-  
-  /**
-   * Checks if a message is a status change message
-   */
+
+  ngAfterViewChecked() {
+    // Removed automatic positioning to let CSS handle it
+  }
+
+
+  positionDropdowns() {
+    // Positioning is handled by CSS with position: absolute
+    // This avoids conflicts and positioning issues
+  }
+
+  // Handle window resize to reposition dropdowns
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any) {
+    this.positionDropdowns();
+  }
+
+  // Handle window scroll to reposition or close dropdowns
+  @HostListener('window:scroll', ['$event'])
+  onScroll(event: any) {
+    // Close all dropdowns on scroll to prevent positioning issues
+    this.closeAllDropdowns();
+  }
+
+  // Checks if a message is a status change message
   isStatusChangeMessage(message: TicketMessage): boolean {
     return message.message_type === 'status_change';
   }
 
-  /**
-   * Gets the column title for a given status
-   */
+  // Gets the column title for a given status
   getColumnTitle(status: string): string {
     const column = this.columns.find(c => c.id === status);
     return column ? column.title : '';
   }
 
-  /**
-   * Gets the column by status id
-   */
+  // Gets the column by status id
   getColumnByStatus(status: string): any {
     return this.columns.find(c => c.id === status);
   }
 
-  
-  /**
-   * Extracts old and new status from a status change message
-   * Handles both cases: when old_status/new_status fields exist, or when we need to parse the message
-   */
+  // Extracts old and new status from a status change message
   getStatusFromMessage(message: TicketMessage): { oldStatus: string, newStatus: string } {
-    // If the message has explicit status fields, use them
     if (message.old_status && message.new_status) {
       return {
         oldStatus: message.old_status,
@@ -195,8 +224,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       };
     }
 
-    // Otherwise, parse the message text
-    // Expected format: "Status changed from 'old_status' to 'new_status'"
     const regex = /da ['"](\w+)['"] a ['"](\w+)['"]/i;
     const match = message.message.match(regex);
     
@@ -207,16 +234,13 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       };
     }
 
-    // Default fallback
     return {
       oldStatus: 'new',
       newStatus: 'waiting'
     };
   }
 
-  /**
-   * Generates the gradient style for a status change message
-   */
+  // Generates the gradient style for a status change message
   getStatusChangeGradient(message: TicketMessage): string {
     const { oldStatus, newStatus } = this.getStatusFromMessage(message);
     const oldColor = this.statusColorMap[oldStatus] || this.statusColorMap['new'];
@@ -241,7 +265,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   }
 
   loadInitialData() {
-    // Load contracts - Admin fix
+    // Load contracts
     if (this.userRole === 1) {
       const contractsSub = this.apiService.getContratti(null).subscribe((response: any) => {
         if (response.body && response.body.risposta) {
@@ -274,16 +298,18 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     const productsSub = this.apiService.ListaProdotti().subscribe((response: any) => {
       if (response.body && response.body.prodotti) {
         this.products = response.body.prodotti.map((p: any) => p.descrizione);
+        this.filteredProducts = [...this.products];
       }
     });
     this.subscriptions.push(productsSub);
 
-    // Load users e SEU
+    // Load users and SEU
     const usersSub = this.apiService.getAllUser().subscribe((response: any) => {
       if (response.body && response.body.risposta) {
         this.users = response.body.risposta.filter((user: any) => 
           user.role.id === 1 || user.role.id === 5
         );
+        this.filteredUsers = [...this.users];
         
         const seuUsers = response.body.risposta.filter((user: any) => 
           user.role.id === 2 || user.role.id === 4
@@ -292,11 +318,13 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
           id: user.id,
           name: `${user.name || ''} ${user.cognome || ''}`.trim() || user.email
         }));
+        this.filteredSeuList = [...this.seuList];
         
         this.generatorsList = response.body.risposta.map((user: any) => ({
           id: user.id,
           name: `${user.name || ''} ${user.cognome || ''}`.trim() || user.email
         }));
+        this.filteredGeneratorsList = [...this.generatorsList];
       }
     });
     this.subscriptions.push(usersSub);
@@ -324,6 +352,14 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   }
 
   processTicketsData(ticketsData: any[]): Ticket[] {
+    // Debug: log the first ticket to see the structure
+    if (ticketsData.length > 0) {
+      console.log('Sample ticket data from API:', ticketsData[0]);
+      if (ticketsData[0].contract) {
+        console.log('Contract data:', ticketsData[0].contract);
+        console.log('User SEU in contract:', ticketsData[0].contract.user_seu);
+      }
+    }
     return ticketsData.map(ticket => ({
       id: ticket.id,
       ticket_number: ticket.ticket_number || `TK-${ticket.id.toString().padStart(3, '0')}`,
@@ -353,8 +389,14 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       created_at: ticket.created_at,
       updated_at: ticket.updated_at,
       product_name: ticket.contract?.product?.descrizione || 'N/A',
+       // Check different possible field names for SEU
       seu_name: ticket.contract?.user_seu ? 
-        `${ticket.contract.user_seu.name || ''} ${ticket.contract.user_seu.cognome || ''}`.trim() : 'N/A',
+        `${ticket.contract.user_seu.name || ''} ${ticket.contract.user_seu.cognome || ''}`.trim() : 
+         (ticket.contract?.seu ? 
+            `${ticket.contract.seu.name || ''} ${ticket.contract.seu.cognome || ''}`.trim() :
+            (ticket.contract?.seu_user ?
+                `${ticket.contract.seu_user.name || ''} ${ticket.contract.seu_user.cognome || ''}`.trim() : 
+                'N/A')),
       messages: ticket.messages || []
     }));
   }
@@ -374,6 +416,12 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
+  //Get consistent color for user based on user ID
+  getUserColor(userId: number): string {
+    const colors = ['#ff6b6b', '#4ecdc4', '#95afc0', '#f368e0', '#feca57', '#00d2d3'];
+    return colors[userId % colors.length];
+  }
+
   applyFilters() {
     this.filteredTickets = this.tickets.filter(ticket => {
       // Contract ID filter
@@ -391,13 +439,13 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         return false;
       }
       
-      // Product filter
-      if (this.filters.product && ticket.product_name !== this.filters.product) {
+      // Product filter - Multi-select
+      if (this.filters.product.length > 0 && !this.filters.product.includes(ticket.product_name || '')) {
         return false;
       }
       
-      // Priority filter
-      if (this.filters.priority && ticket.priority !== this.filters.priority) {
+      // Priority filter - Multi-select
+      if (this.filters.priority.length > 0 && !this.filters.priority.includes(ticket.priority)) {
         return false;
       }
       
@@ -412,31 +460,34 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
         return false;
       }
       
-      // SEU filter
-      if (this.filters.seu) {
-        const seuUser = this.seuList.find(s => s.id.toString() === this.filters.seu);
-        if (seuUser && ticket.seu_name && !ticket.seu_name.toLowerCase().includes(seuUser.name.toLowerCase())) {
+      // SEU filter - Multi-select
+      if (this.filters.seu.length > 0) {
+        const seuIds = this.filters.seu.map(id => parseInt(id));
+        const ticketSeuUser = this.seuList.find(s => 
+          ticket.seu_name && ticket.seu_name.toLowerCase().includes(s.name.toLowerCase())
+        );
+        if (!ticketSeuUser || !seuIds.includes(ticketSeuUser.id)) {
           return false;
         }
       }
       
-      // Generated by filter
-      if (this.filters.generatedBy && 
-          ticket.created_by_user_id?.toString() !== this.filters.generatedBy) {
-        return false;
+      // Generated by filter - Multi-select
+      if (this.filters.generatedBy.length > 0) {
+        const generatorIds = this.filters.generatedBy.map(id => parseInt(id));
+        if (!ticket.created_by_user_id || !generatorIds.includes(ticket.created_by_user_id)) {
+          return false;
+        }
       }
       
-      // Assigned to filter
-      if (this.filters.assignedTo) {
-        if (this.filters.assignedTo === '0') {
+      // Assigned to filter - Multi-select
+      if (this.filters.assignedTo.length > 0) {
+        if (this.filters.assignedTo.includes('0')) {
           if (ticket.status !== 'new' && ticket.assigned_to_user_id) {
             return false;
           }
         } else {
-          if (ticket.status === 'new') {
-            return false;
-          }
-          if (ticket.assigned_to_user_id?.toString() !== this.filters.assignedTo) {
+          const assignedIds = this.filters.assignedTo.map(id => parseInt(id));
+          if (ticket.status === 'new' || !ticket.assigned_to_user_id || !assignedIds.includes(ticket.assigned_to_user_id)) {
             return false;
           }
         }
@@ -459,7 +510,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     });
     
     this.sortTicketsByPriority();
-
     this.updateColumnCounts();
   }
 
@@ -481,29 +531,27 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.filters = {
       contractId: '',
       contractCode: '',
-      product: '',
-      priority: '',
+      product: [],
+      priority: [],
       status: [],
-      assignedTo: '',
+      assignedTo: [],
       customer: '',
-      seu: '',
-      generatedBy: '',
+      seu: [],
+      generatedBy: [],
       openingDate: ''
     };
     this.applyFilters();
   }
 
-  // Multi-select status methods
-  toggleStatusDropdown() {
-    this.showStatusDropdown = !this.showStatusDropdown;
-  }
+  // ========================================
+  // STATUS MULTI-SELECT METHODS
+  // ========================================
 
-  closeStatusDropdown(event: MouseEvent) {
-    // Close dropdown when clicking outside
-    const target = event.target as HTMLElement;
-    if (!target.closest('.multi-select-container')) {
-      this.showStatusDropdown = false;
-    }
+  toggleStatusDropdown() {
+    const wasOpen = this.showStatusDropdown;
+    this.closeAllDropdowns();
+    this.showStatusDropdown = !wasOpen;
+    this.updateDropdownClasses();
   }
 
   toggleStatusFilter(statusId: string) {
@@ -522,7 +570,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
 
   getSelectedStatusLabels(): string {
     if (this.filters.status.length === 0) {
-      return 'Tutti gli stati';  // When nothing is selected, show all
+      return 'Tutti gli stati';
     }
     if (this.filters.status.length === 3) {
       return 'Tutti gli stati';
@@ -536,13 +584,295 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
       .join(', ');
   }
 
+  // ========================================
+  // PRODUCT MULTI-SELECT METHODS
+  // ========================================
+
+  toggleProductDropdown() {
+    const wasOpen = this.showProductDropdown;
+    this.closeAllDropdowns();
+    this.showProductDropdown = !wasOpen;
+    if (this.showProductDropdown) {
+      this.productSearchQuery = '';
+      this.filteredProducts = [...this.products];
+    }
+    this.updateDropdownClasses();
+  }
+
+  toggleProductFilter(product: string) {
+    const index = this.filters.product.indexOf(product);
+    if (index > -1) {
+      this.filters.product.splice(index, 1);
+    } else {
+      this.filters.product.push(product);
+    }
+    this.applyFilters();
+  }
+
+  isProductSelected(product: string): boolean {
+    return this.filters.product.includes(product);
+  }
+
+  filterProducts() {
+    const query = this.productSearchQuery.toLowerCase();
+    this.filteredProducts = this.products.filter(product =>
+      product.toLowerCase().includes(query)
+    );
+  }
+
+  getSelectedProductLabels(): string {
+    if (this.filters.product.length === 0) {
+      return 'Tutti i prodotti';
+    }
+    if (this.filters.product.length === 1) {
+      return this.filters.product[0];
+    }
+    return `${this.filters.product[0]} (+${this.filters.product.length - 1})`;
+  }
+
+  // ========================================
+  // PRIORITY MULTI-SELECT METHODS
+  // ========================================
+
+  togglePriorityDropdown() {
+    const wasOpen = this.showPriorityDropdown;
+    this.closeAllDropdowns();
+    this.showPriorityDropdown = !wasOpen;
+    this.updateDropdownClasses();
+  }
+
+  togglePriorityFilter(priorityValue: string) {
+    const index = this.filters.priority.indexOf(priorityValue);
+    if (index > -1) {
+      this.filters.priority.splice(index, 1);
+    } else {
+      this.filters.priority.push(priorityValue);
+    }
+    this.applyFilters();
+  }
+
+  isPrioritySelected(priorityValue: string): boolean {
+    return this.filters.priority.includes(priorityValue);
+  }
+
+  getSelectedPriorityLabels(): string {
+    if (this.filters.priority.length === 0) {
+      return 'Tutte le Priorità';
+    }
+    if (this.filters.priority.length === 1) {
+      const priority = this.priorities.find(p => p.value === this.filters.priority[0]);
+      return priority ? priority.label : 'Priorità';
+    }
+    if (this.filters.priority.length === 3) {
+      return 'Tutte le Priorità';
+    }
+    const firstPriority = this.priorities.find(p => p.value === this.filters.priority[0]);
+    return `${firstPriority?.label || 'Priorità'} (+${this.filters.priority.length - 1})`;
+  }
+
+  // ========================================
+  // SEU MULTI-SELECT METHODS
+  // ========================================
+
+  toggleSeuDropdown() {
+    const wasOpen = this.showSeuDropdown;
+    this.closeAllDropdowns();
+    this.showSeuDropdown = !wasOpen;
+    if (this.showSeuDropdown) {
+      this.seuSearchQuery = '';
+      this.filteredSeuList = [...this.seuList];
+    }
+    this.updateDropdownClasses();
+  }
+
+  toggleSeuFilter(seuId: string) {
+    const index = this.filters.seu.indexOf(seuId);
+    if (index > -1) {
+      this.filters.seu.splice(index, 1);
+    } else {
+      this.filters.seu.push(seuId);
+    }
+    this.applyFilters();
+  }
+
+  isSeuSelected(seuId: string): boolean {
+    return this.filters.seu.includes(seuId);
+  }
+
+  filterSeu() {
+    const query = this.seuSearchQuery.toLowerCase();
+    this.filteredSeuList = this.seuList.filter(seu =>
+      seu.name.toLowerCase().includes(query)
+    );
+  }
+
+  getSelectedSeuLabels(): string {
+    if (this.filters.seu.length === 0) {
+      return 'Tutti i SEU';
+    }
+    if (this.filters.seu.length === 1) {
+      const seu = this.seuList.find(s => s.id.toString() === this.filters.seu[0]);
+      return seu ? seu.name : 'SEU';
+    }
+    const firstSeu = this.seuList.find(s => s.id.toString() === this.filters.seu[0]);
+    return `${firstSeu?.name || 'SEU'} (+${this.filters.seu.length - 1})`;
+  }
+
+  // ========================================
+  // GENERATED BY MULTI-SELECT METHODS
+  // ========================================
+
+  toggleGeneratedByDropdown() {
+    const wasOpen = this.showGeneratedByDropdown;
+    this.closeAllDropdowns();
+    this.showGeneratedByDropdown = !wasOpen;
+    if (this.showGeneratedByDropdown) {
+      this.generatedBySearchQuery = '';
+      this.filteredGeneratorsList = [...this.generatorsList];
+    }
+    this.updateDropdownClasses();
+  }
+
+  toggleGeneratedByFilter(userId: string) {
+    const index = this.filters.generatedBy.indexOf(userId);
+    if (index > -1) {
+      this.filters.generatedBy.splice(index, 1);
+    } else {
+      this.filters.generatedBy.push(userId);
+    }
+    this.applyFilters();
+  }
+
+  isGeneratedBySelected(userId: string): boolean {
+    return this.filters.generatedBy.includes(userId);
+  }
+
+  filterGenerators() {
+    const query = this.generatedBySearchQuery.toLowerCase();
+    this.filteredGeneratorsList = this.generatorsList.filter(gen =>
+      gen.name.toLowerCase().includes(query)
+    );
+  }
+
+  getSelectedGeneratedByLabels(): string {
+    if (this.filters.generatedBy.length === 0) {
+      return 'Tutti gli utenti';
+    }
+    if (this.filters.generatedBy.length === 1) {
+      const user = this.generatorsList.find(g => g.id.toString() === this.filters.generatedBy[0]);
+      return user ? user.name : 'Utente';
+    }
+    const firstUser = this.generatorsList.find(g => g.id.toString() === this.filters.generatedBy[0]);
+    return `${firstUser?.name || 'Utente'} (+${this.filters.generatedBy.length - 1})`;
+  }
+
+  // ========================================
+  // ASSIGNED TO MULTI-SELECT METHODS
+  // ========================================
+
+  toggleAssignedToDropdown() {
+    const wasOpen = this.showAssignedToDropdown;
+    this.closeAllDropdowns();
+    this.showAssignedToDropdown = !wasOpen;
+    if (this.showAssignedToDropdown) {
+      this.assignedToSearchQuery = '';
+      this.filteredUsers = [...this.users];
+    }
+    this.updateDropdownClasses();
+  }
+
+  toggleAssignedToFilter(userId: string) {
+    const index = this.filters.assignedTo.indexOf(userId);
+    if (index > -1) {
+      this.filters.assignedTo.splice(index, 1);
+    } else {
+      this.filters.assignedTo.push(userId);
+    }
+    this.applyFilters();
+  }
+
+  isAssignedToSelected(userId: string): boolean {
+    return this.filters.assignedTo.includes(userId);
+  }
+
+  filterAssignedTo() {
+    const query = this.assignedToSearchQuery.toLowerCase();
+    this.filteredUsers = this.users.filter(user =>
+      `${user.name} ${user.cognome}`.toLowerCase().includes(query)
+    );
+  }
+
+  getSelectedAssignedToLabels(): string {
+    if (this.filters.assignedTo.length === 0) {
+      return 'Tutti gli utenti';
+    }
+    if (this.filters.assignedTo.includes('0')) {
+      if (this.filters.assignedTo.length === 1) {
+        return 'Non assegnato';
+      }
+      return `Non assegnato (+${this.filters.assignedTo.length - 1})`;
+    }
+    if (this.filters.assignedTo.length === 1) {
+      const user = this.users.find(u => u.id.toString() === this.filters.assignedTo[0]);
+      return user ? `${user.name} ${user.cognome}` : 'Utente';
+    }
+    const firstUser = this.users.find(u => u.id.toString() === this.filters.assignedTo[0]);
+    return `${firstUser?.name || 'Utente'} (+${this.filters.assignedTo.length - 1})`;
+  }
+
+  // ========================================
+  // CLOSE DROPDOWNS
+  // ========================================
+
+  closeAllDropdowns() {
+    this.showStatusDropdown = false;
+    this.showProductDropdown = false;
+    this.showPriorityDropdown = false;
+    this.showSeuDropdown = false;
+    this.showGeneratedByDropdown = false;
+    this.showAssignedToDropdown = false;
+    this.updateDropdownClasses();
+  }
+
+  /**
+   * Updates CSS classes for filter groups based on dropdown state
+   */
+  updateDropdownClasses() {
+    // Use setTimeout to ensure DOM is updated
+    setTimeout(() => {
+      // Remove all dropdown-open classes first
+      const allFilterGroups = document.querySelectorAll('.filter-group');
+      allFilterGroups.forEach(group => {
+        group.classList.remove('dropdown-open');
+      });
+
+      // Add dropdown-open class to the active dropdown's parent
+      if (this.showStatusDropdown || this.showProductDropdown || this.showPriorityDropdown ||
+          this.showSeuDropdown || this.showGeneratedByDropdown || this.showAssignedToDropdown) {
+        
+        const activeDropdown = document.querySelector('.multi-select-dropdown');
+        if (activeDropdown) {
+          const parentFilterGroup = activeDropdown.closest('.filter-group');
+          if (parentFilterGroup) {
+            parentFilterGroup.classList.add('dropdown-open');
+          }
+        }
+      }
+    }, 0);
+  }
+
+  closeStatusDropdown(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.multi-select-container')) {
+      this.closeAllDropdowns();
+    }
+  }
+
   // Column visibility methods
   isColumnVisible(columnId: string): boolean {
-    // If no filters applied, all columns are visible
     if (this.filters.status.length === 0 || this.filters.status.length === 3) {
       return true;
     }
-    // Otherwise, only filtered columns are visible
     return this.filters.status.includes(columnId);
   }
 
@@ -810,9 +1140,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.subscriptions.push(updateSub);
   }
 
-  /**
-  * Sorts tickets by priority (high -> medium -> low)
-  */
   sortTicketsByPriority() {
     const priorityWeight = {
       'high': 3,
@@ -832,9 +1159,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     return column ? column.title : status;
   }
 
-  /**
-   * Load minimized tickets state from localStorage
-   */
   loadMinimizedTicketsFromStorage() {
     try {
       const saved = localStorage.getItem('minimizedTickets');
@@ -847,9 +1171,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Save minimized tickets state to localStorage
-   */
   saveMinimizedTicketsToStorage() {
     try {
       const ticketIds = Array.from(this.minimizedTickets);
@@ -859,9 +1180,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Toggle minimize/expand ticket
-   */
   toggleMinimizeTicket(ticketId: number, event: Event) {
     event.stopPropagation();
     
@@ -870,24 +1188,18 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     } else {
       this.minimizedTickets.add(ticketId);
     }
+    
     this.saveMinimizedTicketsToStorage();
   }
 
-  /**
-   * Check if ticket is minimized
-   */
   isTicketMinimized(ticketId: number): boolean {
     return this.minimizedTickets.has(ticketId);
   }
 
-  /**
-   * Truncate text if too long
-   */
   truncateText(text: string, maxLength: number = 30): string {
     if (text.length <= maxLength) {
       return text;
     }
     return text.substring(0, maxLength) + '...';
   }
-  
 }
