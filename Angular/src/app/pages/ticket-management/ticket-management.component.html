@@ -11,6 +11,57 @@
       </div>
     </div>
     <div class="header-actions">
+      <!-- Ticket count -->
+      <span class="ticket-count">
+        <i class="fas fa-inbox"></i>
+        {{filteredTickets.length}} ticket trovati
+      </span>
+
+      <!-- Archive button (BackOffice & WebOps) -->
+      <button 
+        *ngIf="!isAdmin" 
+        class="btn-archive" 
+        [class.active]="showClosedColumn"
+        (click)="toggleClosedColumn()"
+        title="Mostra/Nascondi archivio">
+        <i class="fas fa-archive"></i>
+        Archivio
+      </button>
+
+      <!-- Archive button (Admin - positioned before delete buttons) -->
+      <button 
+        *ngIf="isAdmin" 
+        class="btn-archive" 
+        [class.active]="showClosedColumn"
+        (click)="toggleClosedColumn()"
+        title="Mostra/Nascondi archivio">
+        <i class="fas fa-archive"></i>
+        Archivio
+      </button>
+
+      <!-- Delete Tickets button (Admin only) -->
+      <button 
+        *ngIf="isAdmin" 
+        class="btn-delete-tickets"
+        [disabled]="selectedTicketsForDeletion.size === 0"
+        (click)="bulkDeleteTickets()"
+        title="Cancella ticket selezionati">
+        <i class="fas fa-trash"></i>
+        Cancella Ticket ({{selectedTicketsForDeletion.size}})
+      </button>
+
+      <!-- Show Deleted button (Admin only) -->
+      <button 
+        *ngIf="isAdmin" 
+        class="btn-show-deleted"
+        [class.active]="showDeletedColumn"
+        (click)="toggleDeletedColumn()"
+        [title]="showDeletedColumn ? 'Nascondi ticket cancellati' : 'Mostra ticket cancellati'">
+        <i class="fas" [class.fa-eye]="!showDeletedColumn" [class.fa-eye-slash]="showDeletedColumn"></i>
+        {{getDeletedButtonText()}}
+      </button>
+
+      <!-- New Ticket button -->
       <button class="btn-new-ticket" (click)="createNewTicket()">
         <i class="fas fa-plus"></i>
         Nuovo Ticket
@@ -130,6 +181,7 @@
           <div class="multi-select-dropdown" *ngIf="showStatusDropdown" (click)="$event.stopPropagation()">
             <div class="multi-select-option" 
                  *ngFor="let column of columns"
+                 [hidden]="column.hidden"
                  (click)="toggleStatusFilter(column.id)">
               <div class="custom-checkbox" 
                    [style.background-color]="isStatusSelected(column.id) ? column.color : 'transparent'"
@@ -294,9 +346,6 @@
       <button class="btn-filter" (click)="clearFilters()">
         <i class="fas fa-times"></i> Reset Filtri
       </button>
-      <div style="margin-left: auto; color: #666; font-size: 14px;">
-        <i class="fas fa-ticket-alt"></i> {{filteredTickets.length}} ticket trovati
-      </div>
     </div>
   </div>
 
@@ -308,7 +357,7 @@
         class="kanban-column"
         [class]="'status-' + column.id"
         [class.column-hidden]="!isColumnVisible(column.id)"
-        [style.flex]="isColumnVisible(column.id) ? '1' : '0'"
+        [style.flex]="!column.hidden ? '1' : '0'"
         (drop)="onTicketDrop($event, column.id)"
         (dragover)="onDragOver($event)">
         
@@ -331,10 +380,22 @@
             (dragstart)="onTicketDragStart($event, ticket)"
             (click)="openTicketModal(ticket)">
             
-            <!-- MINIMIZED VIEW - Compact single row -->
+            <!-- MINIMIZED VIEW - Compact single row with checkbox -->
             <div class="ticket-minimized-view" *ngIf="isTicketMinimized(ticket.id)">
+              <!-- Selection checkbox for minimized tickets -->
+              <div 
+                *ngIf="isAdmin && ticket.status !== 'deleted'" 
+                class="ticket-select-checkbox-mini"
+                (click)="selectTicketForDeletion(ticket.id, $event)">
+                <i 
+                  class="fas" 
+                  [class.fa-square]="!selectedTicketsForDeletion.has(ticket.id)"
+                  [class.fa-check-square]="selectedTicketsForDeletion.has(ticket.id)"
+                  [style.color]="selectedTicketsForDeletion.has(ticket.id) ? '#f44336' : '#ccc'">
+                </i>
+              </div>
+              
               <span class="ticket-id-mini">#{{ticket.ticket_number}}</span>
-              <span class="ticket-contract-id-mini" style="color: #666; font-size: 11px;">ID contratto:{{ticket.contract_id}}</span>
               <span class="ticket-title-mini" [class]="'title-' + ticket.status" [title]="ticket.title">
                 {{truncateText(ticket.title, 25)}}
               </span>
@@ -351,15 +412,40 @@
 
             <!-- EXPANDED VIEW - Full ticket details -->
             <div class="ticket-expanded-view" *ngIf="!isTicketMinimized(ticket.id)">
-              <div class="ticket-header">
+              <!-- Unified header row with all controls -->
+              <div class="ticket-header-unified">
+                <!-- Selection checkbox (admin only, not in deleted column) -->
+                <div 
+                  *ngIf="isAdmin && ticket.status !== 'deleted'" 
+                  class="ticket-select-checkbox-inline"
+                  (click)="selectTicketForDeletion(ticket.id, $event)">
+                  <i 
+                    class="fas" 
+                    [class.fa-square]="!selectedTicketsForDeletion.has(ticket.id)"
+                    [class.fa-check-square]="selectedTicketsForDeletion.has(ticket.id)"
+                    [style.color]="selectedTicketsForDeletion.has(ticket.id) ? '#f44336' : '#ccc'">
+                  </i>
+                </div>
+                
                 <span class="ticket-id">#{{ticket.ticket_number}}</span>
-                <div class="ticket-header-actions">
-                  <span 
-                    class="ticket-priority"
-                    [class]="'priority-' + ticket.priority"
-                    [style.background-color]="getPriorityColor(ticket.priority)">
-                    {{getPriorityLabel(ticket.priority)}}
-                  </span>
+                
+                <span 
+                  class="ticket-priority"
+                  [class]="'priority-' + ticket.priority"
+                  [style.background-color]="getPriorityColor(ticket.priority)">
+                  {{getPriorityLabel(ticket.priority)}}
+                </span>
+                
+                <div class="ticket-header-controls">
+                  <!-- Close ticket button (green tick - only in resolved column) -->
+                  <div 
+                    *ngIf="ticket.status === 'resolved' && canCloseTicket(ticket)" 
+                    class="ticket-close-btn-inline"
+                    (click)="closeTicket(ticket, $event)"
+                    title="Archivia e chiudi ticket">
+                    <i class="fas fa-check-circle"></i>
+                  </div>
+                  
                   <button class="btn-minimize" (click)="toggleMinimizeTicket(ticket.id, $event)" title="Minimizza ticket">
                     <i class="fas fa-chevron-up"></i>
                   </button>

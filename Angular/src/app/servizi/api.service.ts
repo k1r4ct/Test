@@ -680,8 +680,9 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
-  // -------------------- TICKET MANAGEMENT API --------------------
-  /**
+// -------------------- TICKET MANAGEMENT API --------------------
+  
+/**
    * Recupera la lista dei ticket
    */
   getTickets(): Observable<any> {
@@ -728,6 +729,28 @@ export class ApiService implements OnDestroy {
     let headers = this.headers;
     return this.http
       .post(this.global.API_URL + "updateTicketStatus", form, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Chiude un ticket (resolved → closed)
+   * Solo admin o backofficer assegnato possono chiudere
+   */
+  closeTicket(form: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "closeTicket", form, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Cancella multipli ticket in una volta (bulk delete)
+   * Solo admin può eseguire questa operazione
+   */
+  bulkDeleteTickets(form: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "bulkDeleteTickets", form, { headers })
       .pipe(takeUntil(this.destroy$));
   }
 }

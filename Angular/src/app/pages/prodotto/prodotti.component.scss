@@ -1,3 +1,9 @@
+::ng-deep .cdk-high-contrast-active .cdk-overlay-transparent-backdrop {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: auto !important;
+  opacity: 0 !important;
+}
 // Modern Card Styles
 .modern-card {
   //background: linear-gradient(180deg,#268730 10%,#027cad);

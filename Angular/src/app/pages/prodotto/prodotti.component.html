@@ -62,7 +62,7 @@
               <mat-form-field>
                 <mat-label>Filtra macro prodotto</mat-label>
                 <!--INIZIO SEZIONE FILTRO COLONNA -->
-                <mat-select [formControl]="mpdToppings" multiple>
+                <mat-select [formControl]="mpdToppings" multiple (selectionChange)="selectOpt(displayedColumns[2], $event.value)">
                   <mat-select-trigger>
                     {{mpdToppings.value?.[0] || 'Seleziona...'}}
                     @if ((mpdToppings.value?.length || 0) > 1) {
@@ -73,8 +73,7 @@
                     }
                   </mat-select-trigger>
                   @for (topping of MacroDescrizione; track topping) {
-                  <mat-option [value]="topping"
-                    (click)="selectOpt(displayedColumns[2],this.mpdToppings.value)">{{topping}}</mat-option>
+                  <mat-option [value]="topping">{{topping}}</mat-option>
                   }
                 </mat-select>
                 <!--FINE SEZIONE FILTRO COLONNA -->
@@ -92,7 +91,7 @@
               <mat-form-field>
                 <mat-label>Filtra codice macro</mat-label>
                 <!--INIZIO SEZIONE FILTRO COLONNA -->
-                <mat-select [formControl]="mprToppings" multiple>
+                <mat-select [formControl]="mprToppings" multiple (selectionChange)="selectOpt(displayedColumns[3], $event.value)">
                   <mat-select-trigger>
                     {{mprToppings.value?.[0] || 'Seleziona...'}}
                     @if ((mprToppings.value?.length || 0) > 1) {
@@ -103,8 +102,7 @@
                     }
                   </mat-select-trigger>
                   @for (topping of MacroProList; track topping) {
-                  <mat-option [value]="topping"
-                    (click)="selectOpt(displayedColumns[3],this.mprToppings.value)">{{topping}}</mat-option>
+                  <mat-option [value]="topping">{{topping}}</mat-option>
                   }
                 </mat-select>
                 <!--FINE SEZIONE FILTRO COLONNA -->
@@ -122,7 +120,7 @@
               <mat-form-field>
                 <mat-label>Filtra fornitore</mat-label>
                 <!--INIZIO SEZIONE FILTRO COLONNA -->
-                <mat-select [formControl]="forToppings" multiple>
+                <mat-select [formControl]="forToppings" multiple (selectionChange)="selectOpt(displayedColumns[4], $event.value)">
                   <mat-select-trigger>
                     {{forToppings.value?.[0] || 'Seleziona...'}}
                     @if ((forToppings.value?.length || 0) > 1) {
@@ -133,8 +131,7 @@
                     }
                   </mat-select-trigger>
                   @for (topping of fornitoriList; track topping) {
-                  <mat-option [value]="topping"
-                    (click)="selectOpt(displayedColumns[4],this.forToppings.value)">{{topping}}</mat-option>
+                  <mat-option [value]="topping">{{topping}}</mat-option>
                   }
                 </mat-select>
                 <!--FINE SEZIONE FILTRO COLONNA -->

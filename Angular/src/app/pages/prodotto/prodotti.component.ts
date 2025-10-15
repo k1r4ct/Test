@@ -1,7 +1,8 @@
-import { AfterViewInit, Component, DoCheck, OnInit, ViewChild,    } from '@angular/core';
+import { AfterViewInit, Component, DoCheck, OnInit, ViewChild, ViewChildren, QueryList, HostListener } from '@angular/core';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
+import { MatSelect } from '@angular/material/select';
 import { ApiService } from 'src/app/servizi/api.service';
 import { FormControl } from '@angular/forms';
 import { ContrattoService } from 'src/app/servizi/contratto.service';
@@ -50,6 +51,7 @@ export class ProdottiComponent implements AfterViewInit, OnInit  {
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  @ViewChildren(MatSelect) selects!: QueryList<MatSelect>;
 
 
   mprToppings = new FormControl('');
@@ -66,15 +68,76 @@ export class ProdottiComponent implements AfterViewInit, OnInit  {
     this.listaprodotti = [];
   }
 
+  // ===== Helper semplici e riusabili (allineati a GestioneProdotti) =====
+  // Converte qualunque valore in stringa ripulita (senza spazi)
+  private normalizza(val: any): string {
+    return (val ?? '').toString().trim();
+  }
+
+  // Versione maiuscola per confronti case-insensitive
+  private normalizzaUpper(val: any): string {
+    return this.normalizza(val).toUpperCase();
+  }
+
+  // Estrae il codice macro da stringa o oggetto
+  private codiceMacroDa(rec: any): string {
+    const mp = rec?.macro_product;
+    const codice = (typeof mp === 'object' && mp?.codice_macro) ? mp.codice_macro : mp;
+    return this.normalizza(codice);
+  }
+
+  // Estrae la descrizione macro da campo dedicato o da macro_product.descrizione
+  private descrizioneMacroDa(rec: any): string {
+    const diretta = this.normalizza((rec as any)?.macro_descrizione);
+    if (diretta) return diretta;
+    const mp = (rec as any)?.macro_product;
+    const fallback = (typeof mp === 'object') ? (mp?.descrizione || '') : '';
+    return this.normalizza(fallback);
+  }
+
+  // Estrae il nome fornitore sia piatto che annidato
+  private nomeFornitoreDa(rec: any): string {
+    return this.normalizza((rec as any)?.nome_fornitore || (rec as any)?.supplier?.nome_fornitore || '');
+  }
+
+  // Aggiorna le opzioni visibili nelle select in base ai dati attualmente filtrati (effetto AND)
+  private aggiornaOpzioniDisponibili(dati: any[]): void {
+    // Codici macro
+    this.MacroProList = Array.from(new Set(
+      (dati || [])
+        .map((r) => this.codiceMacroDa(r))
+        .filter((v) => !!v)
+    )).sort();
+
+    // Macro prodotto (descrizione)
+    this.MacroDescrizione = Array.from(new Set(
+      (dati || [])
+        .map((r) => this.descrizioneMacroDa(r))
+        .filter((v) => !!v)
+    )).sort();
+
+    // Fornitori
+    this.fornitoriList = Array.from(new Set(
+      (dati || [])
+        .map((r) => this.nomeFornitoreDa(r))
+        .filter((v) => !!v)
+    )).sort();
+
+    // Prodotti (descrizione)
+    this.prodottiList = Array.from(new Set(
+      (dati || [])
+        .map((r: any) => this.normalizza((r as any)?.descrizione))
+        .filter((v) => !!v)
+    )).sort();
+  }
 
   ngOnInit() {
     //console.log('init lista prodotti');
     this.show_product = true;
 
     this.servizioApi.ListaProdotti().subscribe((response) => {
-      console.clear();
       //console.log('carico lista prodotti');
-      console.log(response);
+      //console.log(response);
 
       this.listaprodotti = response.body.prodotti as ListaProdotti[];
       this.dataSource = new MatTableDataSource(this.listaprodotti);
@@ -82,168 +145,54 @@ export class ProdottiComponent implements AfterViewInit, OnInit  {
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
 
-      // setto this.prodottiList  bind MAT-SELECT MAT-OPTION
-      // la select viene caricata con la lista ordinata alfabeticamente
-      // per il campo descrizione
-      // setto this.fornitoriList bind MAT-SELECT MAT-OPTION
-      // la select viene caricata con la lista ordinata alafebiticamente
-      // dei fornitori (in questo caso vengolo eliminati i duplicati)
-
-      this.riempicampifiltri();
+      // Popola inizialmente le opzioni delle select dai dati completi
+      this.aggiornaOpzioniDisponibili(this.listaprodotti as any[]);
 
       // FUNZIONE DI FILTRO STRUTTURATA PER FAR APPARIRE LE RIGHE PER LA QUALE
       // CAMPO TABELLA CONTIENE I VALORI PASSATI SU FILTER
       // ["NOMECAMPOTABELLA" , ["VALORE1","VALORE2",..]]
       // FILTER VIENE COSTRUITO NELLA FUNZIONE selectOpt()
-      this.dataSource.filterPredicate = function (record, filter) {
-        //console.log(filter,record);
+      this.dataSource.filterPredicate = (record: any, filter: string) => {
+        const voci: any[] = (() => { try { return JSON.parse(filter || '[]'); } catch { return []; } })();
+        if (!voci || voci.length === 0) return true;
 
-        const obj = JSON.parse(filter);
-        let isMatch = false;
-        let isMatch_nome_fornitore = false;
-        let isMatch_macro_product = false;
-        let isMatch_macro_descriz = false;
-        let isMatch_descriz = false;
+        for (const [campo, valoriGrezzi] of voci) {
+          // normalizza a array di stringhe maiuscole
+          const valori: string[] = Array.isArray(valoriGrezzi)
+            ? valoriGrezzi.map((v: any) => this.normalizzaUpper(v)).filter((v: string) => !!v)
+            : [this.normalizzaUpper(valoriGrezzi)].filter((v: string) => !!v);
+          if (valori.length === 0) continue;
 
-        let nome_fornitore = false;
-        let macro_product = false;
-        let macro_descriz = false;
-        let descriz = false;
-
-        let statoField: boolean[] = [];
-        let cicli = 0;
-        let stringEleArray: any;
-
-        for (const item of obj) {
-          const field = item[0];
-          const valori = item[1];
-          isMatch = false;
-
-          //console.log(item);
-
-          if(field=="nome_fornitore"){
-            for (const valore of valori) {
-              nome_fornitore = true;
-              //console.log(valore);
-              cicli++;
-              stringEleArray = record[field as keyof ListaProdotti];
-              if (stringEleArray == valore ) {
-                isMatch_nome_fornitore = true;
-              }
+          let corrisponde = true;
+          switch (campo) {
+            case 'nome_fornitore': {
+              const nome = this.normalizzaUpper(this.nomeFornitoreDa(record));
+              corrisponde = valori.includes(nome);
+              break;
             }
+            case 'macro_product': { // Codice Macro
+              const codice = this.normalizzaUpper(this.codiceMacroDa(record));
+              corrisponde = valori.includes(codice);
+              break;
+            }
+            case 'macro_descrizione': { // Macro Prodotto (descrizione)
+              const descr = this.normalizzaUpper(this.descrizioneMacroDa(record));
+              corrisponde = valori.includes(descr);
+              break;
+            }
+            case 'descrizione': {
+              const testo = this.normalizzaUpper((record as any)?.descrizione);
+              const ago = valori[0] || '';
+              corrisponde = testo.includes(ago);
+              break;
+            }
+            default:
+              corrisponde = true;
           }
 
-
-          if(field=="macro_product"){
-            for (const valore of valori) {
-              macro_product = true;
-              //console.log(valore);
-              cicli++;
-              stringEleArray = record[field as keyof ListaProdotti];
-              // Gestisci sia oggetto che stringa per macro_product
-              const macroProductValue = typeof stringEleArray === 'object' && stringEleArray?.codice_macro 
-                ? stringEleArray.codice_macro 
-                : stringEleArray;
-              if (macroProductValue == valore ) {
-                isMatch_macro_product = true;
-              }
-            }
-          }
-
-
-          if(field=="macro_descrizione"){
-            for (const valore of valori) {
-              macro_descriz = true;
-              //console.log(valore);
-              cicli++;
-              stringEleArray = record[field as keyof ListaProdotti];
-              if (stringEleArray == valore ) {
-                isMatch_macro_descriz = true;
-              }
-            }
-          }
-
-
-          if(field=="descrizione"){
-            descriz = true;
-            cicli++;
-            stringEleArray = record[field as keyof ListaProdotti];
-            if (stringEleArray.includes(valori)  ) {
-              isMatch_descriz = true;
-              // isMatch = true;
-            }else{
-              isMatch = false;
-            }
-          }else{
-            //console.log("nessuna descrizione");
-            // isMatch = true;
-          }
-
-
-          if (nome_fornitore && macro_product && macro_descriz && descriz) {
-            if (isMatch_nome_fornitore && isMatch_macro_product && isMatch_macro_descriz && isMatch_descriz) {
-              isMatch = true;
-            }
-          } else if (nome_fornitore && macro_product && descriz) {
-            if (isMatch_nome_fornitore && isMatch_macro_product && isMatch_descriz) {
-              isMatch = true;
-            }
-          } else if (nome_fornitore && macro_product && macro_descriz) {
-            if (isMatch_nome_fornitore && isMatch_macro_product && isMatch_macro_descriz) {
-              isMatch = true;
-            }
-          } else if (nome_fornitore && macro_descriz && descriz) {
-            if (isMatch_nome_fornitore && isMatch_macro_descriz && isMatch_descriz) {
-              isMatch = true;
-            }
-          } else if (macro_product && macro_descriz && descriz) {
-            if (isMatch_macro_product && isMatch_macro_descriz && isMatch_descriz) {
-              isMatch = true;
-            }            
-          } else if (macro_product && macro_descriz) {
-            if (isMatch_macro_product && isMatch_macro_descriz) {
-              isMatch = true;
-            }
-          } else if (macro_product && descriz) {
-            if (isMatch_macro_product && isMatch_descriz) {
-              isMatch = true;
-            }
-          } else if (macro_descriz && descriz) {
-            if (isMatch_macro_descriz && isMatch_descriz) {
-              isMatch = true;
-            }
-          } else if (nome_fornitore && descriz) {
-            if (isMatch_nome_fornitore && isMatch_descriz) {
-              isMatch = true;
-            }
-          } else if (nome_fornitore && macro_product) {
-            if (isMatch_nome_fornitore && isMatch_macro_product) {
-              isMatch = true;
-            }
-          } else if (nome_fornitore && macro_descriz) {
-            if (isMatch_nome_fornitore && isMatch_macro_descriz) {
-              isMatch = true;
-            }
-          } else if (nome_fornitore) {
-            isMatch = isMatch_nome_fornitore;
-          } else if (macro_product) {
-            isMatch = isMatch_macro_product;
-          } else if (macro_descriz) {
-            isMatch = isMatch_macro_descriz;
-          } else if (descriz) {
-            isMatch = isMatch_descriz;
-          }
-
-
-          statoField.push(isMatch);
+          if (!corrisponde) return false; // logica AND
         }
-
-        if (cicli == 0) {
-          return true;
-        }
-
-        statoField = [];
-        return isMatch;
+        return true;
       };
     });
   }
@@ -317,20 +266,8 @@ riempicampifiltri(){
 
 
     this.dataSource.filter = jsonString;
-
-
-    let FilterListaProdotti: any[] = [];
-    let FilterListaFornitori: any[] = [];
-    this.dataSource.filteredData.forEach(element => {
-      //console.log(element);
-      //FilterListaFornitori.push(element["nome_fornitore"]);
-      FilterListaProdotti.push(element["descrizione"]);
-    });
-    
-    this.prodottiList = FilterListaProdotti.sort();
-
-    this.listaprodotti = this.dataSource.filteredData;
-    this.riempicampifiltri();
+    // Aggiorna le opzioni visibili in base ai dati filtrati
+    this.aggiornaOpzioniDisponibili(this.dataSource.filteredData as any[]);
 
     // FilterListaFornitori.sort();
     // this.fornitoriList = FilterListaFornitori.filter((str, index) => {
@@ -366,19 +303,8 @@ riempicampifiltri(){
 
 
     this.dataSource.filter = jsonString;
-
-
-    let FilterListaProdotti: any[] = [];
-    let FilterListaFornitori: any[] = [];
-    this.dataSource.filteredData.forEach(element => {
-      //console.log(element);
-      //FilterListaFornitori.push(element["nome_fornitore"]);
-      FilterListaProdotti.push(element["descrizione"]);
-    });
-    this.prodottiList = FilterListaProdotti.sort();
-
-    this.listaprodotti = this.dataSource.filteredData;
-    this.riempicampifiltri();
+    // Aggiorna le opzioni anche per la ricerca testuale
+    this.aggiornaOpzioniDisponibili(this.dataSource.filteredData as any[]);
 
     // FilterListaFornitori.sort();
     // this.fornitoriList = FilterListaFornitori.filter((str, index) => {
@@ -396,7 +322,30 @@ riempicampifiltri(){
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
-    this.riempicampifiltri();
+    // Opzioni già inizializzate in ngOnInit
+  }
+
+  // Chiude i mat-select aperti quando si clicca fuori dal pannello/trigger
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    const overlayContainer = document.querySelector('.cdk-overlay-container');
+    const clickedInOverlay = overlayContainer ? overlayContainer.contains(target) : false;
+
+    // Se il click è nel pannello (overlay) lasciamo gestire al mat-select
+    if (clickedInOverlay) return;
+
+    // Altrimenti, se il click è fuori dal trigger di ogni select aperta, chiudila
+    this.selects?.forEach((sel) => {
+      if (!sel.panelOpen) return;
+      const triggerEl: HTMLElement | undefined = (sel as any)?._elementRef?.nativeElement;
+      const clickedInTrigger = !!triggerEl && triggerEl.contains(target);
+      if (!clickedInTrigger) {
+        sel.close();
+      }
+    });
   }
 
 

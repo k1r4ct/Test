@@ -1,5 +1,4 @@
 <?php
-// File: Laravel/app/Http/Controllers/TicketController.php
 
 namespace App\Http\Controllers;
 
@@ -17,14 +16,23 @@ class TicketController extends Controller
 {
     /**
      * Get tickets based on user role
-     * Admins and BackOffice see all tickets
-     * Advisors see only tickets for their contracts
+     * Only Admin, BackOffice, and Web Operators can access the ticket board
+     * Only Admin can see deleted tickets
      */
     public function getTickets()
     {
         try {
             $user = Auth::user();
             $userRole = $user->role->id;
+
+            // Only Admin (1,6), BackOffice (5,10), and Web Operators (4,9) can access
+            if (!in_array($userRole, [1, 4, 5, 6, 9, 10])) {
+                return response()->json([
+                    "response" => "error", 
+                    "status" => "403", 
+                    "message" => "Access denied"
+                ]);
+            }
 
             $query = Ticket::with([
                 'contract.customer_data',
@@ -34,27 +42,13 @@ class TicketController extends Controller
                 'messages.user.role'
             ]);
 
-            // Filter based on user role
-            if ($userRole == 1 || $userRole == 5) {
-                // Admin (1) or BackOffice (5) - see all tickets
-                $tickets = $query->orderBy('created_at', 'desc')->get();
-            } else if ($userRole == 2 || $userRole == 4) {
-                // Advisor (2) or Operatore web (4) - see only their contract tickets
-                $contractIds = contract::where('associato_a_user_id', $user->id)
-                    ->pluck('id')
-                    ->toArray();
-                
-                $tickets = $query->whereIn('contract_id', $contractIds)
-                    ->orderBy('created_at', 'desc')
-                    ->get();
-            } else {
-                // Other roles don't have access
-                return response()->json([
-                    "response" => "error", 
-                    "status" => "403", 
-                    "message" => "Access denied"
-                ]);
+            // Only Admin (1,6) can see deleted tickets
+            // BackOffice and WebOps cannot see deleted tickets
+            if (!in_array($userRole, [1, 6])) {
+                $query->where('status', '!=', 'deleted');
             }
+
+            $tickets = $query->orderBy('created_at', 'desc')->get();
 
             return response()->json([
                 "response" => "ok", 
@@ -65,7 +59,7 @@ class TicketController extends Controller
         } catch (\Exception $e) {
             Log::error('Error getting tickets: ' . $e->getMessage());
             return response()->json([
-                "response" => "error", 
+                "response" => "error",
                 "status" => "500", 
                 "message" => "Server error"
             ]);
@@ -73,7 +67,8 @@ class TicketController extends Controller
     }
 
     /**
-     * Create a new ticket
+     * Create new ticket
+     * Can be called from the board (Admin/BackOffice/WebOp) or from contract page (SEU)
      */
     public function createTicket(Request $request)
     {
@@ -89,41 +84,34 @@ class TicketController extends Controller
                 return response()->json([
                     "response" => "error",
                     "status" => "400", 
-                    "message" => "Validation failed",
                     "errors" => $validator->errors()
                 ]);
             }
 
             $user = Auth::user();
-
-            // Check if user can create tickets for this contract
-            if (!$this->canAccessContract($user, $request->contract_id)) {
-                return response()->json([
-                    "response" => "error",
-                    "status" => "403", 
-                    "message" => "Access denied to this contract"
-                ]);
+            $contract = contract::findOrFail($request->contract_id);
+            
+            // Check if user has access to this contract
+            // Admin, BackOffice, WebOp can create for any contract
+            // SEU can only create for contracts they created
+            if (!in_array($user->role->id, [1, 4, 5, 6, 9, 10])) {
+                if ($contract->created_by_user_id != $user->id) {
+                    return response()->json([
+                        "response" => "error",
+                        "status" => "403", 
+                        "message" => "Access denied"
+                    ]);
+                }
             }
 
             $ticket = Ticket::create([
                 'title' => $request->title,
                 'description' => $request->description,
                 'priority' => $request->priority,
+                'status' => 'new',
                 'contract_id' => $request->contract_id,
                 'created_by_user_id' => $user->id,
-                'status' => 'new'
             ]);
-
-            // Create initial message with the description
-            TicketMessage::create([
-                'ticket_id' => $ticket->id,
-                'user_id' => $user->id,
-                'message' => $request->description,
-                'message_type' => 'text'
-            ]);
-
-            // Send notification to backoffice users
-            $this->notifyBackofficeUsers($ticket, 'new_ticket');
 
             // Load relationships for response
             $ticket->load([
@@ -131,6 +119,17 @@ class TicketController extends Controller
                 'contract.product',
                 'createdBy.role'
             ]);
+
+            // Create initial system message
+            TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'message' => 'Ticket creato',
+                'message_type' => 'status_change'
+            ]);
+
+            // Send notification
+            $this->notifyTicketParticipants($ticket, 'new_ticket');
 
             return response()->json([
                 "response" => "ok",
@@ -151,13 +150,16 @@ class TicketController extends Controller
 
     /**
      * Update ticket status
+     * Special rules:
+     * - Only admin can move tickets back to 'new'
+     * - Only admin can move tickets to 'deleted'
      */
     public function updateTicketStatus(Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [
                 'ticket_id' => 'required|exists:tickets,id',
-                'status' => 'required|in:new,waiting,resolved'
+                'status' => 'required|in:new,waiting,resolved,closed,deleted'
             ]);
 
             if ($validator->fails()) {
@@ -169,9 +171,31 @@ class TicketController extends Controller
             }
 
             $user = Auth::user();
+            $userRole = $user->role->id;
             $ticket = Ticket::findOrFail($request->ticket_id);
 
-            // Check permissions
+            $oldStatus = $ticket->status;
+            $newStatus = $request->status;
+
+            // Only Admin (1,6) can move tickets back to 'new'
+            if ($oldStatus !== 'new' && $newStatus === 'new' && !in_array($userRole, [1, 6])) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Only administrators can move tickets back to 'New'"
+                ]);
+            }
+
+            // Only Admin (1,6) can delete tickets
+            if ($newStatus === 'deleted' && !in_array($userRole, [1, 6])) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Only administrators can delete tickets"
+                ]);
+            }
+
+            // Check general permissions
             if (!$this->canManageTicket($user, $ticket)) {
                 return response()->json([
                     "response" => "error",
@@ -180,17 +204,21 @@ class TicketController extends Controller
                 ]);
             }
 
-            $oldStatus = $ticket->status;
+            // Update ticket status
             $ticket->update([
-                'status' => $request->status,
-                'assigned_to_user_id' => $user->id // Assign to current user when status changes
+                'status' => $newStatus,
+                'assigned_to_user_id' => $user->id
             ]);
 
             // Create system message about status change
+            $statusLabels = Ticket::getStatusOptions();
+            $statusLabel = $statusLabels[$newStatus] ?? $newStatus;
+            $oldStatusLabel = $statusLabels[$oldStatus] ?? $oldStatus;
+            
             TicketMessage::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
-                'message' => "Stato cambiato da '{$oldStatus}' a '{$request->status}'",
+                'message' => "Stato cambiato da '{$oldStatusLabel}' a '{$statusLabel}'",
                 'message_type' => 'status_change'
             ]);
 
@@ -205,6 +233,145 @@ class TicketController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error updating ticket status: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500", 
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Close a ticket (move from resolved to closed)
+     * Only admin or assigned backoffice can close tickets
+     */
+    public function closeTicket(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'ticket_id' => 'required|exists:tickets,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "errors" => $validator->errors()
+                ]);
+            }
+
+            $user = Auth::user();
+            $userRole = $user->role->id;
+            $ticket = Ticket::findOrFail($request->ticket_id);
+
+            // Only admin or assigned user can close ticket
+            $isAdmin = in_array($userRole, [1, 6]);
+            $isAssigned = $ticket->assigned_to_user_id == $user->id;
+
+            if (!$isAdmin && !$isAssigned) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Only administrators or assigned users can close tickets"
+                ]);
+            }
+
+            // Check if ticket is in resolved status
+            if ($ticket->status !== 'resolved') {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "message" => "Only resolved tickets can be closed"
+                ]);
+            }
+
+            $ticket->update(['status' => 'closed']);
+
+            // Log the closure
+            TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'message' => 'Ticket archiviato e chiuso',
+                'message_type' => 'status_change'
+            ]);
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200", 
+                "message" => "Ticket closed successfully"
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error closing ticket: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500", 
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Bulk delete tickets (move to deleted status)
+     * Only admin can perform this action
+     */
+    public function bulkDeleteTickets(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'ticket_ids' => 'required|array|min:1',
+                'ticket_ids.*' => 'exists:tickets,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "errors" => $validator->errors()
+                ]);
+            }
+
+            $user = Auth::user();
+            $userRole = $user->role->id;
+
+            // Only Admin (1,6) can delete tickets
+            if (!in_array($userRole, [1, 6])) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Only administrators can delete tickets"
+                ]);
+            }
+
+            $tickets = Ticket::whereIn('id', $request->ticket_ids)->get();
+            $deletedCount = 0;
+
+            foreach ($tickets as $ticket) {
+                $ticket->update([
+                    'status' => 'deleted',
+                    'assigned_to_user_id' => $user->id
+                ]);
+
+                // Log the deletion
+                TicketMessage::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $user->id,
+                    'message' => "Ticket cancellato dall'amministratore",
+                    'message_type' => 'status_change'
+                ]);
+
+                $deletedCount++;
+            }
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200", 
+                "message" => "{$deletedCount} ticket(s) deleted successfully",
+                "deleted_count" => $deletedCount
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error bulk deleting tickets: ' . $e->getMessage());
             return response()->json([
                 "response" => "error",
                 "status" => "500", 
@@ -290,10 +457,10 @@ class TicketController extends Controller
                 'message_type' => 'text'
             ]);
 
-            // Update ticket status to in-progress if it's new
+            // Update ticket status to waiting if it's new
             if ($ticket->status === 'new') {
                 $ticket->update([
-                    'status' => 'in-progress',
+                    'status' => 'waiting',
                     'assigned_to_user_id' => $user->id
                 ]);
             }
@@ -321,165 +488,77 @@ class TicketController extends Controller
     }
 
     /**
-     * Get tickets for a specific contract (for advisor interface)
+     * Check if user can access ticket
+     * Admin and BackOffice can access all tickets
+     * SEU can access tickets they created or for their contracts
      */
-    public function getTicketsByContract($contractId)
+    private function canAccessTicket($user, $ticket)
     {
-        try {
-            $user = Auth::user();
+        $userRole = $user->role->id;
 
-            // Check if user can access this contract
-            if (!$this->canAccessContract($user, $contractId)) {
-                return response()->json([
-                    "response" => "error",
-                    "status" => "403", 
-                    "message" => "Access denied"
-                ]);
-            }
-
-            $tickets = Ticket::with([
-                'createdBy.role',
-                'assignedTo.role',
-                'messages' => function($query) {
-                    $query->latest()->limit(1);
-                }
-            ])
-            ->where('contract_id', $contractId)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-            return response()->json([
-                "response" => "ok",
-                "status" => "200", 
-                "body" => ["risposta" => $tickets]
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error getting tickets by contract: ' . $e->getMessage());
-            return response()->json([
-                "response" => "error",
-                "status" => "500", 
-                "message" => "Server error"
-            ]);
+        // Admin, BackOffice, and Web Operators can access all tickets
+        if (in_array($userRole, [1, 4, 5, 6, 9, 10])) {
+            return true;
         }
+
+        // SEU can access if they created the ticket or own the contract
+        return $ticket->created_by_user_id == $user->id 
+            || $ticket->contract->created_by_user_id == $user->id;
     }
 
     /**
-     * Ticket statistics for dashboard and get API
+     * Check if user can manage ticket (change status, etc.)
+     * Admin and BackOffice can manage all tickets
      */
-    public function getTicketStats()
-    {
-        try {
-            $user = Auth::user();
-            $userRole = $user->role->id;
-
-            $query = Ticket::query();
-
-            // Filter based on user role
-            if ($userRole == 2 || $userRole == 4) {
-                // Advisors see only their tickets
-                $contractIds = contract::where('associato_a_user_id', $user->id)->pluck('id');
-                $query->whereIn('contract_id', $contractIds);
-            }
-
-            $stats = [
-                'total' => $query->count(),
-                'new' => (clone $query)->where('status', 'new')->count(),
-                'in_progress' => (clone $query)->where('status', 'in-progress')->count(),
-                'waiting' => (clone $query)->where('status', 'waiting')->count(),
-                'resolved' => (clone $query)->where('status', 'resolved')->count(),
-                'high_priority' => (clone $query)->where('priority', 'high')->count(),
-            ];
-
-            return response()->json([
-                "response" => "ok",
-                "status" => "200", 
-                "body" => ["risposta" => $stats]
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error getting ticket stats: ' . $e->getMessage());
-            return response()->json([
-                "response" => "error",
-                "status" => "500", 
-                "message" => "Server error"
-            ]);
-        }
-    }
-
-    // Helper methods
-    private function canAccessContract($user, $contractId)
-    {
-        $userRole = $user->role->id;
-        
-        // Admin and BackOfficers can access all contracts
-        if ($userRole == 1 || $userRole == 5) {
-            return true;
-        }
-        
-        // Advisors can access only their contracts
-        if ($userRole == 2 || $userRole == 4) {
-            return contract::where('id', $contractId)
-                ->where('associato_a_user_id', $user->id)
-                ->exists();
-        }
-        
-        return false;
-    }
-
-    private function canAccessTicket($user, $ticket)
-    {
-        return $this->canAccessContract($user, $ticket->contract_id);
-    }
-
     private function canManageTicket($user, $ticket)
     {
         $userRole = $user->role->id;
-        
-        // Only Admins and BackOfficers can manage all tickets
-        if ($userRole == 1 || $userRole == 5) {
+
+        // Admin, BackOffice, and Web Operators can manage all tickets
+        if (in_array($userRole, [1, 4, 5, 6, 9, 10])) {
             return true;
         }
-        
+
+        // SEU cannot manage tickets from the board
         return false;
     }
 
-    private function notifyBackofficeUsers($ticket, $type)
+    /**
+     * Notify ticket participants about updates
+     */
+    private function notifyTicketParticipants($ticket, $event)
     {
-        $backofficeUsers = \App\Models\User::whereHas('role', function($query) {
-            $query->whereIn('id', [1, 5]); // Admin and BackOffice
-        })->get();
+        try {
+            // Get all unique users involved with this ticket
+            $userIds = collect([
+                $ticket->created_by_user_id,
+                $ticket->assigned_to_user_id,
+                $ticket->contract->created_by_user_id
+            ])->filter()->unique()->toArray();
 
-        foreach ($backofficeUsers as $user) {
-            notification::create([
-                'from_user_id' => Auth::id(),
-                'to_user_id' => $user->id,
-                'reparto' => 'Ticket',
-                'notifica' => "Nuovo ticket #{$ticket->ticket_number}: {$ticket->title}",
-                'visualizzato' => 0
-            ]);
-        }
-    }
+            // Get current user to exclude from notifications
+            $currentUserId = Auth::id();
 
-    private function notifyTicketParticipants($ticket, $type)
-    {
-        $participantIds = TicketMessage::where('ticket_id', $ticket->id)
-            ->distinct()
-            ->pluck('user_id')
-            ->push($ticket->created_by_user_id)
-            ->unique()
-            ->filter(function($id) {
-                return $id != Auth::id(); // Don't notify current user
-            });
+            foreach ($userIds as $userId) {
+                // Don't notify the user who triggered the action
+                if ($userId == $currentUserId) {
+                    continue;
+                }
 
-        foreach ($participantIds as $userId) {
-            notification::create([
-                'from_user_id' => Auth::id(),
-                'to_user_id' => $userId,
-                'reparto' => 'Ticket',
-                'notifica' => "Aggiornamento ticket #{$ticket->ticket_number}",
-                'visualizzato' => 0
-            ]);
+                notification::create([
+                    'user_id' => $userId,
+                    'type' => 'ticket_' . $event,
+                    'data' => json_encode([
+                        'ticket_id' => $ticket->id,
+                        'ticket_number' => $ticket->ticket_number,
+                        'title' => $ticket->title,
+                        'event' => $event
+                    ]),
+                    'read' => false
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending notifications: ' . $e->getMessage());
         }
     }
 }

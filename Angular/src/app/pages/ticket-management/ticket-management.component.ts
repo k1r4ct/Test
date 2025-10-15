@@ -9,7 +9,7 @@ export interface Ticket {
   ticket_number: string;
   title: string;
   description: string;
-  status: 'new' | 'waiting' | 'resolved';
+  status: 'new' | 'waiting' | 'resolved' | 'closed' | 'deleted'; // UPDATED: Added 'closed' and 'deleted'
   priority: 'low' | 'medium' | 'high';
   contract_id: number;
   contract_code: string;
@@ -68,6 +68,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   filteredTickets: Ticket[] = [];
   currentUser: any;
   userRole: number = 0;
+  isAdmin: boolean = false;
   
   filters: TicketFilters = {
     contractId: '',
@@ -85,7 +86,9 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   statusColorMap: Record<string, string> = {
     'new': '#2196F3',
     'waiting': '#9C27B0',
-    'resolved': '#4CAF50'
+    'resolved': '#4CAF50',
+    'closed': '#00bcd4',
+    'deleted': '#f44336'
   };
 
   showFilters: boolean = true;
@@ -95,6 +98,13 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   showSeuDropdown: boolean = false;
   showGeneratedByDropdown: boolean = false;
   showAssignedToDropdown: boolean = false;
+  
+  // Column visibility for closed and deleted
+  showClosedColumn: boolean = false;
+  showDeletedColumn: boolean = false;
+  
+  // Ticket selection for bulk delete
+  selectedTicketsForDeletion: Set<number> = new Set<number>();
   
   selectedTicket: Ticket | null = null;
   showTicketModal: boolean = false;
@@ -131,21 +141,40 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       title: 'Nuovo',
       icon: 'fas fa-plus-circle',
       color: '#2196F3',
-      count: 0
+      count: 0,
+      hidden: false
     },
     {
       id: 'waiting',
       title: 'In Attesa',
       icon: 'fas fa-clock',
       color: '#9c27b0',
-      count: 0
+      count: 0,
+      hidden: false
     },
     {
       id: 'resolved',
       title: 'Risolto',
       icon: 'fas fa-check-circle',
       color: '#4caf50',
-      count: 0
+      count: 0,
+      hidden: false
+    },
+    {
+      id: 'closed',
+      title: 'Chiuso',
+      icon: 'fas fa-archive',
+      color: '#00bcd4',
+      count: 0,
+      hidden: true
+    },
+    {
+      id: 'deleted',
+      title: 'Cancellato',
+      icon: 'fas fa-trash',
+      color: '#f44336',
+      count: 0,
+      hidden: true
     }
   ];
 
@@ -179,7 +208,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   ngAfterViewChecked() {
     // Removed automatic positioning to let CSS handle it
   }
-
 
   positionDropdowns() {
     // Positioning is handled by CSS with position: absolute
@@ -257,6 +285,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     const userSub = this.apiService.PrendiUtente().subscribe((userData: any) => {
       this.currentUser = userData.user;
       this.userRole = userData.user.role.id;
+      this.isAdmin = [1, 6].includes(this.userRole);
       this.loadInitialData();
       this.loadTickets();
     });
@@ -351,15 +380,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.subscriptions.push(ticketsSub);
   }
 
-  processTicketsData(ticketsData: any[]): Ticket[] {
-    // Debug: log the first ticket to see the structure
-    if (ticketsData.length > 0) {
-      if (ticketsData[0].contract) {
-        console.log('Contract data:', ticketsData[0].contract);
-        console.log('Inserito da user ID (SEU):', ticketsData[0].contract.inserito_da_user_id);
-      }
-    }
-     
+  processTicketsData(ticketsData: any[]): Ticket[] {     
     return ticketsData.map(ticket => {
       // Try to find the SEU user based on inserito_da_user_id
       let seuName = 'N/A';
@@ -558,6 +579,300 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   }
 
   // ========================================
+  // COLUMN VISIBILITY METHODS (CLOSED & DELETED)
+  // ========================================
+
+  /**
+   * Toggle closed column visibility (Archive)
+   */
+  toggleClosedColumn(): void {
+    this.showClosedColumn = !this.showClosedColumn;
+    
+    const closedColumn = this.columns.find(c => c.id === 'closed');
+    if (closedColumn) {
+      closedColumn.hidden = !this.showClosedColumn;
+    }
+    
+    // Update filter based on column visibility
+    if (this.showClosedColumn) {
+      // Add 'closed' to filters if not present
+      if (!this.filters.status.includes('closed')) {
+        this.filters.status.push('closed');
+      }
+    } else {
+      // Remove 'closed' from filters
+      const index = this.filters.status.indexOf('closed');
+      if (index > -1) {
+        this.filters.status.splice(index, 1);
+      }
+    }
+    
+    this.applyFilters();
+  }
+
+  /**
+   * Toggle deleted column visibility (admin only)
+   */
+  toggleDeletedColumn(): void {
+    if (!this.isAdmin) return;
+    
+    this.showDeletedColumn = !this.showDeletedColumn;
+    
+    const deletedColumn = this.columns.find(c => c.id === 'deleted');
+    if (deletedColumn) {
+      deletedColumn.hidden = !this.showDeletedColumn;
+    }
+    
+    // Update filter based on column visibility
+    if (this.showDeletedColumn) {
+      // Add 'deleted' to filters if not present
+      if (!this.filters.status.includes('deleted')) {
+        this.filters.status.push('deleted');
+      }
+    } else {
+      // Remove 'deleted' from filters
+      const index = this.filters.status.indexOf('deleted');
+      if (index > -1) {
+        this.filters.status.splice(index, 1);
+      }
+    }
+    
+    this.applyFilters();
+  }
+
+  /**
+   * Get button text for show/hide deleted
+   */
+  getDeletedButtonText(): string {
+    return this.showDeletedColumn ? 'Nascondi Cancellati' : 'Mostra Cancellati';
+  }
+
+  /**
+   * Check if user can close a specific ticket
+   * Only admin or assigned user can close tickets
+   */
+  canCloseTicket(ticket: Ticket): boolean {
+    if (this.isAdmin) return true;
+    return ticket.assigned_to_user_id === this.currentUser.id;
+  }
+
+  /**
+   * Close a ticket (resolved → closed)
+   */
+  closeTicket(ticket: Ticket, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    if (!this.canCloseTicket(ticket)) {
+      this.snackBar.open(
+        'Solo gli amministratori o gli assegnatari possono chiudere i ticket',
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        }
+      );
+      return;
+    }
+    
+    if (ticket.status !== 'resolved') {
+      this.snackBar.open(
+        'Solo i ticket risolti possono essere chiusi',
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['warning-snackbar']
+        }
+      );
+      return;
+    }
+    
+    const closeSub = this.apiService.closeTicket({ ticket_id: ticket.id }).subscribe(
+      (response: any) => {
+        // Handle both 204 No Content and 200 OK with response
+        // Update local ticket status regardless of response type
+        ticket.status = 'closed';
+        this.applyFilters();
+        this.updateColumnCounts();
+        
+        // Show closed column if not already visible
+        // if (!this.showClosedColumn) {
+        //   this.toggleClosedColumn();
+        // }
+        
+        this.snackBar.open(
+          `Ticket ${ticket.ticket_number} archiviato e chiuso`,
+          'Chiudi',
+          { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          }
+        );
+      },
+      error => {
+        // If it's a 204 No Content, treat it as success
+        if (error.status === 204 || error.status === 200) {
+          ticket.status = 'closed';
+          this.applyFilters();
+          this.updateColumnCounts();
+          
+          // Show closed column if not already visible
+          if (!this.showClosedColumn) {
+            this.toggleClosedColumn();
+          }
+          
+          this.snackBar.open(
+            `Ticket ${ticket.ticket_number} archiviato e chiuso`,
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['success-snackbar']
+            }
+          );
+        } else {
+          this.snackBar.open(
+            'Errore nella chiusura del ticket',
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['error-snackbar']
+            }
+          );
+        }
+      }
+    );
+    this.subscriptions.push(closeSub);
+  }
+
+  /**
+   * Toggle ticket selection for bulk delete
+   */
+  selectTicketForDeletion(ticketId: number, event: Event): void {
+    event.stopPropagation();
+    
+    if (this.selectedTicketsForDeletion.has(ticketId)) {
+      this.selectedTicketsForDeletion.delete(ticketId);
+    } else {
+      this.selectedTicketsForDeletion.add(ticketId);
+    }
+  }
+
+  /**
+   * Bulk delete selected tickets (admin only)
+   */
+  bulkDeleteTickets(): void {
+    if (!this.isAdmin) return;
+    
+    if (this.selectedTicketsForDeletion.size === 0) {
+      this.snackBar.open(
+        'Seleziona almeno un ticket da cancellare',
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['warning-snackbar']
+        }
+      );
+      return;
+    }
+    
+    if (!confirm(`Sei sicuro di voler cancellare ${this.selectedTicketsForDeletion.size} ticket?`)) {
+      return;
+    }
+    
+    const ticketIds = Array.from(this.selectedTicketsForDeletion);
+    
+    const deleteSub = this.apiService.bulkDeleteTickets({ ticket_ids: ticketIds }).subscribe(
+      (response: any) => {
+        // Handle both 204 No Content and 200 OK with response
+        // Update local tickets regardless
+        this.tickets.forEach(ticket => {
+          if (ticketIds.includes(ticket.id)) {
+            ticket.status = 'deleted';
+          }
+        });
+        
+        this.applyFilters();
+        this.updateColumnCounts();
+        this.selectedTicketsForDeletion.clear();
+        
+        // Show deleted column if not already visible
+        if (!this.showDeletedColumn) {
+          this.toggleDeletedColumn();
+        }
+        
+        const deletedCount = response?.deleted_count || ticketIds.length;
+        this.snackBar.open(
+          `${deletedCount} ticket cancellati con successo`,
+          'Chiudi',
+          { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          }
+        );
+      },
+      error => {
+        // If it's a 204 No Content or 200, treat it as success
+        if (error.status === 204 || error.status === 200) {
+          // Update local tickets
+          this.tickets.forEach(ticket => {
+            if (ticketIds.includes(ticket.id)) {
+              ticket.status = 'deleted';
+            }
+          });
+          
+          this.applyFilters();
+          this.updateColumnCounts();
+          this.selectedTicketsForDeletion.clear();
+          
+          // Show deleted column if not already visible
+          if (!this.showDeletedColumn) {
+            this.toggleDeletedColumn();
+          }
+          
+          this.snackBar.open(
+            `${ticketIds.length} ticket cancellati con successo`,
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['success-snackbar']
+            }
+          );
+        } else {
+          this.snackBar.open(
+            'Errore nella cancellazione dei ticket',
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['error-snackbar']
+            }
+          );
+        }
+      }
+    );
+    
+    this.subscriptions.push(deleteSub);
+  }
+
+  // ========================================
   // STATUS MULTI-SELECT METHODS
   // ========================================
 
@@ -570,11 +885,45 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
 
   toggleStatusFilter(statusId: string) {
     const index = this.filters.status.indexOf(statusId);
+    
     if (index > -1) {
+      // User is DESELECTING the filter
       this.filters.status.splice(index, 1);
+      
+      // SYNC: Also deactivate the corresponding button and hide column
+      if (statusId === 'closed' && this.showClosedColumn) {
+        this.showClosedColumn = false;
+        const closedColumn = this.columns.find(c => c.id === 'closed');
+        if (closedColumn) {
+          closedColumn.hidden = true;
+        }
+      } else if (statusId === 'deleted' && this.showDeletedColumn) {
+        this.showDeletedColumn = false;
+        const deletedColumn = this.columns.find(c => c.id === 'deleted');
+        if (deletedColumn) {
+          deletedColumn.hidden = true;
+        }
+      }
     } else {
+      // User is SELECTING the filter
       this.filters.status.push(statusId);
+      
+      // SYNC: Also activate the corresponding button and show column
+      if (statusId === 'closed' && !this.showClosedColumn) {
+        this.showClosedColumn = true;
+        const closedColumn = this.columns.find(c => c.id === 'closed');
+        if (closedColumn) {
+          closedColumn.hidden = false;
+        }
+      } else if (statusId === 'deleted' && !this.showDeletedColumn && this.isAdmin) {
+        this.showDeletedColumn = true;
+        const deletedColumn = this.columns.find(c => c.id === 'deleted');
+        if (deletedColumn) {
+          deletedColumn.hidden = false;
+        }
+      }
     }
+    
     this.applyFilters();
   }
 
@@ -586,7 +935,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     if (this.filters.status.length === 0) {
       return 'Tutti gli stati';
     }
-    if (this.filters.status.length === 3) {
+    const visibleColumns = this.columns.filter(c => !c.hidden);
+    if (this.filters.status.length === visibleColumns.length) {
       return 'Tutti gli stati';
     }
     return this.filters.status
@@ -884,21 +1234,18 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
 
   // Column visibility methods
   isColumnVisible(columnId: string): boolean {
-    if (this.filters.status.length === 0 || this.filters.status.length === 3) {
-      return true;
-    }
-    return this.filters.status.includes(columnId);
+    const column = this.columns.find(c => c.id === columnId);
+    if (!column) return false;
+    return !column.hidden && this.filters.status.includes(columnId);
   }
 
-  getVisibleColumnsCount(): number {
-    if (this.filters.status.length === 0 || this.filters.status.length === 3) {
-      return 3;
-    }
-    return this.filters.status.length;
-  }
-
+getVisibleColumnsCount(): number {
+  return this.columns.filter(c => 
+    !c.hidden && this.filters.status.includes(c.id)
+  ).length;
+}
   getColumnPosition(columnId: string): number {
-    const visibleColumns = this.columns.filter(c => this.isColumnVisible(c.id));
+    const visibleColumns = this.columns.filter(c => !c.hidden);
     return visibleColumns.findIndex(c => c.id === columnId);
   }
 
@@ -1102,6 +1449,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     event.preventDefault();
   }
 
+  /**
+   * Update ticket status (drag & drop)
+   * UPDATED: Properly handles 204 No Content response
+   */
   updateTicketStatus(ticket: Ticket, newStatus: string) {
     const updateData = {
       ticket_id: ticket.id,
@@ -1110,7 +1461,27 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     };
 
     const updateSub = this.apiService.updateTicketStatus(updateData).subscribe((response: any) => {
-      if (response.response === 'ok') {
+      // Handle both 204 No Content and 200 OK with response
+      // Update local ticket regardless
+      ticket.status = newStatus as any;
+      ticket.assigned_to_user_id = this.currentUser.id;
+      ticket.assigned_to_user_name = `${this.currentUser.name || ''} ${this.currentUser.cognome || ''}`.trim() || this.currentUser.email;
+      
+      this.updateColumnCounts();
+      
+      this.snackBar.open(
+        `Ticket ${ticket.ticket_number} spostato in ${this.getStatusLabel(newStatus)}`,
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['success-snackbar']
+        }
+      );
+    }, error => {
+      // If it's a 204 No Content or 200, treat it as success
+      if (error.status === 204 || error.status === 200) {
         ticket.status = newStatus as any;
         ticket.assigned_to_user_id = this.currentUser.id;
         ticket.assigned_to_user_name = `${this.currentUser.name || ''} ${this.currentUser.cognome || ''}`.trim() || this.currentUser.email;
@@ -1118,7 +1489,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         this.updateColumnCounts();
         
         this.snackBar.open(
-          `Ticket ${ticket.ticket_number} spostato in ${this.getStatusLabel(newStatus)} e assegnato a te`,
+          `Ticket ${ticket.ticket_number} spostato in ${this.getStatusLabel(newStatus)}`,
           'Chiudi',
           { 
             duration: 3000,
@@ -1129,7 +1500,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         );
       } else {
         this.snackBar.open(
-          'Errore nell\'aggiornamento dello stato',
+          error.error?.message || 'Errore nell\'aggiornamento dello stato',
           'Chiudi',
           { 
             duration: 3000,
@@ -1139,17 +1510,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
           }
         );
       }
-    }, error => {
-      this.snackBar.open(
-        'Errore nell\'aggiornamento dello stato',
-        'Chiudi',
-        { 
-          duration: 3000,
-          horizontalPosition: 'center',
-          verticalPosition: 'bottom',
-          panelClass: ['error-snackbar']
-        }
-      );
     });
     this.subscriptions.push(updateSub);
   }

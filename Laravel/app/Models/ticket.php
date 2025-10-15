@@ -1,13 +1,13 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Ticket extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'ticket_number',
@@ -23,7 +23,6 @@ class Ticket extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-        'deleted_at' => 'datetime',
     ];
 
     // Relationships
@@ -122,7 +121,7 @@ class Ticket extends Model
 
     public static function generateTicketNumber()
     {
-        $lastTicket = self::withTrashed()->orderBy('id', 'desc')->first();
+        $lastTicket = self::orderBy('id', 'desc')->first();
         $nextNumber = $lastTicket ? $lastTicket->id + 1 : 1;
         return 'TK-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
@@ -130,9 +129,11 @@ class Ticket extends Model
     public static function getStatusOptions()
     {
         return [
-            'new'     => 'Nuovo',
-            'waiting' => 'In Attesa',
-            'resolved'=> 'Risolto',
+            'new'      => 'Nuovo',
+            'waiting'  => 'In Attesa',
+            'resolved' => 'Risolto',
+            'closed'   => 'Chiuso',
+            'deleted'  => 'Cancellato',
         ];
     }
 

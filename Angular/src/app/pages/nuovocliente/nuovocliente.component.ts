@@ -199,11 +199,11 @@ export class NuovoclienteComponent implements OnInit {
 
         if (risultato.response == "ok") {
           // Successo
-          /* this.shContratto.setStatoContratto(true);
+          this.shContratto.setStatoContratto(true);
           this.shContratto.setIdUtente(Number(localStorage.getItem('userLogin')));
           this.shContratto.setIdCliente(Number(risultato.body.id));
           this.shContratto.setTipoCliente(risultato.body.tipo);
-          this.SharedService.showNewContratto(); */
+          this.SharedService.showNewContratto();
         } else {
           this.openSnackBar();
         }

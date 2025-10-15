@@ -288,7 +288,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     // - Altri ruoli: lock = true
 
     const role = this.User?.role_id;
-    const allowedStatusForSeu = [1, 4, 5];
+    const allowedStatusForSeu = [1, 4, 5,2];
     const statusIdRaw = (contratto?.status_contract?.id ?? contratto?.id_stato ?? null);
     const statusId = statusIdRaw != null ? Number(statusIdRaw) : NaN;
 
@@ -1536,6 +1536,11 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     this.fileSelezionati = [];
     this.caricacontratto = true;
 
+    // Reset prudenziale del lock per evitare che lo stato del contratto precedente resti appiccicato
+    // Verrà ricalcolato appena riceviamo il contratto selezionato
+    this.non_modificare_risposta = true;
+    this.syncFormLocks();
+
     // Forza il change detection per assicurare che i dati precedenti vengano puliti
     this.changeDetectorRef.detectChanges();
 
@@ -1580,7 +1585,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     this.populateselectCambioStatoMassivo();
 
     //console.log(this.microStatiPerMacroStato);
-    this.ApiService.getContratto(r.id).subscribe((contratti: any) => {
+  this.ApiService.getContratto(r.id).subscribe((contratti: any) => {
       // console.log(' dettaglio da chiamat API');
 
       // console.clear();
@@ -1628,13 +1633,16 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       this.getDomandeFromApi();
 
       this.fileSelezionati = contratti.body.file[r.id];
+
+      // Calcola SEMPRE il lock in base all'utente e allo stato del contratto selezionato
+      const primoContratto = contratti?.body?.risposta?.[0];
+      if (primoContratto) {
+        this.non_modificare_risposta = this.shouldLockForContract(primoContratto);
+        this.syncFormLocks();
+      }
+
       this.DettagliContratto = contratti.body.risposta.map((contratto: any) => {
         console.log("Dettagli contratto:", contratto);
-        if (contratto.status_contract.id ==1 || contratto.status_contract.id == 4 || contratto.status_contract.id == 5) {
-          // Calcola il lock in base a ruolo/stato del contratto
-          this.non_modificare_risposta = this.shouldLockForContract(contratto);
-          this.syncFormLocks();
-        }
         return {
           inserito_da_user_id: contratto.inserito_da_user_id,
           id: contratto.id,

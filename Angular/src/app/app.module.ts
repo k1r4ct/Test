@@ -189,7 +189,7 @@ import { TicketManagementComponent } from "./pages/ticket-management/ticket-mana
     ReactiveFormsModule,
     MaterialComponentsModule,
     FormsModule,
-    TimerComponent,
+    /* TimerComponent, */
     MatFormFieldModule,
     MatChipsModule,
     DropzoneModule,
