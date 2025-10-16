@@ -9,7 +9,8 @@ export interface Ticket {
   ticket_number: string;
   title: string;
   description: string;
-  status: 'new' | 'waiting' | 'resolved' | 'closed' | 'deleted'; // UPDATED: Added 'closed' and 'deleted'
+  status: 'new' | 'waiting' | 'resolved' | 'closed' | 'deleted';
+  previous_status?: string;
   priority: 'low' | 'medium' | 'high';
   contract_id: number;
   contract_code: string;
@@ -37,8 +38,6 @@ export interface TicketMessage {
   message_type: 'text' | 'attachment' | 'status_change';  
   attachment_path?: string;
   attachment_name?: string;
-  old_status?: string;  
-  new_status?: string;  
   created_at: string;
 }
 
@@ -146,7 +145,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     },
     {
       id: 'waiting',
-      title: 'In Attesa',
+      title: 'In Lavorazione',
       icon: 'fas fa-clock',
       color: '#9c27b0',
       count: 0,
@@ -243,34 +242,16 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return this.columns.find(c => c.id === status);
   }
 
-  // Extracts old and new status from a status change message
-  getStatusFromMessage(message: TicketMessage): { oldStatus: string, newStatus: string } {
-    if (message.old_status && message.new_status) {
-      return {
-        oldStatus: message.old_status,
-        newStatus: message.new_status
-      };
-    }
-
-    const regex = /da ['"](\w+)['"] a ['"](\w+)['"]/i;
-    const match = message.message.match(regex);
-    
-    if (match) {
-      return {
-        oldStatus: match[1],
-        newStatus: match[2]
-      };
-    }
-
-    return {
-      oldStatus: 'new',
-      newStatus: 'waiting'
-    };
-  }
 
   // Generates the gradient style for a status change message
   getStatusChangeGradient(message: TicketMessage): string {
-    const { oldStatus, newStatus } = this.getStatusFromMessage(message);
+    if (!this.selectedTicket) {
+      return `linear-gradient(135deg, #2196F3 0%, #9C27B0 100%)`;
+    }
+    
+    const oldStatus = this.selectedTicket.previous_status || 'new';
+    const newStatus = this.selectedTicket.status || 'waiting';
+    
     const oldColor = this.statusColorMap[oldStatus] || this.statusColorMap['new'];
     const newColor = this.statusColorMap[newStatus] || this.statusColorMap['waiting'];
     
@@ -407,6 +388,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       title: ticket.title,
       description: ticket.description,
       status: ticket.status,
+      previous_status: ticket.previous_status,
       priority: ticket.priority,
       contract_id: ticket.contract_id,
       contract_code: ticket.contract?.codice_contratto || 'N/A',
@@ -696,11 +678,12 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       (response: any) => {
         // Handle both 204 No Content and 200 OK with response
         // Update local ticket status regardless of response type
+        ticket.previous_status = ticket.status; // Save old status
         ticket.status = 'closed';
         this.applyFilters();
         this.updateColumnCounts();
         
-        // Show closed column if not already visible
+        // COMMENTED: Do not auto-show closed column
         // if (!this.showClosedColumn) {
         //   this.toggleClosedColumn();
         // }
@@ -719,14 +702,15 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       error => {
         // If it's a 204 No Content, treat it as success
         if (error.status === 204 || error.status === 200) {
+          ticket.previous_status = ticket.status; // Save old status
           ticket.status = 'closed';
           this.applyFilters();
           this.updateColumnCounts();
           
-          // Show closed column if not already visible
-          if (!this.showClosedColumn) {
-            this.toggleClosedColumn();
-          }
+          // COMMENTED: Do not auto-show closed column
+          // if (!this.showClosedColumn) {
+          //   this.toggleClosedColumn();
+          // }
           
           this.snackBar.open(
             `Ticket ${ticket.ticket_number} archiviato e chiuso`,
@@ -800,6 +784,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         // Update local tickets regardless
         this.tickets.forEach(ticket => {
           if (ticketIds.includes(ticket.id)) {
+            ticket.previous_status = ticket.status; // Save old status
             ticket.status = 'deleted';
           }
         });
@@ -808,10 +793,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         this.updateColumnCounts();
         this.selectedTicketsForDeletion.clear();
         
-        // Show deleted column if not already visible
-        if (!this.showDeletedColumn) {
-          this.toggleDeletedColumn();
-        }
+        // COMMENTED: Do not auto-show deleted column
+        // if (!this.showDeletedColumn) {
+        //   this.toggleDeletedColumn();
+        // }
         
         const deletedCount = response?.deleted_count || ticketIds.length;
         this.snackBar.open(
@@ -831,6 +816,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
           // Update local tickets
           this.tickets.forEach(ticket => {
             if (ticketIds.includes(ticket.id)) {
+              ticket.previous_status = ticket.status; // Save old status
               ticket.status = 'deleted';
             }
           });
@@ -839,10 +825,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
           this.updateColumnCounts();
           this.selectedTicketsForDeletion.clear();
           
-          // Show deleted column if not already visible
-          if (!this.showDeletedColumn) {
-            this.toggleDeletedColumn();
-          }
+          // COMMENTED: Do not auto-show deleted column
+          // if (!this.showDeletedColumn) {
+          //   this.toggleDeletedColumn();
+          // }
           
           this.snackBar.open(
             `${ticketIds.length} ticket cancellati con successo`,
@@ -1239,11 +1225,12 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return !column.hidden && this.filters.status.includes(columnId);
   }
 
-getVisibleColumnsCount(): number {
-  return this.columns.filter(c => 
-    !c.hidden && this.filters.status.includes(c.id)
-  ).length;
-}
+  getVisibleColumnsCount(): number {
+    return this.columns.filter(c => 
+      !c.hidden && this.filters.status.includes(c.id)
+    ).length;
+  }
+
   getColumnPosition(columnId: string): number {
     const visibleColumns = this.columns.filter(c => !c.hidden);
     return visibleColumns.findIndex(c => c.id === columnId);
@@ -1463,6 +1450,7 @@ getVisibleColumnsCount(): number {
     const updateSub = this.apiService.updateTicketStatus(updateData).subscribe((response: any) => {
       // Handle both 204 No Content and 200 OK with response
       // Update local ticket regardless
+      ticket.previous_status = ticket.status; // Save old status
       ticket.status = newStatus as any;
       ticket.assigned_to_user_id = this.currentUser.id;
       ticket.assigned_to_user_name = `${this.currentUser.name || ''} ${this.currentUser.cognome || ''}`.trim() || this.currentUser.email;
@@ -1482,6 +1470,7 @@ getVisibleColumnsCount(): number {
     }, error => {
       // If it's a 204 No Content or 200, treat it as success
       if (error.status === 204 || error.status === 200) {
+        ticket.previous_status = ticket.status; // Save old status
         ticket.status = newStatus as any;
         ticket.assigned_to_user_id = this.currentUser.id;
         ticket.assigned_to_user_name = `${this.currentUser.name || ''} ${this.currentUser.cognome || ''}`.trim() || this.currentUser.email;
