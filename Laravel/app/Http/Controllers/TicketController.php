@@ -204,8 +204,9 @@ class TicketController extends Controller
                 ]);
             }
 
-            // Update ticket status
+            // Update ticket status WITH previous_status
             $ticket->update([
+                'previous_status' => $oldStatus,
                 'status' => $newStatus,
                 'assigned_to_user_id' => $user->id
             ]);
@@ -285,7 +286,13 @@ class TicketController extends Controller
                 ]);
             }
 
-            $ticket->update(['status' => 'closed']);
+            //  Save old status BEFORE updating
+            $oldStatus = $ticket->status;
+
+            $ticket->update([
+                'previous_status' => $oldStatus,
+                'status' => 'closed'
+            ]);
 
             // Log the closure
             TicketMessage::create([
@@ -347,7 +354,11 @@ class TicketController extends Controller
             $deletedCount = 0;
 
             foreach ($tickets as $ticket) {
+                //  Save old status BEFORE updating
+                $oldStatus = $ticket->status;
+                
                 $ticket->update([
+                    'previous_status' => $oldStatus,
                     'status' => 'deleted',
                     'assigned_to_user_id' => $user->id
                 ]);
@@ -457,9 +468,12 @@ class TicketController extends Controller
                 'message_type' => 'text'
             ]);
 
-            // Update ticket status to waiting if it's new
+            //  Update ticket status to waiting if it's new WITH previous_status
             if ($ticket->status === 'new') {
+                $oldStatus = $ticket->status;
+                
                 $ticket->update([
+                    'previous_status' => $oldStatus,
                     'status' => 'waiting',
                     'assigned_to_user_id' => $user->id
                 ]);
