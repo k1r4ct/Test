@@ -47,6 +47,11 @@ class Ticket extends Model
         return $this->hasMany(TicketMessage::class)->orderBy('created_at', 'asc');
     }
 
+    public function changeLogs()
+    {
+        return $this->hasMany(TicketChangeLog::class)->orderBy('created_at', 'desc');
+    }
+
     // Scopes
     public function scopeByStatus($query, $status)
     {
@@ -124,14 +129,14 @@ class Ticket extends Model
     {
         $lastTicket = self::orderBy('id', 'desc')->first();
         $nextNumber = $lastTicket ? $lastTicket->id + 1 : 1;
-        return 'TK-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        return 'TK-' + str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 
     public static function getStatusOptions()
     {
         return [
             'new'      => 'Nuovo',
-            'waiting'  => 'In Attesa',
+            'waiting'  => 'In Lavorazione',
             'resolved' => 'Risolto',
             'closed'   => 'Chiuso',
             'deleted'  => 'Cancellato',
@@ -141,9 +146,10 @@ class Ticket extends Model
     public static function getPriorityOptions()
     {
         return [
-            'low'    => 'Bassa',
-            'medium' => 'Media',
-            'high'   => 'Alta',
+            'high'       => 'Alta',
+            'medium'     => 'Media',
+            'low'        => 'Bassa',
+            'unassigned' => 'Non Assegnata',
         ];
     }
 

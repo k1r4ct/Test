@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Models\TicketChangeLog;
 use App\Models\contract;
 use App\Models\notification;
 use Illuminate\Http\Request;
@@ -76,7 +77,7 @@ class TicketController extends Controller
             $validator = Validator::make($request->all(), [
                 'title' => 'required|string|max:255',
                 'description' => 'required|string',
-                'priority' => 'required|in:low,medium,high',
+                'priority' => 'nullable|in:low,medium,high,unassigned',
                 'contract_id' => 'required|exists:contracts,id'
             ]);
 
@@ -107,8 +108,7 @@ class TicketController extends Controller
             $ticket = Ticket::create([
                 'title' => $request->title,
                 'description' => $request->description,
-                'priority' => $request->priority,
-                'status' => 'new',
+                'priority' => $request->priority ?? 'unassigned',
                 'contract_id' => $request->contract_id,
                 'created_by_user_id' => $user->id,
             ]);
@@ -126,6 +126,17 @@ class TicketController extends Controller
                 'user_id' => $user->id,
                 'message' => 'Ticket creato',
                 'message_type' => 'status_change'
+            ]);
+
+            // Log ticket creation in changes log
+            TicketChangeLog::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'previous_status' => null,
+                'new_status' => 'new',
+                'previous_priority' => null,
+                'new_priority' => $ticket->priority,
+                'change_type' => 'both'
             ]);
 
             // Send notification
@@ -211,6 +222,17 @@ class TicketController extends Controller
                 'assigned_to_user_id' => $user->id
             ]);
 
+            // Log the status change
+            TicketChangeLog::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'previous_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'previous_priority' => null,
+                'new_priority' => null,
+                'change_type' => 'status'
+            ]);
+
             // Create system message about status change
             $statusLabels = Ticket::getStatusOptions();
             $statusLabel = $statusLabels[$newStatus] ?? $newStatus;
@@ -234,6 +256,71 @@ class TicketController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error updating ticket status: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500", 
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Update ticket priority
+     * Priority changes are NOT shown to clients in the chat
+     */
+    public function updateTicketPriority(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'ticket_id' => 'required|exists:tickets,id',
+                'priority' => 'required|in:low,medium,high,unassigned'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "errors" => $validator->errors()
+                ]);
+            }
+
+            $user = Auth::user();
+            $ticket = Ticket::findOrFail($request->ticket_id);
+
+            $oldPriority = $ticket->priority;
+            $newPriority = $request->priority;
+
+            // Update ticket priority
+            $ticket->update([
+                'priority' => $newPriority
+            ]);
+
+            // Log the priority change (NOT in ticket_messages, only in change log)
+            TicketChangeLog::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'previous_status' => null,
+                'new_status' => null,
+                'previous_priority' => $oldPriority,
+                'new_priority' => $newPriority,
+                'change_type' => 'priority'
+            ]);
+
+            // Get priority labels for response
+            $priorityLabels = Ticket::getPriorityOptions();
+            $oldLabel = $priorityLabels[$oldPriority] ?? $oldPriority;
+            $newLabel = $priorityLabels[$newPriority] ?? $newPriority;
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200", 
+                "message" => "Priority updated successfully",
+                "old_priority" => $oldLabel,
+                "new_priority" => $newLabel
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error updating ticket priority: ' . $e->getMessage());
             return response()->json([
                 "response" => "error",
                 "status" => "500", 
@@ -286,7 +373,6 @@ class TicketController extends Controller
                 ]);
             }
 
-            //  Save old status BEFORE updating
             $oldStatus = $ticket->status;
 
             $ticket->update([
@@ -295,6 +381,17 @@ class TicketController extends Controller
             ]);
 
             // Log the closure
+            TicketChangeLog::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'previous_status' => $oldStatus,
+                'new_status' => 'closed',
+                'previous_priority' => null,
+                'new_priority' => null,
+                'change_type' => 'status'
+            ]);
+
+            // Log the closure in messages
             TicketMessage::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
@@ -354,7 +451,6 @@ class TicketController extends Controller
             $deletedCount = 0;
 
             foreach ($tickets as $ticket) {
-                //  Save old status BEFORE updating
                 $oldStatus = $ticket->status;
                 
                 $ticket->update([
@@ -364,6 +460,17 @@ class TicketController extends Controller
                 ]);
 
                 // Log the deletion
+                TicketChangeLog::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $user->id,
+                    'previous_status' => $oldStatus,
+                    'new_status' => 'deleted',
+                    'previous_priority' => null,
+                    'new_priority' => null,
+                    'change_type' => 'status'
+                ]);
+
+                // Log the deletion in messages
                 TicketMessage::create([
                     'ticket_id' => $ticket->id,
                     'user_id' => $user->id,
@@ -468,7 +575,7 @@ class TicketController extends Controller
                 'message_type' => 'text'
             ]);
 
-            //  Update ticket status to waiting if it's new WITH previous_status
+            // Update ticket status to waiting if it's new WITH previous_status
             if ($ticket->status === 'new') {
                 $oldStatus = $ticket->status;
                 
@@ -476,6 +583,17 @@ class TicketController extends Controller
                     'previous_status' => $oldStatus,
                     'status' => 'waiting',
                     'assigned_to_user_id' => $user->id
+                ]);
+
+                // Log the automatic status change
+                TicketChangeLog::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $user->id,
+                    'previous_status' => $oldStatus,
+                    'new_status' => 'waiting',
+                    'previous_priority' => null,
+                    'new_priority' => null,
+                    'change_type' => 'status'
                 ]);
             }
 
@@ -493,6 +611,72 @@ class TicketController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error sending ticket message: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500", 
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Get complete change history for a ticket
+     * Returns all status and priority changes
+     * OPTIONAL: Use this to show full history to administrators
+     */
+    public function getTicketChangeLogs($ticketId)
+    {
+        try {
+            $user = Auth::user();
+            $ticket = Ticket::findOrFail($ticketId);
+
+            // Check permissions
+            if (!$this->canAccessTicket($user, $ticket)) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Access denied"
+                ]);
+            }
+
+            $logs = TicketChangeLog::with(['user'])
+                ->where('ticket_id', $ticketId)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Format logs with labels
+            $statusLabels = Ticket::getStatusOptions();
+            $priorityLabels = Ticket::getPriorityOptions();
+            
+            $formattedLogs = $logs->map(function($log) use ($statusLabels, $priorityLabels) {
+                $data = [
+                    'id' => $log->id,
+                    'user_name' => $log->user->nome . ' ' . $log->user->cognome,
+                    'change_type' => $log->change_type,
+                    'changed_at' => $log->created_at->format('d/m/Y H:i')
+                ];
+
+                if ($log->previous_status || $log->new_status) {
+                    $data['previous_status'] = $statusLabels[$log->previous_status] ?? $log->previous_status;
+                    $data['new_status'] = $statusLabels[$log->new_status] ?? $log->new_status;
+                }
+
+                if ($log->previous_priority || $log->new_priority) {
+                    $data['previous_priority'] = $priorityLabels[$log->previous_priority] ?? $log->previous_priority;
+                    $data['new_priority'] = $priorityLabels[$log->new_priority] ?? $log->new_priority;
+                }
+
+                return $data;
+            });
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200", 
+                "body" => ["risposta" => $formattedLogs]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting ticket change logs: ' . $e->getMessage());
             return response()->json([
                 "response" => "error",
                 "status" => "500", 

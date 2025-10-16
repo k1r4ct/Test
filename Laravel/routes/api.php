@@ -99,10 +99,12 @@ Route::group(['middleware'=>'api'],function(){
     Route::get('getTickets', [TicketController::class, 'getTickets'])->name('getTickets');
     Route::post('createTicket', [TicketController::class, 'createTicket'])->name('createTicket');
     Route::post('updateTicketStatus', [TicketController::class, 'updateTicketStatus'])->name('updateTicketStatus');
+    Route::post('updateTicketPriority', [TicketController::class, 'updateTicketPriority'])->name('updateTicketPriority'); // NEW
     Route::post('closeTicket', [TicketController::class, 'closeTicket'])->name('closeTicket');
     Route::post('bulkDeleteTickets', [TicketController::class, 'bulkDeleteTickets'])->name('bulkDeleteTickets');
     Route::get('getTicketMessages/{ticketId}', [TicketController::class, 'getTicketMessages'])->name('getTicketMessages');
     Route::post('sendTicketMessage', [TicketController::class, 'sendTicketMessage'])->name('sendTicketMessage');
+    Route::get('getTicketChangeLogs/{ticketId}', [TicketController::class, 'getTicketChangeLogs'])->name('getTicketChangeLogs'); // NEW
     
     //GESTIONE DOMANDE
     Route::get('getDomande{id}',[SpecificDataController::class,'getDomande'])->name('getDomande');
@@ -141,4 +143,3 @@ Route::group(['middleware'=>'api'],function(){
     Route::post('nuovoFornitore',[SupplierController::class,'nuovoFornitore'])->name('nuovoFornitore');
 
 });
-
