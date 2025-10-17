@@ -62,7 +62,7 @@ class TicketController extends Controller
             return response()->json([
                 "response" => "error",
                 "status" => "500", 
-                "message" => "Server error"
+                "message" => "Server error: ".$e->getMessage()
             ]);
         }
     }

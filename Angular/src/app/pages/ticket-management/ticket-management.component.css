@@ -1167,7 +1167,140 @@
   flex-shrink: 0;
 }
 
+/* ========================================
+   PRIORITY DROPDOWN SECTION
+   ======================================== */
+
+/* Wrapper for priority badge and dropdown */
+.priority-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Clickable priority badge */
+.clickable-priority {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  user-select: none;
+}
+
+/* Hover effect on priority badge */
+.clickable-priority:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Active/pressed state */
+.clickable-priority:active {
+  transform: scale(0.98);
+}
+
+/* Priority dropdown menu */
+.priority-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: -45px;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 10002 !important; 
+  min-width: 140px;
+  overflow: hidden;
+  animation: priorityDropdownSlide 0.2s ease-out;
+}
+
+/* Slide down animation for priority dropdown */
+@keyframes priorityDropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Individual priority option */
+.priority-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Remove border from last option */
+.priority-option:last-child {
+  border-bottom: none;
+}
+
+/* Hover state for priority option */
+.priority-option:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Active/pressed state */
+.priority-option:active {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Color indicator circle */
+.priority-color-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+/* Scale up indicator on hover */
+.priority-option:hover .priority-color-indicator {
+  transform: scale(1.15);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Priority option label */
+.priority-option span {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Check icon for selected priority */
+.priority-option i.fa-check {
+  color: #28a745;
+  font-size: 12px;
+  margin-left: auto;
+  animation: checkFadeIn 0.2s ease;
+}
+
+/* Fade in animation for check icon */
+@keyframes checkFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ========================================
+   TICKET CARD CONTENT
+   ======================================== */
 /* Priority badge on ticket */
+
 .ticket-priority {
   padding: 2px 8px;
   border-radius: 12px;
@@ -1176,6 +1309,23 @@
   color: white;
   text-transform: uppercase;
   flex-shrink: 0;
+}
+
+/* ========================================
+   FIX Z-INDEX FOR PRIORITY DROPDOWN IN MINIMIZED CARDS
+   ======================================== */
+
+/* When priority dropdown is open, elevate the entire card */
+.ticket-card:has(.priority-dropdown-menu) {
+  z-index: 10002 !important;
+  position: relative;
+}
+
+/* Ensure minimized cards also get elevated when dropdown is open */
+.ticket-card.ticket-minimized:has(.priority-dropdown-menu) {
+  z-index: 10001 !important;
+  position: relative;
+  overflow: visible !important;
 }
 
 /* Low priority badge color */
@@ -1192,6 +1342,11 @@
 /* High priority badge color */
 .priority-high {
   background-color: #dc3545 !important;
+}
+
+/* Unassigned priority badge color (NEW) */
+.priority-unassigned {
+  background-color: #9e9e9e !important;
 }
 
 /* Information row in ticket card */
@@ -1684,7 +1839,7 @@
 .message.message-own .message-bubble {
   background: #28a745;
   color: white;
-  border-color: #28a745;
+  border-color: #ffffff;
 }
 
 /* Status Change Messages */
@@ -1706,15 +1861,15 @@
 
 /* Bubble styling for status change messages */
 .message-bubble.status-change-bubble {
-  background: linear-gradient(135deg, #2196F3 0%, #9C27B0 100%);
-  color: white;
+  background: linear-gradient(135deg, #2196F3 0%, #ffffff 100%);
+  color: #1976d2;
   padding: 14px 20px;
   border-radius: 20px;
-  border: none;
+  border: 1px solid #2196F3;
   font-size: 13px;
   font-weight: 500;
   line-height: 1.5;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1739,7 +1894,7 @@
 /* Hover effect for status change bubble */
 .message-bubble.status-change-bubble:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 16px rgba(255, 255, 255, 0.3);
 }
 
 /* Icon in status change message */
@@ -1747,6 +1902,8 @@
   font-size: 16px;
   flex-shrink: 0;
   animation: rotateIcon 0.6s ease;
+  color: #676767;
+  border-color: #000000;
 }
 
 /* Rotation animation for status change icon */
@@ -1764,16 +1921,18 @@
   flex: 1;
   font-weight: 600;
   letter-spacing: 0.3px;
+  color: #676767;
 }
 
 /* Timestamp in status change message */
 .status-change-time {
   font-size: 11px;
-  opacity: 0.9;
+  opacity: 0.8;
   font-weight: 400;
   flex-shrink: 0;
   margin-left: 10px;
   font-style: italic;
+  color: #676767;
 }
 
 /* Message Input Container */
@@ -1871,6 +2030,56 @@
   border-color: #dc3545 !important;
   background-color: rgba(220, 53, 69, 0.05);
   animation: errorPulse 0.5s ease;
+}
+
+.contract-select-field {
+  width: 100%;
+}
+
+.contract-select-field .mat-mdc-form-field-flex {
+  border-radius: 6px;
+}
+
+.contract-select-field.error .mat-mdc-form-field-flex {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.contract-select-panel .contract-search-option {
+  cursor: default;
+  pointer-events: none;
+  padding: 8px 12px;
+}
+
+.contract-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.contract-search-wrapper mat-icon {
+  color: #6c757d;
+  font-size: 18px;
+}
+
+.contract-search-wrapper input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #333;
+}
+
+.contract-search-wrapper input::placeholder {
+  color: #888;
+}
+
+.contract-loading-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* Pulse animation for validation errors */
@@ -2338,5 +2547,16 @@
     to {
       transform: translateY(0);
     }
+  }
+  
+  /* Priority dropdown on mobile */
+  .priority-dropdown-menu {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    top: auto;
+    bottom: 20px;
+    min-width: 180px;
+    max-width: 90%;
   }
 }

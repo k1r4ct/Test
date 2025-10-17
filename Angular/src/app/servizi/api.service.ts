@@ -753,4 +753,27 @@ export class ApiService implements OnDestroy {
       .post(this.global.API_URL + "bulkDeleteTickets", form, { headers })
       .pipe(takeUntil(this.destroy$));
   }
+
+    /**
+   * Update ticket priority (low, medium, high, unassigned)
+   * Priority changes are logged but NOT shown in chat messages
+   */
+  updateTicketPriority(form: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "updateTicketPriority", form, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get complete change history for a ticket
+   * Returns all status and priority changes
+   */
+  getTicketChangeLogs(ticketId: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "getTicketChangeLogs/" + ticketId, { headers })
+      .pipe(takeUntil(this.destroy$));
+  } 
+
 }
