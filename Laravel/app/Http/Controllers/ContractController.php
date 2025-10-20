@@ -973,6 +973,28 @@ class ContractController extends Controller
 
         // Applica filtri specifici
         if (!empty($filterParams)) {
+            if (isset($filterParams['ricerca'])) {
+                $ricerca = $filterParams['ricerca'];
+                if (is_string($ricerca) && !empty($ricerca)) {
+                    $query->where(function ($searchQuery) use ($ricerca) {
+                        $likeValue = "%{$ricerca}%";
+
+                        $searchQuery->where('codice_contratto', 'like', $likeValue)
+                            ->orWhereHas('customer_data', function ($customerQuery) use ($likeValue) {
+                                $customerQuery->where('nome', 'like', $likeValue)
+                                    ->orWhere('cognome', 'like', $likeValue)
+                                    ->orWhere('ragione_sociale', 'like', $likeValue)
+                                    ->orWhere('codice_fiscale', 'like', $likeValue)
+                                    ->orWhere('partita_iva', 'like', $likeValue);
+                            });
+
+                        if (is_numeric($ricerca)) {
+                            $searchQuery->orWhere('id', intval($ricerca));
+                        }
+                    });
+                }
+            }
+
             // Filtro per ID contratto (può essere singolo o multiplo)
             if (isset($filterParams['id'])) {
                 $ids = $filterParams['id'];
@@ -1012,6 +1034,13 @@ class ContractController extends Controller
                         $q->where('codice_fiscale', 'like', "%{$pivacf}%")
                             ->orWhere('partita_iva', 'like', "%{$pivacf}%");
                     });
+                }
+            }
+
+            if (isset($filterParams['codice_contratto'])) {
+                $codiceContratto = $filterParams['codice_contratto'];
+                if (is_string($codiceContratto) && !empty($codiceContratto)) {
+                    $query->where('codice_contratto', 'like', "%{$codiceContratto}%");
                 }
             }
 

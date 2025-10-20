@@ -93,7 +93,7 @@ export class ContrattiComponent implements OnInit {
         //console.log(this.LeadsContract);
         this.dataSource.data = this.LeadsContract;
       });
-      console.log(this.dataSource.data);
+      //console.log(this.dataSource.data);
       
     });
   }

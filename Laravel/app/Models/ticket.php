@@ -29,7 +29,7 @@ class Ticket extends Model
     // Relationships
     public function contract()
     {
-        return $this->belongsTo(Contract::class);
+        return $this->belongsTo(contract::class);
     }
 
     public function createdBy()

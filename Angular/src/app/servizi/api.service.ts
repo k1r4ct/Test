@@ -753,4 +753,36 @@ export class ApiService implements OnDestroy {
       .post(this.global.API_URL + "bulkDeleteTickets", form, { headers })
       .pipe(takeUntil(this.destroy$));
   }
+
+  /**
+   * Cambia la priorità dei ticket(low, medium, high, unassigned)
+   */
+  updateTicketPriority(form: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "updateTicketPriority", form, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Recupera i log delle modifiche di stato e priorità di un ticket
+   */
+  getTicketChangeLogs(ticketId: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "getTicketChangeLogs/" + ticketId, { headers })
+      .pipe(takeUntil(this.destroy$));
+  } 
+
+  /**
+  * Verifica se esiste un ticket per un contratto specifico
+  * Restituisce il ticket se esiste, altrimenti null
+  */
+  getTicketByContractId(contractId: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "getTicketByContractId/" + contractId, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
 }

@@ -399,12 +399,34 @@
               <span class="ticket-title-mini" [class]="'title-' + ticket.status" [title]="ticket.title">
                 {{truncateText(ticket.title, 25)}}
               </span>
-              <span 
-                class="ticket-priority-mini"
-                [class]="'priority-' + ticket.priority"
-                [style.background-color]="getPriorityColor(ticket.priority)">
-                {{getPriorityLabel(ticket.priority)}}
-              </span>
+              
+              <!-- Priority badge with dropdown in minimized view -->
+              <div class="priority-dropdown-wrapper" (click)="$event.stopPropagation()">
+                <span 
+                  class="ticket-priority-mini clickable-priority"
+                  [class]="'priority-' + ticket.priority"
+                  [style.background-color]="getPriorityColor(ticket.priority)"
+                  (click)="togglePriorityDropdownForTicket(ticket.id, $event)"
+                  title="Clicca per cambiare priorità">
+                  {{getPriorityLabel(ticket.priority)}}
+                </span>
+                
+                <!-- Priority dropdown menu -->
+                <div class="priority-dropdown-menu" *ngIf="isPriorityDropdownOpen(ticket.id)">
+                  <div 
+                    class="priority-option"
+                    *ngFor="let priority of priorities"
+                    (click)="changeTicketPriority(ticket, priority.value, $event)">
+                    <div 
+                      class="priority-color-indicator"
+                      [style.background-color]="priority.color">
+                    </div>
+                    <span>{{priority.label}}</span>
+                    <i class="fas fa-check" *ngIf="ticket.priority === priority.value"></i>
+                  </div>
+                </div>
+              </div>
+              
               <button class="btn-expand" (click)="toggleMinimizeTicket(ticket.id, $event)" title="Espandi ticket">
                 <i class="fas fa-chevron-down"></i>
               </button>
@@ -429,12 +451,32 @@
                 
                 <span class="ticket-id">#{{ticket.ticket_number}}</span>
                 
-                <span 
-                  class="ticket-priority"
-                  [class]="'priority-' + ticket.priority"
-                  [style.background-color]="getPriorityColor(ticket.priority)">
-                  {{getPriorityLabel(ticket.priority)}}
-                </span>
+                <!-- Priority badge with dropdown in expanded view -->
+                <div class="priority-dropdown-wrapper" (click)="$event.stopPropagation()">
+                  <span 
+                    class="ticket-priority clickable-priority"
+                    [class]="'priority-' + ticket.priority"
+                    [style.background-color]="getPriorityColor(ticket.priority)"
+                    (click)="togglePriorityDropdownForTicket(ticket.id, $event)"
+                    title="Clicca per cambiare priorità">
+                    {{getPriorityLabel(ticket.priority)}}
+                  </span>
+                  
+                  <!-- Priority dropdown menu -->
+                  <div class="priority-dropdown-menu" *ngIf="isPriorityDropdownOpen(ticket.id)">
+                    <div 
+                      class="priority-option"
+                      *ngFor="let priority of priorities"
+                      (click)="changeTicketPriority(ticket, priority.value, $event)">
+                      <div 
+                        class="priority-color-indicator"
+                        [style.background-color]="priority.color">
+                      </div>
+                      <span>{{priority.label}}</span>
+                      <i class="fas fa-check" *ngIf="ticket.priority === priority.value"></i>
+                    </div>
+                  </div>
+                </div>
                 
                 <div class="ticket-header-controls">
                   <!-- Close ticket button (green tick - only in resolved column) -->
@@ -637,17 +679,43 @@
       <form>
         <div class="form-group">
           <label>Contratto <span class="required">*</span></label>
-          <select 
-            [(ngModel)]="newTicket.contract_id" 
-            name="contractId" 
-            required 
-            class="form-control"
+          <mat-form-field
+            appearance="fill"
+            class="contract-select-field"
             [class.error]="showValidationError && !newTicket.contract_id">
-            <option [value]="null" disabled>Seleziona un contratto</option>
-            <option *ngFor="let contract of contracts" [value]="contract.id">
-              {{contract.codice_contratto}} - {{contract.customer_data?.nome || contract.customer_data?.ragione_sociale}}
-            </option>
-          </select>
+            <mat-select
+              [(ngModel)]="newTicket.contract_id"
+              name="contractId"
+              required
+              placeholder="Seleziona un contratto"
+              (openedChange)="onContractPanelToggle($event)"
+              panelClass="contract-select-panel">
+              <mat-option class="contract-search-option" disabled>
+                <div class="contract-search-wrapper" (click)="$event.stopPropagation()">
+                  <mat-icon>search</mat-icon>
+                  <input
+                    #contractSearchInput
+                    type="text"
+                    [value]="contractSearchQuery"
+                    placeholder="Cerca contratto..."
+                    (input)="onContractSearch($any($event.target).value || '')"
+                    (keydown)="$event.stopPropagation()"
+                    (click)="$event.stopPropagation()"
+                  />
+                </div>
+              </mat-option>
+              <mat-option *ngIf="isLoadingContractOptions" class="contract-loading-option" disabled>
+                <mat-progress-spinner diameter="18" mode="indeterminate"></mat-progress-spinner>
+                Caricamento...
+              </mat-option>
+              <mat-option *ngFor="let contract of filteredContracts" [value]="contract.id">
+               {{contract.id}} - {{contract.codice_contratto}} - {{contract.customer_data?.nome || contract.customer_data?.ragione_sociale}} {{contract.customer_data?.cognome || ''}}
+              </mat-option>
+              <mat-option *ngIf="!isLoadingContractOptions && filteredContracts.length === 0" disabled>
+                Nessun contratto trovato
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
         
         <div class="form-group">

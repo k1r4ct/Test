@@ -1,8 +1,9 @@
 // ticket-management.component.ts
-import { Component, OnInit, OnDestroy, AfterViewChecked, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewChecked, HostListener, ElementRef, ViewChild } from '@angular/core';
 import { ApiService } from 'src/app/servizi/api.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Subscription } from 'rxjs';
+import { Subscription, Subject, of, Observable } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, tap, catchError, map } from 'rxjs/operators';
 
 export interface Ticket {
   id: number;
@@ -11,7 +12,7 @@ export interface Ticket {
   description: string;
   status: 'new' | 'waiting' | 'resolved' | 'closed' | 'deleted';
   previous_status?: string;
-  priority: 'low' | 'medium' | 'high';
+  priority: 'low' | 'medium' | 'high' | 'unassigned';
   contract_id: number;
   contract_code: string;
   created_by_user_id: number;
@@ -38,6 +39,8 @@ export interface TicketMessage {
   message_type: 'text' | 'attachment' | 'status_change';  
   attachment_path?: string;
   attachment_name?: string;
+  old_status?: string;  
+  new_status?: string;  
   created_at: string;
 }
 
@@ -52,6 +55,7 @@ export interface TicketFilters {
   seu: string[];
   generatedBy: string[];
   openingDate: string;
+  contract: string[];
 }
 
 @Component({
@@ -79,7 +83,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     customer: '',
     seu: [],
     generatedBy: [],
-    openingDate: ''
+    openingDate: '',
+    contract: []
   };
 
   statusColorMap: Record<string, string> = {
@@ -97,7 +102,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   showSeuDropdown: boolean = false;
   showGeneratedByDropdown: boolean = false;
   showAssignedToDropdown: boolean = false;
-  
+  showPriorityDropdownForTicket: number | null = null;
+  showContractDropdown: boolean = false;
   // Column visibility for closed and deleted
   showClosedColumn: boolean = false;
   showDeletedColumn: boolean = false;
@@ -119,10 +125,18 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   assignedToSearchQuery: string = '';
 
   // Filtered lists for dropdowns
+  @ViewChild('contractSearchInput') contractSearchInput?: ElementRef<HTMLInputElement>;
+
   filteredProducts: string[] = [];
   filteredSeuList: any[] = [];
   filteredGeneratorsList: any[] = [];
   filteredUsers: any[] = [];
+  filteredContracts: any[] = [];
+  contractSearchQuery: string = '';
+  isLoadingContractOptions: boolean = false;
+  private contractSearch$ = new Subject<string>();
+  private contractSearchSub?: Subscription;
+  private contractSearchInitialized = false;
   
   newTicket = {
     title: '',
@@ -182,9 +196,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   generatorsList: any[] = [];
   
   priorities = [
-    { value: 'low', label: 'Bassa', color: '#28a745' },
+    { value: 'high', label: 'Alta', color: '#dc3545' },
     { value: 'medium', label: 'Media', color: '#ffc107' },
-    { value: 'high', label: 'Alta', color: '#dc3545' }
+    { value: 'low', label: 'Bassa', color: '#28a745' },
+    { value: 'unassigned', label: 'N/A', color: '#9e9e9e' }
   ];
 
   contracts: any[] = [];
@@ -202,6 +217,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
 
   ngOnDestroy() {
     this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.contractSearch$.complete();
   }
 
   ngAfterViewChecked() {
@@ -224,6 +240,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   onScroll(event: any) {
     // Close all dropdowns on scroll to prevent positioning issues
     this.closeAllDropdowns();
+    this.closePriorityDropdown();
   }
 
   // Checks if a message is a status change message
@@ -242,20 +259,16 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return this.columns.find(c => c.id === status);
   }
 
-
   // Generates the gradient style for a status change message
   getStatusChangeGradient(message: TicketMessage): string {
     if (!this.selectedTicket) {
-      return `linear-gradient(135deg, #2196F3 0%, #9C27B0 100%)`;
+      return `linear-gradient(135deg, #3a3939ff 0%, #ffffffff 100%)`;
     }
     
-    const oldStatus = this.selectedTicket.previous_status || 'new';
-    const newStatus = this.selectedTicket.status || 'waiting';
+    const currentStatus = this.selectedTicket.status || 'waiting';
+    const statusColor = this.statusColorMap[currentStatus] || this.statusColorMap['waiting'];
     
-    const oldColor = this.statusColorMap[oldStatus] || this.statusColorMap['new'];
-    const newColor = this.statusColorMap[newStatus] || this.statusColorMap['waiting'];
-    
-    return `linear-gradient(135deg, ${oldColor} 0%, ${newColor} 100%)`;
+    return `linear-gradient(135deg, ${statusColor} 0%, #ffffffff 100%)`;
   }
 
   canManageTickets(): boolean {
@@ -267,6 +280,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       this.currentUser = userData.user;
       this.userRole = userData.user.role.id;
       this.isAdmin = [1, 6].includes(this.userRole);
+      this.setupContractSearchPipeline();
       this.loadInitialData();
       this.loadTickets();
     });
@@ -275,35 +289,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   }
 
   loadInitialData() {
-    // Load contracts
-    if (this.userRole === 1) {
-      const contractsSub = this.apiService.getContratti(null).subscribe((response: any) => {
-        if (response.body && response.body.risposta) {
-          this.contracts = response.body.risposta.data || response.body.risposta;
-        }
-      }, error => {
-        this.apiService.getContratti(0).subscribe((response: any) => {
-          if (response.body && response.body.risposta) {
-            this.contracts = response.body.risposta.data || response.body.risposta;
-          }
-        }, error2 => {
-          this.apiService.getContratti(this.currentUser.id).subscribe((response: any) => {
-            if (response.body && response.body.risposta && response.body.risposta.data) {
-              this.contracts = response.body.risposta.data;
-            }
-          });
-        });
-      });
-      this.subscriptions.push(contractsSub);
-    } else {
-      const contractsSub = this.apiService.getContratti(this.currentUser.id).subscribe((response: any) => {
-        if (response.body && response.body.risposta && response.body.risposta.data) {
-          this.contracts = response.body.risposta.data;
-        }
-      });
-      this.subscriptions.push(contractsSub);
-    }
-
     // Load products
     const productsSub = this.apiService.ListaProdotti().subscribe((response: any) => {
       if (response.body && response.body.prodotti) {
@@ -342,6 +327,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
 
   loadTickets() {
     const ticketsSub = this.apiService.getTickets().subscribe((response: any) => {
+      console.log(response);
+      
       if (response && response.body && response.body.risposta) {
         this.tickets = this.processTicketsData(response.body.risposta);
         this.applyFilters();
@@ -388,7 +375,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       title: ticket.title,
       description: ticket.description,
       status: ticket.status,
-      previous_status: ticket.previous_status,
       priority: ticket.priority,
       contract_id: ticket.contract_id,
       contract_code: ticket.contract?.codice_contratto || 'N/A',
@@ -555,9 +541,119 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       customer: '',
       seu: [],
       generatedBy: [],
-      openingDate: ''
+      openingDate: '',
+      contract: []
     };
     this.applyFilters();
+  }
+
+  // ========================================
+  // PRIORITY CHANGE METHODS
+  // ========================================
+
+  /**
+   * Toggle priority dropdown for a specific ticket
+   */
+  togglePriorityDropdownForTicket(ticketId: number, event: Event): void {
+    event.stopPropagation(); // Prevent opening ticket modal
+    
+    // If clicking on the same ticket, close it
+    if (this.showPriorityDropdownForTicket === ticketId) {
+      this.showPriorityDropdownForTicket = null;
+    } else {
+      this.showPriorityDropdownForTicket = ticketId;
+    }
+  }
+
+  /**
+   * Check if priority dropdown is open for a ticket
+   */
+  isPriorityDropdownOpen(ticketId: number): boolean {
+    return this.showPriorityDropdownForTicket === ticketId;
+  }
+
+  /**
+   * Close priority dropdown
+   */
+  closePriorityDropdown(): void {
+    this.showPriorityDropdownForTicket = null;
+  }
+
+  /**
+   * Update ticket priority
+   */
+  changeTicketPriority(ticket: Ticket, newPriority: string, event: Event): void {
+    event.stopPropagation();
+    
+    if (ticket.priority === newPriority) {
+      this.closePriorityDropdown();
+      return;
+    }
+    
+    const oldPriority = ticket.priority;
+    const oldLabel = this.getPriorityLabel(oldPriority);
+    const newLabel = this.getPriorityLabel(newPriority);
+    
+    const updateData = {
+      ticket_id: ticket.id,
+      priority: newPriority
+    };
+    
+    const prioritySub = this.apiService.updateTicketPriority(updateData).subscribe(
+      (response: any) => {
+        // Update local ticket
+        ticket.priority = newPriority as any;
+        
+        // Re-sort tickets by priority
+        this.sortTicketsByPriority();
+        
+        // Close dropdown
+        this.closePriorityDropdown();
+        
+        this.snackBar.open(
+          `Priorità ticket ${ticket.ticket_number} cambiata da ${oldLabel} a ${newLabel}`,
+          'Chiudi',
+          { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          }
+        );
+      },
+      error => {
+        // Handle 204 No Content or 200 OK
+        if (error.status === 204 || error.status === 200) {
+          ticket.priority = newPriority as any;
+          this.sortTicketsByPriority();
+          this.closePriorityDropdown();
+          
+          this.snackBar.open(
+            `Priorità ticket ${ticket.ticket_number} cambiata da ${oldLabel} a ${newLabel}`,
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['success-snackbar']
+            }
+          );
+        } else {
+          this.snackBar.open(
+            'Errore nell\'aggiornamento della priorità',
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['error-snackbar']
+            }
+          );
+        }
+      }
+    );
+    
+    this.subscriptions.push(prioritySub);
   }
 
   // ========================================
@@ -678,15 +774,9 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       (response: any) => {
         // Handle both 204 No Content and 200 OK with response
         // Update local ticket status regardless of response type
-        ticket.previous_status = ticket.status; // Save old status
         ticket.status = 'closed';
         this.applyFilters();
         this.updateColumnCounts();
-        
-        // COMMENTED: Do not auto-show closed column
-        // if (!this.showClosedColumn) {
-        //   this.toggleClosedColumn();
-        // }
         
         this.snackBar.open(
           `Ticket ${ticket.ticket_number} archiviato e chiuso`,
@@ -702,15 +792,9 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       error => {
         // If it's a 204 No Content, treat it as success
         if (error.status === 204 || error.status === 200) {
-          ticket.previous_status = ticket.status; // Save old status
           ticket.status = 'closed';
           this.applyFilters();
           this.updateColumnCounts();
-          
-          // COMMENTED: Do not auto-show closed column
-          // if (!this.showClosedColumn) {
-          //   this.toggleClosedColumn();
-          // }
           
           this.snackBar.open(
             `Ticket ${ticket.ticket_number} archiviato e chiuso`,
@@ -784,7 +868,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         // Update local tickets regardless
         this.tickets.forEach(ticket => {
           if (ticketIds.includes(ticket.id)) {
-            ticket.previous_status = ticket.status; // Save old status
             ticket.status = 'deleted';
           }
         });
@@ -792,11 +875,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         this.applyFilters();
         this.updateColumnCounts();
         this.selectedTicketsForDeletion.clear();
-        
-        // COMMENTED: Do not auto-show deleted column
-        // if (!this.showDeletedColumn) {
-        //   this.toggleDeletedColumn();
-        // }
         
         const deletedCount = response?.deleted_count || ticketIds.length;
         this.snackBar.open(
@@ -816,7 +894,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
           // Update local tickets
           this.tickets.forEach(ticket => {
             if (ticketIds.includes(ticket.id)) {
-              ticket.previous_status = ticket.status; // Save old status
               ticket.status = 'deleted';
             }
           });
@@ -824,11 +901,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
           this.applyFilters();
           this.updateColumnCounts();
           this.selectedTicketsForDeletion.clear();
-          
-          // COMMENTED: Do not auto-show deleted column
-          // if (!this.showDeletedColumn) {
-          //   this.toggleDeletedColumn();
-          // }
           
           this.snackBar.open(
             `${ticketIds.length} ticket cancellati con successo`,
@@ -949,6 +1021,17 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.updateDropdownClasses();
   }
 
+  toggleContractDropdown() {
+    const wasOpen = this.showAssignedToDropdown;
+    this.closeAllDropdowns();
+    this.showAssignedToDropdown = !wasOpen;
+    if (this.showAssignedToDropdown) {
+      this.assignedToSearchQuery = '';
+      this.filteredUsers = [...this.users];
+    }
+    this.updateDropdownClasses();
+  }
+
   toggleProductFilter(product: string) {
     const index = this.filters.product.indexOf(product);
     if (index > -1) {
@@ -978,6 +1061,13 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       return this.filters.product[0];
     }
     return `${this.filters.product[0]} (+${this.filters.product.length - 1})`;
+  }
+
+  getSelectedContractLabels(): string {
+    if (!this.filters.contractId) {
+      return 'Tutti i contratti';
+    }
+    return `#${this.filters.contractId}`;
   }
 
   // ========================================
@@ -1013,7 +1103,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       const priority = this.priorities.find(p => p.value === this.filters.priority[0]);
       return priority ? priority.label : 'Priorità';
     }
-    if (this.filters.priority.length === 3) {
+    if (this.filters.priority.length === 4) {
       return 'Tutte le Priorità';
     }
     const firstPriority = this.priorities.find(p => p.value === this.filters.priority[0]);
@@ -1181,6 +1271,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.showSeuDropdown = false;
     this.showGeneratedByDropdown = false;
     this.showAssignedToDropdown = false;
+    this.showContractDropdown = false;
     this.updateDropdownClasses();
   }
 
@@ -1225,12 +1316,11 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return !column.hidden && this.filters.status.includes(columnId);
   }
 
-  getVisibleColumnsCount(): number {
-    return this.columns.filter(c => 
-      !c.hidden && this.filters.status.includes(c.id)
-    ).length;
-  }
-
+getVisibleColumnsCount(): number {
+  return this.columns.filter(c => 
+    !c.hidden && this.filters.status.includes(c.id)
+  ).length;
+}
   getColumnPosition(columnId: string): number {
     const visibleColumns = this.columns.filter(c => !c.hidden);
     return visibleColumns.findIndex(c => c.id === columnId);
@@ -1272,6 +1362,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
 
   createNewTicket() {
     this.showNewTicketModal = true;
+    if (!this.contractSearchInitialized) {
+      this.setupContractSearchPipeline();
+    }
+    this.onContractSearch('');
   }
 
   saveNewTicket() {
@@ -1410,6 +1504,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.showNewTicketModal = false;
     this.showValidationError = false;
     this.isShaking = false;
+    this.contractSearchQuery = '';
     this.newTicket = {
       title: '',
       description: '',
@@ -1450,7 +1545,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     const updateSub = this.apiService.updateTicketStatus(updateData).subscribe((response: any) => {
       // Handle both 204 No Content and 200 OK with response
       // Update local ticket regardless
-      ticket.previous_status = ticket.status; // Save old status
       ticket.status = newStatus as any;
       ticket.assigned_to_user_id = this.currentUser.id;
       ticket.assigned_to_user_name = `${this.currentUser.name || ''} ${this.currentUser.cognome || ''}`.trim() || this.currentUser.email;
@@ -1470,7 +1564,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     }, error => {
       // If it's a 204 No Content or 200, treat it as success
       if (error.status === 204 || error.status === 200) {
-        ticket.previous_status = ticket.status; // Save old status
         ticket.status = newStatus as any;
         ticket.assigned_to_user_id = this.currentUser.id;
         ticket.assigned_to_user_name = `${this.currentUser.name || ''} ${this.currentUser.cognome || ''}`.trim() || this.currentUser.email;
@@ -1507,7 +1600,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     const priorityWeight = {
       'high': 3,
       'medium': 2,
-      'low': 1
+      'low': 1,
+      'unassigned': 0
     };
     
     this.filteredTickets.sort((a, b) => {
@@ -1540,6 +1634,87 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       localStorage.setItem('minimizedTickets', JSON.stringify(ticketIds));
     } catch (error) {
       console.error('Error saving minimized tickets:', error);
+    }
+  }
+
+  private setupContractSearchPipeline(): void {
+    if (this.contractSearchInitialized || !this.currentUser) {
+      return;
+    }
+
+    this.contractSearchInitialized = true;
+
+    const searchSub = this.contractSearch$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        tap(() => (this.isLoadingContractOptions = true)),
+        switchMap((term: string) =>
+          this.queryContracts(term).pipe(
+            catchError(() => {
+              this.isLoadingContractOptions = false;
+              return of([]);
+            })
+          )
+        )
+      )
+      .subscribe((contracts: any[]) => {
+        this.contracts = contracts;
+        this.filteredContracts = contracts;
+        this.isLoadingContractOptions = false;
+      });
+
+    this.contractSearchSub = searchSub;
+    this.subscriptions.push(searchSub);
+    this.contractSearch$.next('');
+  }
+
+  private queryContracts(term: string): Observable<any[]> {
+    if (!this.currentUser) {
+      return of([]);
+    }
+
+    const filters: any[] = [];
+    const trimmed = term.trim();
+
+    if (trimmed) {
+      filters.push(['ricerca', trimmed]);
+    }
+
+    return this.apiService
+      .searchContratti(
+        this.currentUser.id,
+        JSON.stringify(filters),
+        1,
+        20,
+        'id',
+        'desc'
+      )
+      .pipe(
+        map((response: any) => {
+          let data = response?.body?.risposta;
+          if (data?.data) {
+            data = data.data;
+          }
+          return Array.isArray(data) ? data : [];
+        })
+      );
+  }
+
+  onContractSearch(term: string): void {
+    this.contractSearchQuery = term;
+    this.contractSearch$.next(term);
+  }
+
+  onContractPanelToggle(open: boolean): void {
+    if (open) {
+      if (!this.contractSearchInitialized) {
+        this.setupContractSearchPipeline();
+      }
+      setTimeout(() => this.contractSearchInput?.nativeElement.focus(), 0);
+    } else {
+      this.contractSearchQuery = '';
+      this.onContractSearch('');
     }
   }
 

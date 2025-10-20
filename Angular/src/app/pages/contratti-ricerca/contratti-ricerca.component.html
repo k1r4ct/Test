@@ -221,20 +221,34 @@
             </td>
           </ng-container>
 
-          <!-- Colonna Azioni -->
+          <!-- Colonna Azioni con Bottone Ticket -->
           <ng-container matColumnDef="azioni">
             <th mat-header-cell *matHeaderCellDef class="actions-header">
               <mat-icon>settings</mat-icon>
               Azioni
             </th>
             <td mat-cell *matCellDef="let row" class="actions-cell">
-              <button mat-icon-button 
-                      color="primary"
-                      (click)="visualizzaDettagli(row, 'ricercaContratti'); $event.stopPropagation()"
-                      matTooltip="Visualizza dettagli"
-                      aria-label="Visualizza dettagli contratto">
-                <mat-icon>visibility</mat-icon>
-              </button>
+              <div class="action-buttons">
+                <!-- Bottone Ticket (Mail Icon) -->
+                <button mat-icon-button 
+                        class="ticket-button"
+                        (click)="openTicketModal(row, $event)"
+                        matTooltip="Apri/Crea Ticket Assistenza"
+                        matTooltipPosition="above"
+                        aria-label="Apri o crea ticket di assistenza per questo contratto">
+                  <mat-icon>mail</mat-icon>
+                </button>
+                
+                <!-- Bottone Visualizza Dettagli -->
+                <button mat-icon-button 
+                        color="primary"
+                        (click)="visualizzaDettagli(row, 'ricercaContratti'); $event.stopPropagation()"
+                        matTooltip="Visualizza dettagli"
+                        matTooltipPosition="above"
+                        aria-label="Visualizza dettagli contratto">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+              </div>
             </td>
           </ng-container>
 

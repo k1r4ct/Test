@@ -993,3 +993,51 @@ mat-paginator {
   --mdc-filled-text-field-container-color: transparent;
   --mdc-outlined-text-field-outline-color: #e0e0e0;
 }
+
+
+// Actions cell with ticket button
+.actions-cell {
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  button {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+  
+  // Ticket button with special styling (green like mail icon)
+  .ticket-button {
+    background-color: #268730;
+    color: white;
+    
+    &:hover {
+      background-color: #1d6e26;
+      box-shadow: 0 4px 12px rgba(38, 135, 48, 0.3);
+    }
+    
+    ::ng-deep mat-icon {
+      color: white;
+    }
+  }
+}
+
+.actions-header {
+  text-align: center;
+  min-width: 120px;
+}
+
+// Custom styling for ticket modal panel
+::ng-deep .ticket-modal-panel {
+  .mat-mdc-dialog-container {
+    padding: 0;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+}
