@@ -1,3 +1,4 @@
+// modal.component.ts - COMPLETE FILE
 import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ApiService } from '../servizi/api.service';
@@ -421,7 +422,7 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
         
         if (response.response === 'ok') {
           this.snackBar.open(
-            '✅ Ticket creato con successo!',
+            'Ticket creato con successo!',
             'Chiudi',
             {
               duration: 3000,

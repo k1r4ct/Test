@@ -129,7 +129,7 @@ class Ticket extends Model
     {
         $lastTicket = self::orderBy('id', 'desc')->first();
         $nextNumber = $lastTicket ? $lastTicket->id + 1 : 1;
-        return 'TK-' + str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        return 'TK-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 
     public static function getStatusOptions()

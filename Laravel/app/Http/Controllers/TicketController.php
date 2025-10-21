@@ -95,7 +95,7 @@ class TicketController extends Controller
             // Check if user has access to this contract
             // Admin, BackOffice, WebOp can create for any contract
             // SEU can only create for contracts they created
-            if (!in_array($user->role->id, [1, 4, 5, 6, 9, 10])) {
+            if (!in_array($user->role->id, [1, 2, 4, 5])) {
                 if ($contract->created_by_user_id != $user->id) {
                     return response()->json([
                         "response" => "error",
@@ -104,6 +104,27 @@ class TicketController extends Controller
                     ]);
                 }
             }
+
+            // Check for existing tickets on this contract
+            // SEU cannot create multiple tickets per contract
+            $restrictedRoles = [2, 3];
+            
+            if (in_array($user->role->id, $restrictedRoles)) {
+                $existingTicket = Ticket::where('contract_id', $request->contract_id)
+                    ->where('status', '!=', 'deleted')
+                    ->first();
+                    
+                if ($existingTicket) {
+                    return response()->json([
+                        "response" => "error",
+                        "status" => "409", 
+                        "message" => "Un ticket esiste già per questo contratto. ID Ticket: " . $existingTicket->ticket_number,
+                        "existing_ticket_id" => $existingTicket->id,
+                        "existing_ticket_number" => $existingTicket->ticket_number
+                    ]);
+                }
+            }
+            // Admin and BackOffice can create multiple tickets for the same contract
 
             $ticket = Ticket::create([
                 'title' => $request->title,
@@ -575,28 +596,6 @@ class TicketController extends Controller
                 'message_type' => 'text'
             ]);
 
-            // Update ticket status to waiting if it's new WITH previous_status
-            if ($ticket->status === 'new') {
-                $oldStatus = $ticket->status;
-                
-                $ticket->update([
-                    'previous_status' => $oldStatus,
-                    'status' => 'waiting',
-                    'assigned_to_user_id' => $user->id
-                ]);
-
-                // Log the automatic status change
-                TicketChangeLog::create([
-                    'ticket_id' => $ticket->id,
-                    'user_id' => $user->id,
-                    'previous_status' => $oldStatus,
-                    'new_status' => 'waiting',
-                    'previous_priority' => null,
-                    'new_priority' => null,
-                    'change_type' => 'status'
-                ]);
-            }
-
             // Send notification
             $this->notifyTicketParticipants($ticket, 'new_message');
 
@@ -760,6 +759,10 @@ class TicketController extends Controller
         }
     }
 
+    /**
+     * Get ticket by contract ID
+     * Used to check if a ticket exists for a contract
+     */
     public function getTicketByContractId($contractId)
     {
         try {

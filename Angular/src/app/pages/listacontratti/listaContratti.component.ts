@@ -2489,7 +2489,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         const dettagli = contratto.customer_data || {};
         const row: any = {
           id: contratto.id,
-          cliente: contratto.cliente,
+          cliente_associato: contratto.cliente_associato,
+          contraente: contratto.cliente,
           pivacf: contratto.pivacf,
           datains: contratto.datains,
           datastipula: contratto.datastipula,
@@ -2572,6 +2573,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     // Mapper identico a handleSearchResponse
     const mapRow = (contratto: any) => ({
       id: contratto.id,
+      cliente_associato: contratto.associato_a_user_id,
       cliente:
         contratto.customer_data.cognome && contratto.customer_data.nome
           ? contratto.customer_data.cognome + " " + contratto.customer_data.nome
@@ -3271,43 +3273,94 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       event.stopPropagation();
     }
 
-    const contratto = {
-      id: row.id,
-      cliente: row.cliente,
-      pivacf: row.pivacf,
-      datains: row.datains,
-      prodotto: row.prodotto,
-      seu: row.seu,
-      stato: row.stato
-    };
+    // Recupera i dati utente correnti per verificare il ruolo
+    this.ApiService.PrendiUtente().subscribe((Auth: any) => {
+      const userRole = Auth.user?.role_id;
+      
+      const contratto = {
+        id: row.id,
+        cliente: row.cliente,
+        pivacf: row.pivacf,
+        datains: row.datains,
+        prodotto: row.prodotto,
+        seu: row.seu,
+        stato: row.stato
+      };
 
-    // Verifica se esiste già un ticket
-    this.ApiService.getTicketByContractId(row.id).subscribe({
-      next: (response: any) => {
-        if (response.response === 'ok' && response.body?.ticket) {
-          // Ticket esistente - apri chat
-          this.openExistingTicketModal(response.body.ticket, contratto);
-        } else {
-          // Nessun ticket - crea nuovo
+      // Verifica se esiste già un ticket
+      this.ApiService.getTicketByContractId(row.id).subscribe({
+        next: (response: any) => {
+          console.log('Risposta verifica ticket:', response);
+          if (response.response === 'ok' && response.body?.ticket) {
+            // Ticket esistente - apri sempre la chat esistente
+            this.openExistingTicketModal(response.body.ticket, contratto);
+          } else {
+            // Nessun ticket - verifica se l'utente può crearne uno nuovo
+            this.checkAndCreateTicket(contratto, userRole);
+          }
+        },
+        error: (error) => {
+          console.error('Errore verifica ticket:', error);
+          this.snackBar.open(
+            'Errore nella verifica del ticket',
+            'Chiudi',
+            {
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['error-snackbar']
+            }
+          );
+          // In caso di errore, procedi con verifica creazione
+          this.checkAndCreateTicket(contratto, userRole);
+        }
+      });
+    });
+  }
+
+  /**
+   * Verifica se l'utente può creare un ticket e procede
+   * @param contratto - Dati contratto
+   * @param userRole - Ruolo utente
+   */
+  private checkAndCreateTicket(contratto: any, userRole: number): void {
+    // SEU e Advisor (roles 2, 3, 7, 8) non possono creare ticket multipli
+    const restrictedRoles = [2, 3];
+    
+    if (restrictedRoles.includes(userRole)) {
+      // Doppio controllo per utenti con restrizioni
+      this.ApiService.getTicketByContractId(contratto.id).subscribe({
+        next: (response: any) => {
+          if (response.response === 'ok' && response.body?.ticket) {
+            // Ticket già esistente - mostra avviso e apri la chat esistente
+            this.snackBar.open(
+              'Esiste già un ticket per questo contratto. Apertura chat esistente...',
+              'Chiudi',
+              {
+                duration: 3000,
+                horizontalPosition: 'center',
+                verticalPosition: 'bottom',
+                panelClass: ['warning-snackbar']
+              }
+            );
+            
+            // Apri il ticket esistente
+            this.openExistingTicketModal(response.body.ticket, contratto);
+          } else {
+            // Nessun ticket, può crearne uno
+            this.openTicketCreationModal(contratto);
+          }
+        },
+        error: (error) => {
+          console.error('Errore doppio controllo ticket:', error);
+          // In caso di errore permetti la creazione
           this.openTicketCreationModal(contratto);
         }
-      },
-      error: (error) => {
-        console.error('Errore verifica ticket:', error);
-        this.snackBar.open(
-          'Errore nella verifica del ticket',
-          'Chiudi',
-          {
-            duration: 3000,
-            horizontalPosition: 'center',
-            verticalPosition: 'bottom',
-            panelClass: ['error-snackbar']
-          }
-        );
-        // In caso di errore, procedi con creazione
-        this.openTicketCreationModal(contratto);
-      }
-    });
+      });
+    } else {
+      // Admin/BackOffice possono sempre creare ticket
+      this.openTicketCreationModal(contratto);
+    }
   }
 
   /**
@@ -3337,7 +3390,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       data: { 
         reparto: 'ticket',
         contractData: contractData,
-        existingTicket: ticket
+        existingTicket: ticket  
       },
       disableClose: false,
       hasBackdrop: true,
@@ -3347,10 +3400,10 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     });
 
     dialogRef.afterClosed().pipe(take(1)).subscribe(result => {
+      // Ricarica sempre lo stato del ticket
+      this.checkTicketStatus(Number(contratto.id));
+      
       if (result && result.success) {
-        // Ricarica stato ticket
-        this.checkTicketStatus(Number(contratto.id));
-        
         this.snackBar.open(
           'Conversazione aggiornata',
           'Chiudi',
@@ -3391,7 +3444,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       maxHeight: '90vh',
       data: { 
         reparto: 'ticket',
-        contractData: contractData 
+        contractData: contractData,
+        existingTicket: null 
       },
       disableClose: false,
       hasBackdrop: true,
