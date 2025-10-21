@@ -15,6 +15,8 @@ import {
 import { ContrattoDetailsDialogComponent } from "src/app/modal/modal.component";
 import { trigger, transition, style, animate } from "@angular/animations";
 import { take } from "rxjs";
+import { MatSnackBar } from "@angular/material/snack-bar";
+
 export interface Contratto {
   id: number;
   cliente: string;
@@ -42,29 +44,31 @@ export interface Contratto {
     nomeCognome: string;
     ragSociale: string;
   }[];
-  specific_data:RispostaSpecificData[];
+  specific_data: RispostaSpecificData[];
 }
+
 interface RispostaSpecificData {
   domanda: string;
-  risposta: string | number | boolean | null; // Può essere uno di questi tipi o null
-  tipo: 'text' | 'number' | 'boolean' | 'unknown'; // Tipo della risposta
+  risposta: string | number | boolean | null;
+  tipo: 'text' | 'number' | 'boolean' | 'unknown';
 }
+
 @Component({
-    selector: "app-contratti-ricerca",
-    animations: [
-        trigger("pageTransition", [
-            transition(":enter", [
-                style({ opacity: 0, transform: "scale(0.1)" }),
-                animate("500ms ease-in-out", style({ opacity: 1, transform: "scale(1)" })),
-            ]),
-            transition(":leave", [
-                animate("500ms ease-in-out", style({ opacity: 0, transform: "scale(0.1)" })),
-            ]),
-        ]),
-    ],
-    templateUrl: "./contratti-ricerca.component.html",
-    styleUrl: "./contratti-ricerca.component.scss",
-    standalone: false
+  selector: "app-contratti-ricerca",
+  animations: [
+    trigger("pageTransition", [
+      transition(":enter", [
+        style({ opacity: 0, transform: "scale(0.1)" }),
+        animate("500ms ease-in-out", style({ opacity: 1, transform: "scale(1)" })),
+      ]),
+      transition(":leave", [
+        animate("500ms ease-in-out", style({ opacity: 0, transform: "scale(0.1)" })),
+      ]),
+    ]),
+  ],
+  templateUrl: "./contratti-ricerca.component.html",
+  styleUrl: "./contratti-ricerca.component.scss",
+  standalone: false
 })
 export class ContrattiRicercaComponent implements OnInit {
   LISTACONTRATTI: Contratto[] = [];
@@ -88,20 +92,20 @@ export class ContrattiRicercaComponent implements OnInit {
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+
   constructor(
     private contratto: ContrattoService,
     private apiService: ApiService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {}
+
   ngOnInit(): void {
     this.getContrattoAndResetValue();
     this.setupTableConfiguration();
     
     // Pulizia iniziale dei backdrop
     this.cleanupBackdrops();
-    
-    // Debug check per MatDialog
-    console.log('MatDialog service nel ngOnInit:', !!this.dialog);
   }
 
   private setupTableConfiguration(): void {
@@ -115,6 +119,7 @@ export class ContrattiRicercaComponent implements OnInit {
       }
     });
   }
+
   getContrattoAndResetValue() {
     this.isLoading = true;
     this.dataSource.data = [];
@@ -125,8 +130,6 @@ export class ContrattiRicercaComponent implements OnInit {
     this.contratto
       .getContratto()
       .subscribe((contratto: any) => {
-        console.log("dentro contratti ricerca, api get contratto");
-        console.log(contratto);
         this.codFpIva = contratto.codFpIvaRicerca.codFPIva;
         formData.append("codFPIva", contratto.codFpIvaRicerca.codFPIva);
         formData.append("tiporicerca", contratto.codFpIvaRicerca.tiporicerca);
@@ -157,12 +160,10 @@ export class ContrattiRicercaComponent implements OnInit {
       return 'unknown';
     }
   }
+
   populateTable(formData: any) {
     this.apiService.getContCodFPIva(formData).subscribe({
       next: (risposta: any) => {
-        console.log("lista contratti trovati");
-        console.log(risposta);
-        
         this.LISTACONTRATTI = risposta.body.risposta.map((contratto: any) => ({
           id: contratto.id,
           cliente:
@@ -211,23 +212,12 @@ export class ContrattiRicercaComponent implements OnInit {
               ? contratto.user.ragione_sociale
               : "cliente CONSUMER",
           },
-          specific_data:contratto.specific_data.map((dato: any) => ({
+          specific_data: contratto.specific_data.map((dato: any) => ({
             domanda: dato.domanda,
             risposta: this.getRisposta(dato),
             tipo: this.getTipoRisposta(dato)
           })),
         }));
-        
-        // Debug: logga i primi contratti per verificare le date
-        if (this.LISTACONTRATTI.length > 0) {
-          console.log('Debug date - Primo contratto:', {
-            id: this.LISTACONTRATTI[0].id,
-            datains_raw: risposta.body.risposta[0]?.data_inserimento,
-            datains_processed: this.LISTACONTRATTI[0].datains,
-            datastipula_raw: risposta.body.risposta[0]?.data_stipula,
-            datastipula_processed: this.LISTACONTRATTI[0].datastipula
-          });
-        }
         
         this.dataSource.data = this.LISTACONTRATTI;
         this.isLoading = false;
@@ -242,10 +232,10 @@ export class ContrattiRicercaComponent implements OnInit {
       error: (error) => {
         console.error('Errore nel caricamento dei contratti:', error);
         this.isLoading = false;
-        // Qui potresti aggiungere una notifica di errore
       }
     });
   }
+
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
@@ -256,13 +246,9 @@ export class ContrattiRicercaComponent implements OnInit {
   }
 
   visualizzaDettagli(row: Contratto, reparto: string) {
-    console.log('=== DEBUG MODAL DETTAGLI ===');
-    console.log('Pulsante cliccato per contratto ID:', row.id);
-    
     // Pulizia preventiva di eventuali backdrop residui
     this.cleanupBackdrops();
     
-    // Test con configurazione più robusta per il dialog
     try {
       const dialogRef = this.dialog.open(ContrattoDetailsDialogComponent, {
         width: '80vw',
@@ -281,48 +267,11 @@ export class ContrattiRicercaComponent implements OnInit {
         restoreFocus: true
       });
       
-      console.log('Dialog REF creato:', dialogRef);
-      
       // Gestione della chiusura del dialog
       dialogRef.afterClosed().pipe(take(1)).subscribe(result => {
-        console.log('Dialog chiuso:', result);
         // Pulizia backup dei backdrop dopo la chiusura
         setTimeout(() => this.cleanupBackdrops(), 100);
       });
-      
-      // Verifichiamo subito e poi dopo un timeout
-      const checkDialog = () => {
-        const dialogElement = document.querySelector('.mat-mdc-dialog-container');
-        const backdrop = document.querySelector('.cdk-overlay-backdrop');
-        const overlay = document.querySelector('.cdk-overlay-container');
-        
-        console.log('=== CONTROLLO ELEMENTI DIALOG ===');
-        console.log('Dialog container:', dialogElement);
-        console.log('Backdrop:', backdrop);
-        console.log('Overlay container:', overlay);
-        
-        if (dialogElement) {
-          console.log('Dialog trovato! Stili applicati:', {
-            display: getComputedStyle(dialogElement).display,
-            visibility: getComputedStyle(dialogElement).visibility,
-            zIndex: getComputedStyle(dialogElement).zIndex,
-            position: getComputedStyle(dialogElement).position
-          });
-        }
-        
-        return !!dialogElement;
-      };
-      
-      // Check immediato
-      setTimeout(() => checkDialog(), 100);
-      
-      // Check dopo 1 secondo
-      setTimeout(() => {
-        if (!checkDialog()) {
-          console.error('PROBLEMA: Dialog ancora non trovato nel DOM!');
-          alert('Modal non visualizzato! Controlla gli stili CSS.');
-        }
-      }, 1000);
       
     } catch (error) {
       console.error('Errore apertura dialog:', error);
@@ -352,7 +301,7 @@ export class ContrattiRicercaComponent implements OnInit {
     });
   }
 
-  // Nuovi metodi per la versione modernizzata
+  // Metodi per la versione modernizzata
   selectRow(row: Contratto): void {
     this.selectedRow = this.selectedRow === row ? null : row;
   }
@@ -407,7 +356,6 @@ export class ContrattiRicercaComponent implements OnInit {
 
   // Metodo per esportazione (da implementare se necessario)
   exportData(): void {
-    // Implementazione esportazione dati
     console.log('Esportazione dati in corso...');
   }
 
@@ -425,7 +373,6 @@ export class ContrattiRicercaComponent implements OnInit {
       
       // Se è una stringa, proviamo a parsarla
       if (typeof dateValue === 'string') {
-        // Gestione diversi formati di data
         let parsedDate: Date;
         
         // Formato ISO (2023-12-25T00:00:00.000Z)
@@ -442,20 +389,17 @@ export class ContrattiRicercaComponent implements OnInit {
         else if (dateValue.includes('/')) {
           const parts = dateValue.split('/');
           if (parts.length === 3) {
-            // Assumiamo formato dd/mm/yyyy
             parsedDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
           } else {
             parsedDate = new Date(dateValue);
           }
         }
-        // Altri formati
         else {
           parsedDate = new Date(dateValue);
         }
         
         if (isNaN(parsedDate.getTime())) {
-          console.warn('Data non valida:', dateValue);
-          return dateValue.toString(); // Restituisce la stringa originale se non parsabile
+          return dateValue.toString();
         }
         
         return this.formatDateToString(parsedDate);
@@ -467,7 +411,6 @@ export class ContrattiRicercaComponent implements OnInit {
         return this.formatDateToString(parsedDate);
       }
       
-      // Fallback: restituisce il valore come stringa
       return dateValue.toString();
       
     } catch (error) {
@@ -481,5 +424,175 @@ export class ContrattiRicercaComponent implements OnInit {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
+  }
+
+  // ==================== GESTIONE TICKET SECTION ====================
+  // Tutti i metodi per la gestione dei ticket sono raggruppati qui in fondo
+
+  /**
+   * Apre la modal per creare un nuovo ticket o visualizzare un ticket esistente
+   * Verifica prima se esiste già un ticket per questo contratto
+   * @param contratto - Il contratto per cui aprire/creare il ticket
+   * @param event - L'evento click (opzionale)
+   */
+  openTicketModal(contratto: Contratto, event?: Event): void {
+    // Ferma la propagazione dell'evento per evitare selezione della riga
+    if (event) {
+      event.stopPropagation();
+    }
+
+    // Verifica se esiste già un ticket per questo contratto
+    this.apiService.getTicketByContractId(contratto.id).subscribe({
+      next: (response: any) => {
+        if (response.response === 'ok' && response.body?.ticket) {
+          // Ticket esistente trovato - apri modal con chat esistente
+          console.log('Ticket esistente trovato:', response.body.ticket);
+          this.openExistingTicketModal(response.body.ticket, contratto);
+        } else {
+          // Nessun ticket trovato - apri modal per creazione nuovo ticket
+          this.openTicketCreationModal(contratto);
+        }
+      },
+      error: (error) => {
+        console.error('Errore nella verifica del ticket:', error);
+        
+        // In caso di errore, mostra notifica e procedi con la creazione
+        this.snackBar.open(
+          'Errore nella verifica del ticket. Procedo con la creazione.',
+          'Chiudi',
+          {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['warning-snackbar']
+          }
+        );
+        
+        this.openTicketCreationModal(contratto);
+      }
+    });
+  }
+
+  /**
+   * Apre la modal per visualizzare e chattare su un ticket esistente
+   * @param ticket - I dati del ticket esistente
+   * @param contratto - I dati del contratto associato
+   */
+  private openExistingTicketModal(ticket: any, contratto: Contratto): void {
+    // Prepara i dati del contratto per la modal
+    const contractData = {
+      contractId: contratto.id,
+      contractCode: contratto.id.toString(),
+      clientName: contratto.cliente,
+      pivacf: contratto.pivacf,
+      dateIns: contratto.datains,
+      productName: contratto.prodotto,
+      seuName: contratto.seu,
+      status: contratto.stato
+    };
+
+    // Pulisci eventuali backdrop residui
+    this.cleanupBackdrops();
+
+    // Apri modal con ticket esistente
+    const dialogRef = this.dialog.open(ContrattoDetailsDialogComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      data: { 
+        reparto: 'ticket',
+        contractData: contractData,
+        existingTicket: ticket  // Passa i dati del ticket esistente
+      },
+      disableClose: false,
+      hasBackdrop: true,
+      backdropClass: 'custom-backdrop',
+      panelClass: 'ticket-modal-panel',
+      autoFocus: true
+    });
+
+    // Gestisce la chiusura del dialog
+    dialogRef.afterClosed().pipe(take(1)).subscribe(result => {
+      if (result && result.success) {
+        console.log('Chat ticket chiusa');
+        
+        // Mostra notifica di successo
+        this.snackBar.open(
+          'Conversazione aggiornata',
+          'Chiudi',
+          {
+            duration: 2000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          }
+        );
+      }
+      
+      // Pulisci backdrop dopo la chiusura
+      setTimeout(() => this.cleanupBackdrops(), 100);
+    });
+  }
+
+  /**
+   * Apre la modal per creare un nuovo ticket (flow a 2 step)
+   * @param contratto - I dati del contratto per cui creare il ticket
+   */
+  private openTicketCreationModal(contratto: Contratto): void {
+    // Prepara i dati del contratto per la modal ticket
+    const contractData = {
+      contractId: contratto.id,
+      contractCode: contratto.id.toString(),
+      clientName: contratto.cliente,
+      pivacf: contratto.pivacf,
+      dateIns: contratto.datains,
+      productName: contratto.prodotto,
+      seuName: contratto.seu,
+      status: contratto.stato
+    };
+
+    // Pulisci eventuali backdrop residui prima di aprire la modal
+    this.cleanupBackdrops();
+
+    // Apri modal per creazione nuovo ticket
+    const dialogRef = this.dialog.open(ContrattoDetailsDialogComponent, {
+      width: '800px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      data: { 
+        reparto: 'ticket',
+        contractData: contractData 
+      },
+      disableClose: false,
+      hasBackdrop: true,
+      backdropClass: 'custom-backdrop',
+      panelClass: 'ticket-modal-panel',
+      autoFocus: true
+    });
+
+    // Gestisce il risultato della chiusura del dialog
+    dialogRef.afterClosed().pipe(take(1)).subscribe(result => {
+      if (result && result.success) {
+        console.log('Ticket creato con successo! ID:', result.ticketId);
+        
+        // Mostra notifica di successo
+        this.snackBar.open(
+          'Ticket creato con successo! Il backoffice è stato notificato.',
+          'Chiudi',
+          {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          }
+        );
+        
+        // Opzionale: per refresh dei dati dopo creazione ticket
+        // this.refreshData();
+      }
+      
+      // Pulisci backdrop dopo la chiusura
+      setTimeout(() => this.cleanupBackdrops(), 100);
+    });
   }
 }

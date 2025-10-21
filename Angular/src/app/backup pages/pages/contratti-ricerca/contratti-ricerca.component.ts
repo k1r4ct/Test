@@ -102,9 +102,9 @@ export class ContrattiRicercaComponent implements OnInit {
       .getContratto()
       
       .subscribe((contratto: any) => {
-        console.log("dentro contratti ricerca, api get contratto");
+        //console.log("dentro contratti ricerca, api get contratto");
         
-        console.log(contratto);
+        //console.log(contratto);
         this.codFpIva = contratto.codFpIvaRicerca.codFPIva;
         formData.append("codFPIva", contratto.codFpIvaRicerca.codFPIva);
         formData.append("tiporicerca", contratto.codFpIvaRicerca.tiporicerca);
@@ -138,7 +138,7 @@ export class ContrattiRicercaComponent implements OnInit {
   populateTable(formData: any) {
     this.apiService.getContCodFPIva(formData).subscribe((risposta: any) => {
       //console.log("lista contratti trovati");
-      console.log(risposta);
+      //console.log(risposta);
       this.LISTACONTRATTI = risposta.body.risposta.map((contratto: any) => ({
         id: contratto.id,
         cliente:
@@ -210,8 +210,8 @@ export class ContrattiRicercaComponent implements OnInit {
   }
 
   visualizzaDettagli(row: Contratto, reparto: string) {
-    console.log(row);
-    console.log(this.LISTACONTRATTI);
+    //console.log(row);
+    //console.log(this.LISTACONTRATTI);
     this.dialog.open(ContrattoDetailsDialogComponent, {
       width: "calc(50% - 50px)",
       enterAnimationDuration: "500ms",

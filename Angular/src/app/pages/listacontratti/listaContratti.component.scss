@@ -2391,6 +2391,73 @@ textarea {
   }
 }
 
+// ==================== STILI TICKET BUTTON ====================
+
+.ticket-button {
+  transition: all 0.3s ease;
+  
+  &.ticket-new {
+    color: #757575;
+    
+    &:hover {
+      background-color: rgba(117, 117, 117, 0.1);
+      color: #424242;
+    }
+  }
+  
+  &.ticket-exists {
+    color: #4caf50;
+    
+    &:hover {
+      background-color: rgba(76, 175, 80, 0.1);
+      color: #2e7d32;
+    }
+  }
+  
+  &.ticket-unread {
+    color: #f44336;
+    animation: pulse-ticket 2s infinite;
+    
+    &:hover {
+      background-color: rgba(244, 67, 54, 0.1);
+      color: #c62828;
+    }
+    
+    mat-icon {
+      animation: shake 0.5s ease-in-out infinite alternate;
+    }
+  }
+}
+
+@keyframes pulse-ticket {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+  }
+}
+
+@keyframes shake {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+// Modal ticket styles
+.ticket-modal-panel {
+  .mat-mdc-dialog-container {
+    padding: 0;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+}
+
+
 /* Responsive design per sezione domande */
 @media (max-width: 768px) {
   .contract-details-card {

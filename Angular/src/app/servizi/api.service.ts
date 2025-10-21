@@ -754,9 +754,8 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
-    /**
-   * Update ticket priority (low, medium, high, unassigned)
-   * Priority changes are logged but NOT shown in chat messages
+  /**
+   * Cambia la priorità dei ticket(low, medium, high, unassigned)
    */
   updateTicketPriority(form: any): Observable<any> {
     let headers = this.headers;
@@ -766,8 +765,7 @@ export class ApiService implements OnDestroy {
   }
 
   /**
-   * Get complete change history for a ticket
-   * Returns all status and priority changes
+   * Recupera i log delle modifiche di stato e priorità di un ticket
    */
   getTicketChangeLogs(ticketId: number): Observable<any> {
     let headers = this.headers;
@@ -775,5 +773,16 @@ export class ApiService implements OnDestroy {
       .get(this.global.API_URL + "getTicketChangeLogs/" + ticketId, { headers })
       .pipe(takeUntil(this.destroy$));
   } 
+
+  /**
+  * Verifica se esiste un ticket per un contratto specifico
+  * Restituisce il ticket se esiste, altrimenti null
+  */
+  getTicketByContractId(contractId: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "getTicketByContractId/" + contractId, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
 
 }

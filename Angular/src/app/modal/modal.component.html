@@ -1,3 +1,4 @@
+<!-- ==================== CONTRATTI RICERCA SECTION ==================== -->
 <div *ngIf="data.reparto==='ricercaContratti'">
   <div mat-dialog-content>
     <div class="card contrattoselezionato">
@@ -44,19 +45,6 @@
                 </div>
               </div>
             </div>
-            <!-- <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
-              <div class="form-group">
-                <div class="row">
-                  <div class="col-3">
-                    <label class="uppercase">Ragione Sociale</label>
-                  </div>
-                  <div class="col-9">
-                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
-                      value="{{data.row.ragione_sociale}}" readonly>
-                  </div>
-                </div>
-              </div>
-            </div> -->
             <div class="col-md-12 col-12 col-sm-12 col-xs-12 col-lg-12 col-xl-12">
               <div class="form-group">
                 <div class="row">
@@ -212,6 +200,8 @@
     <button class="btn bottoniFormConferma float-end " mat-button (click)="onClose()">Chiudi</button>
   </div>
 </div>
+
+<!-- ==================== LEADS SECTION ==================== -->
 <div *ngIf="data.reparto==='leads'">
   <div mat-dialog-content>
     <div class="card contrattoselezionato">
@@ -281,7 +271,8 @@
                   <div class="col-8 d-flex align-items-center">
                     <mat-form-field appearance="outline" style="flex: 1 0 auto;">
                       <mat-label>{{data.lead.assegnato_a}}</mat-label>
-                      <mat-select (selectionChange)="cambiaAssegnazione($event.value,data.lead.id)" [disabled]="attivaRiassegnazione">
+                      <mat-select (selectionChange)="cambiaAssegnazione($event.value,data.lead.id)"
+                        [disabled]="attivaRiassegnazione">
                         <mat-option value="{{data.lead.assegnato_a}}" selected disabled>
                           {{data.lead.assegnato_a}}</mat-option>
                         <mat-option *ngFor="let user of userForLeads" [value]="{stato:user.id}">{{user.nome}}
@@ -290,7 +281,7 @@
                     </mat-form-field>
                   </div>
                 </div>
-                
+
                 <form [formGroup]="form" (ngSubmit)="salvaLead()">
                   <div class="row">
                     <div class="col-3">
@@ -308,7 +299,7 @@
                       </mat-form-field>
                     </div>
                   </div>
-                  
+
                   <div class="row" [hidden]="showCalendar">
                     <div class="col-3">
                       <label class="uppercase">Data Appuntamento</label>
@@ -316,7 +307,6 @@
                     <div class="col-9">
 
                       <mat-form-field class="w-100">
-                        <!-- Input per la selezione della data -->
                         <input matInput [matDatepicker]="picker" placeholder="Seleziona la data"
                           formControlName="data_appuntamento_mat" (click)="picker.open()" />
                         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
@@ -324,7 +314,6 @@
                       </mat-form-field>
 
                       <mat-form-field class="w-100">
-                        <!-- Input per la selezione dell'orario -->
                         <input matInput type="time" placeholder="Seleziona l'ora"
                           formControlName="ora_appuntamento_mat" />
                       </mat-form-field>
@@ -339,7 +328,8 @@
                       <label class="uppercase">DATA APPUNTAMENTO</label>
                     </div>
                     <div class="col-9">
-                      <input type="text" class="form-control input" Name="data_appuntamentoView" placeholder="Data Appuntamento"
+                      <input type="text" class="form-control input" Name="data_appuntamentoView"
+                        placeholder="Data Appuntamento"
                         value="{{data.lead.data_appuntamento}} - {{data.lead.ora_appuntamento}}" readonly>
                     </div>
                   </div>
@@ -355,4 +345,341 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ==================== TICKET CREATION SECTION ==================== -->
+<div *ngIf="data.reparto==='ticket'">
+
+  <!-- STEP 1: CONFIRMATION -->
+  <div *ngIf="ticketStep === 'confirm'" class="ticket-modal-content">
+    <div mat-dialog-content class="ticket-dialog-content">
+      <div class="ticket-header">
+        <h2 mat-dialog-title>
+          <mat-icon class="title-icon">confirmation_number</mat-icon>
+          Crea Ticket Assistenza
+        </h2>
+        <p class="subtitle">Contratto #{{ data.contractData?.contractId }}</p>
+      </div>
+
+      <!-- Contract Details Section -->
+      <div class="section-card">
+        <h3 class="section-title">
+          <mat-icon>assignment</mat-icon>
+          Dettagli Contratto
+        </h3>
+
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-md-6 col-12">
+              <div class="form-group">
+                <label class="uppercase">ID</label>
+                <input type="text" class="form-control input" value="{{data.contractData?.contractId}}" readonly>
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="form-group">
+                <label class="uppercase">Cliente/Rag.Sociale</label>
+                <input type="text" class="form-control input" value="{{data.contractData?.clientName}}" readonly>
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="form-group">
+                <label class="uppercase">Partita Iva / Cod. Fiscale</label>
+                <input type="text" class="form-control input" value="{{data.contractData?.pivacf}}" readonly>
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="form-group">
+                <label class="uppercase">Data Inserimento</label>
+                <input type="text" class="form-control input" value="{{data.contractData?.dateIns}}" readonly>
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="form-group">
+                <label class="uppercase">Prodotto</label>
+                <input type="text" class="form-control input" value="{{data.contractData?.productName}}" readonly>
+              </div>
+            </div>
+            <div class="col-md-6 col-12">
+              <div class="form-group">
+                <label class="uppercase">SEU Assegnato</label>
+                <input type="text" class="form-control input" value="{{data.contractData?.seuName}}" readonly>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="form-group">
+                <label class="uppercase">Stato Contratto</label>
+                <input type="text" class="form-control input" value="{{data.contractData?.status}}" readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ticket Info Section -->
+      <div class="section-card">
+        <h3 class="section-title">
+          <mat-icon>info</mat-icon>
+          Informazioni Ticket
+        </h3>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Titolo Ticket</mat-label>
+          <input matInput [(ngModel)]="ticketTitle" placeholder="Inserisci un titolo descrittivo" maxlength="200">
+          <mat-hint align="end">{{ ticketTitle.length }}/200</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Descrizione</mat-label>
+          <textarea matInput [(ngModel)]="ticketDescription" rows="4"
+            placeholder="Descrivi brevemente il problema o la richiesta" maxlength="500"></textarea>
+          <mat-hint align="end">{{ ticketDescription.length }}/500</mat-hint>
+        </mat-form-field>
+
+        <div class="priority-info">
+          <mat-icon>assignment_ind</mat-icon>
+          <p>Il ticket verrà preso in carico dal primo backofficer disponibile.</p>
+        </div>
+      </div>
+
+      <!-- Info Message -->
+      <div class="info-banner">
+        <mat-icon>lightbulb</mat-icon>
+        <p>Nel prossimo passaggio potrai inserire un messaggio iniziale per descrivere meglio la tua richiesta.</p>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div mat-dialog-actions class="dialog-actions">
+      <button mat-stroked-button (click)="onClose()" class="cancel-btn">
+        <mat-icon>close</mat-icon>
+        Annulla
+      </button>
+      <button mat-raised-button color="primary" (click)="proceedToChat()" class="proceed-btn">
+        <mat-icon>arrow_forward</mat-icon>
+        Continua
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: CHAT MESSAGE -->
+  <div *ngIf="ticketStep === 'chat'" class="ticket-modal-content">
+    <div mat-dialog-content class="ticket-dialog-content chat-content">
+      <div class="ticket-header">
+        <h2 mat-dialog-title>
+          <mat-icon class="title-icon">chat</mat-icon>
+          Inserisci Messaggio
+        </h2>
+        <p class="subtitle">{{ ticketTitle }}</p>
+      </div>
+
+      <!-- Summary Card -->
+      <div class="summary-card">
+        <div class="summary-header">
+          <mat-icon>summarize</mat-icon>
+          <h4>Riepilogo Ticket</h4>
+        </div>
+        <div class="summary-body">
+          <div class="summary-row">
+            <span class="label">Contratto:</span>
+            <span class="value">#{{ data.contractData?.contractId }} - {{ data.contractData?.clientName }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input Section -->
+      <div class="section-card">
+        <h3 class="section-title">
+          <mat-icon>message</mat-icon>
+          Messaggio Iniziale
+        </h3>
+
+        <mat-form-field appearance="outline" class="full-width chat-field">
+          <mat-label>Scrivi il tuo messaggio</mat-label>
+          <textarea matInput [(ngModel)]="chatMessage" (input)="autoResizeTextarea($event)" rows="8"
+            placeholder="Descrivi dettagliatamente il problema o la richiesta di assistenza..." maxlength="2000"
+            [disabled]="isCreatingTicket"></textarea>
+          <mat-hint align="end">{{ chatMessage.length }}/2000</mat-hint>
+        </mat-form-field>
+
+        <div class="message-info">
+          <mat-icon>info</mat-icon>
+          <p>Questo messaggio sarà il primo della conversazione del ticket. Potrai aggiungere altri messaggi in seguito
+            dalla sezione Gestione Ticket.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div mat-dialog-actions class="dialog-actions">
+      <button mat-stroked-button (click)="goBackToConfirm()" class="back-btn" [disabled]="isCreatingTicket">
+        <mat-icon>arrow_back</mat-icon>
+        Indietro
+      </button>
+      <button mat-raised-button color="primary" (click)="createTicketWithMessage()" class="create-btn"
+        [disabled]="isCreatingTicket || !chatMessage.trim()">
+        <mat-spinner diameter="20" *ngIf="isCreatingTicket" class="btn-spinner"></mat-spinner>
+        <mat-icon *ngIf="!isCreatingTicket">check_circle</mat-icon>
+        {{ isCreatingTicket ? 'Creazione in corso...' : 'Crea Ticket' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 3: EXISTING TICKET CHAT -->
+  <div *ngIf="ticketStep === 'existing'" class="ticket-modal-content">
+    <div mat-dialog-content class="ticket-dialog-content existing-chat-content">
+      
+      <!-- Header con info ticket -->
+      <div class="existing-ticket-header">
+        <div class="ticket-info-header">
+          <div class="ticket-number-section">
+            <mat-icon class="ticket-icon">confirmation_number</mat-icon>
+            <div>
+              <h2>Ticket #{{ existingTicket?.ticket_number }}</h2>
+              <p class="ticket-title">{{ existingTicket?.title }}</p>
+            </div>
+          </div>
+          
+          <div class="ticket-badges">
+            <mat-chip [color]="getStatusColor(existingTicket?.status)">
+              <mat-icon class="status-icon">
+                {{ existingTicket?.status === 'new' ? 'fiber_new' : 
+                   existingTicket?.status === 'waiting' ? 'schedule' : 
+                   existingTicket?.status === 'resolved' ? 'check_circle' : 'info' }}
+              </mat-icon>
+              {{ existingTicket?.status === 'new' ? 'Nuovo' : 
+                 existingTicket?.status === 'waiting' ? 'In Lavorazione' : 
+                 existingTicket?.status === 'resolved' ? 'Risolto' : 'Info' }}
+            </mat-chip>
+            
+            <mat-chip [color]="getPriorityColor(existingTicket?.priority)">
+              <mat-icon>flag</mat-icon>
+              {{ existingTicket?.priority === 'high' ? 'Alta' : 
+                 existingTicket?.priority === 'medium' ? 'Media' : 
+                 existingTicket?.priority === 'low' ? 'Bassa' : 'Non Assegnata' }}
+            </mat-chip>
+          </div>
+        </div>
+
+        <!-- Contract Info Bar -->
+        <div class="contract-info-bar">
+          <div class="info-item">
+            <mat-icon>assignment</mat-icon>
+            <span><strong>Contratto:</strong> #{{ data.contractData?.contractId }}</span>
+          </div>
+          <div class="info-item">
+            <mat-icon>person</mat-icon>
+            <span><strong>Cliente:</strong> {{ data.contractData?.clientName }}</span>
+          </div>
+          <div class="info-item">
+            <mat-icon>inventory</mat-icon>
+            <span><strong>Prodotto:</strong> {{ data.contractData?.productName }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Area messaggi -->
+      <div class="chat-messages-container" id="chatMessagesContainer">
+        
+        <!-- Loading spinner -->
+        <div *ngIf="isLoadingMessages" class="loading-messages">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Caricamento messaggi...</p>
+        </div>
+
+        <!-- Messages list -->
+        <div *ngIf="!isLoadingMessages" class="messages-list">
+          
+          <!-- No messages -->
+          <div *ngIf="ticketMessages.length === 0" class="no-messages">
+            <mat-icon>chat_bubble_outline</mat-icon>
+            <p>Nessun messaggio presente. Inizia la conversazione!</p>
+          </div>
+
+          <!-- Messages -->
+          <div *ngFor="let message of ticketMessages" 
+               class="message-bubble"
+               [ngClass]="{
+                 'message-seu': message.user_id === currentUser?.id,
+                 'message-backoffice': message.user_id !== currentUser?.id,
+                 'message-system': message.message_type === 'status_change'
+               }">
+            
+            <!-- System message -->
+            <div *ngIf="message.message_type === 'status_change'" class="system-message">
+              <mat-icon>info</mat-icon>
+              <span>{{ message.message }}</span>
+              <span class="message-time">{{ formatMessageTime(message.created_at) }}</span>
+            </div>
+
+            <!-- Regular message -->
+            <div *ngIf="message.message_type !== 'status_change'" class="regular-message">
+              <div class="message-header">
+                <div class="user-info">
+                  <mat-icon class="user-icon">
+                    {{ message.user_id === currentUser?.id ? 'person' : 'support_agent' }}
+                  </mat-icon>
+                  <strong>{{ message.user?.nome && message.user?.cognome ? 
+                            message.user.nome + ' ' + message.user.cognome : 
+                            message.user?.email || 'Utente' }}</strong>
+                  <span class="role-badge">
+                    {{ message.user?.role?.descrizione || 
+                       (message.user_id === currentUser?.id ? 'SEU' : 'Backoffice') }}
+                  </span>
+                </div>
+                <span class="message-time">{{ formatMessageTime(message.created_at) }}</span>
+              </div>
+              
+              <div class="message-content">
+                {{ message.message }}
+              </div>
+
+              <!-- Attachment if present -->
+              <div *ngIf="message.attachment_name" class="message-attachment">
+                <mat-icon>attach_file</mat-icon>
+                <span>{{ message.attachment_name }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input nuovo messaggio -->
+      <div class="chat-input-section">
+        <mat-form-field appearance="outline" class="message-input-field">
+          <mat-label>Scrivi un messaggio...</mat-label>
+          <textarea matInput 
+                    [(ngModel)]="chatMessage" 
+                    (keydown.enter)="handleEnterKey($event)"
+                    rows="3"
+                    placeholder="Scrivi qui il tuo messaggio..."
+                    [disabled]="isSendingMessage"></textarea>
+          <mat-hint>Premi Invio per inviare, Shift+Invio per andare a capo</mat-hint>
+        </mat-form-field>
+
+        <button mat-fab 
+                color="primary" 
+                (click)="sendMessageToExistingTicket()"
+                [disabled]="!chatMessage.trim() || isSendingMessage"
+                class="send-button">
+          <mat-spinner diameter="24" *ngIf="isSendingMessage"></mat-spinner>
+          <mat-icon *ngIf="!isSendingMessage">send</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div mat-dialog-actions class="dialog-actions">
+      <div class="status-info">
+        <mat-icon>info</mat-icon>
+        <span>I messaggi vengono aggiornati automaticamente</span>
+      </div>
+      
+      <button mat-raised-button (click)="onClose()" class="close-chat-btn">
+        <mat-icon>close</mat-icon>
+        Chiudi Chat
+      </button>
+    </div>
+  </div>
+
 </div>

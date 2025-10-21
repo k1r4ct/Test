@@ -41,6 +41,10 @@ import { RicercaclientiService } from "src/app/servizi/ricercaclienti.service";
 import { saveAs } from "file-saver";
 import * as Papa from "papaparse";
 import { json } from "node:stream/consumers";
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ContrattoDetailsDialogComponent } from 'src/app/modal/modal.component';
+import { MatDialog } from '@angular/material/dialog';
+import { take } from 'rxjs';
 export interface UserData {
   id: string;
   name: string;
@@ -197,6 +201,10 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   allContrattiCache: Map<number, any[]> = new Map(); // Map per memorizzare i contratti per pagina
   totalCachedContratti: any[] = []; // Array di tutti i contratti memorizzati nella cache
   isLoadingContratti: boolean = false; // Flag per il caricamento
+
+  // Proprietà per gestione ticket
+  private ticketStatusCache: Map<number, any> = new Map(); // Cache stato ticket per contratto
+  private lastTicketCheck: Date = new Date();
 
   // Proprietà per gestire la vista filtrata
   isFilteredView: boolean = false;
@@ -383,6 +391,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     private sharedservice: SharedService,
     private shContratto: ContrattoService,
     private ApiService: ApiService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar,
     private matIconRegistry: MatIconRegistry,
     private domSanitizer: DomSanitizer,
     private router: Router,
@@ -543,6 +553,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   ngOnInit(): void {
     this.setupFilterApplyPipeline();
     this.finishInit();
+    this.loadTicketStatuses();
   }
 
   ngOnDestroy(): void {
@@ -3147,4 +3158,280 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     
     return this.filesCount(row) > 0;
   }
+  
+  /**
+   * Carica gli stati dei ticket per tutti i contratti visualizzati
+   */
+  private loadTicketStatuses(): void {
+    // Carica lo stato dei ticket per i contratti nella vista corrente
+    if (this.LISTACONTRATTI && this.LISTACONTRATTI.length > 0) {
+      this.LISTACONTRATTI.forEach(contratto => {
+        this.checkTicketStatus(Number(contratto.id));
+      });
+    }
+  }
+
+  /**
+   * Verifica lo stato del ticket per un contratto specifico
+   * @param contractId - ID del contratto
+   */
+  private checkTicketStatus(contractId: number): void {
+    this.ApiService.getTicketByContractId(contractId).subscribe({
+      next: (response: any) => {
+        if (response.response === 'ok' && response.body?.ticket) {
+          // Ticket trovato, verifica messaggi non letti
+          const hasUnread = response.body.ticket.unread_messages_count > 0;
+          
+          this.ticketStatusCache.set(contractId, {
+            ticket: response.body.ticket,
+            hasUnreadMessages: hasUnread
+          });
+        } else {
+          // Nessun ticket
+          this.ticketStatusCache.set(contractId, {
+            ticket: null,
+            hasUnreadMessages: false
+          });
+        }
+        // Forza aggiornamento vista
+        this.changeDetectorRef.detectChanges();
+      },
+      error: (error) => {
+        console.error(`Errore verifica ticket per contratto ${contractId}:`, error);
+        this.ticketStatusCache.set(contractId, {
+          ticket: null,
+          hasUnreadMessages: false
+        });
+      }
+    });
+  }
+
+  /**
+   * Ottiene l'icona appropriata per il bottone ticket
+   * @param contractId - ID del contratto
+   * @returns Nome dell'icona Material
+   */
+  getTicketIcon(contractId: number): string {
+    const cachedStatus = this.ticketStatusCache.get(contractId);
+    
+    if (!cachedStatus) {
+      return 'mail_outline';
+    }
+    
+    if (cachedStatus.ticket) {
+      return cachedStatus.hasUnreadMessages ? 'mark_email_unread' : 'mail';
+    }
+    
+    return 'mail_outline';
+  }
+
+  /**
+   * Ottiene il colore del bottone ticket
+   * @param contractId - ID del contratto
+   * @returns Classe CSS per il colore
+   */
+  getTicketButtonColor(contractId: number): string {
+    const icon = this.getTicketIcon(contractId);
+    
+    switch(icon) {
+      case 'mark_email_unread':
+        return 'ticket-unread';
+      case 'mail':
+        return 'ticket-exists';
+      default:
+        return 'ticket-new';
+    }
+  }
+
+  /**
+   * Ottiene il tooltip per il bottone ticket
+   * @param contractId - ID del contratto
+   * @returns Testo del tooltip
+   */
+  getTicketTooltip(contractId: number): string {
+    const icon = this.getTicketIcon(contractId);
+    
+    switch(icon) {
+      case 'mark_email_unread':
+        return 'Hai messaggi non letti';
+      case 'mail':
+        return 'Visualizza ticket esistente';
+      default:
+        return 'Crea nuovo ticket assistenza';
+    }
+  }
+
+  /**
+   * Apre la modal per creare/visualizzare ticket
+   * @param row - Dati della riga del contratto
+   * @param event - Evento click
+   */
+  openTicketModal(row: any, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    const contratto = {
+      id: row.id,
+      cliente: row.cliente,
+      pivacf: row.pivacf,
+      datains: row.datains,
+      prodotto: row.prodotto,
+      seu: row.seu,
+      stato: row.stato
+    };
+
+    // Verifica se esiste già un ticket
+    this.ApiService.getTicketByContractId(row.id).subscribe({
+      next: (response: any) => {
+        if (response.response === 'ok' && response.body?.ticket) {
+          // Ticket esistente - apri chat
+          this.openExistingTicketModal(response.body.ticket, contratto);
+        } else {
+          // Nessun ticket - crea nuovo
+          this.openTicketCreationModal(contratto);
+        }
+      },
+      error: (error) => {
+        console.error('Errore verifica ticket:', error);
+        this.snackBar.open(
+          'Errore nella verifica del ticket',
+          'Chiudi',
+          {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          }
+        );
+        // In caso di errore, procedi con creazione
+        this.openTicketCreationModal(contratto);
+      }
+    });
+  }
+
+  /**
+   * Apre modal per ticket esistente
+   * @param ticket - Dati ticket esistente
+   * @param contratto - Dati contratto
+   */
+  private openExistingTicketModal(ticket: any, contratto: any): void {
+    const contractData = {
+      contractId: contratto.id,
+      contractCode: contratto.id.toString(),
+      clientName: contratto.cliente,
+      pivacf: contratto.pivacf,
+      dateIns: contratto.datains,
+      productName: contratto.prodotto,
+      seuName: contratto.seu,
+      status: contratto.stato
+    };
+
+    // Pulisci backdrop residui
+    this.cleanupBackdrops();
+
+    const dialogRef = this.dialog.open(ContrattoDetailsDialogComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      data: { 
+        reparto: 'ticket',
+        contractData: contractData,
+        existingTicket: ticket
+      },
+      disableClose: false,
+      hasBackdrop: true,
+      backdropClass: 'custom-backdrop',
+      panelClass: 'ticket-modal-panel',
+      autoFocus: true
+    });
+
+    dialogRef.afterClosed().pipe(take(1)).subscribe(result => {
+      if (result && result.success) {
+        // Ricarica stato ticket
+        this.checkTicketStatus(Number(contratto.id));
+        
+        this.snackBar.open(
+          'Conversazione aggiornata',
+          'Chiudi',
+          {
+            duration: 2000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          }
+        );
+      }
+      setTimeout(() => this.cleanupBackdrops(), 100);
+    });
+  }
+
+  /**
+   * Apre modal per creare nuovo ticket
+   * @param contratto - Dati contratto
+   */
+  private openTicketCreationModal(contratto: any): void {
+    const contractData = {
+      contractId: contratto.id,
+      contractCode: contratto.id.toString(),
+      clientName: contratto.cliente,
+      pivacf: contratto.pivacf,
+      dateIns: contratto.datains,
+      productName: contratto.prodotto,
+      seuName: contratto.seu,
+      status: contratto.stato
+    };
+
+    // Pulisci backdrop residui
+    this.cleanupBackdrops();
+
+    const dialogRef = this.dialog.open(ContrattoDetailsDialogComponent, {
+      width: '800px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      data: { 
+        reparto: 'ticket',
+        contractData: contractData 
+      },
+      disableClose: false,
+      hasBackdrop: true,
+      backdropClass: 'custom-backdrop',
+      panelClass: 'ticket-modal-panel',
+      autoFocus: true
+    });
+
+    dialogRef.afterClosed().pipe(take(1)).subscribe(result => {
+      if (result && result.success) {
+        // Aggiorna stato ticket dopo creazione
+        this.checkTicketStatus(Number(contratto.id));
+        
+        this.snackBar.open(
+          'Ticket creato con successo! Il backoffice è stato notificato.',
+          'Chiudi',
+          {
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          }
+        );
+      }
+      setTimeout(() => this.cleanupBackdrops(), 100);
+    });
+  }
+
+  /**
+   * Pulisce backdrop residui
+   */
+  private cleanupBackdrops(): void {
+    const transparentBackdrops = document.querySelectorAll('.cdk-overlay-transparent-backdrop');
+    transparentBackdrops.forEach(backdrop => {
+      if (backdrop instanceof HTMLElement) {
+        backdrop.style.display = 'none';
+        backdrop.style.visibility = 'hidden';
+        backdrop.style.pointerEvents = 'none';
+      }
+    });
+  }
 }
+      

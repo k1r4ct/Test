@@ -759,4 +759,36 @@ class TicketController extends Controller
             Log::error('Error sending notifications: ' . $e->getMessage());
         }
     }
+
+    public function getTicketByContractId($contractId)
+    {
+        try {
+            $user = Auth::user();
+            $ticket = Ticket::where('contract_id', $contractId)
+                        ->where('status', '!=', 'deleted')
+                        ->with(['messages.user', 'contract'])
+                        ->first();
+            
+            if ($ticket && $this->canAccessTicket($user, $ticket)) {
+                return response()->json([
+                    "response" => "ok",
+                    "status" => "200",
+                    "body" => ["ticket" => $ticket]
+                ]);
+            }
+            
+            return response()->json([
+                "response" => "ok",
+                "status" => "200",
+                "body" => ["ticket" => null]
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error getting ticket by contract: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500"
+            ]);
+        }
+    }
 }
