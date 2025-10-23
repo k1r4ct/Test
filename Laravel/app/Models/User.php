@@ -32,6 +32,7 @@ class User extends Authenticatable implements JWTSubject
         'codice_fiscale',
         'partita_iva',
         'telefono',
+        'cellulare',
         'indirizzo',
         'citta',
         'cap',
@@ -41,10 +42,9 @@ class User extends Authenticatable implements JWTSubject
         'punti_valore_maturati',
         'punti_carriera_maturati',
         'user_id_padre',
-        'partita_iva',
         'ragione_sociale',
-        'pv_bonus',
-        'pv_totali_spesi',
+        'punti_bonus',
+        'punti_spesi',
     ];
 
     /**
@@ -67,16 +67,14 @@ class User extends Authenticatable implements JWTSubject
         'password' => 'hashed',
         'punti_valore_maturati' => 'integer',
         'punti_carriera_maturati' => 'integer',
-        'pv_bonus' => 'integer',
-        'pv_totali_spesi' => 'integer',
+        'punti_bonus' => 'integer',
+        'punti_spesi' => 'integer',
     ];
 
     /**
      * Appends - Virtual attributes
      */
     protected $appends = ['pv_bloccati', 'pv_disponibili', 'pv_totali'];
-
-    // ==================== EXISTING RELATIONSHIPS ====================
 
     public function Role()
     {
@@ -154,7 +152,7 @@ class User extends Authenticatable implements JWTSubject
      */
     public function getPvTotaliAttribute()
     {
-        return ($this->punti_valore_maturati ?? 0) + ($this->pv_bonus ?? 0);
+        return ($this->punti_valore_maturati ?? 0) + ($this->punti_bonus ?? 0);
     }
 
     /**

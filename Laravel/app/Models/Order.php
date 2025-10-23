@@ -15,7 +15,7 @@ class Order extends Model
         'user_id',
         'total_pv',
         'order_status_id',
-        'payment_method_id',
+        'payment_mode_id',
         'order_date',
     ];
 
@@ -35,9 +35,9 @@ class Order extends Model
         return $this->belongsTo(OrderStatus::class);
     }
 
-    public function paymentMethod()
+    public function paymentMode()
     {
-        return $this->belongsTo(PaymentMethod::class);
+        return $this->belongsTo(payment_mode::class, 'payment_mode_id');
     }
 
     public function orderItems()
@@ -61,17 +61,17 @@ class Order extends Model
                     $user = User::find($order->user_id);
                     if ($user) {
                         // 1. Deduct PV from user's available balance
-                        // Check if user has pv_bonus to use first
+                        // Check if user has punti_bonus to use first
                         $pvToDeduct = $order->total_pv;
                         
-                        if ($user->pv_bonus && $user->pv_bonus > 0) {
-                            if ($user->pv_bonus >= $pvToDeduct) {
+                        if ($user->punti_bonus && $user->punti_bonus > 0) {
+                            if ($user->punti_bonus >= $pvToDeduct) {
                                 // Use only bonus PV
-                                $user->decrement('pv_bonus', $pvToDeduct);
+                                $user->decrement('punti_bonus', $pvToDeduct);
                             } else {
                                 // Use all bonus PV and remaining from accumulated PV
-                                $remaining = $pvToDeduct - $user->pv_bonus;
-                                $user->pv_bonus = 0;
+                                $remaining = $pvToDeduct - $user->punti_bonus;
+                                $user->punti_bonus = 0;
                                 $user->decrement('punti_valore_maturati', $remaining);
                                 $user->save();
                             }
@@ -80,8 +80,8 @@ class Order extends Model
                             $user->decrement('punti_valore_maturati', $pvToDeduct);
                         }
                         
-                        // 2. Update user's pv_totali_spesi counter
-                        $user->increment('pv_totali_spesi', $order->total_pv);
+                        // 2. Update user's punti_spesi counter
+                        $user->increment('punti_spesi', $order->total_pv);
                     }
                     
                     // 3. Delete all cart items for this user with 'completato' status

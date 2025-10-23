@@ -15,15 +15,16 @@ class Article extends Model
         'article_name',
         'description',
         'pv_price',
+        'is_digital',
         'available',
         'category_id',
-        'filter_id',
         'store_id',
         'thumbnail_asset_id',
     ];
 
     protected $casts = [
         'pv_price' => 'integer',
+        'is_digital' => 'boolean',
         'available' => 'boolean',
     ];
 
@@ -31,11 +32,6 @@ class Article extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
-    }
-
-    public function filter()
-    {
-        return $this->belongsTo(Filter::class);
     }
 
     public function store()
@@ -74,6 +70,16 @@ class Article extends Model
         return $query->where('available', true);
     }
 
+    public function scopeDigital($query)
+    {
+        return $query->where('is_digital', true);
+    }
+
+    public function scopePhysical($query)
+    {
+        return $query->where('is_digital', false);
+    }
+
     public function scopeByStore($query, $storeId)
     {
         return $query->where('store_id', $storeId);
@@ -84,8 +90,23 @@ class Article extends Model
         return $query->where('category_id', $categoryId);
     }
 
-    public function scopeByFilter($query, $filterId)
+    // Helper methods
+    public function isDigital()
     {
-        return $query->where('filter_id', $filterId);
+        return $this->is_digital === true;
+    }
+
+    public function isPhysical()
+    {
+        return $this->is_digital === false;
+    }
+
+    public function isVisibleToUser($user)
+    {
+        // Check both category and store filters
+        $categoryVisible = $this->category && $this->category->isVisibleToUser($user);
+        $storeVisible = $this->store && $this->store->isVisibleToUser($user);
+
+        return $categoryVisible && $storeVisible && $this->available;
     }
 }
