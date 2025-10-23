@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             PaymentModeSeeder::class,
             
             // 2. Filters and Categories
-            FilterSeeder::class,
+            FilterSeeder::class, 
             CategorySeeder::class,
             
             // 3. Products
@@ -28,6 +28,6 @@ class DatabaseSeeder extends Seeder
             StockSeeder::class,
         ]);
 
-        $this->command->info('✅ E-commerce seeders completed!');
+        $this->command->info('E-commerce seeders completed!');
     }
 }

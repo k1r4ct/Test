@@ -785,4 +785,38 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
+  // -------------------- WALLET API METHODS --------------------
+  
+  /**
+   * Get user wallet information
+   */
+  getWallet(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "user/wallet", { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get wallet summary with active cart
+   */
+  getWalletSummary(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "user/wallet/summary", { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get wallet transaction history (orders)
+   * @param page - Page number for pagination
+   * @param perPage - Items per page (default: 10)
+   */
+  getWalletHistory(page: number = 1, perPage: number = 10): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + `user/wallet/history?page=${page}&per_page=${perPage}`, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
 }

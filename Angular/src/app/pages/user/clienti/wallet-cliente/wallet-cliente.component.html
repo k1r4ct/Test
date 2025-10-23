@@ -1,0 +1,173 @@
+<div class="wallet-section" @cardAnimation>
+  <div class="container-fluid">
+    
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Caricamento...</span>
+      </div>
+      <p class="mt-3 text-muted">Caricamento salvadanaio...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="alert alert-danger" role="alert">
+      <i class="nc-icon nc-simple-remove"></i>
+      {{ error }}
+      <button class="btn btn-sm btn-link" (click)="refreshWallet()">
+        <i class="nc-icon nc-refresh-69"></i> Riprova
+      </button>
+    </div>
+
+    <!-- Wallet Content -->
+    <div *ngIf="!loading && !error">
+      
+      <!-- Header -->
+      <div class="card">
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0">
+              <i class="nc-icon nc-money-coins"></i>
+              Il Mio Salvadanaio
+            </h4>
+            <button class="btn btn-sm btn-outline-primary" (click)="refreshWallet()">
+              <i class="nc-icon nc-refresh-69"></i> Aggiorna
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          
+          <!-- Main Stats Grid -->
+          <div class="row">
+            
+            <!-- PV Disponibili Card (Main Highlight) -->
+            <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+              <div class="card stats-card pv-disponibili-card">
+                <div class="card-body">
+                  <div class="stats-icon">
+                    <i class="nc-icon nc-money-coins"></i>
+                  </div>
+                  <h6 class="stats-label">PV Disponibili</h6>
+                  <h2 class="stats-value" [ngClass]="'text-' + getAvailableColor()">
+                    {{ walletData.pv_disponibili | number:'1.0-0' }}
+                  </h2>
+                  <p class="stats-subtitle">Puoi usarli subito per acquistare</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- PV Totali Card -->
+            <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+              <div class="card stats-card">
+                <div class="card-body">
+                  <div class="stats-icon bg-info">
+                    <i class="nc-icon nc-chart-bar-32"></i>
+                  </div>
+                  <h6 class="stats-label">PV Totali</h6>
+                  <h2 class="stats-value text-info">
+                    {{ walletData.pv_totali | number:'1.0-0' }}
+                  </h2>
+                  <p class="stats-subtitle">
+                    Maturati: {{ walletData.pv_maturati | number:'1.0-0' }} + 
+                    Bonus: {{ walletData.pv_bonus | number:'1.0-0' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- PV Bloccati Card -->
+            <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+              <div class="card stats-card">
+                <div class="card-body">
+                  <div class="stats-icon bg-warning">
+                    <i class="nc-icon nc-lock-circle-open"></i>
+                  </div>
+                  <h6 class="stats-label">PV Bloccati</h6>
+                  <h2 class="stats-value text-warning">
+                    {{ walletData.pv_bloccati | number:'1.0-0' }}
+                  </h2>
+                  <p class="stats-subtitle">Nel carrello attivo</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Secondary Stats Row -->
+          <div class="row mt-3">
+            
+            <!-- PV Maturati Details -->
+            <div class="col-lg-3 col-md-6 col-sm-12 mb-3">
+              <div class="info-box">
+                <div class="info-icon">
+                  <i class="nc-icon nc-check-2"></i>
+                </div>
+                <div class="info-content">
+                  <span class="info-label">PV Maturati</span>
+                  <span class="info-value">{{ walletData.pv_maturati | number:'1.0-0' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- PV Bonus Details -->
+            <div class="col-lg-3 col-md-6 col-sm-12 mb-3">
+              <div class="info-box">
+                <div class="info-icon bg-success">
+                  <i class="nc-icon nc-gift-2"></i>
+                </div>
+                <div class="info-content">
+                  <span class="info-label">PV Bonus</span>
+                  <span class="info-value text-success">{{ walletData.pv_bonus | number:'1.0-0' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- PV Spesi Details -->
+            <div class="col-lg-3 col-md-6 col-sm-12 mb-3">
+              <div class="info-box">
+                <div class="info-icon bg-secondary">
+                  <i class="nc-icon nc-basket"></i>
+                </div>
+                <div class="info-content">
+                  <span class="info-label">PV Spesi</span>
+                  <span class="info-value">{{ walletData.pv_spesi | number:'1.0-0' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Usage Percentage -->
+            <div class="col-lg-3 col-md-6 col-sm-12 mb-3">
+              <div class="info-box">
+                <div class="info-icon bg-primary">
+                  <i class="nc-icon nc-chart-pie-36"></i>
+                </div>
+                <div class="info-content">
+                  <span class="info-label">Utilizzo</span>
+                  <span class="info-value text-primary">{{ getUsagePercentage() }}%</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Info Box -->
+          <div class="row mt-4">
+            <div class="col-12">
+              <div class="alert alert-info">
+                <h6><i class="nc-icon nc-bulb-63"></i> Come funziona il Salvadanaio?</h6>
+                <ul class="mb-0">
+                  <li><strong>PV Maturati:</strong> Punti Valore ottenuti dai contratti confermati</li>
+                  <li><strong>PV Bonus:</strong> Punti extra ricevuti come bonus</li>
+                  <li><strong>PV Disponibili:</strong> Punti che puoi usare subito per acquisti</li>
+                  <li><strong>PV Bloccati:</strong> Punti temporaneamente riservati nel carrello</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

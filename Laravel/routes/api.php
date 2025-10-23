@@ -120,7 +120,6 @@ Route::group(['middleware'=>'api'],function(){
     Route::post('immagineProfiloUtente',[AuthController::class,'uploadProfileImage'])->name('immagineProfiloUtente');
     Route::get('getFiles{id}',[AuthController::class,'getFiles'])->name('getFiles');
 
-
     //GESTIONE LEADS
     Route::post('storeNewLead',[LeadController::class,'storeNewLead'])->name('storeNewLead');
     Route::get('getLeads',[LeadController::class,'getLeads'])->name('getLeads');
@@ -134,6 +133,10 @@ Route::group(['middleware'=>'api'],function(){
     Route::get('getColorRowStatusLead{id}',[LeadController::class,'getColorRowStatusLead'])->name('getColorRowStatusLead');
     Route::post('nuovoClienteLead',[LeadController::class,'nuovoClienteLead'])->name('nuovoClienteLead');
 
+    //GESTIONE WALLET
+    Route::get('user/wallet', [App\Http\Controllers\Api\WalletController::class, 'getWallet']);
+    Route::get('user/wallet/summary', [App\Http\Controllers\Api\WalletController::class, 'getWalletSummary']);
+    Route::get('user/wallet/history', [App\Http\Controllers\Api\WalletController::class, 'getTransactionHistory']);
 
     //GESTIONE MESSAGGI
     Route::get('getMessageNotification',[AuthController::class,'getMessageNotification'])->name('getMessageNotification');

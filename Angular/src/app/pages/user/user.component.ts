@@ -147,6 +147,9 @@ export class UserComponent implements OnInit, OnDestroy {
 
   platformId = inject(PLATFORM_ID);
 
+  // ⭐ WALLET INTEGRATION - NEW PROPERTY ⭐
+  isCliente: boolean = false;
+
 
   vaiALead() {
     // Naviga alla rotta '/clienti'
@@ -206,6 +209,18 @@ export class UserComponent implements OnInit, OnDestroy {
            }else{
               this.textLead="Leads";
            }
+
+          // ⭐ WALLET INTEGRATION - CHECK USER ROLE ⭐
+          // Controlla se l'utente è un Cliente (role_id = 3)
+          if (users.user.role.id === 3) {
+            this.isCliente = true;
+            this.hideTeamMembers = true; // Nascondi team per clienti
+          } else {
+            this.isCliente = false;
+            this.hideTeamMembers = false; // Mostra team per SEU/Advisor
+          }
+          // ⭐ END WALLET INTEGRATION ⭐
+
           // Configura il team dell'utente
           this.Team = users.team.map((us: any) => ({
             id: us.id,
@@ -288,18 +303,6 @@ export class UserComponent implements OnInit, OnDestroy {
       }, 300);
     }
   };
-  showContrast(message:any,severity:any) {
-    //console.log(message);
-    //console.log(severity);
-    
-    //console.log("Show Contrast chiamato");
-    this.messageService.add({
-      severity: severity,
-      summary: 'Modifica Password',
-      detail: message,
-      life: 30000
-    });
-  }
   prova(id:any) {
     //console.log("verifica utente loggato: " + this.authService.isUserLogin());
     console.log(id);
@@ -356,6 +359,7 @@ export class UserComponent implements OnInit, OnDestroy {
     });
 
   }
+
   modificaPassword(id: any) {
     //console.log(id);
 
@@ -397,21 +401,42 @@ export class UserComponent implements OnInit, OnDestroy {
       });
     }
   }
+
   openSnackBar(message:any) {
     this._snackBar.open(message, "Chiudi", {
       horizontalPosition: this.horizontalPosition,
       verticalPosition: this.verticalPosition,
     });
   }
-  createOrgChartData() {
-    interface TreeNode extends TEAM {
-      label: string;
-      expanded: boolean;
-      children: TreeNode[];
+
+  showContrast(message:any,severity:any) {
+    //console.log(message);
+    //console.log(severity);
+    
+    //console.log("Show Contrast chiamato");
+    this.messageService.add({
+      severity: severity,
+      summary: 'Modifica Password',
+      detail: message,
+      life: 30000
+    });
+  }
+
+  animationDone(event: any) {
+    // Metodo per gestire la fine dell'animazione
+    if (event.toState === "out" && event.phaseName === "done") {
+      // Qui puoi aggiungere la logica per navigare alla pagina successiva o eseguire altre azioni dopo l'animazione
     }
-  
-    // Funzione per trasformare i membri in nodi dell'albero
-    const transformToTreeNode = (member: TEAM): TreeNode => {
+  }
+
+  toggleProfileForm() {
+    this.showProfileForm = !this.showProfileForm;
+  }
+
+  // Metodo per creare la struttura dati dell'organigramma
+  createOrgChartData(): void {
+    // Funzione di trasformazione ricorsiva che crea TreeNode
+    const transformToTreeNode = (member: any): any => {
       return {
         id: member.id,
         name: member.name,
@@ -430,12 +455,13 @@ export class UserComponent implements OnInit, OnDestroy {
         label: member.name + ' ' + member.cognome,
         expanded: true,
         foto: member.foto || "",
-        children: member.children ? member.children.map(child => transformToTreeNode(child)) : []
+        children: member.children && member.children.length > 0 
+          ? member.children.map((child: any) => transformToTreeNode(child)) : []
       };
     };
 
     // Crea il nodo dell'utente loggato come radice
-    const currentUserNode: TreeNode = {
+    const currentUserNode: any = {
       id: this.User.id,
       name: this.User.nome,
       cognome: this.User.cognome,
@@ -458,7 +484,7 @@ export class UserComponent implements OnInit, OnDestroy {
 
     // Se ci sono membri del team, aggiungerli come figli dell'utente loggato
     if (this.Team && this.Team.length > 0) {
-      const teamNodes: TreeNode[] = this.Team.map(member => transformToTreeNode(member));
+      const teamNodes: any[] = this.Team.map(member => transformToTreeNode(member));
       currentUserNode.children = teamNodes;
     }
 
