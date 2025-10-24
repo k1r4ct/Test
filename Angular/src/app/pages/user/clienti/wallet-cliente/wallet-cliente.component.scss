@@ -1,0 +1,229 @@
+// Wallet Cliente Component Styles
+
+.wallet-section {
+  padding: 20px 0;
+  
+  // Stats Cards
+  .stats-card {
+    height: 100%;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: none;
+    
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card-body {
+      padding: 25px;
+      position: relative;
+    }
+    
+    .stats-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+      
+      i {
+        font-size: 28px;
+        color: white;
+      }
+      
+      &.bg-info {
+        background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+      }
+      
+      &.bg-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      }
+      
+      &.bg-success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      }
+    }
+    
+    .stats-label {
+      font-size: 14px;
+      color: #9a9a9a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    
+    .stats-value {
+      font-size: 42px;
+      font-weight: 700;
+      margin-bottom: 5px;
+      line-height: 1;
+    }
+    
+    .stats-subtitle {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 0;
+    }
+  }
+  
+  // PV Disponibili Highlight Card
+  .pv-disponibili-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    
+    .stats-icon {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .stats-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .stats-value {
+      color: white;
+    }
+    
+    .stats-subtitle {
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+  
+  // Info Boxes
+  .info-box {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    height: 100%;
+    
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .info-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      background: #f4f4f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+      flex-shrink: 0;
+      
+      i {
+        font-size: 24px;
+        color: #666;
+      }
+      
+      &.bg-success {
+        background: rgba(0, 209, 178, 0.1);
+        i { color: #00d1b2; }
+      }
+      
+      &.bg-secondary {
+        background: rgba(108, 117, 125, 0.1);
+        i { color: #6c757d; }
+      }
+      
+      &.bg-primary {
+        background: rgba(102, 126, 234, 0.1);
+        i { color: #667eea; }
+      }
+    }
+    
+    .info-content {
+      display: flex;
+      flex-direction: column;
+      
+      .info-label {
+        font-size: 12px;
+        color: #9a9a9a;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 3px;
+      }
+      
+      .info-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #333;
+      }
+    }
+  }
+  
+  // Alert Info Box
+  .alert-info {
+    background: linear-gradient(135deg, #e0f7fa 0%, #e1f5fe 100%);
+    border: none;
+    border-radius: 10px;
+    
+    h6 {
+      color: #0277bd;
+      font-weight: 600;
+      margin-bottom: 10px;
+      
+      i {
+        margin-right: 8px;
+      }
+    }
+    
+    ul {
+      list-style: none;
+      padding-left: 0;
+      
+      li {
+        padding: 5px 0;
+        color: #01579b;
+        
+        strong {
+          color: #0277bd;
+        }
+        
+        &:before {
+          content: "•";
+          color: #0277bd;
+          font-weight: bold;
+          display: inline-block;
+          width: 1em;
+          margin-left: -1em;
+          padding-right: 0.5em;
+        }
+      }
+    }
+  }
+  
+  // Loading & Error States
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }
+  
+  // Responsive Adjustments
+  @media (max-width: 768px) {
+    .stats-card {
+      margin-bottom: 15px;
+      
+      .stats-value {
+        font-size: 32px;
+      }
+    }
+    
+    .info-box {
+      margin-bottom: 10px;
+      
+      .info-value {
+        font-size: 20px;
+      }
+    }
+  }
+}

@@ -18,6 +18,7 @@ use App\Http\Controllers\SupplierCategoryController;
 use App\Http\Controllers\OptionStatusContractController;
 use App\Http\Controllers\ContractTypeInformationController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\WalletController; // ⭐ ADDED WALLET CONTROLLER IMPORT
 
 /*
 |--------------------------------------------------------------------------
@@ -40,6 +41,16 @@ Route::group(['middleware'=>'api'],function(){
 
     //GESTIONE UTENTE
     Route::get('me', [AuthController::class,'me']);
+    
+    //GESTIONE WALLET
+    Route::get('user/wallet', [WalletController::class, 'getWallet'])->name('wallet.get');
+    Route::get('user/wallet/summary', [WalletController::class, 'getWalletSummary'])->name('wallet.summary');
+    Route::get('user/wallet/history', [WalletController::class, 'getTransactionHistory'])->name('wallet.history');
+    
+    //Admin only routes for managing points
+    Route::post('admin/wallet/add-bonus', [WalletController::class, 'addBonusPoints'])->name('wallet.addBonus');
+    Route::post('admin/wallet/update-points', [WalletController::class, 'updatePointsAfterPurchase'])->name('wallet.updatePoints');
+    
     Route::get('user/{email}',[RoleController::class,'prendiUtente'])->name('utente');
     Route::post('codFPIva',[AuthController::class,'codFPIva'])->name('codFPIva');
     Route::post('nuovoCliente',[AuthController::class,'nuovoCliente'])->name('nuovoCliente');
@@ -120,7 +131,6 @@ Route::group(['middleware'=>'api'],function(){
     Route::post('immagineProfiloUtente',[AuthController::class,'uploadProfileImage'])->name('immagineProfiloUtente');
     Route::get('getFiles{id}',[AuthController::class,'getFiles'])->name('getFiles');
 
-
     //GESTIONE LEADS
     Route::post('storeNewLead',[LeadController::class,'storeNewLead'])->name('storeNewLead');
     Route::get('getLeads',[LeadController::class,'getLeads'])->name('getLeads');
@@ -133,7 +143,6 @@ Route::group(['middleware'=>'api'],function(){
     Route::post('getLeadsDayClicked',[LeadController::class,'getLeadsDayClicked'])->name('getLeadsDayClicked');
     Route::get('getColorRowStatusLead{id}',[LeadController::class,'getColorRowStatusLead'])->name('getColorRowStatusLead');
     Route::post('nuovoClienteLead',[LeadController::class,'nuovoClienteLead'])->name('nuovoClienteLead');
-
 
     //GESTIONE MESSAGGI
     Route::get('getMessageNotification',[AuthController::class,'getMessageNotification'])->name('getMessageNotification');

@@ -220,15 +220,15 @@
                     <h4 class="section-title">Informazioni di Residenza</h4>
                   </div>
                   
-                  <div class="form-field full-width">
-                    <label class="modern-label">
-                      <i class="material-icons">home</i>
-                      Indirizzo
-                    </label>
-                    <input type="text" class="modern-input indirizzo" placeholder="Indirizzo completo" [value]="User.indirizzo">
-                  </div>
-
                   <div class="address-grid">
+                    <div class="form-field full-width">
+                      <label class="modern-label">
+                        <i class="material-icons">home</i>
+                        Indirizzo
+                      </label>
+                      <input type="text" class="modern-input indirizzo" placeholder="Indirizzo completo" [value]="User.indirizzo">
+                    </div>
+
                     <div class="form-field">
                       <label class="modern-label">
                         <i class="material-icons">location_city</i>
@@ -236,7 +236,7 @@
                       </label>
                       <input type="text" class="modern-input citta" placeholder="Città" [value]="User.citta">
                     </div>
-                    
+
                     <div class="form-field">
                       <label class="modern-label">
                         <i class="material-icons">public</i>
@@ -244,7 +244,7 @@
                       </label>
                       <input type="text" class="modern-input stato" placeholder="Stato" [value]="User.stato">
                     </div>
-                    
+
                     <div class="form-field">
                       <label class="modern-label">
                         <i class="material-icons">markunread_mailbox</i>
@@ -374,9 +374,9 @@
 </div>
 
 <!-- ========================= 
-     SEZIONE 4: TEAM ORGANIZATION 
+     SEZIONE 4: TEAM ORGANIZATION (SOLO PER SEU/ADVISOR)
      ========================= -->
-<div class="team-section" *ngIf="!hideTeamMembers">
+<div class="team-section" *ngIf="!isCliente && !hideTeamMembers">
   <div class="container-fluid">
     <div class="card">
       <div class="card-header">
@@ -438,6 +438,13 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ========================= 
+     SEZIONE 4: WALLET (SOLO PER CLIENTI)
+     ========================= -->
+<div class="wallet-section" *ngIf="isCliente">
+  <app-wallet-cliente></app-wallet-cliente>
 </div>
 
 <!-- Fine Layout Ottimizzato -->

@@ -101,8 +101,8 @@ export class ContrattiPersonaliComponent implements OnInit {
   }
   cerca(id: any) {
     this.servizioApi.ContrattiPersonali(id).subscribe((risultato: any) => {
-      console.log('tabella contratti personali cliente');
-      console.log(risultato);
+      // console.log('tabella contratti personali cliente');
+      // console.log(risultato);
 
       this.LeadsContract = risultato.body.risposta.map((contratto: any) => ({
         id: contratto.id,
@@ -120,7 +120,7 @@ export class ContrattiPersonaliComponent implements OnInit {
         Stato: contratto.status_contract.micro_stato,
       }));
       this.dataSource.data = this.LeadsContract;
-      console.log(this.LeadsContract);
+      // console.log(this.LeadsContract);
     });
   }
 }
