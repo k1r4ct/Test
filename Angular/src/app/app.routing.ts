@@ -3,7 +3,6 @@ import { LoginComponent } from './componenti/login/login.component';
 import { RegistrazioneComponent } from './componenti/registrazione/registrazione.component';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 import { activateUsersFn } from './servizi/route-guard.service';
-import { DropzoneDeactivateGuard } from './servizi/dropzone-deactivate-guard.service';
 import { ClientiComponent } from './pages/clienti/clienti.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { TableComponent } from './pages/table/table.component';
@@ -13,7 +12,6 @@ import { ContrattiComponent } from './pages/contratti/contratti.component';
 import { NuovocontrattoComponent } from './pages/nuovocontratto/nuovocontratto.component';
 import { NuovoclienteComponent } from './pages/nuovocliente/nuovocliente.component';
 import { ProdottiComponent } from './pages/prodotto/prodotti.component';
-import { DropzoneComponent } from 'ngx-dropzone-wrapper';
 import { UserComponent } from './pages/user/user.component';
 import { TypographyComponent } from './pages/typography/typography.component';
 import { DomandeComponent } from './pages/domande/domande.component';
@@ -63,10 +61,5 @@ export const AppRoutes: Routes = [
       // Aggiungi qui le altre rotte del tuo AdminLayoutModule
     ],
   },
-  {
-    path: '',
-    component: DropzoneComponent,
-    canDeactivate: [DropzoneDeactivateGuard],
-  },
-  { path: '**', redirectTo: 'dashboard' },
+    { path: '**', redirectTo: 'dashboard' }
 ];

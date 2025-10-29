@@ -34,7 +34,6 @@ import { MatIconRegistry } from "@angular/material/icon";
 import { DomSanitizer } from "@angular/platform-browser";
 import { FormControl, FormGroup } from "@angular/forms";
 import { Router } from "@angular/router";
-import { DropzoneComponent } from "ngx-dropzone-wrapper";
 import { ActivatedRoute } from "@angular/router";
 import { MatDateRangePicker } from "@angular/material/datepicker";
 import { RicercaclientiService } from "src/app/servizi/ricercaclienti.service";
@@ -67,6 +66,9 @@ export interface ListContrattiData {
   macrostato: string;
   stato: string;
   file: string[];
+  ticketExists: boolean;
+  // Aggiunta: numero messaggi non letti per il ticket (se fornito dal backend)
+  ticketUnreadCount?: number;
 }
 
 export interface ListaClienti {
@@ -327,7 +329,6 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   enableMultiSelect = false;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  @ViewChild(DropzoneComponent) dropzoneComponent!: DropzoneComponent; // Referenza al componente figlio Dropzone
 
   @ViewChild("pickerDataIns") pickerDataIns!: MatDateRangePicker<Date>;
   @ViewChild("pickerDataStipula") pickerDataStipula!: MatDateRangePicker<Date>;
@@ -631,7 +632,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       this.ApiService.getContratti(this.User.id).subscribe((contratti: any) => {
         //console.clear();
         //console.log(' LISTA CONTRATTI per ' + this.User.id);
-        //console.log(contratti);
+        console.log(contratti);
         //console.log(contratti.body.risposta);
         this.filesById = contratti.body?.file || {};
         this.dataSourceFilters = new MatTableDataSource(this.LISTACONTRATTI);
@@ -818,6 +819,9 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
               supplier: contratto.product.supplier.nome_fornitore,
               specific_data: contratto.specific_data || [],
               customer_data: contratto.customer_data || {},
+              ticketExists: contratto.ticket.length > 0 ? true : false,
+              // nuovo campo, può essere 0 se non fornito da questo endpoint
+              ticketUnreadCount: contratto.ticket[0]?.messages.length > 0 ? 1:0,
             })
           );
 
@@ -1605,7 +1609,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       //console.log(contratti.body.risposta[0].specific_data);
       // console.log(contratti.body.risposta[0]);
 
-      // console.log(contratti);
+       //console.log(contratti);
       this.MACROPRODOTTI = contratti.body.macro_prodotti.map(
         (macro_prod: any) => ({
           id: macro_prod.id,
@@ -1904,6 +1908,9 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       },
       error: (error) => {
         //console.error("Errore durante il recupero delle domande:", error);
+
+
+
         this.nuovaspecific_data = [];
         this.changeDetectorRef.detectChanges();
       },
@@ -2595,6 +2602,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       supplier: contratto.product.supplier.nome_fornitore,
       specific_data: contratto.specific_data || [],
       customer_data: contratto.customer_data,
+      ticketExists: contratto.ticket?.length > 0 ? true : false,
     });
 
     const risultati: any[] = Array.isArray(contrattiData)
@@ -2878,6 +2886,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
 
     // Determina quale struttura dati usare
     let contrattiData = response.body.risposta;
+    //console.log(contrattiData);
+    
     let paginationData = null;
 
     // Se risposta è un oggetto paginato di Laravel
@@ -2896,45 +2906,53 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       this.filesById = { ...this.filesById, ...response.body.file };
     }
     if (contrattiData && contrattiData.length > 0) {
-      //console.log(`Trovati ${contrattiData.length} contratti corrispondenti al filtro`);
-
-      // Mappa i contratti nel formato della tabella
       const contrattiFiltrati = contrattiData.map((contratto: any) => {
         const files = this.filesById[contratto.id] || [];
         return {
-        id: contratto.id,
-        cliente:
-          contratto.customer_data.cognome && contratto.customer_data.nome
-            ? contratto.customer_data.cognome +
-              " " +
-              contratto.customer_data.nome
-            : contratto.customer_data.ragione_sociale,
-        pivacf: contratto.customer_data.codice_fiscale
-          ? contratto.customer_data.codice_fiscale
-          : contratto.customer_data.partita_iva,
-        datains: contratto.data_inserimento,
-        datastipula: contratto.data_stipula,
-        prodotto: contratto.product.descrizione,
-        seu: contratto.user_seu.cognome + " " + contratto.user_seu.name,
-        macroprodotto: contratto.product.macro_product.descrizione,
-        macrostato:
-          contratto.status_contract.option_status_contract[0]?.macro_stato ||
-          "",
-        stato: contratto.status_contract.micro_stato,
-        file: files,
-        file_count: files.length,
-        ragione_sociale: contratto.customer_data.ragione_sociale,
-        supplier: contratto.product.supplier.nome_fornitore,
-        specific_data: contratto.specific_data || [],
-        customer_data: contratto.customer_data,
-      };
-    });
-
-      //console.log('Contratti filtrati elaborati:', contrattiFiltrati);
+          id: contratto.id,
+          cliente:
+            contratto.customer_data.cognome && contratto.customer_data.nome
+              ? contratto.customer_data.cognome + " " + contratto.customer_data.nome
+              : contratto.customer_data.ragione_sociale,
+          pivacf: contratto.customer_data.codice_fiscale
+            ? contratto.customer_data.codice_fiscale
+            : contratto.customer_data.partita_iva,
+          datains: contratto.data_inserimento,
+          datastipula: contratto.data_stipula,
+          prodotto: contratto.product.descrizione,
+          seu: contratto.user_seu.cognome + " " + contratto.user_seu.name,
+          macroprodotto: contratto.product.macro_product.descrizione,
+          macrostato: contratto.status_contract.option_status_contract[0]
+            ? contratto.status_contract.option_status_contract[0]
+                .macro_stato
+            : "",
+          stato: contratto.status_contract.micro_stato,
+          file: files,
+          file_count: files.length,
+          ragione_sociale: contratto.customer_data.ragione_sociale,
+          supplier: contratto.product.supplier.nome_fornitore,
+          specific_data: contratto.specific_data || [],
+          customer_data: contratto.customer_data,
+          ticketExists: contratto.ticket?.length > 0 ? true : false,
+          // usa il conteggio fornito da Laravel (withCount)
+          ticketUnreadCount: contratto.ticket[0]?.messages.length > 0 ? 1:0,
+        };
+      });
 
       // Aggiorna DataSource con i contratti filtrati
       this.dataSourceFilters = new MatTableDataSource(contrattiFiltrati);
       this.dataSourceFilters.sort = this.sort;
+
+      // Popola la cache ticket dai dati ricevuti (nessuna chiamata API bulk)
+      contrattiFiltrati.forEach((c: any) => {
+        //console.log(c);
+        
+        const id = Number(c.id);
+        this.ticketStatusCache.set(id, {
+          ticket: c.ticketExists ? {} : null,
+          hasUnreadMessages: Number(c.ticket?.messages.length > 0 ? 1:0) > 0
+        });
+      });
 
       // Configura il paginator per la paginazione server-side
       if (this.paginator) {
@@ -3136,7 +3154,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     if (Array.isArray(f)){
       //console.log(f.length);
       if (f.length > 0){
-        console.log(f);
+        //console.log(f);
       }
       return f.length;
     }
@@ -3163,36 +3181,43 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   
   /**
    * Carica gli stati dei ticket per tutti i contratti visualizzati
+   * Evita chiamate massive: usa i dati già presenti nelle righe
    */
   private loadTicketStatuses(): void {
-    // Carica lo stato dei ticket per i contratti nella vista corrente
     if (this.LISTACONTRATTI && this.LISTACONTRATTI.length > 0) {
-      this.LISTACONTRATTI.forEach(contratto => {
-        this.checkTicketStatus(Number(contratto.id));
+      this.LISTACONTRATTI.forEach((c: any) => {
+        const id = Number(c.id);
+        if (!this.ticketStatusCache.has(id)) {
+          this.ticketStatusCache.set(id, {
+            ticket: c.ticketExists ? {} : null,
+            hasUnreadMessages: Number(c.ticket?.messages.length > 0 ? 1:0) > 0
+          });
+        }
       });
+      this.changeDetectorRef.detectChanges();
     }
   }
 
   /**
    * Verifica lo stato del ticket per un contratto specifico
-   * @param contractId - ID del contratto
+   * Mantieni la chiamata SOLO su azione utente (es. apertura modal)
    */
   private checkTicketStatus(contractId: number): void {
     this.ApiService.getTicketByContractId(contractId).subscribe({
       next: (response: any) => {
+        console.log(response);
+        
         if (response.response === 'ok' && response.body?.ticket) {
-          // Ticket trovato, verifica messaggi non letti
-          const hasUnread = response.body.ticket.unread_messages_count > 0;
-          
+          /* const hasUnread = response.body.ticket.unread_messages_count > 0; */
           this.ticketStatusCache.set(contractId, {
             ticket: response.body.ticket,
-            hasUnreadMessages: hasUnread
+            /* hasUnreadMessages: hasUnread */
           });
         } else {
-          // Nessun ticket
+          // Nessun ticket: usa null (invece di []), così i controlli booleani sono corretti
           this.ticketStatusCache.set(contractId, {
             ticket: null,
-            hasUnreadMessages: false
+            /* hasUnreadMessages: false */
           });
         }
         // Forza aggiornamento vista
@@ -3202,77 +3227,55 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         console.error(`Errore verifica ticket per contratto ${contractId}:`, error);
         this.ticketStatusCache.set(contractId, {
           ticket: null,
-          hasUnreadMessages: false
+          /* hasUnreadMessages: false */
         });
       }
     });
   }
 
   /**
-   * Ottiene l'icona appropriata per il bottone ticket
-   * @param contractId - ID del contratto
-   * @returns Nome dell'icona Material
+   * Icona bottone ticket basata SOLO sui dati della riga (no cache)
+   * Usa icone del set "Material Icons"
    */
-  getTicketIcon(contractId: number): string {
-    const cachedStatus = this.ticketStatusCache.get(contractId);
-    
-    if (!cachedStatus) {
-      return 'mail_outline';
-    }
-    
-    if (cachedStatus.ticket) {
-      return cachedStatus.hasUnreadMessages ? 'mark_email_unread' : 'mail';
-    }
-    
-    return 'mail_outline';
+  getTicketIcon(contractId: number, contr?: any): string {
+    const unreadFromRow = Number(contr?.ticketUnreadCount || 0) > 0;
+
+    // 1) Messaggi non letti
+    if (unreadFromRow) return 'mark_chat_unread';
+
+    // 2) Ticket esistente
+    if (contr?.ticketExists) return 'chat';
+
+    // 3) Nessun ticket
+    return 'chat_bubble_outline';
   }
 
-  /**
-   * Ottiene il colore del bottone ticket
-   * @param contractId - ID del contratto
-   * @returns Classe CSS per il colore
-   */
-  getTicketButtonColor(contractId: number): string {
-    const icon = this.getTicketIcon(contractId);
-    
-    switch(icon) {
-      case 'mark_email_unread':
+  getTicketButtonColor(contractId: number, contr?: any): string {
+    const icon = this.getTicketIcon(contractId, contr);
+    switch (icon) {
+      case 'mark_chat_unread':
         return 'ticket-unread';
-      case 'mail':
+      case 'chat':
         return 'ticket-exists';
       default:
         return 'ticket-new';
     }
   }
 
-  /**
-   * Ottiene il tooltip per il bottone ticket
-   * @param contractId - ID del contratto
-   * @returns Testo del tooltip
-   */
-  getTicketTooltip(contractId: number): string {
-    const icon = this.getTicketIcon(contractId);
-    
-    switch(icon) {
-      case 'mark_email_unread':
+  getTicketTooltip(contractId: number, contr?: any): string {
+    const icon = this.getTicketIcon(contractId, contr);
+    switch (icon) {
+      case 'mark_chat_unread':
         return 'Hai messaggi non letti';
-      case 'mail':
+      case 'chat':
         return 'Visualizza ticket esistente';
       default:
         return 'Crea nuovo ticket assistenza';
     }
   }
 
-  /**
-   * Apre la modal per creare/visualizzare ticket
-   * @param row - Dati della riga del contratto
-   * @param event - Evento click
-   */
   openTicketModal(row: any, event?: Event): void {
-    if (event) {
-      event.stopPropagation();
-    }
-
+    // Lascia la verifica singola (azione utente) — NON fa richieste massive
     // Recupera i dati utente correnti per verificare il ruolo
     this.ApiService.PrendiUtente().subscribe((Auth: any) => {
       const userRole = Auth.user?.role_id;
@@ -3488,4 +3491,4 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     });
   }
 }
-      
+

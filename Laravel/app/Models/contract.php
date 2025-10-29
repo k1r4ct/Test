@@ -285,4 +285,9 @@ class contract extends Model
 
         return $bonusPoints;
     }
+
+    public function ticket()
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

@@ -1,4 +1,4 @@
-import { inject } from '@angular/core';
+/* import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanDeactivateFn, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { DropzoneComponent } from '../dropzone/dropzone.component';
 import { Observable } from 'rxjs';
@@ -17,4 +17,4 @@ export const DropzoneDeactivateGuard: CanDeactivateFn<DropzoneComponent> = (
     component.dropzoneInstance.destroy();
   }
   return true; // Permetti la navigazione
-};
+}; */

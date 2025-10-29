@@ -30,11 +30,11 @@ import { NuovocontraenteComponent } from "./pages/nuovocontraente/nuovocontraent
 import { ProdottiComponent } from "./pages/prodotto/prodotti.component";
 import { NuovoclienteComponent } from "./pages/nuovocliente/nuovocliente.component";
 import { TimerComponent } from "./timer/timer.component";
-import { DropzoneComponent } from "./dropzone/dropzone.component";
+import { FilepondUploaderComponent } from './filepond-uploader/filepond-uploader.component';
 import { DettagliContrattoProdottoComponent } from "./pages/dettagli-contratto-prodotto/dettagli-contratto-prodotto.component";
 import { MatFormFieldModule } from "@angular/material/form-field";
 import { MatChipsModule } from "@angular/material/chips";
-import { DROPZONE_CONFIG, DropzoneModule } from "ngx-dropzone-wrapper";
+import { FilePondModule } from 'ngx-filepond';
 import { MatGridListModule } from "@angular/material/grid-list";
 import { HTTP_INTERCEPTORS } from "@angular/common/http";
 import { AuthInterceptor } from "./servizi/interceptor.service";
@@ -143,7 +143,6 @@ import { WalletClienteComponent } from "./pages/user/clienti/wallet-cliente/wall
     ProdottiComponent,
     NuovoclienteComponent,
     DettagliContrattoProdottoComponent,
-    DropzoneComponent,
     DomandeComponent,
     UserComponent,
     DashboardComponent,
@@ -193,7 +192,7 @@ import { WalletClienteComponent } from "./pages/user/clienti/wallet-cliente/wall
     /* TimerComponent, */
     MatFormFieldModule,
     MatChipsModule,
-    DropzoneModule,
+    FilePondModule,
     MatGridListModule,
     MatSnackBarModule,
     MatButtonModule,
@@ -233,7 +232,8 @@ import { WalletClienteComponent } from "./pages/user/clienti/wallet-cliente/wall
         provide: DateAdapter,
         useFactory: adapterFactory,
     }),
-    QrcodeGeneratorComponent
+    QrcodeGeneratorComponent,
+    FilepondUploaderComponent
 ],
   providers: [
     provideAnimations(),

@@ -9,9 +9,7 @@ import { LeadsComponent } from '../../pages/leads/leads.component';
 import { NotificationsComponent } from '../../pages/notifications/notifications.component';
 import { UpgradeComponent } from '../../pages/upgrade/upgrade.component';
 import { ContrattiComponent } from '../../pages/contratti/contratti.component';
-import { FormGeneraleComponent } from 'src/app/form-generale/form-generale.component';
 import { DomandeComponent } from 'src/app/pages/domande/domande.component';
-import { DropzoneComponent } from 'ngx-dropzone-wrapper';
 
 
 export const AdminLayoutRoutes: Routes = [

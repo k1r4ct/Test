@@ -581,16 +581,16 @@
         <td mat-cell *matCellDef="let row" class="actions-cell">
           <!-- Bottone Ticket con icona dinamica -->
           <button mat-icon-button 
-                  [class]="'action-button ticket-button ' + getTicketButtonColor(row.id)"
+                  [class]="'actions-cell action-button ticket-button ' + getTicketButtonColor(row.id,row)"
                   (click)="openTicketModal(row, $event)"
-                  [matTooltip]="getTicketTooltip(+row.id)"
+                  [matTooltip]="getTicketTooltip(+row.id,row)"
                   matTooltipPosition="above">
-            <mat-icon>{{ getTicketIcon(+row.id) }}</mat-icon>
+            <mat-icon>{{ getTicketIcon(+row.id,row) }}</mat-icon>
           </button>
           
           <!-- Bottone Visualizza Cliente -->
           <button mat-icon-button 
-                  class="action-button" 
+                  class="action-button view-btn" 
                   (click)="vaiAClientiCodFPiva(row.pivacf)"
                   matTooltip="Visualizza dettagli cliente">
             <mat-icon>visibility</mat-icon>
@@ -600,7 +600,7 @@
           <button mat-icon-button 
                   class="action-button edit-btn" 
                   matTooltip="Modifica contratto">
-            <mat-icon>edit</mat-icon>
+            <mat-icon>edit_document</mat-icon>
           </button>
         </td>
       </ng-container>
@@ -1141,7 +1141,7 @@
           <mat-icon>cloud_upload</mat-icon>
           Carica Nuovi Documenti
         </h5>
-        <app-dropzone uploadType="contract" class="modern-dropzone"></app-dropzone>
+        <app-filepond-uploader uploadType="contract" class="modern-dropzone"></app-filepond-uploader>
       </div>
     </div>
 

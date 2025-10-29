@@ -279,7 +279,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     const userSub = this.apiService.PrendiUtente().subscribe((userData: any) => {
       this.currentUser = userData.user;
       this.userRole = userData.user.role.id;
-      this.isAdmin = [1, 6].includes(this.userRole);
+      this.isAdmin = [1, 5].includes(this.userRole);
       this.setupContractSearchPipeline();
       this.loadInitialData();
       this.loadTickets();

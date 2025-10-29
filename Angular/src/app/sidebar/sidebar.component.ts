@@ -33,7 +33,7 @@ export const ROUTES_ADMIN: RouteInfo[] = [
   { path: '/table', title: 'Gestione Prodotti', icon: 'nc-tile-56', class: '' },
   { path: '/macroprodotti', title: 'Gestione MacroProdotti', icon: 'nc-tile-56', class: '' },
   { path: '/utenti', title: 'Gestione Utenti', icon: 'nc-circle-10', class: '' },
-  { path: '/ticket', title: 'Gestione Ticket', icon: 'nc-circle-10', class: '' },
+  { path: '/ticket', title: 'Gestione Ticket', icon: 'nc-send', class: '' },
 ];
 
 export const ROUTES_BKOFF: RouteInfo[] = [
@@ -41,6 +41,8 @@ export const ROUTES_BKOFF: RouteInfo[] = [
   { path: '/clienti', title: 'Clienti', icon: 'nc-vector', class: '' },
   { path: '/contratti', title: 'Contratti', icon: 'nc-paper', class: '' },
   { path: '/table', title: 'Gestione Prodotti', icon: 'nc-tile-56', class: '' },
+  { path: '/ticket', title: 'Gestione Ticket', icon: 'nc-send', class: '' },
+
 ];
 
 export const ROUTES_ADVISOR: RouteInfo[] = [

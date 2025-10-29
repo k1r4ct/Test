@@ -222,7 +222,7 @@ class ContractController extends Controller
     {
         // Parametri di paginazione comuni per tutti i ruoli
         $perPage = $request->get('per_page', 250); // Default 250, personalizzabile
-
+        $authId = Auth::user()->id;
         if (Auth::user()->role_id == 1) {
             $contrattiUtente = Contract::with([
                 'User',
@@ -234,7 +234,20 @@ class ContractController extends Controller
                 'product.macro_product',
                 'specific_data',
                 'payment_mode',
-                'status_contract.option_status_contract'
+                'status_contract.option_status_contract',
+                'ticket' => function ($q) use ($authId) {
+                    $q->where('status', '!=', 'deleted')->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
             ])->orderBy('id', 'desc')->paginate($perPage);
         } elseif (Auth::user()->role_id == 2  || Auth::user()->role_id == 4) {
 
@@ -262,7 +275,20 @@ class ContractController extends Controller
                 'product.supplier',
                 'product.macro_product',
                 'specific_data',
-                'payment_mode'
+                'payment_mode',
+                'ticket' => function ($q) use ($authId) {
+                    $q->where('status', '!=', 'deleted')->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
             ])->whereIn('inserito_da_user_id', $teamMemberIds)->orderBy('id', 'desc')->paginate($perPage);
         } elseif (Auth::user()->role_id == 5) {
             $macroProduct = contract_management::where('user_id', Auth::user()->id)->get();
@@ -291,7 +317,20 @@ class ContractController extends Controller
                 'product.supplier',
                 'product.macro_product',
                 'specific_data',
-                'payment_mode'
+                'payment_mode',
+                'ticket' => function ($q) use ($authId) {
+                    $q->where('status', '!=', 'deleted')->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
             ])
                 ->whereIn('product_id', $macros)
                 ->orderBy('id', 'desc')
@@ -328,7 +367,20 @@ class ContractController extends Controller
                 'product.supplier',
                 'product.macro_product',
                 'specific_data',
-                'payment_mode'
+                'payment_mode',
+                'ticket' => function ($q) use ($authId) {
+                    $q->where('status', '!=', 'deleted')->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
             ])->whereIn('associato_a_user_id', $teamMemberIds)->orderBy('id', 'desc')->paginate($perPage);
 
             //->whereHas('customer_data', function ($query) {  // Aggiungi whereHas
@@ -822,6 +874,9 @@ class ContractController extends Controller
             $sortDirection = 'desc';
         }
 
+        // ID utente loggato per filtrare i messaggi dei ticket
+        $authId = Auth::user()->id;
+
         // Ottieni i filtri dal frontend
         $filters = $request->get('filters', '');
 
@@ -872,7 +927,21 @@ class ContractController extends Controller
                 'product.macro_product',
                 'specific_data',
                 'payment_mode',
-                'status_contract.option_status_contract'
+                'status_contract.option_status_contract',
+                // Carica ticket + solo messaggi da altri utenti e conta come "unread"
+                'ticket' => function ($q) use ($authId) {
+                    $q->where('status', '!=', 'deleted')->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
             ]);
         } elseif (Auth::user()->role_id == 2 || Auth::user()->role_id == 4) {
             // Manager/Supervisor - può vedere i contratti del suo team
@@ -889,7 +958,20 @@ class ContractController extends Controller
                 'product.supplier',
                 'product.macro_product',
                 'specific_data',
-                'payment_mode'
+                'payment_mode',
+                'ticket' => function ($q) use ($authId) {
+                    $q->where('status', '!=', 'deleted')->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
             ])->whereIn('inserito_da_user_id', $teamMemberIds);
         } elseif (Auth::user()->role_id == 5) {
             // Ruolo 5 - può vedere contratti solo per i macro prodotti assegnati
@@ -917,7 +999,20 @@ class ContractController extends Controller
                 'product.supplier',
                 'product.macro_product',
                 'specific_data',
-                'payment_mode'
+                'payment_mode',
+                'ticket' => function ($q) use ($authId) {
+                    $q->where('status', '!=', 'deleted')->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
             ])->whereIn('product_id', $macros);
         } elseif (Auth::user()->role_id == 3) {
             // Ruolo 3 - gestione team e lead convertiti
@@ -953,7 +1048,20 @@ class ContractController extends Controller
                 'product.supplier',
                 'product.macro_product',
                 'specific_data',
-                'payment_mode'
+                'payment_mode',
+                'ticket' => function ($q) use ($authId) {
+                    $q->where('status', '!=', 'deleted')->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
             ])->whereIn('associato_a_user_id', $teamMemberIds);
         } else {
             // Altri ruoli - solo i propri contratti
@@ -967,7 +1075,20 @@ class ContractController extends Controller
                 'product.supplier',
                 'product.macro_product',
                 'specific_data',
-                'payment_mode'
+                'payment_mode',
+                'ticket' => function ($q) use ($authId) {
+                    $q->where('status', '!=', 'deleted')->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
             ])->where('inserito_da_user_id', $id);
         }
 

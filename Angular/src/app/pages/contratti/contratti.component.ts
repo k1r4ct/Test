@@ -17,7 +17,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableDataSource } from "@angular/material/table"; // Importa MatTableDataSource
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSort } from "@angular/material/sort";
-import { DropzoneService } from "src/app/servizi/dropzone.service";
 import { ApiService } from "src/app/servizi/api.service";
 
 export interface LeadContract {
@@ -70,7 +69,7 @@ export class ContrattiComponent implements OnInit {
   User: any;
   LeadsContract: LeadContract[] = [];
   dataSource = new MatTableDataSource<LeadContract>();
-  constructor(private dropzoneService: DropzoneService, private ApiService:ApiService) {} // Costruttore (puoi aggiungere dipendenze se necessario)
+  constructor(private ApiService:ApiService) {} // Costruttore (puoi aggiungere dipendenze se necessario)
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
@@ -131,7 +130,7 @@ export class ContrattiComponent implements OnInit {
   }
 
   ngOnDestroy() {
-    this.dropzoneService.destroyDropzone();
+    
   }
 }
 
