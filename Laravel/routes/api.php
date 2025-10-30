@@ -18,7 +18,7 @@ use App\Http\Controllers\SupplierCategoryController;
 use App\Http\Controllers\OptionStatusContractController;
 use App\Http\Controllers\ContractTypeInformationController;
 use App\Http\Controllers\TicketController;
-use App\Http\Controllers\WalletController; // ⭐ ADDED WALLET CONTROLLER IMPORT
+use App\Http\Controllers\WalletController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +34,7 @@ use App\Http\Controllers\WalletController; // ⭐ ADDED WALLET CONTROLLER IMPORT
 
 
 Route::group(['middleware'=>'api'],function(){
+    
     //GESTIONE LOGIN
     Route::post('login', [AuthController::class,'login']);
     Route::post('logout', [AuthController::class,'logout']);
@@ -117,6 +118,10 @@ Route::group(['middleware'=>'api'],function(){
     Route::post('sendTicketMessage', [TicketController::class, 'sendTicketMessage'])->name('sendTicketMessage');
     Route::get('getTicketChangeLogs/{ticketId}', [TicketController::class, 'getTicketChangeLogs'])->name('getTicketChangeLogs'); 
     Route::get('getTicketByContractId/{contractId}', [TicketController::class, 'getTicketByContractId']);
+    Route::post('restoreTicket', [TicketController::class, 'restoreTicket'])->name('restoreTicket');
+    Route::get('getAllTicketsByContractId/{contractId}', [TicketController::class, 'getAllTicketsByContractId'])->name('getAllTicketsByContractId');
+    Route::post('deleteTicketByContractId', [TicketController::class, 'deleteTicketByContractId'])->name('deleteTicketByContractId');
+    Route::post('restoreLastTicketByContractId', [TicketController::class, 'restoreLastTicketByContractId'])->name('restoreLastTicketByContractId');
 
     //GESTIONE DOMANDE
     Route::get('getDomande{id}',[SpecificDataController::class,'getDomande'])->name('getDomande');

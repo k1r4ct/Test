@@ -760,15 +760,18 @@ class TicketController extends Controller
     }
 
     /**
-     * Get ticket by contract ID
-     * Used to check if a ticket exists for a contract
+     * Get active ticket by contract ID
+     * Used to check if an active ticket exists for a contract
+     * Excludes closed and deleted tickets to allow new ticket creation
      */
     public function getTicketByContractId($contractId)
     {
         try {
             $user = Auth::user();
+            // Exclude both deleted AND closed tickets
+            // This allows creating a new ticket once the previous one is closed
             $ticket = Ticket::where('contract_id', $contractId)
-                        ->where('status', '!=', 'deleted')
+                        ->whereNotIn('status', ['deleted', 'closed'])
                         ->with(['messages.user', 'contract'])
                         ->first();
             
@@ -791,6 +794,374 @@ class TicketController extends Controller
             return response()->json([
                 "response" => "error",
                 "status" => "500"
+            ]);
+        }
+    }
+
+    /**
+     * Restore a closed or deleted ticket
+     * Only administrators can perform this action
+     * If force_replace is true, will delete any active ticket
+     */
+    public function restoreTicket(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'ticket_id' => 'required|exists:tickets,id',
+                'force_replace' => 'boolean'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "errors" => $validator->errors()
+                ]);
+            }
+
+            $user = Auth::user();
+            $userRole = $user->role->id;
+
+            // Only Admin (roles 1,6) can restore tickets
+            if (!in_array($userRole, [1, 6])) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Only administrators can restore tickets"
+                ]);
+            }
+
+            $ticket = Ticket::findOrFail($request->ticket_id);
+            
+            // Can only restore closed or deleted tickets
+            if (!in_array($ticket->status, ['closed', 'deleted'])) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "message" => "Can only restore closed or deleted tickets"
+                ]);
+            }
+
+            // Check if there's an active ticket for this contract
+            $activeTicket = Ticket::where('contract_id', $ticket->contract_id)
+                                  ->whereNotIn('status', ['deleted', 'closed'])
+                                  ->first();
+
+            if ($activeTicket && !$request->force_replace) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "409", 
+                    "message" => "An active ticket exists for this contract",
+                    "active_ticket" => $activeTicket
+                ]);
+            }
+
+            // If force_replace, delete the active ticket
+            if ($activeTicket && $request->force_replace) {
+                $activeTicket->update([
+                    'status' => 'deleted',
+                    'previous_status' => $activeTicket->status
+                ]);
+
+                // Log the deletion
+                TicketChangeLog::create([
+                    'ticket_id' => $activeTicket->id,
+                    'user_id' => $user->id,
+                    'previous_status' => $activeTicket->status,
+                    'new_status' => 'deleted',
+                    'change_type' => 'status'
+                ]);
+            }
+
+            $oldStatus = $ticket->status;
+            
+            // Restore to 'new' status as requested
+            $newStatus = 'new';
+
+            $ticket->update([
+                'status' => $newStatus,
+                'previous_status' => $oldStatus,
+                'assigned_to_user_id' => null  // Reset assignment when restoring to new
+            ]);
+
+            // Log the restoration
+            TicketChangeLog::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'previous_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'previous_priority' => null,
+                'new_priority' => null,
+                'change_type' => 'status'
+            ]);
+
+            // Add system message
+            TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'message' => "Ticket ripristinato da stato '{$oldStatus}' a 'Nuovo'",
+                'message_type' => 'status_change'
+            ]);
+
+            // Send notification
+            $this->notifyTicketParticipants($ticket, 'status_changed');
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200", 
+                "message" => "Ticket restored successfully",
+                "body" => ["risposta" => $ticket]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error restoring ticket: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500", 
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Get all tickets for a specific contract
+     * Admin only - includes closed and deleted tickets
+     */
+    public function getAllTicketsByContractId($contractId)
+    {
+        try {
+            $user = Auth::user();
+            $userRole = $user->role->id;
+
+            // Only Admin can see all tickets including deleted
+            if (!in_array($userRole, [1, 6])) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Only administrators can view all tickets"
+                ]);
+            }
+
+            $tickets = Ticket::where('contract_id', $contractId)
+                            ->with(['messages.user', 'createdBy', 'assignedTo'])
+                            ->orderBy('created_at', 'desc')
+                            ->get();
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200",
+                "body" => ["tickets" => $tickets]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting all tickets by contract: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500",
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Delete active ticket for a contract
+     * Admin only
+     */
+    public function deleteTicketByContractId(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'contract_id' => 'required|exists:contracts,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "errors" => $validator->errors()
+                ]);
+            }
+
+            $user = Auth::user();
+            $userRole = $user->role->id;
+
+            // Only Admin can delete tickets
+            if (!in_array($userRole, [1, 6])) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Only administrators can delete tickets"
+                ]);
+            }
+
+            // Find active ticket
+            $ticket = Ticket::where('contract_id', $request->contract_id)
+                           ->whereNotIn('status', ['deleted', 'closed'])
+                           ->first();
+
+            if (!$ticket) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "404", 
+                    "message" => "No active ticket found for this contract"
+                ]);
+            }
+
+            $oldStatus = $ticket->status;
+
+            $ticket->update([
+                'status' => 'deleted',
+                'previous_status' => $oldStatus
+            ]);
+
+            // Log the deletion
+            TicketChangeLog::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'previous_status' => $oldStatus,
+                'new_status' => 'deleted',
+                'change_type' => 'status'
+            ]);
+
+            // Add system message
+            TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'message' => "Ticket cancellato dall'amministratore",
+                'message_type' => 'status_change'
+            ]);
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200", 
+                "message" => "Ticket deleted successfully"
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting ticket by contract: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500",
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Restore the last closed/deleted ticket for a contract
+     * Admin only
+     */
+    public function restoreLastTicketByContractId(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'contract_id' => 'required|exists:contracts,id',
+                'force_replace' => 'boolean'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "errors" => $validator->errors()
+                ]);
+            }
+
+            $user = Auth::user();
+            $userRole = $user->role->id;
+
+            // Only Admin can restore tickets
+            if (!in_array($userRole, [1, 6])) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Only administrators can restore tickets"
+                ]);
+            }
+
+            // Find the last closed/deleted ticket
+            $lastTicket = Ticket::where('contract_id', $request->contract_id)
+                               ->whereIn('status', ['closed', 'deleted'])
+                               ->orderBy('updated_at', 'desc')
+                               ->first();
+
+            if (!$lastTicket) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "404", 
+                    "message" => "No closed or deleted tickets found for this contract"
+                ]);
+            }
+
+            // Check for active ticket
+            $activeTicket = Ticket::where('contract_id', $request->contract_id)
+                                  ->whereNotIn('status', ['deleted', 'closed'])
+                                  ->first();
+
+            if ($activeTicket && !$request->force_replace) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "409", 
+                    "message" => "An active ticket exists for this contract",
+                    "active_ticket" => $activeTicket
+                ]);
+            }
+
+            // If force_replace, delete the active ticket
+            if ($activeTicket && $request->force_replace) {
+                $activeTicket->update([
+                    'status' => 'deleted',
+                    'previous_status' => $activeTicket->status
+                ]);
+
+                // Log the deletion
+                TicketChangeLog::create([
+                    'ticket_id' => $activeTicket->id,
+                    'user_id' => $user->id,
+                    'previous_status' => $activeTicket->status,
+                    'new_status' => 'deleted',
+                    'change_type' => 'status'
+                ]);
+            }
+
+            // Restore the last ticket to 'new' status
+            $oldStatus = $lastTicket->status;
+            $lastTicket->update([
+                'status' => 'new',
+                'previous_status' => $oldStatus,
+                'assigned_to_user_id' => null
+            ]);
+
+            // Log the restoration
+            TicketChangeLog::create([
+                'ticket_id' => $lastTicket->id,
+                'user_id' => $user->id,
+                'previous_status' => $oldStatus,
+                'new_status' => 'new',
+                'change_type' => 'status'
+            ]);
+
+            // Add system message
+            TicketMessage::create([
+                'ticket_id' => $lastTicket->id,
+                'user_id' => $user->id,
+                'message' => "Ultimo ticket ripristinato a stato 'Nuovo'",
+                'message_type' => 'status_change'
+            ]);
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200", 
+                "message" => "Last ticket restored successfully",
+                "body" => ["risposta" => $lastTicket]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error restoring last ticket: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500",
+                "message" => "Server error"
             ]);
         }
     }

@@ -236,7 +236,7 @@ class ContractController extends Controller
                 'payment_mode',
                 'status_contract.option_status_contract',
                 'ticket' => function ($q) use ($authId) {
-                    $q->where('status', '!=', 'deleted')->with([
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
                         'messages' => function ($mq) use ($authId) {
                             $mq->where('user_id', '!=', $authId)
                             ->orderBy('created_at', 'desc')
@@ -277,7 +277,7 @@ class ContractController extends Controller
                 'specific_data',
                 'payment_mode',
                 'ticket' => function ($q) use ($authId) {
-                    $q->where('status', '!=', 'deleted')->with([
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
                         'messages' => function ($mq) use ($authId) {
                             $mq->where('user_id', '!=', $authId)
                             ->orderBy('created_at', 'desc')
@@ -319,7 +319,7 @@ class ContractController extends Controller
                 'specific_data',
                 'payment_mode',
                 'ticket' => function ($q) use ($authId) {
-                    $q->where('status', '!=', 'deleted')->with([
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
                         'messages' => function ($mq) use ($authId) {
                             $mq->where('user_id', '!=', $authId)
                             ->orderBy('created_at', 'desc')
@@ -369,7 +369,7 @@ class ContractController extends Controller
                 'specific_data',
                 'payment_mode',
                 'ticket' => function ($q) use ($authId) {
-                    $q->where('status', '!=', 'deleted')->with([
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
                         'messages' => function ($mq) use ($authId) {
                             $mq->where('user_id', '!=', $authId)
                             ->orderBy('created_at', 'desc')
@@ -930,7 +930,7 @@ class ContractController extends Controller
                 'status_contract.option_status_contract',
                 // Carica ticket + solo messaggi da altri utenti e conta come "unread"
                 'ticket' => function ($q) use ($authId) {
-                    $q->where('status', '!=', 'deleted')->with([
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
                         'messages' => function ($mq) use ($authId) {
                             $mq->where('user_id', '!=', $authId)
                             ->orderBy('created_at', 'desc')
@@ -960,7 +960,7 @@ class ContractController extends Controller
                 'specific_data',
                 'payment_mode',
                 'ticket' => function ($q) use ($authId) {
-                    $q->where('status', '!=', 'deleted')->with([
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
                         'messages' => function ($mq) use ($authId) {
                             $mq->where('user_id', '!=', $authId)
                             ->orderBy('created_at', 'desc')
@@ -1001,7 +1001,7 @@ class ContractController extends Controller
                 'specific_data',
                 'payment_mode',
                 'ticket' => function ($q) use ($authId) {
-                    $q->where('status', '!=', 'deleted')->with([
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
                         'messages' => function ($mq) use ($authId) {
                             $mq->where('user_id', '!=', $authId)
                             ->orderBy('created_at', 'desc')
@@ -1050,7 +1050,7 @@ class ContractController extends Controller
                 'specific_data',
                 'payment_mode',
                 'ticket' => function ($q) use ($authId) {
-                    $q->where('status', '!=', 'deleted')->with([
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
                         'messages' => function ($mq) use ($authId) {
                             $mq->where('user_id', '!=', $authId)
                             ->orderBy('created_at', 'desc')
@@ -1077,7 +1077,7 @@ class ContractController extends Controller
                 'specific_data',
                 'payment_mode',
                 'ticket' => function ($q) use ($authId) {
-                    $q->where('status', '!=', 'deleted')->with([
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
                         'messages' => function ($mq) use ($authId) {
                             $mq->where('user_id', '!=', $authId)
                             ->orderBy('created_at', 'desc')

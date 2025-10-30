@@ -527,6 +527,9 @@ export class ContrattiRicercaComponent implements OnInit {
             panelClass: ['success-snackbar']
           }
         );
+        
+        // Refresh the contract list to update ticket icons
+        this.getContrattoAndResetValue();
       }
       
       // Pulisci backdrop dopo la chiusura
@@ -587,8 +590,8 @@ export class ContrattiRicercaComponent implements OnInit {
           }
         );
         
-        // Opzionale: per refresh dei dati dopo creazione ticket
-        // this.refreshData();
+        // Refresh the contract list to update ticket icons
+        this.getContrattoAndResetValue();
       }
       
       // Pulisci backdrop dopo la chiusura

@@ -785,6 +785,46 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
+  /**
+   * Get all tickets for a specific contract (admin only)
+   */
+  getAllTicketsByContractId(contractId: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + "getAllTicketsByContractId/" + contractId, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Delete active ticket for a contract (admin only)
+   */
+  deleteTicketByContractId(form: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "deleteTicketByContractId", form, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Restore last closed/deleted ticket for a contract (admin only)
+   */
+  restoreLastTicketByContractId(form: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "restoreLastTicketByContractId", form, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Restore a specific ticket (admin only)
+   */
+  restoreTicket(form: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "restoreTicket", form, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
   // -------------------- WALLET API METHODS --------------------
   
   /**
