@@ -118,6 +118,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   isShaking: boolean = false;
   minimizedTickets: Set<number> = new Set<number>();
 
+  //  Track dragging state and current ticket being dragged
+  isDragging: boolean = false;
+  currentDraggingTicket: Ticket | null = null;
+
   // Search queries for filtering dropdown options
   productSearchQuery: string = '';
   seuSearchQuery: string = '';
@@ -275,11 +279,86 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return this.userRole === 1 || this.userRole === 5;
   }
 
+    /**
+     * Check if current user can drag/move a ticket
+     * Admin (role 1) can move any ticket
+     * BackOffice (role 5) and Operatore Web (role 4) can only move tickets assigned to them
+     */
+    canDragTicket(ticket: Ticket): boolean {
+    // Admin can move any ticket
+    if (this.userRole === 1) {
+        return true;
+    }
+
+    // BackOffice and Operatore Web can only move tickets assigned to them
+    if (this.userRole === 4 || this.userRole === 5) {
+        return ticket.assigned_to_user_id === this.currentUser.id || ticket.status === 'new';
+    }
+
+    // Other roles cannot move tickets
+    return false;
+    }
+
+  /**
+   * Check if a ticket can be dropped on a specific column
+   * Admin (role 1) can drop anywhere
+   * BackOffice (role 5) cannot drop assigned tickets on 'new' status
+   */
+  canDropOnColumn(ticket: Ticket, targetStatus: string): boolean {
+    // Admin can drop anywhere
+    if (this.userRole === 1) {
+      return true;
+    }
+
+    // BackOffice cannot move assigned tickets to 'new' status
+    if (this.userRole === 5) {
+      if (ticket.assigned_to_user_id === this.currentUser.id && 
+          ticket.status !== 'new' && 
+          targetStatus === 'new') {
+        return false;
+      }
+    }
+
+    // Use standard drag permissions
+    return this.canDragTicket(ticket);
+  }
+
+  /**
+   *  Check if current user can reply to a ticket
+   * Admin (role 1) can always reply
+   * BackOffice (role 5) and Operatore Web (role 4) can only reply if ticket is assigned to them
+   */
+  canReplyToTicket(ticket: Ticket | null): boolean {
+    if (!ticket) {
+      return false;
+    }
+
+    // Admin can always reply
+    if (this.userRole === 1) {
+      return true;
+    }
+
+    // BackOffice and Operatore Web can only reply to tickets assigned to them
+    if (this.userRole === 4 || this.userRole === 5) {
+      return ticket.assigned_to_user_id === this.currentUser.id;
+    }
+
+    // Other roles cannot reply
+    return false;
+  }
+
+  /**
+   * Show ban icon only when dragging a ticket that cannot be dragged
+   */
+  shouldShowBanIcon(ticket: Ticket): boolean {
+    return this.isDragging && this.currentDraggingTicket?.id === ticket.id && !this.canDragTicket(ticket);
+  }
+
   loadCurrentUser() {
     const userSub = this.apiService.PrendiUtente().subscribe((userData: any) => {
       this.currentUser = userData.user;
       this.userRole = userData.user.role.id;
-      this.isAdmin = [1, 5].includes(this.userRole);
+      this.isAdmin = this.userRole === 1;
       this.setupContractSearchPipeline();
       this.loadInitialData();
       this.loadTickets();
@@ -1456,6 +1535,21 @@ getVisibleColumnsCount(): number {
   sendMessage() {
     if (!this.newMessage.trim() || !this.selectedTicket) return;
 
+    //  Check if user can reply to this ticket
+    if (!this.canReplyToTicket(this.selectedTicket)) {
+      this.snackBar.open(
+        'Solo il backoffice assegnato può rispondere a questo ticket',
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        }
+      );
+      return;
+    }
+
     const messageData = {
       ticket_id: this.selectedTicket.id,
       user_id: this.currentUser.id,
@@ -1518,17 +1612,94 @@ getVisibleColumnsCount(): number {
     const ticketId = event.dataTransfer.getData('text/plain');
     const ticket = this.tickets.find(t => t.id.toString() === ticketId);
     
-    if (ticket && ticket.status !== newStatus) {
-      this.updateTicketStatus(ticket, newStatus);
+    if (!ticket) {
+        //  Reset dragging state
+        this.isDragging = false;
+        this.currentDraggingTicket = null;
+        return;
     }
-  }
-
+    
+    //  Check if ticket can be dropped on this column
+    if (!this.canDropOnColumn(ticket, newStatus)) {
+        this.snackBar.open(
+        'Non puoi spostare un ticket assegnato su "Nuovo"',
+        'Chiudi',
+        { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+        }
+        );
+        //  Reset dragging state
+        this.isDragging = false;
+        this.currentDraggingTicket = null;
+        return;
+    }
+    
+    // Check if user can move this ticket
+    if (!this.canDragTicket(ticket)) {
+        this.snackBar.open(
+        'Non hai i permessi per spostare questo ticket',
+        'Chiudi',
+        { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+        }
+        );
+        //  Reset dragging state
+        this.isDragging = false;
+        this.currentDraggingTicket = null;
+        return;
+    }
+    
+    if (ticket.status !== newStatus) {
+        this.updateTicketStatus(ticket, newStatus);
+    }
+    
+    //  Reset dragging state
+    this.isDragging = false;
+    this.currentDraggingTicket = null;
+    }
   onTicketDragStart(event: any, ticket: Ticket) {
+    // Check if user can drag this ticket
+    if (!this.canDragTicket(ticket)) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Show ban icon temporarily for visual feedback
+        this.isDragging = true;
+        this.currentDraggingTicket = ticket;
+        
+        // Reset after a short delay
+        setTimeout(() => {
+          this.isDragging = false;
+          this.currentDraggingTicket = null;
+        }, 800);
+
+        return;
+    }
+    
+    // Set dragging state for allowed drag
+    this.isDragging = true;
+    this.currentDraggingTicket = ticket;
+    
     event.dataTransfer.setData('text/plain', ticket.id.toString());
-  }
+    }
 
   onDragOver(event: any) {
     event.preventDefault();
+  }
+  
+  /**
+   * Handle drag end event (called when drag ends, regardless of where it ends)
+   * This ensures isDragging is always reset, even if drop doesn't happen
+   */
+  onTicketDragEnd() {
+    this.isDragging = false;
+    this.currentDraggingTicket = null;
   }
 
   /**

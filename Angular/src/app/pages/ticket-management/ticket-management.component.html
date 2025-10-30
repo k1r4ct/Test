@@ -375,10 +375,17 @@
             *ngFor="let ticket of getTicketsForColumn(column.id)" 
             class="ticket-card"
             [class.ticket-minimized]="isTicketMinimized(ticket.id)"
+            [class.ticket-not-draggable]="!canDragTicket(ticket)"
             [class]="'ticket-status-' + column.id"
-            draggable="true"
+            [attr.draggable]="true"
             (dragstart)="onTicketDragStart($event, ticket)"
+            (dragend)="onTicketDragEnd()"
             (click)="openTicketModal(ticket)">
+            
+            <!-- Ban icon -->
+            <div class="ticket-ban-icon" *ngIf="shouldShowBanIcon(ticket)">
+              <i class="fas fa-ban"></i>
+            </div>
             
             <!-- MINIMIZED VIEW - Compact single row with checkbox -->
             <div class="ticket-minimized-view" *ngIf="isTicketMinimized(ticket.id)">
@@ -645,15 +652,22 @@
             </div>
           </div>
         </div>
-
+        <div class="chat-disabled-message" *ngIf="!canReplyToTicket(selectedTicket)">
+          <i class="fas fa-info-circle"></i>
+          Non puoi rispondere a questo ticket perché non è stato assegnato a te
+        </div>  
         <div class="message-input-container">
           <input 
             type="text" 
             [(ngModel)]="newMessage" 
             placeholder="Scrivi un messaggio..."
             (keyup.enter)="sendMessage()"
+            [disabled]="!canReplyToTicket(selectedTicket)"
             class="message-input">
-          <button class="send-btn" (click)="sendMessage()">
+          <button 
+            class="send-btn" 
+            (click)="sendMessage()"
+            [disabled]="!canReplyToTicket(selectedTicket)">
             <i class="fas fa-paper-plane"></i>
           </button>
         </div>
