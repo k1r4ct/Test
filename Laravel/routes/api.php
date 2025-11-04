@@ -122,6 +122,10 @@ Route::group(['middleware'=>'api'],function(){
     Route::get('getAllTicketsByContractId/{contractId}', [TicketController::class, 'getAllTicketsByContractId'])->name('getAllTicketsByContractId');
     Route::post('deleteTicketByContractId', [TicketController::class, 'deleteTicketByContractId'])->name('deleteTicketByContractId');
     Route::post('restoreLastTicketByContractId', [TicketController::class, 'restoreLastTicketByContractId'])->name('restoreLastTicketByContractId');
+    Route::post('tickets/attachments/upload', [TicketController::class, 'uploadAttachments']);
+    Route::get('tickets/{ticket}/attachments', [TicketController::class, 'getTicketAttachments']);
+    Route::get('attachments/{attachment}/download', [TicketController::class, 'downloadAttachment']);
+    Route::delete('attachments/{attachment}', [TicketController::class, 'deleteAttachment']);
 
     //GESTIONE DOMANDE
     Route::get('getDomande{id}',[SpecificDataController::class,'getDomande'])->name('getDomande');

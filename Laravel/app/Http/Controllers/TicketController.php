@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
+use App\Models\TicketAttachment;
 use App\Models\TicketMessage;
 use App\Models\TicketChangeLog;
 use App\Models\contract;
@@ -12,6 +13,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
 
 class TicketController extends Controller
 {
@@ -1165,4 +1169,289 @@ class TicketController extends Controller
             ]);
         }
     }
+
+    /**
+     * Upload attachments for a ticket message
+     */
+    public function uploadAttachments(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'ticket_id' => 'required|exists:tickets,id',
+                'message_id' => 'nullable|exists:ticket_messages,id',
+                'attachments' => 'required|array',
+                'attachments.*' => 'required|file|max:10240' // 10MB max per file
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "errors" => $validator->errors()
+                ]);
+            }
+
+            $user = Auth::user();
+            $ticket = Ticket::findOrFail($request->ticket_id);
+
+            // Check permissions using your existing method
+            if (!$this->canAccessTicket($user, $ticket)) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Access denied"
+                ]);
+            }
+
+            $attachments = [];
+            $contractId = $ticket->contract_id;
+
+            DB::beginTransaction();
+
+            foreach ($request->file('attachments') as $file) {
+                // Validate file type and size
+                if (!$this->validateAttachment($file)) {
+                    DB::rollBack();
+                    return response()->json([
+                        "response" => "error",
+                        "status" => "400", 
+                        "message" => "Invalid file type or size"
+                    ]);
+                }
+
+                // Generate unique filename
+                $originalName = $file->getClientOriginalName();
+                $extension = $file->getClientOriginalExtension();
+                $uniqueName = Str::random(32) . '_' . time() . '.' . $extension;
+
+                // Create directory structure
+                $yearMonth = date('Y-m');
+                $relativePath = "contracts/{$contractId}/tickets/{$ticket->id}/{$yearMonth}";
+                $fullPath = storage_path("app/{$relativePath}");
+
+                // Create directories if they don't exist
+                if (!File::exists($fullPath)) {
+                    File::makeDirectory($fullPath, 0755, true);
+                }
+
+                // Move file
+                $file->move($fullPath, $uniqueName);
+                $filePath = "{$relativePath}/{$uniqueName}";
+
+                // Calculate hash
+                $fileHash = hash_file('sha256', "{$fullPath}/{$uniqueName}");
+
+                // Save to database
+                $attachment = TicketAttachment::create([
+                    'ticket_id' => $ticket->id,
+                    'ticket_message_id' => $request->message_id,
+                    'user_id' => $user->id,
+                    'file_name' => $uniqueName,
+                    'original_name' => $originalName,
+                    'file_path' => $filePath,
+                    'file_size' => filesize("{$fullPath}/{$uniqueName}"),
+                    'mime_type' => $file->getClientMimeType(),
+                    'hash' => $fileHash
+                ]);
+
+                $attachments[] = $attachment;
+            }
+
+            // Update message flag if message_id provided
+            if ($request->message_id) {
+                TicketMessage::where('id', $request->message_id)
+                    ->update(['has_attachments' => true]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200", 
+                "message" => "Attachments uploaded successfully",
+                "body" => ["attachments" => $attachments]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error uploading attachments: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500",
+                "message" => "Server error: " . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get attachments for a ticket
+     */
+    public function getTicketAttachments($ticketId)
+    {
+        try {
+            $user = Auth::user();
+            $ticket = Ticket::findOrFail($ticketId);
+
+            // Check permissions using your existing method
+            if (!$this->canAccessTicket($user, $ticket)) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Access denied"
+                ]);
+            }
+
+            $attachments = TicketAttachment::where('ticket_id', $ticketId)
+                ->with('user:id,name,cognome,email')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200",
+                "body" => ["attachments" => $attachments]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting ticket attachments: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500",
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Download an attachment
+     */
+    public function downloadAttachment($attachmentId)
+    {
+        try {
+            $attachment = TicketAttachment::findOrFail($attachmentId);
+            $user = Auth::user();
+            $ticket = $attachment->ticket;
+
+            // Check permissions using your existing method
+            if (!$this->canAccessTicket($user, $ticket)) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Access denied"
+                ]);
+            }
+
+            $fullPath = storage_path('app/' . $attachment->file_path);
+
+            if (!file_exists($fullPath)) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "404",
+                    "message" => "File not found"
+                ]);
+            }
+
+            return response()->download($fullPath, $attachment->original_name);
+
+        } catch (\Exception $e) {
+            Log::error('Error downloading attachment: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500",
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Delete an attachment
+     */
+    public function deleteAttachment($attachmentId)
+    {
+        try {
+            $attachment = TicketAttachment::findOrFail($attachmentId);
+            $user = Auth::user();
+            $userRole = $user->role->id;
+
+            // Only admin or the uploader can delete
+            if (!in_array($userRole, [1, 6]) && $attachment->user_id != $user->id) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Access denied"
+                ]);
+            }
+
+            DB::beginTransaction();
+
+            // Delete physical file
+            $fullPath = storage_path('app/' . $attachment->file_path);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+
+            // Update message flag if this was the last attachment for the message
+            if ($attachment->ticket_message_id) {
+                $remainingAttachments = TicketAttachment::where('ticket_message_id', $attachment->ticket_message_id)
+                    ->where('id', '!=', $attachment->id)
+                    ->count();
+                
+                if ($remainingAttachments == 0) {
+                    TicketMessage::where('id', $attachment->ticket_message_id)
+                        ->update(['has_attachments' => false]);
+                }
+            }
+
+            // Delete database record
+            $attachment->delete();
+
+            DB::commit();
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200",
+                "message" => "Attachment deleted successfully"
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error deleting attachment: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500",
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Validate attachment file
+     */
+    protected function validateAttachment($file)
+    {
+        // Maximum file size: 10MB
+        $maxSize = 10 * 1024 * 1024;
+
+        // Blocked extensions for security
+        $blockedExtensions = [
+            'exe', 'bat', 'cmd', 'sh', 'php', 'js', 
+            'jar', 'app', 'deb', 'rpm', 'dmg', 'pkg',
+            'com', 'scr', 'vbs', 'msi', 'dll'
+        ];
+
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        // Check file size
+        if ($file->getSize() > $maxSize) {
+            return false;
+        }
+
+        // Check if extension is blocked
+        if (in_array($extension, $blockedExtensions)) {
+            return false;
+        }
+
+        return true;
+    }
+
 }
