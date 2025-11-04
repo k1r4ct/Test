@@ -52,6 +52,55 @@ class Ticket extends Model
         return $this->hasMany(TicketChangeLog::class)->orderBy('created_at', 'desc');
     }
 
+    /**
+     * Get all attachments for the ticket.
+     */
+    public function attachments()
+    {
+        return $this->hasMany(TicketAttachment::class);
+    }
+
+    /**
+     * Get attachments count.
+     */
+    public function getAttachmentCountAttribute()
+    {
+        return $this->attachments()->count();
+    }
+
+    /**
+     * Get total size of all attachments.
+     */
+    public function getTotalAttachmentSizeAttribute()
+    {
+        return $this->attachments()->sum('file_size');
+    }
+
+    /**
+     * Get formatted total size.
+     */
+    public function getFormattedTotalAttachmentSizeAttribute()
+    {
+        $bytes = $this->total_attachment_size;
+        
+        if ($bytes == 0) return '0 B';
+        
+        $units = ['B', 'KB', 'MB', 'GB'];
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+            $bytes /= 1024;
+        }
+        
+        return round($bytes, 2) . ' ' . $units[$i];
+    }
+
+    /**
+     * Check if ticket has attachments.
+     */
+    public function hasAttachments()
+    {
+        return $this->attachments()->exists();
+    }
+
     // Scopes
     public function scopeByStatus($query, $status)
     {
@@ -78,6 +127,14 @@ class Ticket extends Model
         return $query->where('created_by_user_id', $userId);
     }
 
+    /**
+     * Scope to get tickets with attachments.
+     */
+    public function scopeWithAttachments($query)
+    {
+        return $query->has('attachments');
+    }
+
     // Attributes
     public function getCustomerNameAttribute()
     {
@@ -102,10 +159,10 @@ class Ticket extends Model
     public function getAssignedToNameAttribute()
     {
         if ($this->assignedTo) {
-            if ($this->assignedTo->nome && $this->assignedTo->cognome) {
-                return $this->assignedTo->nome . ' ' . $this->assignedTo->cognome;
-            } elseif (!empty($this->assignedTo->rag_soc)) {
-                return $this->assignedTo->rag_soc;
+            if ($this->assignedTo->name && $this->assignedTo->cognome) {
+                return $this->assignedTo->name . ' ' . $this->assignedTo->cognome;
+            } elseif (!empty($this->assignedTo->ragione_sociale)) {
+                return $this->assignedTo->ragione_sociale;
             }
             return $this->assignedTo->email;
         }
@@ -115,10 +172,10 @@ class Ticket extends Model
     public function getCreatedByNameAttribute()
     {
         if ($this->createdBy) {
-            if ($this->createdBy->nome && $this->createdBy->cognome) {
-                return $this->createdBy->nome . ' ' . $this->createdBy->cognome;
-            } elseif (!empty($this->createdBy->rag_soc)) {
-                return $this->createdBy->rag_soc;
+            if ($this->createdBy->name && $this->createdBy->cognome) {
+                return $this->createdBy->name . ' ' . $this->createdBy->cognome;
+            } elseif (!empty($this->createdBy->ragione_sociale)) {
+                return $this->createdBy->ragione_sociale;
             }
             return $this->createdBy->email;
         }
@@ -153,7 +210,7 @@ class Ticket extends Model
         ];
     }
 
-    // Boot method to auto-generate ticket number
+    // Boot method to auto-generate ticket number and handle cascading deletes
     protected static function boot()
     {
         parent::boot();
@@ -162,6 +219,13 @@ class Ticket extends Model
             if (empty($ticket->ticket_number)) {
                 $ticket->ticket_number = self::generateTicketNumber();
             }
+        });
+
+        // When deleting a ticket, also delete its attachments
+        static::deleting(function ($ticket) {
+            $ticket->attachments()->each(function ($attachment) {
+                $attachment->delete();
+            });
         });
     }
 }

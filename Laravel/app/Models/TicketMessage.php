@@ -12,39 +12,58 @@ class TicketMessage extends Model
         'ticket_id',
         'user_id',
         'message',
-        'message_type',       
-        'attachment_path',
-        'attachment_name',
-        'attachment_size',
+        'message_type',
+        'has_attachments',  // New field replacing individual attachment fields
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'has_attachments' => 'boolean',
     ];
 
+    /**
+     * Get the ticket that owns the message.
+     */
     public function ticket()
     {
         return $this->belongsTo(Ticket::class);
     }
 
+    /**
+     * Get the user who created the message.
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Get the attachments for the message.
+     */
+    public function attachments()
+    {
+        return $this->hasMany(TicketAttachment::class, 'ticket_message_id');
+    }
+
+    /**
+     * Get the username attribute.
+     */
     public function getUserNameAttribute()
     {
         if ($this->user) {
-            if ($this->user->nome && $this->user->cognome) {
-                return $this->user->nome . ' ' . $this->user->cognome;
-            } elseif (!empty($this->user->rag_soc)) {
-                return $this->user->rag_soc;
+            if ($this->user->name && $this->user->cognome) {
+                return $this->user->name . ' ' . $this->user->cognome;
+            } elseif (!empty($this->user->ragione_sociale)) {
+                return $this->user->ragione_sociale;
             }
         }
         return 'Utente Sconosciuto';
     }
 
+    /**
+     * Get the user role attribute.
+     */
     public function getUserRoleAttribute()
     {
         return $this->user && $this->user->role
@@ -52,19 +71,44 @@ class TicketMessage extends Model
             : 'N/A';
     }
 
-    public function getFormattedSizeAttribute()
+    /**
+     * Check if message has attachments.
+     */
+    public function hasAttachments()
     {
-        if (!$this->attachment_size) {
-            return null;
-        }
+        return $this->has_attachments || $this->attachments()->exists();
+    }
 
-        $bytes = $this->attachment_size;
+    /**
+     * Get attachment count.
+     */
+    public function getAttachmentCountAttribute()
+    {
+        return $this->attachments()->count();
+    }
+
+    /**
+     * Get total size of all attachments.
+     */
+    public function getTotalAttachmentSizeAttribute()
+    {
+        return $this->attachments()->sum('file_size');
+    }
+
+    /**
+     * Get formatted total size of all attachments.
+     */
+    public function getFormattedTotalSizeAttribute()
+    {
+        $bytes = $this->total_attachment_size;
+        
+        if ($bytes == 0) return '0 B';
+        
         $units = ['B', 'KB', 'MB', 'GB'];
-
         for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
-
+        
         return round($bytes, 2) . ' ' . $units[$i];
     }
 
@@ -84,9 +128,9 @@ class TicketMessage extends Model
         return $query->where('message_type', 'text');
     }
 
-    public function scopeAttachments($query)
+    public function scopeWithAttachments($query)
     {
-        return $query->where('message_type', 'attachment');
+        return $query->where('has_attachments', true);
     }
 
     public function scopeStatusChanges($query)
@@ -102,5 +146,20 @@ class TicketMessage extends Model
     public function scopeOldest($query)
     {
         return $query->orderBy('created_at', 'asc');
+    }
+
+    /**
+     * Boot method to handle cascading deletes.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // When deleting a message, also delete its attachments
+        static::deleting(function ($message) {
+            $message->attachments()->each(function ($attachment) {
+                $attachment->delete();
+            });
+        });
     }
 }
