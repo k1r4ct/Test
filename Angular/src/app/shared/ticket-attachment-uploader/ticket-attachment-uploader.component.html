@@ -1,0 +1,182 @@
+<!-- ticket-attachment-uploader.component.html -->
+<div class="attachment-uploader" [class.compact-variant]="variant === 'compact'" [class.full-variant]="variant === 'full'">
+  
+  <!-- UPLOAD AREA -->
+  <div class="upload-section" *ngIf="!isUploading">
+    <div 
+      class="upload-area"
+      [class.dragging]="isDragging"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+      (click)="fileInput.click()">
+      
+      <mat-icon class="upload-icon">cloud_upload</mat-icon>
+      
+      <div class="upload-text">
+        <p class="primary-text">Trascina i file qui o</p>
+        <button mat-raised-button color="primary" type="button" class="browse-btn">
+          <mat-icon>attach_file</mat-icon>
+          Sfoglia File
+        </button>
+      </div>
+      
+      <div class="upload-hint">
+        <mat-icon>info</mat-icon>
+        <span>Max {{ maxFiles }} file, {{ formatBytes(maxFileSize) }} ciascuno</span>
+      </div>
+
+      <!-- Hidden file input -->
+      <input 
+        #fileInput
+        type="file" 
+        multiple 
+        [attr.accept]="'.jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip'"
+        (change)="onFileInputChange($event)"
+        style="display: none;">
+    </div>
+  </div>
+
+  <!-- SELECTED FILES LIST -->
+  <div class="selected-files" *ngIf="selectedFiles.length > 0">
+    <div class="section-header">
+      <mat-icon>attachment</mat-icon>
+      <h4>File Selezionati ({{ selectedFiles.length }})</h4>
+    </div>
+
+    <div class="file-list">
+      <div class="file-item" *ngFor="let selectedFile of selectedFiles; let i = index"
+           [class.uploading]="selectedFile.uploading"
+           [class.uploaded]="selectedFile.uploaded">
+        
+        <!-- File preview/icon -->
+        <div class="file-preview">
+          <img *ngIf="selectedFile.preview" 
+               [src]="selectedFile.preview" 
+               [alt]="selectedFile.file.name"
+               class="preview-image">
+          <mat-icon *ngIf="!selectedFile.preview" class="file-icon">
+            {{ getFileIcon(selectedFile.file.name) }}
+          </mat-icon>
+        </div>
+
+        <!-- File info -->
+        <div class="file-info">
+          <div class="file-name" [matTooltip]="selectedFile.file.name">
+            {{ selectedFile.file.name }}
+          </div>
+          <div class="file-meta">
+            <span class="file-size">{{ formatBytes(selectedFile.file.size) }}</span>
+            <span class="file-status" *ngIf="selectedFile.uploading">
+              <mat-spinner diameter="16"></mat-spinner>
+              Caricamento...
+            </span>
+            <span class="file-status success" *ngIf="selectedFile.uploaded">
+              <mat-icon>check_circle</mat-icon>
+              Caricato
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="file-actions">
+          <button mat-icon-button 
+                  (click)="removeSelectedFile(i)"
+                  [disabled]="selectedFile.uploading"
+                  matTooltip="Rimuovi"
+                  color="warn">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload button -->
+    <div class="upload-actions" *ngIf="!isUploading && selectedFiles.length > 0">
+      <button mat-raised-button 
+              color="primary" 
+              (click)="uploadFiles()"
+              [disabled]="!ticketId">
+        <mat-icon>cloud_upload</mat-icon>
+        Carica {{ selectedFiles.length }} {{ selectedFiles.length === 1 ? 'File' : 'File' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- UPLOADING STATE -->
+  <div class="uploading-state" *ngIf="isUploading">
+    <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+    <div class="uploading-message">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Caricamento in corso...</p>
+    </div>
+  </div>
+
+  <!-- EXISTING ATTACHMENTS -->
+  <div class="existing-attachments" *ngIf="showExistingAttachments && existingAttachments.length > 0">
+    <div class="section-header">
+      <mat-icon>folder_open</mat-icon>
+      <h4>Allegati Esistenti ({{ existingAttachments.length }})</h4>
+    </div>
+
+    <div class="file-list">
+      <div class="file-item existing" *ngFor="let attachment of existingAttachments">
+        
+        <!-- File icon/preview -->
+        <div class="file-preview" (click)="previewAttachment(attachment)">
+          <mat-icon class="file-icon">{{ getFileIcon(attachment.original_name) }}</mat-icon>
+        </div>
+
+        <!-- File info -->
+        <div class="file-info" (click)="previewAttachment(attachment)">
+          <div class="file-name" [matTooltip]="attachment.original_name">
+            {{ attachment.original_name }}
+          </div>
+          <div class="file-meta">
+            <span class="file-size">{{ formatBytes(attachment.file_size) }}</span>
+            <span class="file-uploader" *ngIf="attachment.user_name">
+              <mat-icon>person</mat-icon>
+              {{ attachment.user_name }}
+            </span>
+            <span class="file-date">
+              <mat-icon>schedule</mat-icon>
+              {{ attachment.created_at | date:'dd/MM/yyyy HH:mm' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="file-actions">
+          <button mat-icon-button 
+                  (click)="previewAttachment(attachment)"
+                  matTooltip="Anteprima"
+                  color="primary">
+            <mat-icon>visibility</mat-icon>
+          </button>
+          
+          <button mat-icon-button 
+                  (click)="downloadAttachment(attachment)"
+                  matTooltip="Download"
+                  color="accent">
+            <mat-icon>download</mat-icon>
+          </button>
+          
+          <button mat-icon-button 
+                  *ngIf="canDeleteAttachment(attachment)"
+                  (click)="deleteAttachment(attachment)"
+                  matTooltip="Elimina"
+                  color="warn">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-state" *ngIf="showExistingAttachments && existingAttachments.length === 0 && selectedFiles.length === 0 && !isUploading">
+    <mat-icon>attach_file</mat-icon>
+    <p>Nessun allegato presente</p>
+  </div>
+
+</div>

@@ -1,0 +1,113 @@
+<!-- attachment-preview-modal.component.html -->
+<div class="preview-modal">
+  
+  <!-- HEADER -->
+  <div class="modal-header" mat-dialog-title>
+    <div class="header-content">
+      <mat-icon class="file-type-icon">{{ getFileIcon() }}</mat-icon>
+      <div class="file-details">
+        <h2 class="file-name">{{ attachment.original_name }}</h2>
+        <div class="file-meta">
+          <span class="meta-item">
+            <mat-icon>folder</mat-icon>
+            {{ formatBytes(attachment.file_size) }}
+          </span>
+          <span class="meta-item" *ngIf="attachment.user_name">
+            <mat-icon>person</mat-icon>
+            {{ attachment.user_name }}
+          </span>
+          <span class="meta-item">
+            <mat-icon>schedule</mat-icon>
+            {{ attachment.created_at | date:'dd/MM/yyyy HH:mm' }}
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="header-actions">
+      <button mat-icon-button 
+              (click)="downloadAttachment()" 
+              matTooltip="Download"
+              color="primary">
+        <mat-icon>download</mat-icon>
+      </button>
+      <button mat-icon-button 
+              (click)="close()" 
+              matTooltip="Chiudi">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="modal-content" mat-dialog-content>
+    
+    <!-- LOADING STATE -->
+    <div class="loading-state" *ngIf="isLoading">
+      <mat-spinner diameter="60"></mat-spinner>
+      <p>Caricamento in corso...</p>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div class="error-state" *ngIf="loadError && !isLoading">
+      <mat-icon>error_outline</mat-icon>
+      <h3>Errore nel caricamento</h3>
+      <p>Non è stato possibile caricare l'anteprima del file</p>
+      <button mat-raised-button color="primary" (click)="downloadAttachment()">
+        <mat-icon>download</mat-icon>
+        Scarica File
+      </button>
+    </div>
+
+    <!-- IMAGE PREVIEW -->
+    <div class="preview-container image-preview" *ngIf="previewType === 'image' && !isLoading && !loadError">
+      <img [src]="previewUrl" [alt]="attachment.original_name" class="preview-image">
+    </div>
+
+    <!-- PDF PREVIEW -->
+    <div class="preview-container pdf-preview" *ngIf="previewType === 'pdf' && !isLoading && !loadError">
+      <iframe [src]="previewUrl" class="pdf-iframe" frameborder="0"></iframe>
+    </div>
+
+    <!-- TEXT PREVIEW -->
+    <div class="preview-container text-preview" *ngIf="previewType === 'text' && !isLoading && !loadError">
+      <iframe [src]="previewUrl" class="text-iframe" frameborder="0"></iframe>
+    </div>
+
+    <!-- UNSUPPORTED FILE TYPE -->
+    <div class="unsupported-preview" *ngIf="previewType === 'unsupported' && !isLoading">
+      <mat-icon class="large-icon">{{ getFileIcon() }}</mat-icon>
+      <h3>Anteprima non disponibile</h3>
+      <p>Questo tipo di file non supporta l'anteprima</p>
+      <div class="file-info-card">
+        <div class="info-row">
+          <span class="label">Nome file:</span>
+          <span class="value">{{ attachment.original_name }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Dimensione:</span>
+          <span class="value">{{ formatBytes(attachment.file_size) }}</span>
+        </div>
+        <div class="info-row" *ngIf="attachment.mime_type">
+          <span class="label">Tipo:</span>
+          <span class="value">{{ attachment.mime_type }}</span>
+        </div>
+      </div>
+      <button mat-raised-button color="primary" (click)="downloadAttachment()" class="download-btn">
+        <mat-icon>download</mat-icon>
+        Scarica File
+      </button>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="modal-footer" mat-dialog-actions>
+    <button mat-button (click)="close()">Chiudi</button>
+    <button mat-raised-button color="primary" (click)="downloadAttachment()">
+      <mat-icon>download</mat-icon>
+      Download
+    </button>
+  </div>
+
+</div>

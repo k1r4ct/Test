@@ -50,7 +50,7 @@ export class ApiService implements OnDestroy {
     }
   }
 
-  // Nuovo metodo per emettere i dati filtrati per data
+  // Metodo per emettere i dati filtrati per data
   emitFilteredData(selectedDate: Date, filteredContratti: any[], filteredLeads?: any[]) {
     const currentData = this.combinedDataSubject.value || {};
     
@@ -859,4 +859,54 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
+  // -------------------- TICKET ATTACHMENTS API --------------------
+
+  /**
+   * Upload attachments for a ticket
+   * Supports multiple files up to 10MB each
+   */
+  uploadTicketAttachments(formData: FormData): Observable<any> {
+    let headers = this.getAuthHeaders();
+    // Remove Content-Type to let browser set it with boundary for multipart/form-data
+    headers = headers.delete('Content-Type');
+    
+    return this.http
+      .post(this.global.API_URL + "tickets/attachments/upload", formData, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get all attachments for a specific ticket
+   */
+  getTicketAttachments(ticketId: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + `tickets/${ticketId}/attachments`, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Download a specific attachment
+   * Returns blob for file download
+   */
+  downloadTicketAttachment(attachmentId: number): Observable<Blob> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + `attachments/${attachmentId}/download`, { 
+        headers,
+        responseType: 'blob'
+      })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Delete a specific attachment
+   * Only admin or uploader can delete
+   */
+  deleteTicketAttachment(attachmentId: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .delete(this.global.API_URL + `attachments/${attachmentId}`, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
 }

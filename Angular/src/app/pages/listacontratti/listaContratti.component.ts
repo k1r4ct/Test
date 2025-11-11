@@ -67,7 +67,6 @@ export interface ListContrattiData {
   stato: string;
   file: string[];
   ticketExists: boolean;
-  // Aggiunta: numero messaggi non letti per il ticket (se fornito dal backend)
   ticketUnreadCount?: number;
 }
 
@@ -207,7 +206,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   // Proprietà per gestione ticket
   private ticketStatusCache: Map<number, any> = new Map(); // Cache stato ticket per contratto
   private lastTicketCheck: Date = new Date();
-
+  private readonly FILTERS_STORAGE_KEY = 'listaContratti_filtri';
+  private pendingDateFilters: Map<string, any[]> = new Map();
   // Proprietà per gestire la vista filtrata
   isFilteredView: boolean = false;
   filteredCount: number = 0;
@@ -553,6 +553,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
 
   ngOnInit(): void {
     this.setupFilterApplyPipeline();
+    this.loadFiltersFromStorage();
     this.finishInit();
     this.loadTicketStatuses();
   }
@@ -563,6 +564,125 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     if (this.filterApplySub) {
       this.filterApplySub.unsubscribe();
     }
+  }
+
+  private loadFiltersFromStorage(): void {
+    try {
+      const savedFilters = localStorage.getItem(this.FILTERS_STORAGE_KEY);
+      if (savedFilters) {
+        const filtersArray = JSON.parse(savedFilters);
+        
+        // Ripristina il filterDictionary
+        this.filterDictionary = new Map(filtersArray);
+        
+        // Ripristina anche OGGETTO_FILTRICONTRATTI
+        this.OGGETTO_FILTRICONTRATTI = savedFilters;
+        
+        console.log('Filtri caricati da localStorage:', this.filterDictionary);
+        
+        // Salva le date in pendenza per applicarle dopo in ngAfterViewInit
+        filtersArray.forEach(([key, value]: [string, any]) => {
+          if ((key === 'datains' || key === 'datastipula') && Array.isArray(value) && value.length === 2) {
+            this.pendingDateFilters.set(key, value);
+          }
+        });
+        
+        // Applica i valori ai form controls
+        this.applyFiltersToControls(filtersArray);
+        
+        // Applica i filtri al backend
+        const filterString = JSON.stringify(filtersArray);
+        this.applySpecificFilters(filterString);
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento dei filtri da localStorage:', error);
+      // In caso di errore, pulisci localStorage
+      localStorage.removeItem(this.FILTERS_STORAGE_KEY);
+    }
+  }
+
+    private saveFiltersToStorage(): void {
+    try {
+      const filtersArray = Array.from(this.filterDictionary.entries());
+      const filtersJson = JSON.stringify(filtersArray);
+      localStorage.setItem(this.FILTERS_STORAGE_KEY, filtersJson);
+      console.log('Filtri salvati in localStorage');
+    } catch (error) {
+      console.error('Errore nel salvataggio dei filtri in localStorage:', error);
+    }
+  }
+
+  private clearFiltersFromStorage(): void {
+    try {
+      localStorage.removeItem(this.FILTERS_STORAGE_KEY);
+      console.log('Filtri rimossi da localStorage');
+    } catch (error) {
+      console.error('Errore nella rimozione dei filtri da localStorage:', error);
+    }
+  }
+
+  private applyFiltersToControls(filtersArray: any[]): void {
+    filtersArray.forEach(([key, value]) => {
+      // Salta valori nulli o undefined
+      if (value === null || value === undefined) return;
+
+      switch (key) {
+        case 'id':
+          // ID è un campo di testo, non una select
+          const idValue = Array.isArray(value) ? value.join(', ') : value;
+          this.formID.setValue(idValue);
+          break;
+          
+        case 'cliente':
+          // Cliente è un campo di testo
+          this.formCliente.setValue(value);
+          break;
+          
+        case 'pivacf':
+          // CFPI può essere sia array che stringa
+          this.formCFPI.setValue(value);
+          break;
+          
+        case 'prodotto':
+          // Per mat-select multiple, il valore può essere un array o una stringa
+          // Se formProdotti è configurato per selezione multipla, mantieni l'array
+          // Altrimenti converti in stringa
+          const prodValue = Array.isArray(value) ? value : [value];
+          // Verifica se il FormControl accetta array (cast a any per evitare errori di tipo)
+          (this.formProdotti as any).setValue(prodValue);
+          break;
+          
+        case 'macroprodotto':
+          const macroValue = Array.isArray(value) ? value : [value];
+          (this.formMacroPro as any).setValue(macroValue);
+          break;
+          
+        case 'macrostato':
+          const macroStatoValue = Array.isArray(value) ? value : [value];
+          (this.formMacroStato as any).setValue(macroStatoValue);
+          break;
+          
+        case 'stato':
+          const statoValue = Array.isArray(value) ? value : [value];
+          (this.formStato as any).setValue(statoValue);
+          break;
+          
+        case 'seu':
+          const seuValue = Array.isArray(value) ? value : [value];
+          (this.formSEU as any).setValue(seuValue);
+          break;
+          
+        case 'supplier':
+          const supplierValue = Array.isArray(value) ? value : [value];
+          (this.formSupplier as any).setValue(supplierValue);
+          break;
+          
+        case 'datains':
+        case 'datastipula':
+          // Le date verranno gestite in ngAfterViewInit quando i picker sono pronti
+          break;
+      }
+    });
   }
 
   private setupFilterApplyPipeline(): void {
@@ -686,6 +806,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
             this.listaSEU = unici as string[];
             this.listaSEU_bk = unici as string[];
             //console.log('Lista SEU completa caricata', this.listaSEU.length);
+            this.checkAndApplySavedFilters();
           });
           this.ApiService.ListaProdotti().subscribe((prodotti: any) => {
             //console.log(prodotti);
@@ -701,6 +822,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
               }
             );
             this.listaProdotti_bk = this.listaProdotti;
+            this.checkAndApplySavedFilters();
           });
 
           // ordina in ordine alfabetico
@@ -720,6 +842,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
               }
             );
             this.listaMacroPro_bk = this.listaMacroPro;
+
+            this.checkAndApplySavedFilters();
           });
           //console.log(this.listacfpi);
 
@@ -746,6 +870,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
               }
             );
             this.listaMacroStato_bk = this.listaMacroStato;
+
+            this.checkAndApplySavedFilters();
           });
 
           this.ApiService.getStato().subscribe((response: any) => {
@@ -764,6 +890,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
               return !set.has(str);
             });
             this.listaStato_bk = this.listaStato;
+
+            this.checkAndApplySavedFilters();
           });
           //console.log(this.listacfpi);
           //console.log(contratti.body.risposta);
@@ -790,6 +918,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           // e cha ha la sua interfaccia ListContrattiData[] = [];
           // può contenere dati in colonna maggiori rispetto alle colonne visualizzate in tabella ( lato html )
           // che hanno UN EFFETTO in base hai filtri sulla visualizzazione.
+          this.checkAndApplySavedFilters();
 
           this.LISTACONTRATTI = contratti.body.risposta.data.map(
             (contratto: any) => ({
@@ -1001,6 +1130,37 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     // ... (resto del codice ngOnInit)
   }
 
+  private listsLoadedStatus = {
+    seu: false,
+    prodotti: false,
+    macroProdotti: false,
+    macroStato: false,
+    stato: false,
+    supplier: false
+  };
+  private filtersApplied = false;
+
+  private checkAndApplySavedFilters(): void {
+    // Controlla quali liste sono state caricate verificando se hanno elementi
+    this.listsLoadedStatus.seu = this.listaSEU_bk.length > 0;
+    this.listsLoadedStatus.prodotti = this.listaProdotti_bk.length > 0;
+    this.listsLoadedStatus.macroProdotti = this.listaMacroPro_bk.length > 0;
+    this.listsLoadedStatus.macroStato = this.listaMacroStato_bk.length > 0;
+    this.listsLoadedStatus.stato = this.listaStato_bk.length > 0;
+    this.listsLoadedStatus.supplier = this.listaSupplier_bk.length > 0;
+
+    // Verifica se tutte le liste sono state caricate
+    const allListsLoaded = Object.values(this.listsLoadedStatus).every(status => status);
+
+    // Applica i filtri solo se:
+    // 1. Tutte le liste sono caricate
+    // 2. Non sono già stati applicati
+    // 3. Non ci sono filtri da querystring (hanno priorità)
+    if (allListsLoaded && !this.filtersApplied && (!this.filtroQueryString || this.filtroQueryString.length === 0)) {
+      this.filtersApplied = true;
+      this.loadFiltersFromStorage();
+    }
+  }
   // Funzione per gestire il focus
   onInputFocus(classSel: string) {
     // console.log("focus");
@@ -1139,14 +1299,10 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     // Configura il listener per gli eventi del paginator
     if (this.paginator) {
       this.paginator.page.subscribe((event: any) => {
-        // Calcola la pagina (MatPaginator usa indice 0-based, noi usiamo 1-based)
         const page = event.pageIndex + 1;
-
-        // Se la dimensione della pagina è cambiata
         if (event.pageSize !== this.paginationInfo.perPage) {
           this.changePerPage(event.pageSize);
         } else {
-          // Altrimenti carica solo la nuova pagina
           this.loadPage(page);
         }
       });
@@ -1155,7 +1311,6 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     // Configura il listener per gli eventi di ordinamento (server-side)
     if (this.sort) {
       this.sort.sortChange.subscribe((sortState: Sort) => {
-        // Mappa il nome colonna al campo backend
         const fieldMap: Record<string, string> = {
           id: "id",
           cliente: "cliente",
@@ -1171,13 +1326,16 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         };
 
         this.currentSortField = fieldMap[sortState.active] || "id";
-        this.currentSortDirection = (sortState.direction || "desc") as
-          | "asc"
-          | "desc";
-
-        // Ricarica dalla prima pagina con il nuovo ordinamento
+        this.currentSortDirection = (sortState.direction || "desc") as "asc" | "desc";
         this.loadPage(1);
       });
+    }
+
+    // Applica le date salvate in pendenza DOPO che i picker sono inizializzati
+    if (this.pendingDateFilters.size > 0) {
+      setTimeout(() => {
+        this.applyPendingDateFilters();
+      }, 500); // Timeout più lungo per assicurarsi che tutto sia pronto
     }
 
     if (this.filtroQueryString && this.filtroQueryString.length > 0) {
@@ -1188,23 +1346,15 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       this.sort.sortChange.emit(sortState);
 
       let filtroStringa = JSON.parse(this.filtroQueryString);
-
       const oggetto = Object.fromEntries(filtroStringa);
 
       if (oggetto["datains"] != undefined) {
-        // console.log(oggetto['datains'][0]);
-        // console.log(oggetto['datains'][1]);
-
         const datainsINI = this.trasformaData(oggetto["datains"][0]);
         const datainsFIN = this.trasformaData(oggetto["datains"][1]);
-
-        //console.log(datainsINI);
-        //console.log(datainsFIN);
 
         if (datainsINI && datainsFIN) {
           const nuovaDatainsINI = new Date(datainsINI);
           const nuovaDatainsFIN = new Date(datainsFIN);
-
           this.pickerDataIns.select(nuovaDatainsINI);
           this.pickerDataIns.select(nuovaDatainsFIN);
         }
@@ -1215,19 +1365,12 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       }
 
       if (oggetto["datastipula"] != undefined) {
-        // console.log(oggetto['datastipula'][0]);
-        // console.log(oggetto['datastipula'][1]);
-
         const datastipulaINI = this.trasformaData(oggetto["datastipula"][0]);
         const datastipulaFIN = this.trasformaData(oggetto["datastipula"][1]);
-
-        //console.log(datastipulaINI);
-        //console.log(datastipulaFIN);
 
         if (datastipulaINI && datastipulaFIN) {
           const nuovadatastipulaINI = new Date(datastipulaINI);
           const nuovadatastipulaFIN = new Date(datastipulaFIN);
-
           this.pickerDataStipula.select(nuovadatastipulaINI);
           this.pickerDataStipula.select(nuovadatastipulaFIN);
         }
@@ -1239,6 +1382,45 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     }
   }
 
+    private applyPendingDateFilters(): void {
+    this.pendingDateFilters.forEach((value, key) => {
+      if (key === 'datains' && this.pickerDataIns) {
+        const dataInsINI = this.trasformaData(value[0]);
+        const dataInsFIN = this.trasformaData(value[1]);
+        if (dataInsINI && dataInsFIN) {
+          try {
+            const nuovaDataInsINI = new Date(dataInsINI);
+            const nuovaDataInsFIN = new Date(dataInsFIN);
+            this.pickerDataIns.select(nuovaDataInsINI);
+            this.pickerDataIns.select(nuovaDataInsFIN);
+            console.log('Filtro data inserimento applicato:', value);
+          } catch (error) {
+            console.error('Errore nell\'applicazione della data inserimento:', error);
+          }
+        }
+      } else if (key === 'datastipula' && this.pickerDataStipula) {
+        const dataStipulaINI = this.trasformaData(value[0]);
+        const dataStipulaFIN = this.trasformaData(value[1]);
+        if (dataStipulaINI && dataStipulaFIN) {
+          try {
+            const nuovaDataStipulaINI = new Date(dataStipulaINI);
+            const nuovaDataStipulaFIN = new Date(dataStipulaFIN);
+            this.pickerDataStipula.select(nuovaDataStipulaINI);
+            this.pickerDataStipula.select(nuovaDataStipulaFIN);
+            console.log('Filtro data stipula applicato:', value);
+          } catch (error) {
+            console.error('Errore nell\'applicazione della data stipula:', error);
+          }
+        }
+      }
+    });
+    
+    // Pulisci i filtri in pendenza dopo averli applicati
+    this.pendingDateFilters.clear();
+    
+    // Forza il change detection
+    this.changeDetectorRef.detectChanges();
+  }
   // ngAfterContentInit() {
   //   const sortState: Sort = {active: 'datains', direction: 'desc'};
   //   this.sort.active = sortState.active;
@@ -1533,6 +1715,12 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   }
 
   resetFiltri() {
+    // Cancella i filtri da localStorage
+    this.clearFiltersFromStorage();
+    
+    // Resetta il filterDictionary
+    this.filterDictionary.clear();
+    
     this.router
       .navigateByUrl("/refresh", { skipLocationChange: false })
       .then(() => {
@@ -2020,11 +2208,68 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     this.ApiService.updateContratto(formData).subscribe(
       (ContrattoAggiornato: any) => {
         //console.log(ContrattoAggiornato);
-        this.aggiornaPagineEsettaFiltri();
+        
+        // Invece di ricaricare la pagina, ricarica solo i dati con i filtri attuali
+        this.reloadContrattiWithCurrentFilters();
+        
+        // Mostra un messaggio di successo
+        this.snackBar.open(
+          'Contratto aggiornato con successo',
+          'Chiudi',
+          {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          }
+        );
+        
+        // Chiudi il pannello dettagli
+        this.contrattoselezionato = true;
+      },
+      (error) => {
+        console.error('Errore durante l\'aggiornamento del contratto:', error);
+        this.snackBar.open(
+          'Errore durante l\'aggiornamento del contratto',
+          'Chiudi',
+          {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          }
+        );
       }
     );
   }
 
+  private reloadContrattiWithCurrentFilters(): void {
+    // Costruisci i filtri attuali
+    const currentFilters = JSON.stringify(
+      Array.from(this.filterDictionary.entries())
+    );
+
+    // Ricarica la pagina corrente con i filtri attuali
+    this.isLoadingContratti = true;
+    
+    this.ApiService.searchContratti(
+      this.User.id,
+      currentFilters,
+      this.paginationInfo.currentPage,
+      this.paginationInfo.perPage,
+      this.currentSortField,
+      this.currentSortDirection
+    ).subscribe(
+      (response: any) => {
+        this.handleSearchResponse(response);
+        this.isLoadingContratti = false;
+      },
+      (error: any) => {
+        console.error("Errore durante il ricaricamento:", error);
+        this.handleSearchError(error);
+      }
+    );
+  }
   // Funzione trackBy per ottimizzare il rendering delle domande
   trackByDomanda(index: number, domanda: any): any {
     return domanda.id || domanda.domanda || index;
@@ -2415,7 +2660,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     //console.log(this.MODIFICAMASSIVA);
     const stato_avanzamento_m = document.querySelector(
       ".stato_avanzamento_massivo"
-    ) as HTMLSelectElement; // Trova l'elemento select
+    ) as HTMLSelectElement;
     const statoAvanzamento = stato_avanzamento_m?.value;
     const contrattiAll = JSON.stringify(this.MODIFICAMASSIVA);
     //console.log(contrattiAll);
@@ -2427,13 +2672,46 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
 
     this.ApiService.updateStatoMassivoContratti(
       formDataModificaMassiva
-    ).subscribe((Risposta: any) => {
-      //console.log(Risposta);
-      if (Risposta.status == 200) {
-        window.location.reload();
-        this.aggiornaPagineEsettaFiltri();
+    ).subscribe(
+      (Risposta: any) => {
+        //console.log(Risposta);
+        if (Risposta.status == 200) {
+          // Invece di ricaricare completamente, ricarica con i filtri attuali
+          this.reloadContrattiWithCurrentFilters();
+          
+          // Resetta la selezione multipla
+          this.MODIFICAMASSIVA = [];
+          this.selectedMassiviIds.clear();
+          this.CONTEGGIOPRODOTTI = [];
+          this.visualizzaModificaMassiva = false;
+          
+          // Mostra messaggio di successo
+          this.snackBar.open(
+            'Stati aggiornati con successo',
+            'Chiudi',
+            {
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['success-snackbar']
+            }
+          );
+        }
+      },
+      (error) => {
+        console.error('Errore durante l\'aggiornamento massivo:', error);
+        this.snackBar.open(
+          'Errore durante l\'aggiornamento degli stati',
+          'Chiudi',
+          {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          }
+        );
       }
-    });
+    );
   }
 
   aggiornaPagineEsettaFiltri() {
@@ -2453,7 +2731,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     }
     //console.log(statofiltropieno);
     //console.log(this.OGGETTO_FILTRICONTRATTI);
-
+    this.saveFiltersToStorage();
     if (statofiltropieno) {
       const filtroSerializzato = JSON.stringify(this.OGGETTO_FILTRICONTRATTI);
       this.router
@@ -2867,15 +3145,18 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         if (Array.isArray(arr)) entries = arr;
       } catch {}
     }
-  const sorted = entries.sort((a: any, b: any) => String(a[0]).localeCompare(String(b[0])));
-  const filterString = JSON.stringify(sorted);
+    const sorted = entries.sort((a: any, b: any) => String(a[0]).localeCompare(String(b[0])));
+    const filterString = JSON.stringify(sorted);
 
     // Evita richieste duplicate
     if (this.lastAppliedFilterValue === filterString) return;
 
-  // In ogni caso (anche filtri vuoti "[]") rinvia la chiamata API alla pipeline con debounce,
-  // così il backend restituisce l'elenco completo senza filtri.
-  this.filterApply$.next(filterString);
+    // Salva i filtri in localStorage ogni volta che vengono applicati
+    this.saveFiltersToStorage();
+
+    // In ogni caso (anche filtri vuoti "[]") rinvia la chiamata API alla pipeline con debounce,
+    // così il backend restituisce l'elenco completo senza filtri.
+    this.filterApply$.next(filterString);
   }
 
   /**

@@ -597,8 +597,14 @@ class AuthController extends Controller
 
             $seuSub = $this->getTeamMembers($userId);
             // Log::info('Sottoposti trovati: ' . json_encode($seuSub));
+            // aggiugere $userId alla lista degli ID estratti di $ids
             $ids = extractIds($seuSub);
+            $ids[] = $userId; // Aggiungi l'ID dell'utente corrente
+
+            //Log::info('IDs estratti: ' . json_encode($ids));
             // Log::info('IDs estratti: ' . json_encode($ids));
+            // i promoter estratti sono solo quelli con stato_user = 1 cioè attivi
+            // $seu = User::whereIn('id', $ids)->where('role_id', 2)->where('stato_user',1)->get();
             $seu = User::whereIn('id', $ids)->where('role_id', 2)->get();
         }
 
