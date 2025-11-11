@@ -104,6 +104,7 @@
 /* Archive button (show/hide closed tickets) */
 .btn-archive {
   background: #00bcd4;
+  border-color: aliceblue;
   color: white;
   padding: 10px 18px;
   border-radius: 8px;
@@ -173,7 +174,10 @@
 .btn-show-deleted {
   background: #f44336;
   color: #ffffff;
-  border: 2px solid #dc3545;
+  border-top-color: white;
+  border-left-color: white;
+  border-right-color: rgb(240, 248, 255);
+  border-bottom-color: rgb(240, 248, 255);
   padding: 10px 18px;
   border-radius: 8px;
   cursor: pointer;
