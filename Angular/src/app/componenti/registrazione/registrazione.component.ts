@@ -42,7 +42,7 @@ export class RegistrazioneComponent implements OnInit {
   state: any;
   ruoliequalifiche: any;
   showError: boolean = false;
-  selectTipecliente: string = "businness";
+  selectTipecliente: string = "business";
 
   user_padre = localStorage.getItem('userLogin');
   newCliente: FormGroup = new FormGroup({});
@@ -60,7 +60,7 @@ export class RegistrazioneComponent implements OnInit {
     }
 
     if (this.SharedService.TipoCliente == "PARTITA IVA") {
-      this.selectTipecliente = "businness";
+      this.selectTipecliente = "business";
     }
 
 
@@ -102,7 +102,7 @@ export class RegistrazioneComponent implements OnInit {
   changetype(event: Event){
     const tipologia=(event.target as HTMLSelectElement).value;
     console.log(tipologia); 
-    if (tipologia=="businness") {
+    if (tipologia=="business") {
       this.newCliente.get('nome')?.setValue("-");
       this.newCliente.get('cognome')?.setValue("-")
       this.newCliente.get('codice_fiscale')?.setValue("0000000000000000");
@@ -120,7 +120,7 @@ export class RegistrazioneComponent implements OnInit {
 
     const typecli=document.getElementById('tipocliente')  as HTMLSelectElement
 
-    if(typecli.value=="businness"){
+    if(typecli.value=="business"){
       //console.log("cliente buisiness setto nome cognome e codicefiscale vuoti per superare i controlli");
       this.newCliente.get('nome')?.setValue("-");
       this.newCliente.get('cognome')?.setValue("-")

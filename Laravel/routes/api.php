@@ -79,6 +79,7 @@ Route::group(['middleware'=>'api'],function(){
 
     //GESTIONE MACROPRODOTTI UPDATE
     Route::post('updateMacroProdotto',[MacroProductController::class,'updateMacroProdotto'])->name('updateMacroProdotto');
+    Route::post('creaNuovoMacroProdotto',[MacroProductController::class,'creaNuovoMacroProdotto'])->name('creaNuovoMacroProdotto');
 
     //GESTIONE CATEGORIE
     Route::get('macroCat', [MacroProductController::class,'macroCat']);

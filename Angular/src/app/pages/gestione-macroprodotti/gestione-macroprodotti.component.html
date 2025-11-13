@@ -1,12 +1,153 @@
 <p-toast class="p-toast" position="bottom-right"></p-toast>
 
 <!-- Action Buttons Grid -->
-<!-- <div class="modern-action-grid" *ngIf="abilitaTasti">
+<div class="modern-action-grid" *ngIf="abilitaTasti">
   <button mat-raised-button class="modern-action-btn modern-action-btn--primary" (click)="nuovoprodotto()">
     <mat-icon class="modern-action-btn__icon">add_box</mat-icon>
     <span class="modern-action-btn__text">Nuovo Macro Prodotto</span>
   </button>
-</div> -->
+</div>
+
+<!-- NUOVO: Form per Inserimento Nuovo Macro Prodotto -->
+<div class="modern-insert-card" *ngIf="!nuovoprodottoHidden" @slideIn>
+  <div class="modern-insert-card__header">
+    <div class="modern-insert-card__header-content">
+      <mat-icon class="modern-insert-card__header-icon">add_circle</mat-icon>
+      <h2 class="modern-insert-card__title">Nuovo Macro Prodotto</h2>
+    </div>
+    <button mat-icon-button 
+            class="modern-insert-card__close-btn"
+            (click)="annullaNuovoMacroProdotto()"
+            matTooltip="Chiudi">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="modern-insert-card__body">
+    <form [formGroup]="nuovoMacroProdottoForm" class="modern-insert-form">
+      <div class="modern-insert-form__grid">
+        
+        <!-- Codice Macro Field -->
+        <div class="modern-insert-form__field">
+          <mat-form-field appearance="outline" class="modern-insert-form__input">
+            <mat-label>Codice Macro *</mat-label>
+            <input matInput 
+                   type="text" 
+                   formControlName="codice_macro"
+                   placeholder="Es: MP001"
+                   [class.error]="isFieldInvalid('codice_macro')">
+            <mat-icon matSuffix class="modern-insert-form__icon">qr_code</mat-icon>
+            <mat-error *ngIf="isFieldInvalid('codice_macro')">
+              {{ getFieldError('codice_macro') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Descrizione Field -->
+        <div class="modern-insert-form__field">
+          <mat-form-field appearance="outline" class="modern-insert-form__input">
+            <mat-label>Descrizione *</mat-label>
+            <input matInput 
+                   type="text" 
+                   formControlName="descrizione"
+                   placeholder="Es: Energia Elettrica"
+                   [class.error]="isFieldInvalid('descrizione')">
+            <mat-icon matSuffix class="modern-insert-form__icon">description</mat-icon>
+            <mat-error *ngIf="isFieldInvalid('descrizione')">
+              {{ getFieldError('descrizione') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Categoria Fornitore Field -->
+        <div class="modern-insert-form__field">
+          <mat-form-field appearance="outline" class="modern-insert-form__input">
+            <mat-label>Categoria Fornitore *</mat-label>
+            <mat-select formControlName="supplier_category_id"
+                        placeholder="Seleziona categoria"
+                        [class.error]="isFieldInvalid('supplier_category_id')">
+              <mat-option *ngIf="isLoadingCategorie" disabled>
+                <mat-spinner diameter="20"></mat-spinner>
+                <span style="margin-left: 10px;">Caricamento...</span>
+              </mat-option>
+              <mat-option *ngFor="let categoria of listaCategorieFornitori" 
+                          [value]="categoria.id">
+                {{ categoria.nome }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix class="modern-insert-form__icon">category</mat-icon>
+            <mat-error *ngIf="isFieldInvalid('supplier_category_id')">
+              {{ getFieldError('supplier_category_id') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Punti Valore Field -->
+        <div class="modern-insert-form__field">
+          <mat-form-field appearance="outline" class="modern-insert-form__input">
+            <mat-label>Punti Valore *</mat-label>
+            <input matInput 
+                   type="number" 
+                   formControlName="punti_valore"
+                   placeholder="0"
+                   min="0"
+                   [class.error]="isFieldInvalid('punti_valore')">
+            <mat-icon matSuffix class="modern-insert-form__icon">stars</mat-icon>
+            <mat-error *ngIf="isFieldInvalid('punti_valore')">
+              {{ getFieldError('punti_valore') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Punti Carriera Field -->
+        <div class="modern-insert-form__field">
+          <mat-form-field appearance="outline" class="modern-insert-form__input">
+            <mat-label>Punti Carriera *</mat-label>
+            <input matInput 
+                   type="number" 
+                   formControlName="punti_carriera"
+                   placeholder="0"
+                   min="0"
+                   [class.error]="isFieldInvalid('punti_carriera')">
+            <mat-icon matSuffix class="modern-insert-form__icon">trending_up</mat-icon>
+            <mat-error *ngIf="isFieldInvalid('punti_carriera')">
+              {{ getFieldError('punti_carriera') }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+      </div>
+
+      <!-- Form Info -->
+      <div class="modern-insert-form__info">
+        <mat-icon class="modern-insert-form__info-icon">info</mat-icon>
+        <span>I campi contrassegnati con * sono obbligatori</span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="modern-insert-form__actions">
+        <button mat-stroked-button 
+                class="modern-insert-form__cancel-btn"
+                type="button"
+                (click)="annullaNuovoMacroProdotto()"
+                [disabled]="isSubmittingNuovoMacro">
+          <mat-icon>cancel</mat-icon>
+          <span>Annulla</span>
+        </button>
+        
+        <button mat-raised-button 
+                class="modern-insert-form__save-btn"
+                type="button"
+                (click)="salvaNuovoMacroProdotto()"
+                [disabled]="isSubmittingNuovoMacro || nuovoMacroProdottoForm.invalid">
+          <mat-spinner *ngIf="isSubmittingNuovoMacro" diameter="20" class="modern-insert-form__spinner"></mat-spinner>
+          <mat-icon *ngIf="!isSubmittingNuovoMacro">save</mat-icon>
+          <span>{{ isSubmittingNuovoMacro ? 'Salvataggio...' : 'Salva Macro Prodotto' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <div class="modern-card" [@pageTransition]="state">
   <div class="modern-card__header">

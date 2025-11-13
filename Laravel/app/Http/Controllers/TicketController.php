@@ -45,7 +45,8 @@ class TicketController extends Controller
                 'createdBy.role',
                 'assignedTo.role',
                 'messages.user.role'
-            ]);
+            ])
+            ->withCount('attachments');
 
             // Only Admin (1,6) can see deleted tickets
             // BackOffice and WebOps cannot see deleted tickets

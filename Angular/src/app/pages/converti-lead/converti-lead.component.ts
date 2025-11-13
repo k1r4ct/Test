@@ -52,7 +52,7 @@ export class ConvertiLeadComponent implements OnInit, OnChanges {
   state: any;
   ruoliequalifiche: any;
   showError: boolean = false;
-  selectTipecliente: string = "businness";
+  selectTipecliente: string = "business";
   tipoCliente:any;
   user_padre = localStorage.getItem('userLogin');
   newCliente: FormGroup = new FormGroup({});
@@ -71,7 +71,7 @@ export class ConvertiLeadComponent implements OnInit, OnChanges {
     }
 
     if (this.SharedService.TipoCliente == "PARTITA IVA") {
-      this.selectTipecliente = "businness";
+      this.selectTipecliente = "business";
     }
 
 
@@ -136,7 +136,7 @@ export class ConvertiLeadComponent implements OnInit, OnChanges {
 
     console.log("tipocliente",this.selectTipecliente);
     
-    if(this.selectTipecliente === "businness"){
+    if(this.selectTipecliente === "business"){
       //console.log("cliente buisiness setto nome cognome e codicefiscale vuoti per superare i controlli");
       this.newCliente.get('nome')?.setValue("-");
       this.newCliente.get('cognome')?.setValue("-")

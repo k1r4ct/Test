@@ -407,6 +407,12 @@
                 {{truncateText(ticket.title, 25)}}
               </span>
               
+              <!-- Attachments Badge (minimized) -->
+              <div class="attachments-badge" *ngIf="(ticket.attachments_count ?? 0) > 0" title="{{ticket.attachments_count ?? 0}} allegati">
+                <i class="fas fa-paperclip"></i>
+                <span>{{ticket.attachments_count ?? 0}}</span>
+              </div>
+              
               <!-- Priority badge with dropdown in minimized view -->
               <div class="priority-dropdown-wrapper" (click)="$event.stopPropagation()">
                 <span 
@@ -457,6 +463,12 @@
                 </div>
                 
                 <span class="ticket-id">#{{ticket.ticket_number}}</span>
+                
+                <!-- Attachments Badge (expanded) -->
+                <div class="attachments-badge" *ngIf="(ticket.attachments_count ?? 0) > 0" title="{{ticket.attachments_count ?? 0}} allegati">
+                  <i class="fas fa-paperclip"></i>
+                  <span>{{ticket.attachments_count ?? 0}}</span>
+                </div>
                 
                 <!-- Priority badge with dropdown in expanded view -->
                 <div class="priority-dropdown-wrapper" (click)="$event.stopPropagation()">
@@ -531,6 +543,12 @@
               <div class="ticket-info-row">
                 <i class="fas fa-user-tie"></i>
                 <span><strong>SEU:</strong> {{ticket.seu_name}}</span>
+              </div>
+
+              <!-- Attachment indicator in ticket card -->
+              <div class="ticket-info-row" *ngIf="ticket.attachments_count && ticket.attachments_count > 0">
+                <i class="fas fa-paperclip"></i>
+                <span><strong>Allegati:</strong> {{ticket.attachments_count}}</span>
               </div>
 
               <div class="ticket-meta">
@@ -612,6 +630,54 @@
         </div>
       </div>
 
+      <!-- ATTACHMENTS SECTION -->
+      <div class="attachments-section" *ngIf="ticketAttachments.length > 0 || isLoadingAttachments">
+        <h3>
+          <i class="fas fa-paperclip"></i> 
+          Allegati ({{ticketAttachments.length}})
+        </h3>
+        
+        <div class="loading-attachments" *ngIf="isLoadingAttachments">
+          <i class="fas fa-spinner fa-spin"></i> Caricamento allegati...
+        </div>
+        
+        <div class="attachments-grid" *ngIf="!isLoadingAttachments && ticketAttachments.length > 0">
+          <div *ngFor="let attachment of ticketAttachments" 
+               class="attachment-card"
+               (click)="downloadAttachment(attachment)">
+            <div class="attachment-icon">
+              <i class="fas" [class]="getAttachmentIcon(attachment.original_name)"></i>
+            </div>
+            <div class="attachment-info">
+              <div class="attachment-title">{{attachment.original_name}}</div>
+              <div class="attachment-meta">
+                <span class="attachment-size">{{formatFileSize(attachment.file_size)}}</span>
+                <span class="attachment-user">
+                  <i class="fas fa-user"></i>
+                  {{attachment.user_name}}
+                </span>
+              </div>
+            </div>
+            <div class="attachment-actions">
+              <button 
+                class="download-btn"
+                (click)="downloadAttachment(attachment); $event.stopPropagation()"
+                title="Scarica">
+                <i class="fas fa-download"></i>
+              </button>
+              <button 
+                *ngIf="canDeleteAttachment(attachment)"
+                class="delete-btn"
+                (click)="deleteAttachment(attachment); $event.stopPropagation()"
+                title="Elimina">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- END ATTACHMENTS SECTION -->
+
       <div class="messages-section">
         <h3>Conversazione</h3>
         <div class="messages-container">
@@ -639,6 +705,31 @@
               <!-- Regular message bubble -->
               <div class="message-bubble" *ngIf="!isStatusChangeMessage(message)">
                 {{message.message}}
+                
+                <!-- Display attachments if present -->
+                <div *ngIf="message.attachments && message.attachments.length > 0" 
+                     class="message-attachments">
+                  <div class="attachments-header">
+                    <i class="fas fa-paperclip"></i>
+                    <span>{{ message.attachments.length }} {{ message.attachments.length === 1 ? 'allegato' : 'allegati' }}</span>
+                  </div>
+                  <div class="attachments-list">
+                    <div *ngFor="let attachment of message.attachments"
+                         class="attachment-item"
+                         (click)="downloadAttachment(attachment); $event.stopPropagation()">
+                      <i class="fas" [class]="getAttachmentIcon(attachment.original_name)"></i>
+                      <span class="attachment-name">{{ attachment.original_name }}</span>
+                      <span class="attachment-size">({{ formatFileSize(attachment.file_size) }})</span>
+                      <button 
+                        *ngIf="canDeleteAttachment(attachment)"
+                        class="delete-attachment-btn"
+                        (click)="deleteAttachment(attachment); $event.stopPropagation()"
+                        title="Elimina allegato">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <!-- Status change message bubble with gradient -->
@@ -655,21 +746,60 @@
         <div class="chat-disabled-message" *ngIf="!canReplyToTicket(selectedTicket)">
           <i class="fas fa-info-circle"></i>
           Non puoi rispondere a questo ticket perché non è stato assegnato a te
-        </div>  
+        </div>
+        
+        <!-- MESSAGE INPUT WITH ATTACHMENTS -->
         <div class="message-input-container">
-          <input 
-            type="text" 
-            [(ngModel)]="newMessage" 
-            placeholder="Scrivi un messaggio..."
-            (keyup.enter)="sendMessage()"
-            [disabled]="!canReplyToTicket(selectedTicket)"
-            class="message-input">
-          <button 
-            class="send-btn" 
-            (click)="sendMessage()"
-            [disabled]="!canReplyToTicket(selectedTicket)">
-            <i class="fas fa-paper-plane"></i>
-          </button>
+          <!-- Attachment upload area (only if can attach) -->
+          <div class="reply-attachments-area" *ngIf="canAttachToTicket(selectedTicket)">
+            <input 
+              type="file" 
+              #replyFileInput
+              style="display: none"
+              multiple
+              (change)="onReplyFilesSelected($event)"
+              accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip">
+            
+            <button 
+              class="attachment-btn" 
+              (click)="replyFileInput.click()"
+              [disabled]="!canReplyToTicket(selectedTicket) || replyAttachments.length >= maxFiles"
+              title="Allega file (max {{maxFiles}})">
+              <i class="fas fa-paperclip"></i>
+              <span *ngIf="replyAttachments.length > 0" class="attachment-count">
+                {{replyAttachments.length}}
+              </span>
+            </button>
+            
+            <!-- Selected files chips -->
+            <div class="selected-files-chips" *ngIf="replyAttachments.length > 0">
+              <div *ngFor="let file of replyAttachments; let i = index" class="file-chip">
+                <i class="fas fa-file"></i>
+                <span>{{file.name}}</span>
+                <button (click)="replyAttachments.splice(i, 1)" class="remove-chip">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="message-input-wrapper">
+            <input 
+              type="text" 
+              [(ngModel)]="newMessage" 
+              placeholder="Scrivi un messaggio..."
+              (keyup.enter)="sendMessage()"
+              [disabled]="!canReplyToTicket(selectedTicket)"
+              class="message-input">
+            
+            <button 
+              class="send-btn" 
+              (click)="sendMessage()"
+              [disabled]="!canReplyToTicket(selectedTicket) || (!newMessage.trim() && replyAttachments.length === 0)">
+              <i class="fas fa-paper-plane" *ngIf="!isUploadingReplyAttachments"></i>
+              <i class="fas fa-spinner fa-spin" *ngIf="isUploadingReplyAttachments"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -765,6 +895,53 @@
           </select>
         </div>
 
+        <!-- ATTACHMENTS SECTION IN NEW TICKET MODAL -->
+        <div class="form-group">
+          <label>
+            <i class="fas fa-paperclip"></i> 
+            Allegati (Opzionale)
+          </label>
+          <div class="attachment-upload-area">
+            <input 
+              type="file" 
+              #newTicketFileInput
+              style="display: none"
+              multiple
+              (change)="onNewTicketFilesSelected($event)"
+              accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip">
+            
+            <button 
+              type="button"
+              class="attachment-upload-btn" 
+              (click)="newTicketFileInput.click()"
+              [disabled]="newTicketAttachments.length >= maxFiles">
+              <i class="fas fa-cloud-upload-alt"></i>
+              Aggiungi Allegati (max {{maxFiles}})
+            </button>
+            
+            <!-- Selected files list -->
+            <div class="selected-files-list" *ngIf="newTicketAttachments.length > 0">
+              <div *ngFor="let file of newTicketAttachments; let i = index" class="file-item">
+                <i class="fas fa-file"></i>
+                <span class="file-name">{{file.name}}</span>
+                <span class="file-size">({{formatFileSize(file.size)}})</span>
+                <button 
+                  type="button"
+                  (click)="newTicketAttachments.splice(i, 1)" 
+                  class="remove-file-btn">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+            
+            <p class="upload-hint">
+              <i class="fas fa-info-circle"></i>
+              Max {{maxFiles}} file, {{formatFileSize(maxFileSize)}} ciascuno
+            </p>
+          </div>
+        </div>
+        <!-- END ATTACHMENTS SECTION -->
+
         <div class="validation-message" *ngIf="showValidationError">
           <i class="fas fa-exclamation-triangle"></i>
           Compila tutti i campi obbligatori contrassegnati con *
@@ -774,8 +951,10 @@
           <button type="button" class="btn btn-secondary" (click)="closeNewTicketModal()">
             Annulla
           </button>
-          <button type="button" class="btn btn-primary" (click)="saveNewTicket()">
-            <i class="fas fa-save"></i> Crea Ticket
+          <button type="button" class="btn btn-primary" (click)="saveNewTicket()" [disabled]="isUploadingNewTicketAttachments">
+            <i class="fas fa-save" *ngIf="!isUploadingNewTicketAttachments"></i>
+            <i class="fas fa-spinner fa-spin" *ngIf="isUploadingNewTicketAttachments"></i>
+            Crea Ticket
           </button>
         </div>
       </form>

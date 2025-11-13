@@ -11,7 +11,7 @@
             <div class="form-group">
               <label class="form-label">Tipologia Cliente </label>
               <select type="number" class="form-select" [(ngModel)]="selectTipecliente" (change)="settaTipoCliente($event)">
-                <option selected Value="businness">Business</option>
+                <option selected Value="business">Business</option>
                 <option value="consumer">Consumer</option>
               </select>
             </div>
@@ -36,7 +36,7 @@
             </div>
           </div>
 
-          <div class="row" *ngIf="selectTipecliente == 'businness'">
+          <div class="row" *ngIf="selectTipecliente == 'business'">
             <div class="col-md-12 pr-1">
               <div class="form-group">
                 <label>Ragione Sociale</label>
@@ -45,7 +45,7 @@
             </div>
           </div>
 
-          <div class="row" *ngIf="selectTipecliente == 'businness'">
+          <div class="row" *ngIf="selectTipecliente == 'business'">
             <div class="col-md-6">
               <div class="form-group">
                 <label>Partita Iva</label>

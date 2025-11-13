@@ -8,7 +8,7 @@ import { MatTableDataSource } from "@angular/material/table";
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSort } from "@angular/material/sort";
 import { ApiService } from "src/app/servizi/api.service";
-import { FormControl } from "@angular/forms";
+import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { trigger, transition, style, animate } from "@angular/animations";
 import { ConfirmDialogComponent } from "src/app/confirm-dialog/confirm-dialog.component";
 import { MatDialog } from "@angular/material/dialog";
@@ -39,6 +39,20 @@ export interface ProdottiNew {
   supplier: any[];
   supplier_category: any[];
 }
+
+export interface NuovoMacroProdotto {
+  codice_macro: string;
+  descrizione: string;
+  punti_valore: number;
+  punti_carriera: number;
+  supplier_category_id: number;
+}
+
+export interface CategoriaFornitore {
+  id: number;
+  nome: string;
+}
+
 @Component({
     selector: "app-gestione-macroprodotti",
     templateUrl: "./gestione-macroprodotti.component.html",
@@ -51,6 +65,15 @@ export interface ProdottiNew {
             ]),
             transition(":leave", [
                 animate("500ms ease-in-out", style({ opacity: 0, transform: "scale(0.1)" })), // Riduci e rendi invisibile
+            ]),
+        ]),
+        trigger("slideIn", [
+            transition(":enter", [
+                style({ opacity: 0, transform: "translateY(-20px)" }),
+                animate("300ms ease-out", style({ opacity: 1, transform: "translateY(0)" })),
+            ]),
+            transition(":leave", [
+                animate("300ms ease-in", style({ opacity: 0, transform: "translateY(-20px)" })),
             ]),
         ]),
     ],
@@ -102,6 +125,11 @@ export class GestioneMacroprodottiComponent {
   severityMacroProduct='';
   summaryMacroProduct='';
 
+  // Form per nuovo macro prodotto
+  nuovoMacroProdottoForm: FormGroup;
+  isSubmittingNuovoMacro = false;
+  listaCategorieFornitori: CategoriaFornitore[] = [];
+  isLoadingCategorie = false;
 
 
   constructor(
@@ -112,6 +140,15 @@ export class GestioneMacroprodottiComponent {
   ) {
     this.dataSource = new MatTableDataSource();
     this.listamacroprodotti = [];
+    
+    // Inizializza il form per nuovo macro prodotto
+    this.nuovoMacroProdottoForm = new FormGroup({
+      codice_macro: new FormControl('', [Validators.required, Validators.minLength(2)]),
+      descrizione: new FormControl('', [Validators.required, Validators.minLength(3)]),
+      punti_valore: new FormControl(0, [Validators.required, Validators.min(0)]),
+      punti_carriera: new FormControl(0, [Validators.required, Validators.min(0)]),
+      supplier_category_id: new FormControl('', [Validators.required])
+    });
   }
 
 
@@ -138,9 +175,15 @@ export class GestioneMacroprodottiComponent {
     ];
 
     console.log(" ----------- ");
-
     console.log(this.DettaglioMacroProdotto);
 
+    this.caricaListaMacroProdotti();
+  }
+
+  /**
+   * Carica la lista dei macro prodotti dal backend
+   */
+  private caricaListaMacroProdotti(): void {
     this.servizioApi.LeggiMacroCategorie().subscribe((response) => {
       console.log("carico lista MACRO prodotti");
       console.log(response.body.risposta);
@@ -223,7 +266,6 @@ export class GestioneMacroprodottiComponent {
       };
 
     });
-
   }
 
 
@@ -264,6 +306,9 @@ export class GestioneMacroprodottiComponent {
 
     this.descrizione_prodotto_sel = r.descrizione;
     this.macroprodottoselezionato = false;
+    
+    // Chiudi il form di nuovo macro prodotto se è aperto
+    this.nuovoprodottoHidden = true;
 
     this.servizioApi.allMacroProduct(r.id).subscribe((response: any) => {
         // console.log(response);
@@ -334,6 +379,9 @@ export class GestioneMacroprodottiComponent {
         this.severityProduct='success'
         this.summaryProduct='Modifica Macro Prodotto'
         this.showMessage(this.messageProduct,'success',this.summaryProduct)
+        
+        // Ricarica la lista dopo la modifica
+        this.caricaListaMacroProdotti();
       }else{
         this.messageProduct='Macro Prodotto non Modificato'
         this.severityProduct='error'
@@ -345,9 +393,193 @@ export class GestioneMacroprodottiComponent {
 
   }
 
+  /**
+   * Mostra/nascondi il form per nuovo macro prodotto
+   */
   nuovoprodotto() {
-    //console.log("nuovo");
-    this.nuovoprodottoHidden = false;
+    this.nuovoprodottoHidden = !this.nuovoprodottoHidden;
+    
+    // Se stiamo aprendo il form, carica le categorie fornitori
+    if (!this.nuovoprodottoHidden) {
+      this.macroprodottoselezionato = true;
+      
+      // Carica le categorie fornitori
+      this.caricaCategorieFornitori();
+      
+      // Reset del form
+      this.nuovoMacroProdottoForm.reset({
+        codice_macro: '',
+        descrizione: '',
+        punti_valore: 0,
+        punti_carriera: 0,
+        supplier_category_id: ''
+      });
+      
+      // Scroll verso il form
+      /* setTimeout(() => {
+        this.srvScroll.triggerScroll();
+      }, 100); */
+    }
+  }
+
+  /**
+   * Carica le categorie fornitori dal backend
+   */
+  private caricaCategorieFornitori(): void {
+    this.isLoadingCategorie = true;
+    this.servizioApi.recuperaCategorieFornitori().subscribe(
+      (response: any) => {
+        console.log('Categorie fornitori:', response);
+        
+        // Adatta la struttura della risposta in base al formato del tuo backend
+        // Esempio: response.body.risposta o response.data o response direttamente
+        if (response.body && response.body.risposta) {
+          this.listaCategorieFornitori = response.body.risposta.map((cat: any) => ({
+            id: cat.id,
+            nome: cat.nome_categoria 
+          }));
+        }
+        
+        console.log('Lista categorie mappate:', this.listaCategorieFornitori);
+        this.isLoadingCategorie = false;
+      },
+      (error) => {
+        console.error('Errore nel caricamento delle categorie:', error);
+        this.isLoadingCategorie = false;
+        this.showMessage(
+          'Errore nel caricamento delle categorie fornitori',
+          'error',
+          'Caricamento Categorie'
+        );
+      }
+    );
+  }
+
+  /**
+   * Annulla l'inserimento di un nuovo macro prodotto
+   */
+  annullaNuovoMacroProdotto(): void {
+    this.nuovoprodottoHidden = true;
+    this.nuovoMacroProdottoForm.reset({
+      codice_macro: '',
+      descrizione: '',
+      punti_valore: 0,
+      punti_carriera: 0,
+      supplier_category_id: ''
+    });
+  }
+
+  /**
+   * Salva il nuovo macro prodotto
+   */
+  salvaNuovoMacroProdotto(): void {
+    // Valida il form
+    if (this.nuovoMacroProdottoForm.invalid) {
+      // Marca tutti i campi come touched per mostrare gli errori
+      Object.keys(this.nuovoMacroProdottoForm.controls).forEach(key => {
+        this.nuovoMacroProdottoForm.get(key)?.markAsTouched();
+      });
+      
+      this.showMessage(
+        'Compila tutti i campi obbligatori correttamente',
+        'warn',
+        'Validazione Form'
+      );
+      return;
+    }
+
+    this.isSubmittingNuovoMacro = true;
+
+    const formData = new FormData();
+    formData.append('codice_macro', this.nuovoMacroProdottoForm.get('codice_macro')?.value || '');
+    formData.append('descrizione', this.nuovoMacroProdottoForm.get('descrizione')?.value || '');
+    formData.append('punti_valore', this.nuovoMacroProdottoForm.get('punti_valore')?.value || '0');
+    formData.append('punti_carriera', this.nuovoMacroProdottoForm.get('punti_carriera')?.value || '0');
+    formData.append('supplier_category_id', this.nuovoMacroProdottoForm.get('supplier_category_id')?.value || '');
+
+    // TODO: Chiama la tua API backend quando sarà pronta
+    // Esempio: this.servizioApi.creaNuovoMacroProdotto(formData).subscribe(...)
+    
+    console.log('Dati da inviare al backend:', {
+      codice_macro: this.nuovoMacroProdottoForm.get('codice_macro')?.value,
+      descrizione: this.nuovoMacroProdottoForm.get('descrizione')?.value,
+      punti_valore: this.nuovoMacroProdottoForm.get('punti_valore')?.value,
+      punti_carriera: this.nuovoMacroProdottoForm.get('punti_carriera')?.value,
+      supplier_category_id: this.nuovoMacroProdottoForm.get('supplier_category_id')?.value
+    });
+
+    
+    
+    this.servizioApi.creaNuovoMacroProdotto(formData).subscribe(
+      (result: any) => {
+        console.log('Risposta API:', result);
+        this.isSubmittingNuovoMacro = false;
+
+        if (result.status === "200") {
+          this.showMessage(
+            'Nuovo Macro Prodotto creato con successo',
+            'success',
+            'Creazione Macro Prodotto'
+          );
+
+          // Reset e chiusura form
+          this.nuovoprodottoHidden = true;
+          this.nuovoMacroProdottoForm.reset({
+            codice_macro: '',
+            descrizione: '',
+            punti_valore: 0,
+            punti_carriera: 0,
+            supplier_category_id: ''
+          });
+
+          // Ricarica la lista
+          this.caricaListaMacroProdotti();
+        } else {
+          this.showMessage(
+            'Errore durante la creazione del Macro Prodotto',
+            'error',
+            'Creazione Macro Prodotto'
+          );
+        }
+      },
+      (error) => {
+        console.error('Errore API:', error);
+        this.isSubmittingNuovoMacro = false;
+        this.showMessage(
+          'Errore durante la creazione del Macro Prodotto',
+          'error',
+          'Creazione Macro Prodotto'
+        );
+      }
+    );
+  }
+
+  /**
+   * Verifica se un campo del form è invalido e touched
+   */
+  isFieldInvalid(fieldName: string): boolean {
+    const field = this.nuovoMacroProdottoForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  /**
+   * Ottiene il messaggio di errore per un campo
+   */
+  getFieldError(fieldName: string): string {
+    const field = this.nuovoMacroProdottoForm.get(fieldName);
+    
+    if (field?.hasError('required')) {
+      return 'Questo campo è obbligatorio';
+    }
+    if (field?.hasError('minlength')) {
+      const minLength = field.errors?.['minlength'].requiredLength;
+      return `Minimo ${minLength} caratteri richiesti`;
+    }
+    if (field?.hasError('min')) {
+      return 'Il valore deve essere maggiore o uguale a 0';
+    }
+    
+    return '';
   }
 
   showMessage(message:any,severity:any,summary:any){
@@ -359,7 +591,7 @@ export class GestioneMacroprodottiComponent {
       severity: severity,
       summary: summary,
       detail: message,
-      life: 90000
+      life: 5000
     });
 
   }
@@ -372,12 +604,8 @@ export class GestioneMacroprodottiComponent {
       severity: severity,
       summary: summary,
       detail: message,
-      life: 90000
+      life: 5000
     });
 
   }
-
-
-
-
 }

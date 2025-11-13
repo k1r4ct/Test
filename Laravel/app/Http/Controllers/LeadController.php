@@ -142,7 +142,7 @@ class LeadController extends Controller
             $partita_iva = null;
         }
 
-        if (request('tipo') == "businness") {
+        if (request('tipo') == "business") {
             $ragione_sociale = request('ragione_sociale');
             $partita_iva = request('partita_iva');
             $controlloEsistente = User::where('partita_iva', $partita_iva)->get();

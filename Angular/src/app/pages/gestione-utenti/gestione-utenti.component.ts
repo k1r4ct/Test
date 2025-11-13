@@ -10,7 +10,13 @@ import { ApiService } from "src/app/servizi/api.service";
 import { MatTableDataSource } from "@angular/material/table"; // Importa MatTableDataSource
 import { MatPaginator } from "@angular/material/paginator";
 import { MatSort } from "@angular/material/sort";
-import { MessageService } from 'primeng/api';
+import { MessageService } from "primeng/api";
+import { FormControl, FormGroup, Validators } from "@angular/forms";
+import {
+  MatSnackBar,
+  MatSnackBarHorizontalPosition,
+  MatSnackBarVerticalPosition,
+} from "@angular/material/snack-bar";
 interface City {
   name: string;
   code: string;
@@ -26,7 +32,7 @@ interface Qualifiche {
 }
 interface Macro_product {
   id: number;
-  codice_macro:string;
+  codice_macro: string;
   descrizione: string;
 }
 export interface Utenti {
@@ -44,45 +50,51 @@ export interface SEU {
 }
 export interface DettagliUtente {
   id: string;
-  nome:string;
-  cognome:string;
-  ragione_sociale:string;
+  nome: string;
+  cognome: string;
+  ragione_sociale: string;
   nominativo_ragSoc: string;
   email: string;
   ruolo: string;
   qualifica: string;
   codice: string;
   codf_Piva: string;
-  contract_management:{
-    id:number;
-    codice_macro:string;
-    descrizione:string;
+  contract_management: {
+    id: number;
+    codice_macro: string;
+    descrizione: string;
   }[];
-  seu_riferimento:any;
-  stato_user:number;
+  seu_riferimento: any;
+  stato_user: number;
 }
 @Component({
-    selector: "app-gestione-utenti",
-    templateUrl: "./gestione-utenti.component.html",
-    styleUrl: "./gestione-utenti.component.scss",
-    animations: [
-        trigger("pageTransition", [
-            transition(":enter", [
-                style({ opacity: 0, transform: "scale(0.1)" }), // Inizia piccolo al centro
-                animate("500ms ease-in-out", style({ opacity: 1, transform: "scale(1)" })), // Espandi e rendi visibile
-            ]),
-            transition(":leave", [
-                animate("500ms ease-in-out", style({ opacity: 0, transform: "scale(0.1)" })), // Riduci e rendi invisibile
-            ]),
-        ]),
-    ],
-    standalone: false
+  selector: "app-gestione-utenti",
+  templateUrl: "./gestione-utenti.component.html",
+  styleUrl: "./gestione-utenti.component.scss",
+  animations: [
+    trigger("pageTransition", [
+      transition(":enter", [
+        style({ opacity: 0, transform: "scale(0.1)" }), // Inizia piccolo al centro
+        animate(
+          "500ms ease-in-out",
+          style({ opacity: 1, transform: "scale(1)" })
+        ), // Espandi e rendi visibile
+      ]),
+      transition(":leave", [
+        animate(
+          "500ms ease-in-out",
+          style({ opacity: 0, transform: "scale(0.1)" })
+        ), // Riduci e rendi invisibile
+      ]),
+    ]),
+  ],
+  standalone: false,
 })
 export class GestioneUtentiComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  @ViewChild('attivoUser') attivoUser: any;
-  @ViewChild('resetpasswd') resetPasswd: any;
+  @ViewChild("attivoUser") attivoUser: any;
+  @ViewChild("resetpasswd") resetPasswd: any;
   displayedColumns: string[] = [
     "id",
     "nominativo/Rag.Sociale",
@@ -96,7 +108,7 @@ export class GestioneUtentiComponent implements OnInit {
   Utenti: Utenti[] = [];
   selectedUtenti: Utenti[] = [];
   selectedIdUtenti: Utenti[] = [];
-  dettagliUtente:DettagliUtente[]=[];
+  dettagliUtente: DettagliUtente[] = [];
   dataSource = new MatTableDataSource<Utenti>();
   state: any;
   showRegistrazione = true;
@@ -106,15 +118,28 @@ export class GestioneUtentiComponent implements OnInit {
   ruolo: Ruolo[] = [];
   selectedRuolo: Ruolo[] = [];
   selectedRuoloUser: any;
-  qualifiche:Qualifiche[]=[];
-  selectedQualifiche:any;
-  macro_product:Macro_product[]=[];
-  macro_productSelected:Macro_product[]=[];
+  qualifiche: Qualifiche[] = [];
+  selectedQualifiche: any;
+  macro_product: Macro_product[] = [];
+  macro_productSelected: Macro_product[] = [];
   seu: SEU[] = [];
   seuSelected: any;
 
-  userselezionato=true;
-  constructor(private apiService: ApiService,private MessageSystem:MessageService) {
+  newCliente: FormGroup = new FormGroup({});
+  user_padre = localStorage.getItem("userLogin");
+  userselezionato = true;
+  selectTipecliente: string = "business";
+  showError: boolean = false;
+  ruoli: any;
+  ruoliequalifiche: any;
+
+  horizontalPosition: MatSnackBarHorizontalPosition = "center";
+  verticalPosition: MatSnackBarVerticalPosition = "top";
+  constructor(
+    private apiService: ApiService,
+    private MessageSystem: MessageService,
+    private _snackBar: MatSnackBar
+  ) {
     this.cities = [
       { name: "New York", code: "NY" },
       { name: "Rome", code: "RM" },
@@ -127,7 +152,8 @@ export class GestioneUtentiComponent implements OnInit {
   filterRuoli(row: any, filter: string): boolean {
     console.log(filter);
 
-    if (!filter) { // Controlla se filter è una stringa vuota
+    if (!filter) {
+      // Controlla se filter è una stringa vuota
       return true; // Nessun filtro attivo, mostra tutte le righe
     }
 
@@ -136,9 +162,13 @@ export class GestioneUtentiComponent implements OnInit {
     const utentiSelezionati = filterObj.utente || []; // Inizializza come array vuoto se undefined
     const idUtentiSelezionati = filterObj.id || []; // Inizializza come array vuoto se undefined
 
-    const matchRuolo = !ruoliSelezionati.length || ruoliSelezionati.includes(row.ruolo);
-    const matchUtente = !utentiSelezionati.length || utentiSelezionati.includes(row.nominativo_ragSoc);
-    const matchIdUtente = !idUtentiSelezionati.length || idUtentiSelezionati.includes(row.id);
+    const matchRuolo =
+      !ruoliSelezionati.length || ruoliSelezionati.includes(row.ruolo);
+    const matchUtente =
+      !utentiSelezionati.length ||
+      utentiSelezionati.includes(row.nominativo_ragSoc);
+    const matchIdUtente =
+      !idUtentiSelezionati.length || idUtentiSelezionati.includes(row.id);
     console.log(matchUtente);
 
     return matchRuolo && matchUtente && matchIdUtente;
@@ -149,8 +179,8 @@ export class GestioneUtentiComponent implements OnInit {
       //console.log(Us);
       this.Utenti = Us.body.risposta.map((Utente: any) => ({
         id: Utente.id,
-        nome:Utente.name?Utente.name:"---",
-        cognome:Utente.cognome?Utente.cognome:"---",
+        nome: Utente.name ? Utente.name : "---",
+        cognome: Utente.cognome ? Utente.cognome : "---",
         nominativo_ragSoc:
           Utente.name && Utente.cognome
             ? Utente.name + " " + Utente.cognome
@@ -162,40 +192,77 @@ export class GestioneUtentiComponent implements OnInit {
         codf_Piva: Utente.codice_fiscale
           ? Utente.codice_fiscale
           : Utente.partita_iva,
-        contract_management:Utente.contract_management.map((CM:any)=>({
-          id:CM.macro_product_id,
-          codice_macro:CM.codice_macro,
-          descrizione:CM.descrizione
-        }))
+        contract_management: Utente.contract_management.map((CM: any) => ({
+          id: CM.macro_product_id,
+          codice_macro: CM.codice_macro,
+          descrizione: CM.descrizione,
+        })),
       }));
       //console.log(this.Utenti);
 
-      this.apiService.richiestaRuolieQualifiche().subscribe((Risposta:any)=>{
-        this.qualifiche=Risposta.qualifiche.map((Qualifiche:any)=>({
-          id:Qualifiche.id,
-          descrizione:Qualifiche.descrizione,
-        }))
+      this.apiService.richiestaRuolieQualifiche().subscribe((Risposta: any) => {
+        console.log(Risposta);
+
+        this.qualifiche = Risposta.qualifiche.map((Qualifiche: any) => ({
+          id: Qualifiche.id,
+          descrizione: Qualifiche.descrizione,
+        }));
         this.ruolo = Risposta.ruoli.map((Ruolo: any) => ({
           id: Ruolo.id,
           descrizione: Ruolo.descrizione,
         }));
-      })
+        this.ruoli = this.ruolo;
+      });
       //console.log(this.selectedUtenti);
+      //console.log(this.ruolo);
       this.dataSource.data = this.Utenti;
+    });
+
+    this.newCliente = new FormGroup({
+      nome: new FormControl("", [Validators.required]),
+      cognome: new FormControl("", [Validators.required]),
+      ragione_sociale: new FormControl("", [Validators.required]),
+      email: new FormControl("", [Validators.required, Validators.email]), // controlla email
+      telefono: new FormControl("", [Validators.required]), // controlla email
+      codice_fiscale: new FormControl("", [
+        Validators.required,
+        Validators.minLength(16),
+      ]),
+      partita_iva: new FormControl("", [
+        Validators.required,
+        Validators.minLength(11),
+      ]),
+      indirizzo: new FormControl("", [Validators.required]),
+      provincia: new FormControl("", [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.pattern(/^[a-zA-Z]+$/),
+      ]),
+      citta: new FormControl("", [Validators.required]),
+      nazione: new FormControl("", [Validators.required]),
+      cap: new FormControl("", [
+        Validators.required,
+        Validators.pattern(/\d+$/),
+        Validators.minLength(5),
+      ]), // accetta solo numeri
+      qualifica: new FormControl(),
+      ruolo: new FormControl(),
+      us_padre: new FormControl(),
+      tipo: new FormControl(),
+      milli: new FormControl(),
     });
   }
 
   applyFilter() {
-    this.userselezionato=true;
+    this.userselezionato = true;
     const filterValue = {
-      ruolo: this.selectedRuolo.map(ruolo => ruolo.descrizione),
-      utente: this.selectedUtenti.map(utente => utente.nominativo_ragSoc),
-      id: this.selectedIdUtenti.map(id=>id.id)
+      ruolo: this.selectedRuolo.map((ruolo) => ruolo.descrizione),
+      utente: this.selectedUtenti.map((utente) => utente.nominativo_ragSoc),
+      id: this.selectedIdUtenti.map((id) => id.id),
     };
     this.dataSource.filterPredicate = this.filterRuoli;
     this.dataSource.filter = JSON.stringify(filterValue);
     console.log(this.dataSource.filter);
-
   }
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
@@ -205,50 +272,114 @@ export class GestioneUtentiComponent implements OnInit {
     this.showRegistrazione = false;
   }
 
+changetype(event: Event) {
+  const tipologia = (event.target as HTMLSelectElement).value;
+  console.log(tipologia);
+  
+  if (tipologia == "business") {
+    // Cambia a business
+    this.selectTipecliente = "business";
+    
+    // Rimuovi validatori e resetta campi consumer
+    this.newCliente.get("nome")?.clearValidators();
+    this.newCliente.get("nome")?.setValue("-");
+    this.newCliente.get("nome")?.updateValueAndValidity();
+    
+    this.newCliente.get("cognome")?.clearValidators();
+    this.newCliente.get("cognome")?.setValue("-");
+    this.newCliente.get("cognome")?.updateValueAndValidity();
+    
+    this.newCliente.get("codice_fiscale")?.clearValidators();
+    this.newCliente.get("codice_fiscale")?.setValue("0000000000000000");
+    this.newCliente.get("codice_fiscale")?.updateValueAndValidity();
+    
+    // Aggiungi validatori per campi business
+    this.newCliente.get("ragione_sociale")?.setValidators([Validators.required]);
+    this.newCliente.get("ragione_sociale")?.setValue("");
+    this.newCliente.get("ragione_sociale")?.updateValueAndValidity();
+    
+    this.newCliente.get("partita_iva")?.setValidators([Validators.required]);
+    this.newCliente.get("partita_iva")?.setValue("");
+    this.newCliente.get("partita_iva")?.updateValueAndValidity();
+    
+  } else {
+    // Cambia a consumer
+    this.selectTipecliente = "consumer";
+    
+    // Rimuovi validatori e resetta campi business
+    this.newCliente.get("ragione_sociale")?.clearValidators();
+    this.newCliente.get("ragione_sociale")?.setValue("-");
+    this.newCliente.get("ragione_sociale")?.updateValueAndValidity();
+    
+    this.newCliente.get("partita_iva")?.clearValidators();
+    this.newCliente.get("partita_iva")?.setValue("00000000000");
+    this.newCliente.get("partita_iva")?.updateValueAndValidity();
+    
+    // Aggiungi validatori per campi consumer
+    this.newCliente.get("nome")?.setValidators([Validators.required]);
+    this.newCliente.get("nome")?.setValue("");
+    this.newCliente.get("nome")?.updateValueAndValidity();
+    
+    this.newCliente.get("cognome")?.setValidators([Validators.required]);
+    this.newCliente.get("cognome")?.setValue("");
+    this.newCliente.get("cognome")?.updateValueAndValidity();
+    
+    this.newCliente.get("codice_fiscale")?.setValidators([Validators.required]);
+    this.newCliente.get("codice_fiscale")?.setValue("");
+    this.newCliente.get("codice_fiscale")?.updateValueAndValidity();
+  }
+}
   editUser(user: any) {
     //console.log(user.id);
-  this.userselezionato=false;
-    this.apiService.dettagliUtente(user.id).subscribe((Utente:any)=>{
+    this.userselezionato = false;
+    this.apiService.dettagliUtente(user.id).subscribe((Utente: any) => {
       console.log(Utente);
 
       this.dettagliUtente = Utente.body.risposta.map((Ut: any) => ({
         id: Ut.id,
-        nome:Ut.name?Ut.name:"---",
-        cognome:Ut.cognome?Ut.cognome:"---",
-        nominativo_ragSoc:Ut.ragione_sociale?Ut.ragione_sociale:"---",
+        nome: Ut.name ? Ut.name : "---",
+        cognome: Ut.cognome ? Ut.cognome : "---",
+        nominativo_ragSoc: Ut.ragione_sociale ? Ut.ragione_sociale : "---",
         email: Ut.email,
         ruolo: Ut.role.descrizione,
         qualifica: Ut.qualification.descrizione,
         codice: Ut.codice,
-        codf_Piva: Ut.codice_fiscale
-          ? Ut.codice_fiscale
-          : Ut.partita_iva,
-        contract_management:Ut.contract_management.map((CM:any)=>({
-          id:CM.macro_product_id,
-          codice_macro:CM.codice_macro,
-          descrizione:CM.descrizione
+        codf_Piva: Ut.codice_fiscale ? Ut.codice_fiscale : Ut.partita_iva,
+        contract_management: Ut.contract_management.map((CM: any) => ({
+          id: CM.macro_product_id,
+          codice_macro: CM.codice_macro,
+          descrizione: CM.descrizione,
         })),
-        seu_riferimento:Ut.user_id_padre,
-        stato_user:Ut.stato_user
+        seu_riferimento: Ut.user_id_padre,
+        stato_user: Ut.stato_user,
       }));
 
-      this.macro_product=Utente.body.macro_product.map((macro_p:any)=>({
-        id:macro_p.id,
-        codice_macro:macro_p.codice_macro,
-        descrizione:macro_p.descrizione,
-      }))
+      this.macro_product = Utente.body.macro_product.map((macro_p: any) => ({
+        id: macro_p.id,
+        codice_macro: macro_p.codice_macro,
+        descrizione: macro_p.descrizione,
+      }));
       //console.log(this.macro_product);
 
-      this.selectedRuoloUser = this.ruolo.find(r => r.descrizione === this.dettagliUtente[0].ruolo)
-      this.selectedQualifiche = this.qualifiche.find(r => r.descrizione === this.dettagliUtente[0].qualifica)
-      if (this.dettagliUtente && this.dettagliUtente.length > 0 && this.dettagliUtente[0].contract_management) {
-        this.macro_productSelected = this.macro_product.filter(r =>
-          this.dettagliUtente[0].contract_management.some(cm => cm.id === r.id)
+      this.selectedRuoloUser = this.ruolo.find(
+        (r) => r.descrizione === this.dettagliUtente[0]?.ruolo
+      );
+      this.selectedQualifiche = this.qualifiche.find(
+        (r) => r.descrizione === this.dettagliUtente[0]?.qualifica
+      );
+      if (
+        this.dettagliUtente &&
+        this.dettagliUtente.length > 0 &&
+        this.dettagliUtente[0]?.contract_management
+      ) {
+        this.macro_productSelected = this.macro_product.filter((r) =>
+          this.dettagliUtente[0].contract_management.some(
+            (cm) => cm.id === r.id
+          )
         );
       }
       //console.log(this.dettagliUtente);
-
-    })
+    });
     this.apiService.recuperaSEU().subscribe((SEU: any) => {
       //console.log(SEU);
 
@@ -260,45 +391,127 @@ export class GestioneUtentiComponent implements OnInit {
         };
       });
       this.seuSelected = this.seu.find(
-        (r) => r.id === this.dettagliUtente[0].seu_riferimento
+        (r) => r.id === this.dettagliUtente[0]?.seu_riferimento
       );
     });
   }
 
-  SalvaModificheUtente(user:any){
-    const id = document.querySelector(
-      '.id'
-    ) as HTMLSelectElement; // Trova l'elemento select
+storeCliente() {
+  this.showError = true;
+
+  const typecli = document.getElementById("tipocliente") as HTMLSelectElement;
+
+  if (typecli.value == "business") {
+    this.newCliente.get("nome")?.setValue("-");
+    this.newCliente.get("cognome")?.setValue("-");
+    this.newCliente.get("codice_fiscale")?.setValue("0000000000000000");
+  } else {
+    this.newCliente.get("ragione_sociale")?.setValue("-");
+    this.newCliente.get("partita_iva")?.setValue("00000000000");
+  }
+
+  if (this.newCliente.valid) {
+    const newCliente = {
+      nome: this.newCliente.value.nome,
+      cognome: this.newCliente.value.cognome,
+      ragione_sociale: this.newCliente.value.ragione_sociale,
+      email: this.newCliente.value.email,
+      telefono: this.newCliente.value.telefono,
+      codice_fiscale: this.newCliente.value.codice_fiscale,
+      partita_iva: this.newCliente.value.partita_iva,
+      indirizzo: this.newCliente.value.indirizzo,
+      provincia: this.newCliente.value.provincia,
+      citta: this.newCliente.value.citta,
+      nazione: this.newCliente.value.nazione,
+      cap: this.newCliente.value.cap,
+      qualifica: this.newCliente.value.qualifica,
+      ruolo: this.newCliente.value.ruolo,
+      us_padre: localStorage.getItem("userLogin"),
+      tipo: this.selectTipecliente,
+      password: "Benvenutoinsemprechiaro",
+    };
+
+    this.apiService.nuovoUtente(newCliente).subscribe((risultato: any) => {
+      if (risultato.response == "ok") {
+        const nuovoUtenteId = risultato.body.id;
+        
+        // Ricarica TUTTE le liste necessarie
+        this.apiService.getAllUser().subscribe((Us: any) => {
+          this.Utenti = Us.body.risposta.map((Utente: any) => ({
+            id: Utente.id,
+            nome: Utente.name ? Utente.name : "---",
+            cognome: Utente.cognome ? Utente.cognome : "---",
+            nominativo_ragSoc:
+              Utente.name && Utente.cognome
+                ? Utente.name + " " + Utente.cognome
+                : Utente.ragione_sociale,
+            email: Utente.email,
+            ruolo: Utente.role.descrizione,
+            qualifica: Utente.qualification.descrizione,
+            codice: Utente.codice,
+            codf_Piva: Utente.codice_fiscale
+              ? Utente.codice_fiscale
+              : Utente.partita_iva,
+            contract_management: Utente.contract_management.map((CM: any) => ({
+              id: CM.macro_product_id,
+              codice_macro: CM.codice_macro,
+              descrizione: CM.descrizione,
+            })),
+          }));
+          
+          // Aggiorna la tabella
+          this.dataSource.data = this.Utenti;
+          
+          // Ricarica anche ruoli e qualifiche
+          this.apiService.richiestaRuolieQualifiche().subscribe((Risposta: any) => {
+            this.qualifiche = Risposta.qualifiche.map((Qualifiche: any) => ({
+              id: Qualifiche.id,
+              descrizione: Qualifiche.descrizione,
+            }));
+            this.ruolo = Risposta.ruoli.map((Ruolo: any) => ({
+              id: Ruolo.id,
+              descrizione: Ruolo.descrizione,
+            }));
+            this.ruoli = this.ruolo;
+            
+            // Nascondi il form di registrazione
+            this.showRegistrazione = true;
+            
+            // ORA apri l'edit del nuovo utente con tutte le liste caricate
+            this.editUser({ id: nuovoUtenteId });
+          });
+        });
+      } else {
+        this.openSnackBar();
+      }
+    });
+  } else {
+    this.messageSnackBar();
+  }
+}
+
+  SalvaModificheUtente(user: any) {
+    const id = document.querySelector(".id") as HTMLSelectElement; // Trova l'elemento select
     const idUtente = id?.value;
 
-    const nome = document.querySelector(
-      '.nome'
-    ) as HTMLSelectElement; // Trova l'elemento select
+    const nome = document.querySelector(".nome") as HTMLSelectElement; // Trova l'elemento select
     const nomeutente = nome?.value;
 
-    const cognome = document.querySelector(
-      '.cognome'
-    ) as HTMLSelectElement; // Trova l'elemento select
+    const cognome = document.querySelector(".cognome") as HTMLSelectElement; // Trova l'elemento select
     const cognomeUtente = cognome?.value;
 
-    const rag_soc = document.querySelector(
-      '.rag_soc'
-    ) as HTMLSelectElement; // Trova l'elemento select
+    const rag_soc = document.querySelector(".rag_soc") as HTMLSelectElement; // Trova l'elemento select
     const ragione_soc = rag_soc?.value;
 
-    const email = document.querySelector(
-      '.email'
-    ) as HTMLSelectElement; // Trova l'elemento select
+    const email = document.querySelector(".email") as HTMLSelectElement; // Trova l'elemento select
     const emailUtente = email?.value;
 
     const cod_utente = document.querySelector(
-      '.cod_utente'
+      ".cod_utente"
     ) as HTMLSelectElement; // Trova l'elemento select
     const cod_Utente = cod_utente?.value;
 
-    const cod_fPiva = document.querySelector(
-      '.cod_fPiva'
-    ) as HTMLSelectElement; // Trova l'elemento select
+    const cod_fPiva = document.querySelector(".cod_fPiva") as HTMLSelectElement; // Trova l'elemento select
     const cod_fPivaUtente = cod_fPiva?.value;
 
     /* const resetp = document.querySelector(
@@ -311,55 +524,84 @@ export class GestioneUtentiComponent implements OnInit {
     ) as HTMLSelectElement; // Trova l'elemento select
     const activeUserValue = activeUser?.value; */
     const formData = new FormData();
-    const activeUser=this.attivoUser.checked? '1' : '0';
-    const resetpwd=this.resetPasswd.checked? '1' : '0';
-    console.log('Reset Password:', resetpwd);
-    console.log('Active User:', activeUser);
-    
-    formData.append('idUtente',idUtente)
-    formData.append('nomeutente',nomeutente)
-    formData.append('cognomeUtente',cognomeUtente)
-    formData.append('ragione_soc',ragione_soc)
-    formData.append('emailUtente',emailUtente)
-    formData.append('ruolo',this.selectedRuoloUser.id)
-    formData.append('qualifica',this.selectedQualifiche.id)
-    formData.append('seu',this.seuSelected.id)
-    formData.append('cod_Utente',cod_Utente)
-    formData.append('cod_fPivaUtente',cod_fPivaUtente)
-    formData.append('resetpwd',resetpwd)
-    formData.append('activeUser',activeUser)
+    const activeUser = this.attivoUser.checked ? "1" : "0";
+    const resetpwd = this.resetPasswd.checked ? "1" : "0";
+    console.log("Reset Password:", resetpwd);
+    console.log("Active User:", activeUser);
+
+    formData.append("idUtente", idUtente);
+    formData.append("nomeutente", nomeutente);
+    formData.append("cognomeUtente", cognomeUtente);
+    formData.append("ragione_soc", ragione_soc);
+    formData.append("emailUtente", emailUtente);
+    formData.append("ruolo", this.selectedRuoloUser.id);
+    formData.append("qualifica", this.selectedQualifiche.id);
+    formData.append("seu", this.seuSelected.id);
+    formData.append("cod_Utente", cod_Utente);
+    formData.append("cod_fPivaUtente", cod_fPivaUtente);
+    formData.append("resetpwd", resetpwd);
+    formData.append("activeUser", activeUser);
     this.macro_productSelected.forEach((product, index) => {
-      formData.append(`contract_management[${index}][id]`, product.id.toString()); // Aggiungi l'ID come chiave
-      formData.append(`contract_management[${index}][descrizione]`, product.descrizione); // Aggiungi il valore come valore
+      formData.append(
+        `contract_management[${index}][id]`,
+        product.id.toString()
+      ); // Aggiungi l'ID come chiave
+      formData.append(
+        `contract_management[${index}][descrizione]`,
+        product.descrizione
+      ); // Aggiungi il valore come valore
     });
 
-    this.apiService.updateUtente(formData).subscribe((Risp:any)=>{
+    this.apiService.updateUtente(formData).subscribe((Risp: any) => {
       console.log(Risp);
       this.showMessage();
-    })
+    });
   }
-  showMessage(){
+  showMessage() {
     this.MessageSystem.add({
-      severity: 'success',
-      summary: 'Modifica Utente',
-      detail: 'Utente Modificato',
-      life: 30000
+      severity: "success",
+      summary: "Modifica Utente",
+      detail: "Utente Modificato",
+      life: 30000,
     });
   }
 
-  resetpwd(obj: any){
-    let str = document.getElementById(obj)?.getAttribute('value');
+  resetpwd(obj: any) {
+    let str = document.getElementById(obj)?.getAttribute("value");
     let status: string;
-    status = (str == "true") ?  "false" : "true";
-    document.getElementById(obj)?.setAttribute('value', status);
+    status = str == "true" ? "false" : "true";
+    document.getElementById(obj)?.setAttribute("value", status);
   }
 
-  activeUser(obj: any){
-    let str = document.getElementById(obj)?.getAttribute('value');
+  activeUser(obj: any) {
+    let str = document.getElementById(obj)?.getAttribute("value");
     let status: any;
-    status = (str == "true") ?  0 : 1;
-    document.getElementById(obj)?.setAttribute('value', status);
+    status = str == "true" ? 0 : 1;
+    document.getElementById(obj)?.setAttribute("value", status);
   }
 
+  openSnackBar() {
+    this._snackBar.open("UTENTE GIA PRESENTE!", "Chiudi", {
+      horizontalPosition: this.horizontalPosition,
+      verticalPosition: this.verticalPosition,
+    });
+  }
 
+  messageSnackBar() {
+    this._snackBar.open("Compilare correttamente tutti i campi", "Chiudi", {
+      horizontalPosition: this.horizontalPosition,
+      verticalPosition: this.verticalPosition,
+    });
+  }
+
+  /* role_qualification() {
+    this.apiService.richiestaRuolieQualifiche().subscribe((datiraccolti: any) => {
+        //console.log(datiraccolti);
+        this.ruoliequalifiche = datiraccolti;
+        //console.log(this.ruoliequalifiche);
+        this.ruoli = this.ruoliequalifiche.ruoli;
+        this.qualifiche = this.ruoliequalifiche.qualifiche;
+        console.log(this.ruoli);
+      });
+  } */
 }

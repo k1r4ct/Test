@@ -17,7 +17,7 @@ return [
 
     'paths' => ['*'],
 
-    'allowed_methods' => ['GET', 'POST'],
+    'allowed_methods' => ['GET', 'POST','DELETE'],
 
     'allowed_origins' => [env('FRONTEND_URL', '*')],
 

@@ -81,7 +81,20 @@ class MacroProductController extends Controller
 
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $updateMacroProdotto]]);
     }
+    
+    public function creaNuovoMacroProdotto(Request $request)
+    {
 
+        $creaNuovoMacroProdotto = macro_product::create([
+            'descrizione' => $request->descrizione ,
+            'codice_macro' => $request->codice_macro ,
+            'punti_valore' => $request->punti_valore,
+            'punti_carriera' => $request->punti_carriera,
+            'supplier_category_id' => $request->supplier_category_id
+            ]);
+
+        return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $creaNuovoMacroProdotto]]);
+    }
     public function index()
     {
         //

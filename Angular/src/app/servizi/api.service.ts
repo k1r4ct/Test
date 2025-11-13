@@ -51,16 +51,20 @@ export class ApiService implements OnDestroy {
   }
 
   // Metodo per emettere i dati filtrati per data
-  emitFilteredData(selectedDate: Date, filteredContratti: any[], filteredLeads?: any[]) {
+  emitFilteredData(
+    selectedDate: Date,
+    filteredContratti: any[],
+    filteredLeads?: any[]
+  ) {
     const currentData = this.combinedDataSubject.value || {};
-    
+
     const updatedData = {
       ...currentData,
       selectedDate: selectedDate,
       filteredContratti: filteredContratti,
       filteredLeads: filteredLeads,
       isFiltered: true,
-      filterType: 'date'
+      filterType: "date",
     };
 
     this.combinedDataSubject.next(updatedData);
@@ -75,7 +79,7 @@ export class ApiService implements OnDestroy {
       filteredContratti: null,
       filteredLeads: null,
       isFiltered: false,
-      filterType: null
+      filterType: null,
     };
 
     this.combinedDataSubject.next(resetData);
@@ -165,20 +169,28 @@ export class ApiService implements OnDestroy {
     // console.log(domande);
 
     return this.http
-      .post(this.global.API_URL + 'getDomandeMacro/' + idMacroProdotto,  { domande: domande}, { headers })
+      .post(
+        this.global.API_URL + "getDomandeMacro/" + idMacroProdotto,
+        { domande: domande },
+        { headers }
+      )
       .pipe(takeUntil(this.destroy$));
   }
 
-  getRisposteSelect(idDomanda: any, risposta: any): Observable<any> { 
+  getRisposteSelect(idDomanda: any, risposta: any): Observable<any> {
     let headers = this.headers;
 
     // console.log("-------------------------------- ger risp select");
     // console.log(" idDomanda: " + idDomanda);
-    // console.log(" risposta: " + risposta);       
+    // console.log(" risposta: " + risposta);
 
     return this.http
-     .post(this.global.API_URL + 'getRisposteSelect/' + idDomanda, { rispostafornita: risposta }, { headers })
-     .pipe(takeUntil(this.destroy$));    
+      .post(
+        this.global.API_URL + "getRisposteSelect/" + idDomanda,
+        { rispostafornita: risposta },
+        { headers }
+      )
+      .pipe(takeUntil(this.destroy$));
   }
   //  LISTA DELLE CHIAMATE API PER DEI VARI COMPONENTI
 
@@ -652,6 +664,13 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
+  creaNuovoMacroProdotto(form: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "creaNuovoMacroProdotto", form, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
   nuovoFornitore(form: any): Observable<any> {
     let headers = this.headers;
     return this.http
@@ -680,9 +699,9 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
-// -------------------- TICKET MANAGEMENT API --------------------
-  
-/**
+  // -------------------- TICKET MANAGEMENT API --------------------
+
+  /**
    * Recupera la lista dei ticket
    */
   getTickets(): Observable<any> {
@@ -772,16 +791,18 @@ export class ApiService implements OnDestroy {
     return this.http
       .get(this.global.API_URL + "getTicketChangeLogs/" + ticketId, { headers })
       .pipe(takeUntil(this.destroy$));
-  } 
+  }
 
   /**
-  * Verifica se esiste un ticket per un contratto specifico
-  * Restituisce il ticket se esiste, altrimenti null
-  */
+   * Verifica se esiste un ticket per un contratto specifico
+   * Restituisce il ticket se esiste, altrimenti null
+   */
   getTicketByContractId(contractId: number): Observable<any> {
     let headers = this.headers;
     return this.http
-      .get(this.global.API_URL + "getTicketByContractId/" + contractId, { headers })
+      .get(this.global.API_URL + "getTicketByContractId/" + contractId, {
+        headers,
+      })
       .pipe(takeUntil(this.destroy$));
   }
 
@@ -791,7 +812,9 @@ export class ApiService implements OnDestroy {
   getAllTicketsByContractId(contractId: number): Observable<any> {
     let headers = this.headers;
     return this.http
-      .get(this.global.API_URL + "getAllTicketsByContractId/" + contractId, { headers })
+      .get(this.global.API_URL + "getAllTicketsByContractId/" + contractId, {
+        headers,
+      })
       .pipe(takeUntil(this.destroy$));
   }
 
@@ -811,7 +834,9 @@ export class ApiService implements OnDestroy {
   restoreLastTicketByContractId(form: any): Observable<any> {
     let headers = this.headers;
     return this.http
-      .post(this.global.API_URL + "restoreLastTicketByContractId", form, { headers })
+      .post(this.global.API_URL + "restoreLastTicketByContractId", form, {
+        headers,
+      })
       .pipe(takeUntil(this.destroy$));
   }
 
@@ -826,7 +851,7 @@ export class ApiService implements OnDestroy {
   }
 
   // -------------------- WALLET API METHODS --------------------
-  
+
   /**
    * Get user wallet information
    */
@@ -855,7 +880,11 @@ export class ApiService implements OnDestroy {
   getWalletHistory(page: number = 1, perPage: number = 10): Observable<any> {
     let headers = this.headers;
     return this.http
-      .get(this.global.API_URL + `user/wallet/history?page=${page}&per_page=${perPage}`, { headers })
+      .get(
+        this.global.API_URL +
+          `user/wallet/history?page=${page}&per_page=${perPage}`,
+        { headers }
+      )
       .pipe(takeUntil(this.destroy$));
   }
 
@@ -868,10 +897,12 @@ export class ApiService implements OnDestroy {
   uploadTicketAttachments(formData: FormData): Observable<any> {
     let headers = this.getAuthHeaders();
     // Remove Content-Type to let browser set it with boundary for multipart/form-data
-    headers = headers.delete('Content-Type');
-    
+    headers = headers.delete("Content-Type");
+
     return this.http
-      .post(this.global.API_URL + "tickets/attachments/upload", formData, { headers })
+      .post(this.global.API_URL + "tickets/attachments/upload", formData, {
+        headers,
+      })
       .pipe(takeUntil(this.destroy$));
   }
 
@@ -892,9 +923,9 @@ export class ApiService implements OnDestroy {
   downloadTicketAttachment(attachmentId: number): Observable<Blob> {
     let headers = this.headers;
     return this.http
-      .get(this.global.API_URL + `attachments/${attachmentId}/download`, { 
+      .get(this.global.API_URL + `attachments/${attachmentId}/download`, {
         headers,
-        responseType: 'blob'
+        responseType: "blob",
       })
       .pipe(takeUntil(this.destroy$));
   }

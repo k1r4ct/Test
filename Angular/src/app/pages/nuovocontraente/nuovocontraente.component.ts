@@ -92,7 +92,7 @@ export class NuovocontraenteComponent implements OnInit {
       this.contraenteType = oggetto.tipoCliente;
       if (this.contraenteType == 'consumer') {
         this.valoretypecli = 1;
-      } else if (this.contraenteType == 'businness') {
+      } else if (this.contraenteType == 'business') {
         this.valoretypecli = 0;
       }
     });

@@ -28,14 +28,14 @@
                 </button>
                 <button type="button"
                         class="search-type-btn"
-                        [class.active]="selectTipecliente === 'businness'"
-                        (click)="onTipoClienteChange('businness')">
+                        [class.active]="selectTipecliente === 'business'"
+                        (click)="onTipoClienteChange('business')">
                   <mat-icon>business</mat-icon>
                   <span>Business</span>
                 </button>
                 <div class="search-type-info">
                   <small class="text-muted">
-                    Modalità attuale: <strong>{{ selectTipecliente === 'businness' ? 'Business' : 'Consumer' }}</strong>
+                    Modalità attuale: <strong>{{ selectTipecliente === 'business' ? 'Business' : 'Consumer' }}</strong>
                   </small>
                 </div>
               </div>
@@ -77,7 +77,7 @@
             </div>
 
             <!-- Business -->
-            <div *ngIf="selectTipecliente == 'businness'">
+            <div *ngIf="selectTipecliente == 'business'">
               <div class="row">
                 <div class="col-md-12">
                   <div class="form-group">

@@ -42,7 +42,7 @@ export class NuovoclienteComponent implements OnInit {
   state: any;
   ruoliequalifiche: any;
   showError: boolean = false;
-  selectTipecliente: string = "businness";
+  selectTipecliente: string = "business";
 
   user_padre = localStorage.getItem('userLogin');
   newCliente: FormGroup = new FormGroup({});
@@ -60,7 +60,7 @@ export class NuovoclienteComponent implements OnInit {
     }
 
     if (this.SharedService.TipoCliente == "PARTITA IVA") {
-      this.selectTipecliente = "businness";
+      this.selectTipecliente = "business";
     }
 
     this.initializeForm();

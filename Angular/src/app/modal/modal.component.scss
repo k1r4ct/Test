@@ -91,6 +91,12 @@
 }
 
 // Material Form Fields
+::ng-deep .ticket-modal-content {
+  mat-hint {
+    display: none !important;
+  }
+}
+
 ::ng-deep .full-width {
   width: 100%;
   margin-bottom: 1rem;
@@ -755,5 +761,409 @@
     .send-button {
       align-self: flex-end;
     }
+  }
+}
+
+// ==================== CUSTOM ATTACHMENT MANAGER STYLES ==================
+
+.attachment-section {
+  margin-top: 1rem;
+  
+  .attachment-upload-area {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 1.5rem;
+    background: #f9fafb;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    
+    &:hover:not(.disabled) {
+      border-color: #268730;
+      background: #f0fdf4;
+    }
+    
+    &.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 1rem;
+      
+      .upload-icon {
+        font-size: 3rem;
+        width: 3rem;
+        height: 3rem;
+        color: #9ca3af;
+        margin-bottom: 0.5rem;
+      }
+      
+      .upload-text {
+        color: #374151;
+        font-size: 1rem;
+        margin: 0.5rem 0;
+      }
+      
+      .upload-hint {
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin: 0;
+      }
+    }
+    
+    .files-list {
+      .files-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        
+        .files-count {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: #268730;
+          font-weight: 500;
+          
+          mat-icon {
+            font-size: 1.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+          }
+        }
+      }
+      
+      .file-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+        
+        .file-item {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.5rem;
+          background: white;
+          border-radius: 6px;
+          border: 1px solid #e5e7eb;
+          
+          &:hover {
+            background: #f3f4f6;
+          }
+          
+          .file-icon {
+            flex-shrink: 0;
+            color: #6b7280;
+            
+            &.file-type-image { color: #06b6d4; }
+            &.file-type-picture_as_pdf { color: #dc2626; }
+            &.file-type-description { color: #2563eb; }
+            &.file-type-table_chart { color: #16a34a; }
+            &.file-type-slideshow { color: #ea580c; }
+            &.file-type-folder_zip { color: #7c3aed; }
+          }
+          
+          .file-info {
+            flex: 1;
+            min-width: 0;
+            
+            .file-name {
+              display: block;
+              font-size: 0.875rem;
+              color: #111827;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+            
+            .file-size {
+              display: block;
+              font-size: 0.75rem;
+              color: #6b7280;
+            }
+          }
+        }
+      }
+      
+      .add-more-btn {
+        margin-top: 1rem;
+        width: 100%;
+      }
+    }
+  }
+  
+  .upload-progress {
+    margin-top: 1rem;
+    text-align: center;
+    
+    mat-progress-bar {
+      margin-bottom: 0.5rem;
+    }
+    
+    p {
+      font-size: 0.875rem;
+      color: #6b7280;
+      margin: 0;
+    }
+  }
+}
+
+// Attachment strip for existing ticket chat
+.chat-input-section {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  
+  .chat-input-wrapper {
+    flex: 1;
+    
+    .message-input-field {
+      width: 100%;
+      margin-bottom: 0;
+    }
+    
+    .attachment-strip {
+      margin-top: 0.5rem;
+      
+      .attachment-compact {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        
+        .selected-files {
+          flex: 1;
+          
+          mat-chip-listbox {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            
+            mat-chip {
+              font-size: 0.875rem;
+              height: 28px;
+              
+              mat-icon[matChipAvatar] {
+                font-size: 1rem;
+                width: 1rem;
+                height: 1rem;
+              }
+              
+              mat-icon[matChipRemove] {
+                font-size: 1.125rem;
+                width: 1.125rem;
+                height: 1.125rem;
+                cursor: pointer;
+              }
+            }
+          }
+        }
+        
+        .attach-button {
+          position: relative;
+          
+          .attach-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #268730;
+            color: white;
+            font-size: 0.625rem;
+            font-weight: 600;
+            padding: 2px 4px;
+            border-radius: 10px;
+            min-width: 16px;
+            text-align: center;
+          }
+        }
+      }
+      
+      .attachment-progress {
+        margin-top: 0.5rem;
+      }
+    }
+  }
+  
+  .send-button {
+    flex-shrink: 0;
+    margin-bottom: 0.5rem;
+  }
+}
+
+// Message attachments display
+.message-attachments {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(39, 135, 48, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(39, 135, 48, 0.2);
+  
+  .attachments-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: #268730;
+    font-size: 0.875rem;
+    font-weight: 500;
+    
+    mat-icon {
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+  
+  .attachments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    
+    .attachment-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.5rem;
+      background: white;
+      border-radius: 4px;
+      text-decoration: none;
+      color: #374151;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: #f3f4f6;
+        color: #268730;
+        transform: translateX(2px);
+      }
+      
+      .attachment-icon {
+        font-size: 1.125rem;
+        width: 1.125rem;
+        height: 1.125rem;
+        color: #6b7280;
+      }
+      
+      .attachment-name {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+      }
+      
+      .attachment-size {
+        color: #9ca3af;
+        font-size: 0.75rem;
+      }
+    }
+  }
+}
+
+// Message bubble adjustments for attachments
+.message-bubble {
+  &.message-seu {
+    .message-attachments {
+      background: rgba(37, 99, 235, 0.05);
+      border-color: rgba(37, 99, 235, 0.2);
+      
+      .attachments-header {
+        color: #2563eb;
+      }
+    }
+  }
+  
+  &.message-backoffice {
+    .message-attachments {
+      background: rgba(107, 114, 128, 0.05);
+      border-color: rgba(107, 114, 128, 0.2);
+      
+      .attachments-header {
+        color: #6b7280;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .attachment-section {
+    .attachment-upload-area {
+      padding: 1rem;
+      
+      .files-list {
+        .file-items {
+          max-height: 150px;
+        }
+      }
+    }
+  }
+  
+  .chat-input-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    
+    .chat-input-wrapper {
+      width: 100%;
+    }
+    
+    .send-button {
+      align-self: flex-end;
+      margin-bottom: 0;
+    }
+  }
+  
+  .message-attachments {
+    .attachments-list {
+      .attachment-item {
+        .attachment-name {
+          max-width: 150px;
+        }
+      }
+    }
+  }
+}
+
+// Drag and drop visual feedback
+.drag-over {
+  .attachment-upload-area {
+    border-color: #268730 !important;
+    background: #dcfce7 !important;
+    
+    .empty-state {
+      .upload-icon {
+        color: #268730;
+        animation: pulse 1s infinite;
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+// Disabled state
+.attachment-upload-area.disabled,
+.attach-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  
+  &:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
   }
 }

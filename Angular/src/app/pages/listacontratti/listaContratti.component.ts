@@ -43,6 +43,7 @@ import { json } from "node:stream/consumers";
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ContrattoDetailsDialogComponent } from 'src/app/modal/modal.component';
 import { MatDialog } from '@angular/material/dialog';
+import { Overlay } from '@angular/cdk/overlay';
 import { take } from 'rxjs';
 export interface UserData {
   id: string;
@@ -196,7 +197,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   CONTEGGIOPRODOTTI: ConteggioProdotti[] = [];
   fileSelezionati: any[] = [];
   visualizzaModificaMassiva = false;
-
+  selectTotale: number = 0;
   // Proprietà per gestire la ricerca server-side e la cache
   public searchMessage = ""; // Messaggio per l'utente sulla ricerca
   allContrattiCache: Map<number, any[]> = new Map(); // Map per memorizzare i contratti per pagina
@@ -205,8 +206,9 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
 
   // Proprietà per gestione ticket
   private ticketStatusCache: Map<number, any> = new Map(); // Cache stato ticket per contratto
+  private savedScrollPosition: number = 0;
   private lastTicketCheck: Date = new Date();
-  private readonly FILTERS_STORAGE_KEY = 'listaContratti_filtri';
+  private readonly FILTERS_STORAGE_KEY = "listaContratti_filtri";
   private pendingDateFilters: Map<string, any[]> = new Map();
   // Proprietà per gestire la vista filtrata
   isFilteredView: boolean = false;
@@ -298,8 +300,9 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     // - Altri ruoli: lock = true
 
     const role = this.User?.role_id;
-    const allowedStatusForSeu = [1, 4, 5,2];
-    const statusIdRaw = (contratto?.status_contract?.id ?? contratto?.id_stato ?? null);
+    const allowedStatusForSeu = [1, 4, 5, 2];
+    const statusIdRaw =
+      contratto?.status_contract?.id ?? contratto?.id_stato ?? null;
     const statusId = statusIdRaw != null ? Number(statusIdRaw) : NaN;
 
     if (role === 1 || role === 5) {
@@ -314,9 +317,13 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
 
   private syncFormLocks(): void {
     const shouldDisable = !!this.non_modificare_risposta;
-    const controls = [this.formStatoAvanzamento, this.formMacroProdotto, this.formMicroProdotto];
+    const controls = [
+      this.formStatoAvanzamento,
+      this.formMacroProdotto,
+      this.formMicroProdotto,
+    ];
 
-    controls.forEach(ctrl => {
+    controls.forEach((ctrl) => {
       if (!ctrl) return;
       if (shouldDisable && ctrl.enabled) {
         ctrl.disable({ emitEvent: false });
@@ -378,14 +385,31 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   get isHeaderChecked(): boolean {
     const pageRows = this.dataSourceFilters?.filteredData || [];
     if (!pageRows.length) return false;
-    return pageRows.every((r) => this.selectedMassiviIds.has(Number(r.id)) || r.stato === "Gettonato" || r.stato === "Stornato");
+    // Admin può selezionare tutto, altri escludono Gettonato/Stornato
+    if (this.User?.role_id === 1) {
+      return pageRows.every((r) => this.selectedMassiviIds.has(Number(r.id)));
+    }
+    return pageRows.every(
+      (r) =>
+        this.selectedMassiviIds.has(Number(r.id)) ||
+        r.stato === "Gettonato" ||
+        r.stato === "Stornato"
+    );
   }
   get isHeaderIndeterminate(): boolean {
     const pageRows = this.dataSourceFilters?.filteredData || [];
     if (!pageRows.length) return false;
-    const selectable = pageRows.filter((r) => r.stato !== "Gettonato" && r.stato !== "Stornato");
+    // Admin può selezionare tutto, altri escludono Gettonato/Stornato
+    const selectable =
+      this.User?.role_id === 1
+        ? pageRows
+        : pageRows.filter(
+            (r) => r.stato !== "Gettonato" && r.stato !== "Stornato"
+          );
     if (!selectable.length) return false;
-    const selectedOnPage = selectable.filter((r) => this.selectedMassiviIds.has(Number(r.id))).length;
+    const selectedOnPage = selectable.filter((r) =>
+      this.selectedMassiviIds.has(Number(r.id))
+    ).length;
     return selectedOnPage > 0 && selectedOnPage < selectable.length;
   }
   constructor(
@@ -399,7 +423,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private changeDetectorRef: ChangeDetectorRef,
-    private ricercaCliente: RicercaclientiService
+    private ricercaCliente: RicercaclientiService,
+    private overlay: Overlay
   ) {
     this.matIconRegistry.addSvgIcon(
       "file-jpg",
@@ -419,7 +444,6 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         "assets/icons/file-pdf.svg"
       ) // Percorso dell'icona PDF
     );
-  // ...
   }
 
   // ===== Piccoli aiuti (nomi semplici) =====
@@ -571,53 +595,66 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       const savedFilters = localStorage.getItem(this.FILTERS_STORAGE_KEY);
       if (savedFilters) {
         const filtersArray = JSON.parse(savedFilters);
-        
+
         // Ripristina il filterDictionary
         this.filterDictionary = new Map(filtersArray);
-        
+
         // Ripristina anche OGGETTO_FILTRICONTRATTI
         this.OGGETTO_FILTRICONTRATTI = savedFilters;
-        
-        console.log('Filtri caricati da localStorage:', this.filterDictionary);
-        
+
+        console.log("Filtri caricati da localStorage:", this.filterDictionary);
+
         // Salva le date in pendenza per applicarle dopo in ngAfterViewInit
         filtersArray.forEach(([key, value]: [string, any]) => {
-          if ((key === 'datains' || key === 'datastipula') && Array.isArray(value) && value.length === 2) {
+          if (
+            (key === "datains" || key === "datastipula") &&
+            Array.isArray(value) &&
+            value.length === 2
+          ) {
             this.pendingDateFilters.set(key, value);
           }
         });
-        
+
         // Applica i valori ai form controls
         this.applyFiltersToControls(filtersArray);
-        
+
         // Applica i filtri al backend
         const filterString = JSON.stringify(filtersArray);
         this.applySpecificFilters(filterString);
       }
     } catch (error) {
-      console.error('Errore nel caricamento dei filtri da localStorage:', error);
+      console.error(
+        "Errore nel caricamento dei filtri da localStorage:",
+        error
+      );
       // In caso di errore, pulisci localStorage
       localStorage.removeItem(this.FILTERS_STORAGE_KEY);
     }
   }
 
-    private saveFiltersToStorage(): void {
+  private saveFiltersToStorage(): void {
     try {
       const filtersArray = Array.from(this.filterDictionary.entries());
       const filtersJson = JSON.stringify(filtersArray);
       localStorage.setItem(this.FILTERS_STORAGE_KEY, filtersJson);
-      console.log('Filtri salvati in localStorage');
+      console.log("Filtri salvati in localStorage");
     } catch (error) {
-      console.error('Errore nel salvataggio dei filtri in localStorage:', error);
+      console.error(
+        "Errore nel salvataggio dei filtri in localStorage:",
+        error
+      );
     }
   }
 
   private clearFiltersFromStorage(): void {
     try {
       localStorage.removeItem(this.FILTERS_STORAGE_KEY);
-      console.log('Filtri rimossi da localStorage');
+      console.log("Filtri rimossi da localStorage");
     } catch (error) {
-      console.error('Errore nella rimozione dei filtri da localStorage:', error);
+      console.error(
+        "Errore nella rimozione dei filtri da localStorage:",
+        error
+      );
     }
   }
 
@@ -627,23 +664,23 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       if (value === null || value === undefined) return;
 
       switch (key) {
-        case 'id':
+        case "id":
           // ID è un campo di testo, non una select
-          const idValue = Array.isArray(value) ? value.join(', ') : value;
+          const idValue = Array.isArray(value) ? value.join(", ") : value;
           this.formID.setValue(idValue);
           break;
-          
-        case 'cliente':
+
+        case "cliente":
           // Cliente è un campo di testo
           this.formCliente.setValue(value);
           break;
-          
-        case 'pivacf':
+
+        case "pivacf":
           // CFPI può essere sia array che stringa
           this.formCFPI.setValue(value);
           break;
-          
-        case 'prodotto':
+
+        case "prodotto":
           // Per mat-select multiple, il valore può essere un array o una stringa
           // Se formProdotti è configurato per selezione multipla, mantieni l'array
           // Altrimenti converti in stringa
@@ -651,34 +688,34 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           // Verifica se il FormControl accetta array (cast a any per evitare errori di tipo)
           (this.formProdotti as any).setValue(prodValue);
           break;
-          
-        case 'macroprodotto':
+
+        case "macroprodotto":
           const macroValue = Array.isArray(value) ? value : [value];
           (this.formMacroPro as any).setValue(macroValue);
           break;
-          
-        case 'macrostato':
+
+        case "macrostato":
           const macroStatoValue = Array.isArray(value) ? value : [value];
           (this.formMacroStato as any).setValue(macroStatoValue);
           break;
-          
-        case 'stato':
+
+        case "stato":
           const statoValue = Array.isArray(value) ? value : [value];
           (this.formStato as any).setValue(statoValue);
           break;
-          
-        case 'seu':
+
+        case "seu":
           const seuValue = Array.isArray(value) ? value : [value];
           (this.formSEU as any).setValue(seuValue);
           break;
-          
-        case 'supplier':
+
+        case "supplier":
           const supplierValue = Array.isArray(value) ? value : [value];
           (this.formSupplier as any).setValue(supplierValue);
           break;
-          
-        case 'datains':
-        case 'datastipula':
+
+        case "datains":
+        case "datastipula":
           // Le date verranno gestite in ngAfterViewInit quando i picker sono pronti
           break;
       }
@@ -950,7 +987,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
               customer_data: contratto.customer_data || {},
               ticketExists: contratto.ticket.length > 0 ? true : false,
               // nuovo campo, può essere 0 se non fornito da questo endpoint
-              ticketUnreadCount: contratto.ticket[0]?.messages.length > 0 ? 1:0,
+              ticketUnreadCount:
+                contratto.ticket[0]?.messages.length > 0 ? 1 : 0,
             })
           );
 
@@ -1136,7 +1174,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     macroProdotti: false,
     macroStato: false,
     stato: false,
-    supplier: false
+    supplier: false,
   };
   private filtersApplied = false;
 
@@ -1150,13 +1188,19 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     this.listsLoadedStatus.supplier = this.listaSupplier_bk.length > 0;
 
     // Verifica se tutte le liste sono state caricate
-    const allListsLoaded = Object.values(this.listsLoadedStatus).every(status => status);
+    const allListsLoaded = Object.values(this.listsLoadedStatus).every(
+      (status) => status
+    );
 
     // Applica i filtri solo se:
     // 1. Tutte le liste sono caricate
     // 2. Non sono già stati applicati
     // 3. Non ci sono filtri da querystring (hanno priorità)
-    if (allListsLoaded && !this.filtersApplied && (!this.filtroQueryString || this.filtroQueryString.length === 0)) {
+    if (
+      allListsLoaded &&
+      !this.filtersApplied &&
+      (!this.filtroQueryString || this.filtroQueryString.length === 0)
+    ) {
       this.filtersApplied = true;
       this.loadFiltersFromStorage();
     }
@@ -1326,7 +1370,9 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         };
 
         this.currentSortField = fieldMap[sortState.active] || "id";
-        this.currentSortDirection = (sortState.direction || "desc") as "asc" | "desc";
+        this.currentSortDirection = (sortState.direction || "desc") as
+          | "asc"
+          | "desc";
         this.loadPage(1);
       });
     }
@@ -1382,9 +1428,9 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     }
   }
 
-    private applyPendingDateFilters(): void {
+  private applyPendingDateFilters(): void {
     this.pendingDateFilters.forEach((value, key) => {
-      if (key === 'datains' && this.pickerDataIns) {
+      if (key === "datains" && this.pickerDataIns) {
         const dataInsINI = this.trasformaData(value[0]);
         const dataInsFIN = this.trasformaData(value[1]);
         if (dataInsINI && dataInsFIN) {
@@ -1393,12 +1439,15 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
             const nuovaDataInsFIN = new Date(dataInsFIN);
             this.pickerDataIns.select(nuovaDataInsINI);
             this.pickerDataIns.select(nuovaDataInsFIN);
-            console.log('Filtro data inserimento applicato:', value);
+            console.log("Filtro data inserimento applicato:", value);
           } catch (error) {
-            console.error('Errore nell\'applicazione della data inserimento:', error);
+            console.error(
+              "Errore nell'applicazione della data inserimento:",
+              error
+            );
           }
         }
-      } else if (key === 'datastipula' && this.pickerDataStipula) {
+      } else if (key === "datastipula" && this.pickerDataStipula) {
         const dataStipulaINI = this.trasformaData(value[0]);
         const dataStipulaFIN = this.trasformaData(value[1]);
         if (dataStipulaINI && dataStipulaFIN) {
@@ -1407,17 +1456,20 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
             const nuovaDataStipulaFIN = new Date(dataStipulaFIN);
             this.pickerDataStipula.select(nuovaDataStipulaINI);
             this.pickerDataStipula.select(nuovaDataStipulaFIN);
-            console.log('Filtro data stipula applicato:', value);
+            console.log("Filtro data stipula applicato:", value);
           } catch (error) {
-            console.error('Errore nell\'applicazione della data stipula:', error);
+            console.error(
+              "Errore nell'applicazione della data stipula:",
+              error
+            );
           }
         }
       }
     });
-    
+
     // Pulisci i filtri in pendenza dopo averli applicati
     this.pendingDateFilters.clear();
-    
+
     // Forza il change detection
     this.changeDetectorRef.detectChanges();
   }
@@ -1717,10 +1769,10 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   resetFiltri() {
     // Cancella i filtri da localStorage
     this.clearFiltersFromStorage();
-    
+
     // Resetta il filterDictionary
     this.filterDictionary.clear();
-    
+
     this.router
       .navigateByUrl("/refresh", { skipLocationChange: false })
       .then(() => {
@@ -1788,7 +1840,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     this.populateselectCambioStatoMassivo();
 
     //console.log(this.microStatiPerMacroStato);
-  this.ApiService.getContratto(r.id).subscribe((contratti: any) => {
+    this.ApiService.getContratto(r.id).subscribe((contratti: any) => {
       // console.log(' dettaglio da chiamat API');
 
       // console.clear();
@@ -1797,7 +1849,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       //console.log(contratti.body.risposta[0].specific_data);
       // console.log(contratti.body.risposta[0]);
 
-       //console.log(contratti);
+      //console.log(contratti);
       this.MACROPRODOTTI = contratti.body.macro_prodotti.map(
         (macro_prod: any) => ({
           id: macro_prod.id,
@@ -1840,7 +1892,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       // Calcola SEMPRE il lock in base all'utente e allo stato del contratto selezionato
       const primoContratto = contratti?.body?.risposta?.[0];
       if (primoContratto) {
-        this.non_modificare_risposta = this.shouldLockForContract(primoContratto);
+        this.non_modificare_risposta =
+          this.shouldLockForContract(primoContratto);
         this.syncFormLocks();
       }
 
@@ -1887,7 +1940,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           },
         };
       });
-      
+
       // console.log(' dettagli del contratto');
       // console.log(this.DettagliContratto);
 
@@ -1942,9 +1995,9 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         );
 
         // Imposta lo stato di avanzamento
-  this.formStatoAvanzamento.setValue(contratto.id_stato);
-  // Dopo aver impostato i valori dei controlli, sincronizza il lock
-  this.syncFormLocks();
+        this.formStatoAvanzamento.setValue(contratto.id_stato);
+        // Dopo aver impostato i valori dei controlli, sincronizza il lock
+        this.syncFormLocks();
       }
 
       this.ApiService.recuperaSEU().subscribe((SEU: any) => {
@@ -2097,8 +2150,6 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       error: (error) => {
         //console.error("Errore durante il recupero delle domande:", error);
 
-
-
         this.nuovaspecific_data = [];
         this.changeDetectorRef.detectChanges();
       },
@@ -2197,10 +2248,10 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     // Aggiungi i dati delle domande specifiche
     if (specificData && specificData.length > 0) {
       const specificDataJson = JSON.stringify(specificData);
-      //console.log("JSON specific_data da inviare:", specificDataJson);
+      console.log("JSON specific_data da inviare:", specificDataJson);
       formData.append("specific_data", specificDataJson);
     } else {
-      //console.log("Nessun dato specific_data da inviare");
+      console.log("Nessun dato specific_data da inviare");
     }
 
     //console.log("FormData creato:", formData);
@@ -2208,35 +2259,31 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     this.ApiService.updateContratto(formData).subscribe(
       (ContrattoAggiornato: any) => {
         //console.log(ContrattoAggiornato);
-        
+
         // Invece di ricaricare la pagina, ricarica solo i dati con i filtri attuali
         this.reloadContrattiWithCurrentFilters();
-        
+
         // Mostra un messaggio di successo
-        this.snackBar.open(
-          'Contratto aggiornato con successo',
-          'Chiudi',
-          {
-            duration: 3000,
-            horizontalPosition: 'center',
-            verticalPosition: 'bottom',
-            panelClass: ['success-snackbar']
-          }
-        );
-        
+        this.snackBar.open("Contratto aggiornato con successo", "Chiudi", {
+          duration: 3000,
+          horizontalPosition: "center",
+          verticalPosition: "bottom",
+          panelClass: ["success-snackbar"],
+        });
+
         // Chiudi il pannello dettagli
         this.contrattoselezionato = true;
       },
       (error) => {
-        console.error('Errore durante l\'aggiornamento del contratto:', error);
+        console.error("Errore durante l'aggiornamento del contratto:", error);
         this.snackBar.open(
-          'Errore durante l\'aggiornamento del contratto',
-          'Chiudi',
+          "Errore durante l'aggiornamento del contratto",
+          "Chiudi",
           {
             duration: 3000,
-            horizontalPosition: 'center',
-            verticalPosition: 'bottom',
-            panelClass: ['error-snackbar']
+            horizontalPosition: "center",
+            verticalPosition: "bottom",
+            panelClass: ["error-snackbar"],
           }
         );
       }
@@ -2251,7 +2298,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
 
     // Ricarica la pagina corrente con i filtri attuali
     this.isLoadingContratti = true;
-    
+
     this.ApiService.searchContratti(
       this.User.id,
       currentFilters,
@@ -2327,7 +2374,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
             valore = inputElement.value;
           }
 
-         /*  console.log(
+          /*  console.log(
             `Valore trovato per "${item.domanda}": "${valore}", tipo: "${item.tipo}"`
           );
  */
@@ -2394,11 +2441,23 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
 
         if (inputElement) {
           let valore = inputElement.value;
+          if (!valore || valore.trim() === "") {
+            //console.log(`Campo "${item.domanda}" vuoto, lo salto`);
+            return; // Salta questa iterazione
+          }
+          if (inputElement.type === 'checkbox') {
+        valore = (inputElement as HTMLInputElement).checked ? 'true' : 'false';
+        // Se il checkbox non è stato toccato (rimasto su default false), salta
+        if (valore === 'false') {
+          //console.log(`Checkbox "${item.domanda}" non selezionato, lo salto`);
+          return;
+        }
+      }
           let tipo = this.mapTipoRisposta(
             item.tipo_risposta || item.tipoRisposta
           );
 
-         /*  console.log(
+          /*  console.log(
             `Valore trovato per "${item.domanda}": "${valore}", tipo: "${tipo}"`
           ); */
 
@@ -2536,7 +2595,10 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     checkbox: HTMLInputElement
   ): any {
     // Controllo di sicurezza: non permettere la selezione per stati specifici
-    if (row.stato === "Gettonato" || row.stato === "Stornato") {
+    if (
+      (row.stato === "Gettonato" || row.stato === "Stornato") &&
+      this.User?.role_id !== 1
+    ) {
       // Se il checkbox è presente, assicurati che rimanga non selezionato
       if (checkbox) {
         checkbox.checked = false;
@@ -2556,7 +2618,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         checkbox.checked = !enable;
       }
     }
-  if (enable) {
+    if (enable) {
       const nuovaModifica: ModificaMassiva = {
         id: row.id,
         nome_ragSociale: row.cliente,
@@ -2678,36 +2740,32 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         if (Risposta.status == 200) {
           // Invece di ricaricare completamente, ricarica con i filtri attuali
           this.reloadContrattiWithCurrentFilters();
-          
+
           // Resetta la selezione multipla
           this.MODIFICAMASSIVA = [];
           this.selectedMassiviIds.clear();
           this.CONTEGGIOPRODOTTI = [];
           this.visualizzaModificaMassiva = false;
-          
+
           // Mostra messaggio di successo
-          this.snackBar.open(
-            'Stati aggiornati con successo',
-            'Chiudi',
-            {
-              duration: 3000,
-              horizontalPosition: 'center',
-              verticalPosition: 'bottom',
-              panelClass: ['success-snackbar']
-            }
-          );
+          this.snackBar.open("Stati aggiornati con successo", "Chiudi", {
+            duration: 3000,
+            horizontalPosition: "center",
+            verticalPosition: "bottom",
+            panelClass: ["success-snackbar"],
+          });
         }
       },
       (error) => {
-        console.error('Errore durante l\'aggiornamento massivo:', error);
+        console.error("Errore durante l'aggiornamento massivo:", error);
         this.snackBar.open(
-          'Errore durante l\'aggiornamento degli stati',
-          'Chiudi',
+          "Errore durante l'aggiornamento degli stati",
+          "Chiudi",
           {
             duration: 3000,
-            horizontalPosition: 'center',
-            verticalPosition: 'bottom',
-            panelClass: ['error-snackbar']
+            horizontalPosition: "center",
+            verticalPosition: "bottom",
+            panelClass: ["error-snackbar"],
           }
         );
       }
@@ -2959,6 +3017,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   async toggleSelectAll(event: any) {
     this.selectAllChecked = event.checked;
 
+    this.isLoadingContratti = true;
     if (this.selectAllChecked) {
       // Selezione massiva su TUTTI i risultati filtrati (tutte le pagine)
       const tutti = await this.fetchAllContrattiForExport();
@@ -2967,10 +3026,13 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       this.MODIFICAMASSIVA = [];
       this.CONTEGGIOPRODOTTI = [];
       this.selectedMassiviIds.clear();
-
       for (const row of tutti) {
         // Salta i contratti con stati non selezionabili
-        if (row.stato === "Gettonato" || row.stato === "Stornato") continue;
+        if (
+          this.User?.role_id !== 1 &&
+          (row.stato === "Gettonato" || row.stato === "Stornato")
+        )
+          continue;
 
         this.selectedMassiviIds.add(Number(row.id));
         const nuovaModifica: ModificaMassiva = {
@@ -2994,6 +3056,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           esiste.contatore += 1;
         }
       }
+      this.selectTotale = 1;
 
       // Aggiorna i checkbox della pagina corrente (solo UI)
       setTimeout(() => {
@@ -3028,6 +3091,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       this.visualizzaModificaMassiva = false;
       this.contrattoselezionato = false;
     }
+    this.isLoadingContratti = false;
   }
 
   // Metodi per il design moderno
@@ -3081,7 +3145,10 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   // Metodo per gestire il cambiamento della checkbox
   onCheckboxChange(row: any, event: any): void {
     // Controlla se il contratto ha uno stato che non permette la selezione
-    if (row.stato === "Gettonato" || row.stato === "Stornato") {
+    if (
+      this.User?.role_id !== 1 &&
+      (row.stato === "Gettonato" || row.stato === "Stornato")
+    ) {
       // Se il contratto non è selezionabile, ferma l'evento e non procede
       event.preventDefault();
       event.stopPropagation();
@@ -3141,11 +3208,16 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     } catch {
       // fallback: prova a usare filterValue se è già una stringa di entries
       try {
-        const arr = typeof filterValue === "string" ? JSON.parse(filterValue) : filterValue;
+        const arr =
+          typeof filterValue === "string"
+            ? JSON.parse(filterValue)
+            : filterValue;
         if (Array.isArray(arr)) entries = arr;
       } catch {}
     }
-    const sorted = entries.sort((a: any, b: any) => String(a[0]).localeCompare(String(b[0])));
+    const sorted = entries.sort((a: any, b: any) =>
+      String(a[0]).localeCompare(String(b[0]))
+    );
     const filterString = JSON.stringify(sorted);
 
     // Evita richieste duplicate
@@ -3168,7 +3240,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     // Determina quale struttura dati usare
     let contrattiData = response.body.risposta;
     //console.log(contrattiData);
-    
+
     let paginationData = null;
 
     // Se risposta è un oggetto paginato di Laravel
@@ -3193,7 +3265,9 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           id: contratto.id,
           cliente:
             contratto.customer_data.cognome && contratto.customer_data.nome
-              ? contratto.customer_data.cognome + " " + contratto.customer_data.nome
+              ? contratto.customer_data.cognome +
+                " " +
+                contratto.customer_data.nome
               : contratto.customer_data.ragione_sociale,
           pivacf: contratto.customer_data.codice_fiscale
             ? contratto.customer_data.codice_fiscale
@@ -3204,8 +3278,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           seu: contratto.user_seu.cognome + " " + contratto.user_seu.name,
           macroprodotto: contratto.product.macro_product.descrizione,
           macrostato: contratto.status_contract.option_status_contract[0]
-            ? contratto.status_contract.option_status_contract[0]
-                .macro_stato
+            ? contratto.status_contract.option_status_contract[0].macro_stato
             : "",
           stato: contratto.status_contract.micro_stato,
           file: files,
@@ -3216,7 +3289,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           customer_data: contratto.customer_data,
           ticketExists: contratto.ticket?.length > 0 ? true : false,
           // usa il conteggio fornito da Laravel (withCount)
-          ticketUnreadCount: contratto.ticket[0]?.messages.length > 0 ? 1:0,
+          ticketUnreadCount: contratto.ticket[0]?.messages.length > 0 ? 1 : 0,
         };
       });
 
@@ -3227,11 +3300,11 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       // Popola la cache ticket dai dati ricevuti (nessuna chiamata API bulk)
       contrattiFiltrati.forEach((c: any) => {
         //console.log(c);
-        
+
         const id = Number(c.id);
         this.ticketStatusCache.set(id, {
           ticket: c.ticketExists ? {} : null,
-          hasUnreadMessages: Number(c.ticket?.messages.length > 0 ? 1:0) > 0
+          hasUnreadMessages: Number(c.ticket?.messages.length > 0 ? 1 : 0) > 0,
         });
       });
 
@@ -3292,9 +3365,13 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       // Sincronizza checkbox pagina corrente con selezione globale
       setTimeout(() => {
         (this.dataSourceFilters?.filteredData || []).forEach((row: any) => {
-          const checkbox = document.getElementById("check-" + row.id) as HTMLInputElement;
+          const checkbox = document.getElementById(
+            "check-" + row.id
+          ) as HTMLInputElement;
           if (checkbox) {
-            (checkbox as any).checked = this.selectedMassiviIds.has(Number(row.id));
+            (checkbox as any).checked = this.selectedMassiviIds.has(
+              Number(row.id)
+            );
           }
         });
       });
@@ -3428,23 +3505,21 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
 
   filesCount(row: any): number {
     //console.log(row);
-    
+
     const f = row?.file;
-    
-    
-    if (Array.isArray(f)){
+
+    if (Array.isArray(f)) {
       //console.log(f.length);
-      if (f.length > 0){
+      if (f.length > 0) {
         //console.log(f);
       }
       return f.length;
     }
     //console.log(typeof f);
-    
-    if (f && typeof f === "object"){
+
+    if (f && typeof f === "object") {
       //console.log(Object.keys(f).length);
       return Object.keys(f).length;
-      
     }
     const n = (row as any)?.file_count ?? (row as any)?.files_count ?? 0;
     //console.log(n.length);
@@ -3456,10 +3531,10 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   /** True se la riga ha uno o più file. */
   hasFiles(row: any): boolean {
     //console.log(this.filesCount(row));
-    
+
     return this.filesCount(row) > 0;
   }
-  
+
   /**
    * Carica gli stati dei ticket per tutti i contratti visualizzati
    * Evita chiamate massive: usa i dati già presenti nelle righe
@@ -3471,7 +3546,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         if (!this.ticketStatusCache.has(id)) {
           this.ticketStatusCache.set(id, {
             ticket: c.ticketExists ? {} : null,
-            hasUnreadMessages: Number(c.ticket?.messages.length > 0 ? 1:0) > 0
+            hasUnreadMessages:
+              Number(c.ticket?.messages.length > 0 ? 1 : 0) > 0,
           });
         }
       });
@@ -3487,8 +3563,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     this.ApiService.getTicketByContractId(contractId).subscribe({
       next: (response: any) => {
         console.log(response);
-        
-        if (response.response === 'ok' && response.body?.ticket) {
+
+        if (response.response === "ok" && response.body?.ticket) {
           /* const hasUnread = response.body.ticket.unread_messages_count > 0; */
           this.ticketStatusCache.set(contractId, {
             ticket: response.body.ticket,
@@ -3505,12 +3581,15 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         this.changeDetectorRef.detectChanges();
       },
       error: (error) => {
-        console.error(`Errore verifica ticket per contratto ${contractId}:`, error);
+        console.error(
+          `Errore verifica ticket per contratto ${contractId}:`,
+          error
+        );
         this.ticketStatusCache.set(contractId, {
           ticket: null,
           /* hasUnreadMessages: false */
         });
-      }
+      },
     });
   }
 
@@ -3522,36 +3601,36 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     const unreadFromRow = Number(contr?.ticketUnreadCount || 0) > 0;
 
     // 1) Messaggi non letti
-    if (unreadFromRow) return 'mark_chat_unread';
+    if (unreadFromRow) return "mark_chat_unread";
 
     // 2) Ticket esistente
-    if (contr?.ticketExists) return 'chat';
+    if (contr?.ticketExists) return "chat";
 
     // 3) Nessun ticket
-    return 'chat_bubble_outline';
+    return "chat_bubble_outline";
   }
 
   getTicketButtonColor(contractId: number, contr?: any): string {
     const icon = this.getTicketIcon(contractId, contr);
     switch (icon) {
-      case 'mark_chat_unread':
-        return 'ticket-unread';
-      case 'chat':
-        return 'ticket-exists';
+      case "mark_chat_unread":
+        return "ticket-unread";
+      case "chat":
+        return "ticket-exists";
       default:
-        return 'ticket-new';
+        return "ticket-new";
     }
   }
 
   getTicketTooltip(contractId: number, contr?: any): string {
     const icon = this.getTicketIcon(contractId, contr);
     switch (icon) {
-      case 'mark_chat_unread':
-        return 'Hai messaggi non letti';
-      case 'chat':
-        return 'Visualizza ticket esistente';
+      case "mark_chat_unread":
+        return "Hai messaggi non letti";
+      case "chat":
+        return "Visualizza ticket esistente";
       default:
-        return 'Crea nuovo ticket assistenza';
+        return "Crea nuovo ticket assistenza";
     }
   }
 
@@ -3560,7 +3639,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     // Recupera i dati utente correnti per verificare il ruolo
     this.ApiService.PrendiUtente().subscribe((Auth: any) => {
       const userRole = Auth.user?.role_id;
-      
+
       const contratto = {
         id: row.id,
         cliente: row.cliente,
@@ -3568,14 +3647,14 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         datains: row.datains,
         prodotto: row.prodotto,
         seu: row.seu,
-        stato: row.stato
+        stato: row.stato,
       };
 
       // Verifica se esiste già un ticket
       this.ApiService.getTicketByContractId(row.id).subscribe({
         next: (response: any) => {
-          console.log('Risposta verifica ticket:', response);
-          if (response.response === 'ok' && response.body?.ticket) {
+          console.log("Risposta verifica ticket:", response);
+          if (response.response === "ok" && response.body?.ticket) {
             // Ticket esistente - apri sempre la chat esistente
             this.openExistingTicketModal(response.body.ticket, contratto);
           } else {
@@ -3584,20 +3663,16 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           }
         },
         error: (error) => {
-          console.error('Errore verifica ticket:', error);
-          this.snackBar.open(
-            'Errore nella verifica del ticket',
-            'Chiudi',
-            {
-              duration: 3000,
-              horizontalPosition: 'center',
-              verticalPosition: 'bottom',
-              panelClass: ['error-snackbar']
-            }
-          );
+          console.error("Errore verifica ticket:", error);
+          this.snackBar.open("Errore nella verifica del ticket", "Chiudi", {
+            duration: 3000,
+            horizontalPosition: "center",
+            verticalPosition: "bottom",
+            panelClass: ["error-snackbar"],
+          });
           // In caso di errore, procedi con verifica creazione
           this.checkAndCreateTicket(contratto, userRole);
-        }
+        },
       });
     });
   }
@@ -3610,24 +3685,24 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
   private checkAndCreateTicket(contratto: any, userRole: number): void {
     // SEU e Advisor (roles 2, 3, 7, 8) non possono creare ticket multipli
     const restrictedRoles = [2, 3];
-    
+
     if (restrictedRoles.includes(userRole)) {
       // Doppio controllo per utenti con restrizioni
       this.ApiService.getTicketByContractId(contratto.id).subscribe({
         next: (response: any) => {
-          if (response.response === 'ok' && response.body?.ticket) {
+          if (response.response === "ok" && response.body?.ticket) {
             // Ticket già esistente - mostra avviso e apri la chat esistente
             this.snackBar.open(
-              'Esiste già un ticket per questo contratto. Apertura chat esistente...',
-              'Chiudi',
+              "Esiste già un ticket per questo contratto. Apertura chat esistente...",
+              "Chiudi",
               {
                 duration: 3000,
-                horizontalPosition: 'center',
-                verticalPosition: 'bottom',
-                panelClass: ['warning-snackbar']
+                horizontalPosition: "center",
+                verticalPosition: "bottom",
+                panelClass: ["warning-snackbar"],
               }
             );
-            
+
             // Apri il ticket esistente
             this.openExistingTicketModal(response.body.ticket, contratto);
           } else {
@@ -3636,15 +3711,31 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           }
         },
         error: (error) => {
-          console.error('Errore doppio controllo ticket:', error);
+          console.error("Errore doppio controllo ticket:", error);
           // In caso di errore permetti la creazione
           this.openTicketCreationModal(contratto);
-        }
+        },
       });
     } else {
       // Admin/BackOffice possono sempre creare ticket
       this.openTicketCreationModal(contratto);
     }
+  }
+
+  /**
+   * Save current scroll position before opening modal
+   */
+  private saveScrollPosition(): void {
+    this.savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+  }
+
+  /**
+   * Restore scroll position after modal opens
+   */
+  private restoreScrollPosition(): void {
+    setTimeout(() => {
+      window.scrollTo(0, this.savedScrollPosition);
+    }, 0);
   }
 
   /**
@@ -3661,29 +3752,47 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       dateIns: contratto.datains,
       productName: contratto.prodotto,
       seuName: contratto.seu,
-      status: contratto.stato
+      status: contratto.stato,
     };
+
+    // Save current scroll position
+    this.saveScrollPosition();
+
+    // Hide "Gestione Documenti" section
+    this.contrattoselezionato = true;
 
     // Pulisci backdrop residui
     this.cleanupBackdrops();
 
     const dialogRef = this.dialog.open(ContrattoDetailsDialogComponent, {
-      width: '900px',
-      maxWidth: '95vw',
-      maxHeight: '90vh',
-      data: { 
-        reparto: 'ticket',
+      width: "900px",
+      maxWidth: "95vw",
+      maxHeight: "90vh",
+      data: {
+        reparto: "ticket",
         contractData: contractData,
-        existingTicket: ticket  
+        existingTicket: ticket,
       },
       disableClose: false,
       hasBackdrop: true,
       backdropClass: 'custom-backdrop',
       panelClass: 'ticket-modal-panel',
-      autoFocus: true
+      autoFocus: false,
+      restoreFocus: false,
+      scrollStrategy: this.overlay.scrollStrategies.block()
+    });
+
+    // Restore scroll position after dialog opens
+    dialogRef.afterOpened().subscribe(() => {
+      this.restoreScrollPosition();
     });
 
     dialogRef.afterClosed().pipe(take(1)).subscribe(result => {
+      // Show "Gestione Documenti" section again if details exist
+      if (this.DettagliContratto && this.DettagliContratto.length > 0) {
+        this.contrattoselezionato = false;
+      }
+
       // Ricarica sempre lo stato del ticket
       this.checkTicketStatus(Number(contratto.id));
       
@@ -3693,14 +3802,13 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           'Chiudi',
           {
             duration: 2000,
-            horizontalPosition: 'center',
-            verticalPosition: 'bottom',
-            panelClass: ['success-snackbar']
-          }
-        );
-      }
-      setTimeout(() => this.cleanupBackdrops(), 100);
-    });
+            horizontalPosition: "center",
+            verticalPosition: "bottom",
+            panelClass: ["success-snackbar"],
+          });
+        }
+        setTimeout(() => this.cleanupBackdrops(), 100);
+      });
   }
 
   /**
@@ -3716,29 +3824,47 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       dateIns: contratto.datains,
       productName: contratto.prodotto,
       seuName: contratto.seu,
-      status: contratto.stato
+      status: contratto.stato,
     };
+
+    // Save current scroll position
+    this.saveScrollPosition();
+
+    // Hide "Gestione Documenti" section
+    this.contrattoselezionato = true;
 
     // Pulisci backdrop residui
     this.cleanupBackdrops();
 
     const dialogRef = this.dialog.open(ContrattoDetailsDialogComponent, {
-      width: '800px',
-      maxWidth: '95vw',
-      maxHeight: '90vh',
-      data: { 
-        reparto: 'ticket',
+      width: "800px",
+      maxWidth: "95vw",
+      maxHeight: "90vh",
+      data: {
+        reparto: "ticket",
         contractData: contractData,
-        existingTicket: null 
+        existingTicket: null,
       },
       disableClose: false,
       hasBackdrop: true,
       backdropClass: 'custom-backdrop',
       panelClass: 'ticket-modal-panel',
-      autoFocus: true
+      autoFocus: false,
+      restoreFocus: false,
+      scrollStrategy: this.overlay.scrollStrategies.block()
+    });
+
+    // Restore scroll position after dialog opens
+    dialogRef.afterOpened().subscribe(() => {
+      this.restoreScrollPosition();
     });
 
     dialogRef.afterClosed().pipe(take(1)).subscribe(result => {
+      // Show "Gestione Documenti" section again if details exist
+      if (this.DettagliContratto && this.DettagliContratto.length > 0) {
+        this.contrattoselezionato = false;
+      }
+
       if (result && result.success) {
         // Aggiorna stato ticket dopo creazione
         this.checkTicketStatus(Number(contratto.id));
@@ -3762,14 +3888,15 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
    * Pulisce backdrop residui
    */
   private cleanupBackdrops(): void {
-    const transparentBackdrops = document.querySelectorAll('.cdk-overlay-transparent-backdrop');
-    transparentBackdrops.forEach(backdrop => {
+    const transparentBackdrops = document.querySelectorAll(
+      ".cdk-overlay-transparent-backdrop"
+    );
+    transparentBackdrops.forEach((backdrop) => {
       if (backdrop instanceof HTMLElement) {
-        backdrop.style.display = 'none';
-        backdrop.style.visibility = 'hidden';
-        backdrop.style.pointerEvents = 'none';
+        backdrop.style.display = "none";
+        backdrop.style.visibility = "hidden";
+        backdrop.style.pointerEvents = "none";
       }
     });
   }
 }
-

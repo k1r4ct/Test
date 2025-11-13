@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ApiService } from '../servizi/api.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -14,6 +14,15 @@ export interface UserForLeads {
   id: number;
   nome: string;
   cognome: string;
+}
+
+// Interface for file preview
+interface FilePreview {
+  file: File;
+  name: string;
+  size: number;
+  type: string;
+  preview?: string;
 }
 
 @Component({
@@ -44,6 +53,22 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
   isSendingMessage: boolean = false;
   pollingSubscription: Subscription | null = null;
   lastMessageId: number = 0;
+  
+  // Attachment handling - Local buffer approach
+  pendingAttachments: FilePreview[] = [];  // Files waiting to be uploaded
+  isUploadingAttachments: boolean = false;
+  maxFileSize: number = 10 * 1024 * 1024; // 10MB
+  maxFiles: number = 5;
+  
+  // Blocked file extensions for security
+  blockedExtensions: string[] = [
+    'exe', 'bat', 'cmd', 'sh', 'php', 'js',
+    'jar', 'app', 'deb', 'rpm', 'dmg', 'pkg',
+    'com', 'scr', 'vbs', 'msi', 'dll'
+  ];
+  
+  // File input reference
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   
   SetOpt: FormGroup = new FormGroup({});
   showError: boolean = false;
@@ -128,6 +153,13 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
     
     // Stop polling if active
     this.stopPolling();
+    
+    // Revoke object URLs for previews
+    this.pendingAttachments.forEach(file => {
+      if (file.preview) {
+        URL.revokeObjectURL(file.preview);
+      }
+    });
   }
 
   // ==================== TICKET METHODS ====================
@@ -139,6 +171,8 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
     if (this.data.contractData) {
       this.ticketTitle = `Contratto #${this.data.contractData.contractCode} - ${this.data.contractData.clientName}`;
       this.ticketStep = 'confirm';
+      // Priority always 'unassigned' for SEU users
+      this.ticketPriority = 'unassigned';
     }
   }
 
@@ -267,6 +301,7 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
     
     this.isSendingMessage = true;
     
+    // Step 1: Send message first
     const messageData = {
       ticket_id: this.existingTicket.id,
       message: this.chatMessage.trim()
@@ -274,31 +309,35 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
     
     const sendSub = this.apiService.sendTicketMessage(messageData).subscribe(
       (response: any) => {
-        if (response.response === 'ok') {
-          // Clear input
-          this.chatMessage = '';
+        if (response.response === 'ok' && response.body?.risposta) {
+          const messageId = response.body.risposta.id;
           
-          // Reload messages to show the new one
-          this.loadTicketMessages();
-          
+          // Step 2: Upload attachments if any with the message_id
+          if (this.pendingAttachments.length > 0) {
+            this.uploadAttachmentsForMessage(this.existingTicket.id, messageId);
+          } else {
+            // No attachments, complete the process
+            this.completeMessageSending();
+          }
+        } else {
+          this.isSendingMessage = false;
           this.snackBar.open(
-            'Messaggio inviato',
+            'Errore nell\'invio del messaggio',
             'Chiudi',
             {
-              duration: 2000,
+              duration: 3000,
               horizontalPosition: 'center',
               verticalPosition: 'bottom',
-              panelClass: ['success-snackbar']
+              panelClass: ['error-snackbar']
             }
           );
         }
-        this.isSendingMessage = false;
       },
       (error) => {
         console.error('Error sending message:', error);
         this.isSendingMessage = false;
         this.snackBar.open(
-          'Errore nell\'invio del messaggio',
+          'Errore di connessione nell\'invio del messaggio',
           'Chiudi',
           {
             duration: 3000,
@@ -314,23 +353,89 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Upload attachments for a specific message
+   */
+  private uploadAttachmentsForMessage(ticketId: number, messageId: number): void {
+    const formData = new FormData();
+    formData.append('ticket_id', ticketId.toString());
+    formData.append('message_id', messageId.toString());
+    
+    // Add all files to FormData with array notation
+    this.pendingAttachments.forEach(filePreview => {
+      formData.append('attachments[]', filePreview.file);
+    });
+    
+    this.isUploadingAttachments = true;
+    
+    this.apiService.uploadTicketAttachments(formData).subscribe(
+      (response: any) => {
+        this.isUploadingAttachments = false;
+        
+        if (response.response === 'ok') {
+          console.log('Attachments uploaded successfully:', response.body?.attachments);
+          this.completeMessageSending();
+        } else {
+          // Attachments failed but message was sent
+          this.snackBar.open(
+            'Messaggio inviato ma errore nel caricamento allegati',
+            'Chiudi',
+            {
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['warning-snackbar']
+            }
+          );
+          this.completeMessageSending();
+        }
+      },
+      (error) => {
+        console.error('Error uploading attachments:', error);
+        this.isUploadingAttachments = false;
+        // Message sent but attachments failed
+        this.snackBar.open(
+          'Messaggio inviato ma errore nel caricamento allegati',
+          'Chiudi',
+          {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['warning-snackbar']
+          }
+        );
+        this.completeMessageSending();
+      }
+    );
+  }
+
+  /**
+   * Complete message sending process
+   */
+  private completeMessageSending(): void {
+    // Clear message and attachments
+    this.chatMessage = '';
+    this.clearAttachments();
+    this.isSendingMessage = false;
+    
+    // Reload messages to show new one
+    this.loadTicketMessages();
+    
+    this.snackBar.open(
+      'Messaggio inviato con successo!',
+      'Chiudi',
+      {
+        duration: 2000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['success-snackbar']
+      }
+    );
+  }
+
+  /**
    * Proceed to chat step
    */
   proceedToChat(): void {
-    if (!this.ticketTitle || !this.ticketDescription) {
-      this.snackBar.open(
-        'Inserisci un titolo e una descrizione per il ticket',
-        'Chiudi',
-        {
-          duration: 3000,
-          horizontalPosition: 'center',
-          verticalPosition: 'bottom',
-          panelClass: ['error-snackbar']
-        }
-      );
-      return;
-    }
-    
     this.ticketStep = 'chat';
   }
 
@@ -339,10 +444,12 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
    */
   goBackToConfirm(): void {
     this.ticketStep = 'confirm';
+    // Clear attachments when going back
+    this.clearAttachments();
   }
 
   /**
-   * Create ticket and send first message
+   * Create ticket with message
    */
   createTicketWithMessage(): void {
     if (!this.chatMessage.trim()) {
@@ -365,13 +472,16 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
       contract_id: this.data.contractData.contractId,
       title: this.ticketTitle,
       description: this.ticketDescription,
-      priority: this.ticketPriority
+      priority: this.ticketPriority 
     };
 
+    // Step 1: Create ticket
     const createSub = this.apiService.createTicket(ticketData).subscribe(
       (response: any) => {
         if (response.response === 'ok' && response.body?.risposta?.id) {
           const ticketId = response.body.risposta.id;
+          
+          // Step 2: Send first message
           this.sendFirstMessage(ticketId);
         } else {
           this.isCreatingTicket = false;
@@ -417,25 +527,18 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
 
     const messageSub = this.apiService.sendTicketMessage(messageData).subscribe(
       (response: any) => {
-        this.isCreatingTicket = false;
-        
-        if (response.response === 'ok') {
-          this.snackBar.open(
-            'Ticket creato con successo!',
-            'Chiudi',
-            {
-              duration: 3000,
-              horizontalPosition: 'center',
-              verticalPosition: 'bottom',
-              panelClass: ['success-snackbar']
-            }
-          );
+        if (response.response === 'ok' && response.body?.risposta) {
+          const messageId = response.body.risposta.id;
           
-          this.dialogRef.close({ 
-            success: true, 
-            ticketId: ticketId 
-          });
+          // Step 3: Upload attachments if any
+          if (this.pendingAttachments.length > 0) {
+            this.uploadAttachmentsForNewTicket(ticketId, messageId);
+          } else {
+            // No attachments, complete the process
+            this.completeTicketCreation(ticketId);
+          }
         } else {
+          this.isCreatingTicket = false;
           this.snackBar.open(
             'Ticket creato ma errore nell\'invio del messaggio',
             'Chiudi',
@@ -465,6 +568,308 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
     );
 
     this.subscriptions.push(messageSub);
+  }
+
+  /**
+   * Upload attachments for new ticket first message
+   */
+  private uploadAttachmentsForNewTicket(ticketId: number, messageId: number): void {
+    const formData = new FormData();
+    formData.append('ticket_id', ticketId.toString());
+    formData.append('message_id', messageId.toString());
+    
+    // Add all files with array notation
+    this.pendingAttachments.forEach(filePreview => {
+      formData.append('attachments[]', filePreview.file);
+    });
+    
+    this.isUploadingAttachments = true;
+    
+    this.apiService.uploadTicketAttachments(formData).subscribe(
+      (response: any) => {
+        this.isUploadingAttachments = false;
+        
+        if (response.response === 'ok') {
+          console.log('Attachments uploaded for new ticket:', response.body?.attachments);
+        } else {
+          console.error('Attachments upload failed but ticket was created');
+        }
+        
+        // Complete regardless of attachment upload result
+        this.completeTicketCreation(ticketId);
+      },
+      (error) => {
+        console.error('Error uploading attachments:', error);
+        this.isUploadingAttachments = false;
+        // Complete even if attachments failed
+        this.completeTicketCreation(ticketId);
+      }
+    );
+  }
+
+  /**
+   * Complete ticket creation process
+   */
+  private completeTicketCreation(ticketId: number): void {
+    this.isCreatingTicket = false;
+    
+    this.snackBar.open(
+      'Ticket creato con successo!',
+      'Chiudi',
+      {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['success-snackbar']
+      }
+    );
+    
+    this.dialogRef.close({ 
+      success: true, 
+      ticketId: ticketId 
+    });
+  }
+
+  // ==================== ATTACHMENT METHODS ====================
+
+  /**
+   * Trigger file input click
+   */
+  openFileSelector(): void {
+    if (this.fileInput) {
+      this.fileInput.nativeElement.click();
+    }
+  }
+
+  /**
+   * Handle file selection
+   */
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.addFiles(Array.from(input.files));
+    }
+    // Reset input value to allow selecting the same file again
+    input.value = '';
+  }
+
+  /**
+   * Add files to pending attachments
+   */
+  private addFiles(files: File[]): void {
+    const availableSlots = this.maxFiles - this.pendingAttachments.length;
+    
+    if (availableSlots <= 0) {
+      this.snackBar.open(
+        `Massimo ${this.maxFiles} allegati consentiti`,
+        'Chiudi',
+        {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['warning-snackbar']
+        }
+      );
+      return;
+    }
+    
+    const filesToAdd = files.slice(0, availableSlots);
+    
+    for (const file of filesToAdd) {
+      // Validate file
+      const validation = this.validateFile(file);
+      if (!validation.valid) {
+        this.snackBar.open(
+          validation.message,
+          'Chiudi',
+          {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['warning-snackbar']
+          }
+        );
+        continue;
+      }
+      
+      // Create preview
+      const filePreview: FilePreview = {
+        file: file,
+        name: file.name,
+        size: file.size,
+        type: file.type
+      };
+      
+      // Generate preview for images
+      if (this.isImage(file)) {
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          filePreview.preview = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+      
+      this.pendingAttachments.push(filePreview);
+    }
+  }
+
+  /**
+   * Validate file
+   */
+  private validateFile(file: File): { valid: boolean; message: string } {
+    // Check file size
+    if (file.size > this.maxFileSize) {
+      return {
+        valid: false,
+        message: `File "${file.name}" supera il limite di 10MB`
+      };
+    }
+    
+    // Check file extension
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (extension && this.blockedExtensions.includes(extension)) {
+      return {
+        valid: false,
+        message: `Tipo di file non consentito: .${extension}`
+      };
+    }
+    
+    return { valid: true, message: '' };
+  }
+
+  /**
+   * Remove attachment from pending list
+   */
+  removeAttachment(index: number): void {
+    const removed = this.pendingAttachments.splice(index, 1)[0];
+    if (removed.preview) {
+      URL.revokeObjectURL(removed.preview);
+    }
+  }
+
+  /**
+   * Clear all attachments
+   */
+  clearAttachments(): void {
+    this.pendingAttachments.forEach(file => {
+      if (file.preview) {
+        URL.revokeObjectURL(file.preview);
+      }
+    });
+    this.pendingAttachments = [];
+  }
+
+  /**
+   * Check if file is an image
+   */
+  private isImage(file: File): boolean {
+    return file.type.startsWith('image/');
+  }
+
+  /**
+   * Get file icon based on type
+   */
+  getFileIcon(file: FilePreview): string {
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type === 'application/pdf') return 'picture_as_pdf';
+    if (file.type.includes('word')) return 'description';
+    if (file.type.includes('excel') || file.type.includes('spreadsheet')) return 'table_chart';
+    if (file.type.includes('powerpoint') || file.type.includes('presentation')) return 'slideshow';
+    if (file.type.includes('zip') || file.type.includes('rar')) return 'folder_zip';
+    return 'insert_drive_file';
+  }
+
+  /**
+   * Format file size
+   */
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  /**
+   * Get attachment icon based on file name/extension
+   * Used in template for displaying attachment icons in messages
+   */
+  getAttachmentIcon(fileName: string): string {
+    if (!fileName) return 'insert_drive_file';
+    
+    const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    
+    // Map extensions to Material icons
+    const iconMap: { [key: string]: string } = {
+      // Images
+      'jpg': 'image',
+      'jpeg': 'image', 
+      'png': 'image',
+      'gif': 'image',
+      'bmp': 'image',
+      'svg': 'image',
+      'webp': 'image',
+      
+      // Documents
+      'pdf': 'picture_as_pdf',
+      'doc': 'description',
+      'docx': 'description',
+      'txt': 'text_snippet',
+      'rtf': 'description',
+      'odt': 'description',
+      
+      // Spreadsheets
+      'xls': 'table_chart',
+      'xlsx': 'table_chart',
+      'csv': 'table_chart',
+      'ods': 'table_chart',
+      
+      // Presentations
+      'ppt': 'slideshow',
+      'pptx': 'slideshow',
+      'odp': 'slideshow',
+      
+      // Archives
+      'zip': 'folder_zip',
+      'rar': 'folder_zip',
+      '7z': 'folder_zip',
+      'tar': 'folder_zip',
+      'gz': 'folder_zip',
+      
+      // Code
+      'html': 'code',
+      'css': 'code',
+      'js': 'code',
+      'ts': 'code',
+      'json': 'code',
+      'xml': 'code',
+      
+      // Default
+      'default': 'insert_drive_file'
+    };
+    
+    return iconMap[extension] || iconMap['default'];
+  }
+
+  /**
+   * Handle drag over
+   */
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  /**
+   * Handle drop
+   */
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.addFiles(Array.from(files));
+    }
   }
 
   /**
@@ -557,6 +962,7 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
 
   onClose(): void {
     this.stopPolling();
+    this.clearAttachments();
     this.dialogRef.close();
   }
 

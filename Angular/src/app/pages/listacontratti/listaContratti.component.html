@@ -1003,7 +1003,7 @@
                     [disabled]="non_modificare_risposta" 
                     type="number" 
                     value="" 
-                    [name]="domanda.domanda"
+                    [name]="domanda.id"
                     placeholder="Inserisci valore numerico">
                   
                   <!-- Switch boolean -->
@@ -1012,7 +1012,7 @@
                       class="form-check-input form-check form-switch modern-switch" 
                       [disabled]="non_modificare_risposta" 
                       type="checkbox" 
-                      [name]="domanda.domanda">
+                      [name]="domanda.id">
                     <span class="switch-label">No</span>
                   </div>
                   
@@ -1023,7 +1023,7 @@
                     [disabled]="non_modificare_risposta" 
                     type="text" 
                     value="" 
-                    [name]="domanda.domanda"
+                    [name]="domanda.id"
                     placeholder="Inserisci testo">
                   
                   <!-- Select -->
@@ -1031,7 +1031,7 @@
                     <select 
                       class="form-control modern-select" 
                       [disabled]="non_modificare_risposta" 
-                      [name]="domanda.domanda">
+                      [name]="domanda.id">
                       <option value="">Seleziona un'opzione</option>
                       <option *ngFor="let opzione of domanda.detail_question" [value]="opzione.opzione">
                         {{ opzione.opzione }}

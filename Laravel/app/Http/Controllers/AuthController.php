@@ -179,7 +179,7 @@ class AuthController extends Controller
             $result2 = customer_data::where('codice_fiscale', "=", $codFPIva)->Where('codice_fiscale', "!=", "")->get();
         } else if ($tipoRichiesta == "PARTITA IVA") {
             $result = User::Where('partita_iva', "=", $codFPIva)->Where('partita_iva', "!=", "")->get();
-            $tipo = "businness";
+            $tipo = "business";
             $result2 = customer_data::where('partita_iva', "=", $codFPIva)->Where('codice_fiscale', "!=", "")->get();
         }
 
@@ -259,7 +259,7 @@ class AuthController extends Controller
             $password= request('password');
         }
 
-        if (request('tipo') == "businness") {
+        if (request('tipo') == "business") {
             $ragione_sociale = request('ragione_sociale');
             $partita_iva = request('partita_iva');
             $controlloEsistente = User::where('partita_iva', $partita_iva)->get();
@@ -597,14 +597,10 @@ class AuthController extends Controller
 
             $seuSub = $this->getTeamMembers($userId);
             // Log::info('Sottoposti trovati: ' . json_encode($seuSub));
-            // aggiugere $userId alla lista degli ID estratti di $ids
             $ids = extractIds($seuSub);
             $ids[] = $userId; // Aggiungi l'ID dell'utente corrente
 
-            //Log::info('IDs estratti: ' . json_encode($ids));
             // Log::info('IDs estratti: ' . json_encode($ids));
-            // i promoter estratti sono solo quelli con stato_user = 1 cioè attivi
-            // $seu = User::whereIn('id', $ids)->where('role_id', 2)->where('stato_user',1)->get();
             $seu = User::whereIn('id', $ids)->where('role_id', 2)->get();
         }
 

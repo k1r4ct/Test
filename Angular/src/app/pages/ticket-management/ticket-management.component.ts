@@ -27,6 +27,8 @@ export interface Ticket {
   product_name?: string;
   seu_name?: string;
   messages?: TicketMessage[];
+  attachments_count?: number;
+  has_attachments?: boolean;
 }
 
 export interface TicketMessage {
@@ -42,6 +44,27 @@ export interface TicketMessage {
   old_status?: string;  
   new_status?: string;  
   created_at: string;
+  has_attachments?: boolean;
+  attachments?: TicketAttachment[];
+}
+
+export interface TicketAttachment {
+  id: number;
+  ticket_id: number;
+  ticket_message_id?: number;
+  user_id: number;
+  file_name: string;
+  original_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  hash: string;
+  created_at: string;
+  user_name?: string;
+  formatted_size?: string;
+  is_image?: boolean;
+  is_pdf?: boolean;
+  is_document?: boolean;
 }
 
 export interface TicketFilters {
@@ -151,6 +174,26 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
 
   newMessage: string = '';
   isLoadingMessages: boolean = false;
+
+  // ==================== ATTACHMENT MANAGEMENT PROPERTIES ====================
+  
+  // Attachments for new ticket creation
+  newTicketAttachments: File[] = [];
+  isUploadingNewTicketAttachments: boolean = false;
+  
+  // Attachments for reply message
+  replyAttachments: File[] = [];
+  isUploadingReplyAttachments: boolean = false;
+  
+  // Existing attachments for current ticket
+  ticketAttachments: TicketAttachment[] = [];
+  isLoadingAttachments: boolean = false;
+  
+  // Max file configuration
+  maxFiles: number = 5;
+  maxFileSize: number = 10 * 1024 * 1024; // 10MB
+
+  // ==================== END ADDED PROPERTIES ====================
 
   columns = [
     {
@@ -279,25 +322,25 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return this.userRole === 1 || this.userRole === 5;
   }
 
-    /**
-     * Check if current user can drag/move a ticket
-     * Admin (role 1) can move any ticket
-     * BackOffice (role 5) and Operatore Web (role 4) can only move tickets assigned to them
-     */
-    canDragTicket(ticket: Ticket): boolean {
+  /**
+   * Check if current user can drag/move a ticket
+   * Admin (role 1) can move any ticket
+   * BackOffice (role 5) and Operatore Web (role 4) can only move tickets assigned to them
+   */
+  canDragTicket(ticket: Ticket): boolean {
     // Admin can move any ticket
     if (this.userRole === 1) {
-        return true;
+      return true;
     }
 
     // BackOffice and Operatore Web can only move tickets assigned to them
     if (this.userRole === 4 || this.userRole === 5) {
-        return ticket.assigned_to_user_id === this.currentUser.id || ticket.status === 'new';
+      return ticket.assigned_to_user_id === this.currentUser.id || ticket.status === 'new';
     }
 
     // Other roles cannot move tickets
     return false;
-    }
+  }
 
   /**
    * Check if a ticket can be dropped on a specific column
@@ -354,6 +397,267 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return this.isDragging && this.currentDraggingTicket?.id === ticket.id && !this.canDragTicket(ticket);
   }
 
+  // ==================== ATTACHMENT METHODS ====================
+
+  /**
+   * Check if user can attach files to this ticket
+   * Rules:
+   * - Admin can always attach
+   * - If ticket is new/unassigned, anyone can attach
+   * - If ticket is assigned, only assigned user or admin can attach
+   */
+  canAttachToTicket(ticket: Ticket | null): boolean {
+    if (!ticket) return false;
+    
+    // Admin can always attach
+    if (this.isAdmin) return true;
+    
+    // If ticket is new or unassigned, anyone can attach
+    if (ticket.status === 'new' || !ticket.assigned_to_user_id) {
+      return true;
+    }
+    
+    // If ticket is assigned, only assigned user can attach
+    return ticket.assigned_to_user_id === this.currentUser?.id;
+  }
+
+  /**
+   * Check if user can delete an attachment
+   * Only admin or uploader can delete
+   */
+  canDeleteAttachment(attachment: TicketAttachment): boolean {
+    if (!attachment || !this.currentUser) return false;
+    
+    // Admin can always delete
+    if (this.isAdmin) return true;
+    
+    // Uploader can delete their own attachments
+    return attachment.user_id === this.currentUser.id;
+  }
+
+  /**
+   * Load attachments for the selected ticket
+   */
+  loadTicketAttachments(): void {
+    if (!this.selectedTicket) return;
+    
+    this.isLoadingAttachments = true;
+    
+    const loadSub = this.apiService.getTicketAttachments(this.selectedTicket.id).subscribe(
+      (response: any) => {
+        if (response.response === 'ok' && response.body?.attachments) {
+          this.ticketAttachments = response.body.attachments;
+        }
+        this.isLoadingAttachments = false;
+      },
+      (error) => {
+        console.error('Error loading attachments:', error);
+        this.isLoadingAttachments = false;
+      }
+    );
+    
+    this.subscriptions.push(loadSub);
+  }
+
+  /**
+   * Handle file selection for new ticket
+   */
+  onNewTicketFilesSelected(event: any): void {
+    const files: FileList = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    const filesArray = Array.from(files);
+    
+    // Check max files limit
+    if (filesArray.length > this.maxFiles) {
+      this.snackBar.open(
+        `Puoi caricare massimo ${this.maxFiles} file`,
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['warning-snackbar']
+        }
+      );
+      return;
+    }
+    
+    // Check file sizes
+    const oversizedFiles = filesArray.filter(f => f.size > this.maxFileSize);
+    if (oversizedFiles.length > 0) {
+      this.snackBar.open(
+        `Alcuni file superano la dimensione massima di ${this.formatFileSize(this.maxFileSize)}`,
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['warning-snackbar']
+        }
+      );
+      return;
+    }
+    
+    this.newTicketAttachments = filesArray;
+  }
+
+  /**
+   * Handle file selection for reply message
+   */
+  onReplyFilesSelected(event: any): void {
+    const files: FileList = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    const filesArray = Array.from(files);
+    
+    // Check max files limit
+    if (filesArray.length > this.maxFiles) {
+      this.snackBar.open(
+        `Puoi caricare massimo ${this.maxFiles} file`,
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['warning-snackbar']
+        }
+      );
+      return;
+    }
+    
+    // Check file sizes
+    const oversizedFiles = filesArray.filter(f => f.size > this.maxFileSize);
+    if (oversizedFiles.length > 0) {
+      this.snackBar.open(
+        `Alcuni file superano la dimensione massima di ${this.formatFileSize(this.maxFileSize)}`,
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['warning-snackbar']
+        }
+      );
+      return;
+    }
+    
+    this.replyAttachments = filesArray;
+  }
+
+  /**
+   * Get file icon based on file name/extension
+   */
+  getAttachmentIcon(fileName: string): string {
+    if (!fileName) return 'fa-file';
+    
+    const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    
+    const iconMap: { [key: string]: string } = {
+      'jpg': 'fa-file-image', 'jpeg': 'fa-file-image', 'png': 'fa-file-image', 'gif': 'fa-file-image',
+      'pdf': 'fa-file-pdf',
+      'doc': 'fa-file-word', 'docx': 'fa-file-word',
+      'xls': 'fa-file-excel', 'xlsx': 'fa-file-excel',
+      'ppt': 'fa-file-powerpoint', 'pptx': 'fa-file-powerpoint',
+      'txt': 'fa-file-alt',
+      'zip': 'fa-file-archive', 'rar': 'fa-file-archive',
+    };
+    
+    return iconMap[extension] || 'fa-file';
+  }
+
+  /**
+   * Format file size
+   */
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  /**
+   * Download attachment
+   */
+  downloadAttachment(attachment: TicketAttachment): void {
+    this.apiService.downloadTicketAttachment(attachment.id).subscribe(
+      (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = attachment.original_name;
+        link.click();
+        window.URL.revokeObjectURL(url);
+        
+        this.snackBar.open('Download avviato', 'Chiudi', {
+          duration: 2000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['success-snackbar']
+        });
+      },
+      (error) => {
+        this.snackBar.open('Errore durante il download', 'Chiudi', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        });
+      }
+    );
+  }
+
+  /**
+   * Delete attachment
+   */
+  deleteAttachment(attachment: TicketAttachment): void {
+    if (!this.canDeleteAttachment(attachment)) {
+      this.snackBar.open('Non hai i permessi per eliminare questo allegato', 'Chiudi', {
+        duration: 3000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+    
+    if (!confirm(`Eliminare "${attachment.original_name}"?`)) {
+      return;
+    }
+    
+    this.apiService.deleteTicketAttachment(attachment.id).subscribe(
+      (response: any) => {
+        if (response.response === 'ok') {
+          this.snackBar.open('Allegato eliminato', 'Chiudi', {
+            duration: 2000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          });
+          
+          // Remove from local list
+          this.ticketAttachments = this.ticketAttachments.filter(a => a.id !== attachment.id);
+          
+          // Reload ticket messages to update attachment display
+          if (this.selectedTicket) {
+            this.loadTicketMessages(this.selectedTicket.id);
+          }
+        }
+      },
+      (error) => {
+        this.snackBar.open('Errore durante l\'eliminazione', 'Chiudi', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        });
+      }
+    );
+  }
+
+  // ==================== END ATTACHMENT METHODS ====================
+
   loadCurrentUser() {
     const userSub = this.apiService.PrendiUtente().subscribe((userData: any) => {
       this.currentUser = userData.user;
@@ -406,7 +710,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
 
   loadTickets() {
     const ticketsSub = this.apiService.getTickets().subscribe((response: any) => {
-      console.log(response);
+      // console.log(response);
       
       if (response && response.body && response.body.risposta) {
         this.tickets = this.processTicketsData(response.body.risposta);
@@ -449,38 +753,40 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       }
       
       return {      
-      id: ticket.id,
-      ticket_number: ticket.ticket_number || `TK-${ticket.id.toString().padStart(3, '0')}`,
-      title: ticket.title,
-      description: ticket.description,
-      status: ticket.status,
-      priority: ticket.priority,
-      contract_id: ticket.contract_id,
-      contract_code: ticket.contract?.codice_contratto || 'N/A',
-      created_by_user_id: ticket.created_by_user_id,
-      created_by_user_name: ticket.created_by?.name ? 
-        `${ticket.created_by.name} ${ticket.created_by.cognome || ''}`.trim() : 
-        ticket.created_by?.email || 'N/A',
-      assigned_to_user_id: ticket.assigned_to_user_id,
-      assigned_to_user_name: ticket.assigned_to?.name ? 
-        `${ticket.assigned_to.name} ${ticket.assigned_to.cognome || ''}`.trim() : 
-        ticket.assigned_to?.email || null,
-      customer_name: ticket.contract?.customer_data?.nome && ticket.contract?.customer_data?.cognome ?
-        `${ticket.contract.customer_data.nome} ${ticket.contract.customer_data.cognome}` :
-        ticket.contract?.customer_data?.ragione_sociale || 'N/A',
-      customer_initials: this.getInitials(
-        ticket.contract?.customer_data?.nome && ticket.contract?.customer_data?.cognome ?
-        `${ticket.contract.customer_data.nome} ${ticket.contract.customer_data.cognome}` :
-        ticket.contract?.customer_data?.ragione_sociale || 'N/A'
-      ),
-      avatar_color: this.getRandomColor(),
-      created_at: ticket.created_at,
-      updated_at: ticket.updated_at,
-      product_name: ticket.contract?.product?.descrizione || 'N/A',
-      seu_name: seuName,
-      messages: ticket.messages || []
-     };
-   });
+        id: ticket.id,
+        ticket_number: ticket.ticket_number || `TK-${ticket.id.toString().padStart(3, '0')}`,
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status,
+        priority: ticket.priority,
+        contract_id: ticket.contract_id,
+        contract_code: ticket.contract?.codice_contratto || 'N/A',
+        created_by_user_id: ticket.created_by_user_id,
+        created_by_user_name: ticket.created_by?.name ? 
+          `${ticket.created_by.name} ${ticket.created_by.cognome || ''}`.trim() : 
+          ticket.created_by?.email || 'N/A',
+        assigned_to_user_id: ticket.assigned_to_user_id,
+        assigned_to_user_name: ticket.assigned_to?.name ? 
+          `${ticket.assigned_to.name} ${ticket.assigned_to.cognome || ''}`.trim() : 
+          ticket.assigned_to?.email || null,
+        customer_name: ticket.contract?.customer_data?.nome && ticket.contract?.customer_data?.cognome ?
+          `${ticket.contract.customer_data.nome} ${ticket.contract.customer_data.cognome}` :
+          ticket.contract?.customer_data?.ragione_sociale || 'N/A',
+        customer_initials: this.getInitials(
+          ticket.contract?.customer_data?.nome && ticket.contract?.customer_data?.cognome ?
+          `${ticket.contract.customer_data.nome} ${ticket.contract.customer_data.cognome}` :
+          ticket.contract?.customer_data?.ragione_sociale || 'N/A'
+        ),
+        avatar_color: this.getRandomColor(),
+        created_at: ticket.created_at,
+        updated_at: ticket.updated_at,
+        product_name: ticket.contract?.product?.descrizione || 'N/A',
+        seu_name: seuName,
+        messages: ticket.messages || [],
+        attachment_count: ticket.attachment_count || 0,
+        has_attachments: ticket.has_attachments || false
+      };
+    });
   }
 
   getInitials(fullName: string): string {
@@ -1395,11 +1701,12 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return !column.hidden && this.filters.status.includes(columnId);
   }
 
-getVisibleColumnsCount(): number {
-  return this.columns.filter(c => 
-    !c.hidden && this.filters.status.includes(c.id)
-  ).length;
-}
+  getVisibleColumnsCount(): number {
+    return this.columns.filter(c => 
+      !c.hidden && this.filters.status.includes(c.id)
+    ).length;
+  }
+
   getColumnPosition(columnId: string): number {
     const visibleColumns = this.columns.filter(c => !c.hidden);
     return visibleColumns.findIndex(c => c.id === columnId);
@@ -1441,12 +1748,14 @@ getVisibleColumnsCount(): number {
 
   createNewTicket() {
     this.showNewTicketModal = true;
+    this.newTicketAttachments = []; // Reset attachments
     if (!this.contractSearchInitialized) {
       this.setupContractSearchPipeline();
     }
     this.onContractSearch('');
   }
 
+  // Updated to handle attachments
   saveNewTicket() {
     if (!this.newTicket.title || !this.newTicket.description || !this.newTicket.contract_id) {
       this.showValidationError = true;
@@ -1473,19 +1782,28 @@ getVisibleColumnsCount(): number {
     };
 
     const createSub = this.apiService.createTicket(ticketData).subscribe((response: any) => {
-      if (response.response === 'ok') {
-        this.snackBar.open(
-          'Ticket creato con successo',
-          'Chiudi',
-          { 
-            duration: 3000,
-            horizontalPosition: 'center',
-            verticalPosition: 'bottom',
-            panelClass: ['success-snackbar']
-          }
-        );
-        this.closeNewTicketModal();
-        this.loadTickets();
+      if (response.response === 'ok' && response.body?.risposta) {
+        const createdTicket = response.body.risposta;
+
+        // If there are attachments, upload them
+        if (this.newTicketAttachments.length > 0) {
+          this.uploadNewTicketAttachments(createdTicket.id);
+        } else {
+          // No attachments, just close modal and reload
+          this.closeNewTicketModal();
+          this.loadTickets();
+
+          this.snackBar.open(
+            `Ticket ${createdTicket.ticket_number} creato con successo`,
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['success-snackbar']
+            }
+          );
+        }
       } else {
         this.snackBar.open(
           'Errore nella creazione del ticket',
@@ -1513,10 +1831,61 @@ getVisibleColumnsCount(): number {
     this.subscriptions.push(createSub);
   }
 
+  // Upload attachments for newly created ticket
+  private uploadNewTicketAttachments(ticketId: number): void {
+    this.isUploadingNewTicketAttachments = true;
+
+    const formData = new FormData();
+    formData.append('ticket_id', ticketId.toString());
+
+    this.newTicketAttachments.forEach((file) => {
+      formData.append('attachments[]', file);
+    });
+
+    this.apiService.uploadTicketAttachments(formData).subscribe(
+      (response: any) => {
+        this.isUploadingNewTicketAttachments = false;
+
+        if (response.response === 'ok') {
+          this.closeNewTicketModal();
+          this.loadTickets();
+
+          this.snackBar.open(
+            'Ticket creato con allegati',
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['success-snackbar']
+            }
+          );
+        }
+      },
+      (error) => {
+        this.isUploadingNewTicketAttachments = false;
+        this.closeNewTicketModal();
+        this.loadTickets();
+
+        this.snackBar.open(
+          'Ticket creato ma errore nel caricamento degli allegati',
+          'Chiudi',
+          { 
+            duration: 4000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['warning-snackbar']
+          }
+        );
+      }
+    );
+  }
+
   openTicketModal(ticket: Ticket) {
     this.selectedTicket = ticket;
     this.showTicketModal = true;
     this.loadTicketMessages(ticket.id);
+    this.loadTicketAttachments(); // Load attachments when opening ticket
   }
 
   loadTicketMessages(ticketId: number) {
@@ -1532,8 +1901,14 @@ getVisibleColumnsCount(): number {
     this.subscriptions.push(messagesSub);
   }
 
+  // Updated to handle attachments
   sendMessage() {
-    if (!this.newMessage.trim() || !this.selectedTicket) return;
+    if (!this.selectedTicket) return;
+    
+    // Check if there's a message or attachments
+    if (!this.newMessage.trim() && this.replyAttachments.length === 0) {
+      return;
+    }
 
     //  Check if user can reply to this ticket
     if (!this.canReplyToTicket(this.selectedTicket)) {
@@ -1549,6 +1924,18 @@ getVisibleColumnsCount(): number {
       );
       return;
     }
+
+    // If there are attachments, upload them with message
+    if (this.replyAttachments.length > 0) {
+      this.uploadReplyAttachmentsAndSendMessage();
+    } else {
+      this.sendMessageWithoutAttachments();
+    }
+  }
+
+  // Send message without attachments
+  private sendMessageWithoutAttachments(): void {
+    if (!this.selectedTicket || !this.newMessage.trim()) return;
 
     const messageData = {
       ticket_id: this.selectedTicket.id,
@@ -1588,10 +1975,103 @@ getVisibleColumnsCount(): number {
     this.subscriptions.push(messageSub);
   }
 
+  // Upload reply attachments and send message
+  private uploadReplyAttachmentsAndSendMessage(): void {
+    if (!this.selectedTicket) return;
+
+    this.isUploadingReplyAttachments = true;
+
+    const formData = new FormData();
+    formData.append('ticket_id', this.selectedTicket.id.toString());
+
+    // Add message if present
+    if (this.newMessage.trim()) {
+      // First create the message
+      const messageData = {
+        ticket_id: this.selectedTicket.id,
+        user_id: this.currentUser.id,
+        message: this.newMessage,
+        message_type: 'text'
+      };
+
+      this.apiService.sendTicketMessage(messageData).subscribe(
+        (response: any) => {
+          if (response.response === 'ok' && response.body?.message?.id) {
+            // Upload attachments with message_id
+            const messageId = response.body.message.id;
+            formData.append('message_id', messageId.toString());
+
+            // Add files
+            this.replyAttachments.forEach((file) => {
+              formData.append('attachments[]', file);
+            });
+
+            // Upload attachments
+            this.uploadAttachments(formData);
+          }
+        },
+        (error) => {
+          this.isUploadingReplyAttachments = false;
+          this.snackBar.open('Errore durante l\'invio del messaggio', 'Chiudi', {
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          });
+        }
+      );
+    } else {
+      // No message, just upload attachments
+      this.replyAttachments.forEach((file) => {
+        formData.append('attachments[]', file);
+      });
+
+      this.uploadAttachments(formData);
+    }
+  }
+
+  // Upload attachments helper
+  private uploadAttachments(formData: FormData): void {
+    this.apiService.uploadTicketAttachments(formData).subscribe(
+      (response: any) => {
+        this.isUploadingReplyAttachments = false;
+
+        if (response.response === 'ok') {
+          this.newMessage = '';
+          this.replyAttachments = [];
+
+          this.snackBar.open('Messaggio e allegati inviati', 'Chiudi', {
+            duration: 2000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['success-snackbar']
+          });
+
+          // Reload messages and attachments
+          if (this.selectedTicket) {
+            this.loadTicketMessages(this.selectedTicket.id);
+            this.loadTicketAttachments();
+          }
+        }
+      },
+      (error) => {
+        this.isUploadingReplyAttachments = false;
+        this.snackBar.open('Errore durante il caricamento degli allegati', 'Chiudi', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        });
+      }
+    );
+  }
+
   closeTicketModal() {
     this.showTicketModal = false;
     this.selectedTicket = null;
     this.newMessage = '';
+    this.ticketAttachments = []; // Clear attachments when closing
+    this.replyAttachments = []; // Clear pending reply attachments
   }
 
   closeNewTicketModal() {
@@ -1599,6 +2079,7 @@ getVisibleColumnsCount(): number {
     this.showValidationError = false;
     this.isShaking = false;
     this.contractSearchQuery = '';
+    this.newTicketAttachments = []; // Clear attachments
     this.newTicket = {
       title: '',
       description: '',
@@ -1662,7 +2143,8 @@ getVisibleColumnsCount(): number {
     //  Reset dragging state
     this.isDragging = false;
     this.currentDraggingTicket = null;
-    }
+  }
+
   onTicketDragStart(event: any, ticket: Ticket) {
     // Check if user can drag this ticket
     if (!this.canDragTicket(ticket)) {
@@ -1687,7 +2169,7 @@ getVisibleColumnsCount(): number {
     this.currentDraggingTicket = ticket;
     
     event.dataTransfer.setData('text/plain', ticket.id.toString());
-    }
+  }
 
   onDragOver(event: any) {
     event.preventDefault();
