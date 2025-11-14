@@ -315,7 +315,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     const currentStatus = this.selectedTicket.status || 'waiting';
     const statusColor = this.statusColorMap[currentStatus] || this.statusColorMap['waiting'];
     
-    return `linear-gradient(135deg, ${statusColor} 0%, #ffffffff 100%)`;
+    return `linear-gradient(180deg, ${statusColor} 0%, rgb(20 20 20) 100%)`;
   }
 
   canManageTickets(): boolean {

@@ -187,7 +187,7 @@
   padding: 10px 18px;
   border-radius: 8px;
   border-top-width: 2px;
-  border-left-width: 0px;
+  border-left-width: 2px;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
@@ -1728,7 +1728,7 @@
 }
 
 .messages-section h3 {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #268730 10%, #027cad);
   color: white;
   margin: -20px -20px 20px -20px;
   padding: 16px 20px;
@@ -1770,7 +1770,7 @@
 }
 
 .messages-container::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #268730 10%, #027cad);
   border-radius: 10px;
 }
 
@@ -1888,7 +1888,7 @@
   position: relative;
   word-wrap: break-word;
   transition: all 0.2s ease;
-  border: none; /* Rimuove il bordo */
+  border: none;
 }
 
 .message-bubble:hover {
@@ -1898,9 +1898,9 @@
 
 /* Styling for user's own messages */
 .message.message-own .message-bubble {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border-radius: 18px 18px 4px 18px;
+  background: linear-gradient(135deg, #268730 10%, #027cad);
+  border-radius: 0px 18px 0px 18px;
   border: none;
 }
 
@@ -1977,8 +1977,7 @@
   flex-shrink: 0;
   animation: rotateIcon 0.6s ease;
   background: linear-gradient(307deg, #fefefe, #ffffff, #fffcfc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  text-shadow:0px 0px 0px white, 0px 0px 1px black, 3px 2px 2px black, 2px 2px 2px black;
   background-clip: text;
   filter: drop-shadow(0 2px 4px rgba(139, 139, 139, 0.45));
 }
@@ -2000,8 +1999,7 @@
   letter-spacing: 0.3px;
   color: #ffffff;
   text-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.3),
-    0 1px 2px rgba(0, 0, 0, 0.2);
+  0px 0px 0px black, 0px 3px 2px black, 3px 2px 2px black, 2px 2px 2px black;
 }
 
 /* Timestamp in status change message */
@@ -2011,14 +2009,10 @@
   flex-shrink: 0;
   margin-left: 12px;
   font-style: italic;
-  background: linear-gradient(135deg, #000000, #4e4e4e);
+  color: #ffffff;
   text-shadow: 
-  0 2px 4px rgba(0, 0, 0, 0.3),
-  0 1px 2px rgba(0, 0, 0, 0.2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  0px 1px 0px white, 0px 3px 1px black, 1px 3px 1px black, 2px 2px 1px black;
   background-clip: text;
-  opacity: 0.9; 
   letter-spacing: 0.3px;
   animation: fadeInTime 0.5s ease 0.3s both;
 }
@@ -2061,11 +2055,11 @@
 
 /* Send message button */
 .send-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #268730 10%, #027cad);
   border: none;
   color: white;
   width: 44px;
-  height: 44px;
+  height: 45px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -2371,7 +2365,7 @@
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: #dee2e6;
+  background: rgba(0, 0, 0, 0.87);
   box-shadow: none;
 }
 
@@ -2742,7 +2736,7 @@
 
 .attachment-btn {
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #268730 10%, #027cad);
   border: none;
   color: white;
   width: 44px;
@@ -3210,7 +3204,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #268730 10%, #027cad);
   color: white;
   border-radius: 12px;
   font-size: 11px;
