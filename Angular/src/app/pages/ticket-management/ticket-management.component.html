@@ -1,7 +1,6 @@
-<!-- ticket-management.component.html -->
 <div class="ticket-management-container" *ngIf="canManageTickets()" (click)="closeStatusDropdown($event)">
   
-  <!-- Header -->
+  <!-- ==================== HEADER ==================== -->
   <div class="top-header">
     <div class="header-title">
       <i class="fas fa-ticket-alt"></i>
@@ -69,7 +68,7 @@
     </div>
   </div>
 
-  <!-- Filters Section -->
+  <!-- ==================== FILTERS SECTION ==================== -->
   <div class="filters-section">
     <div class="filter-header">
       <h3><i class="fas fa-filter"></i> Filtri di Ricerca</h3>
@@ -349,7 +348,7 @@
     </div>
   </div>
 
-  <!-- Kanban Board -->
+  <!-- ==================== KANBAN BOARD ==================== -->
   <div class="kanban-container">
     <div class="kanban-board" [attr.data-visible-columns]="getVisibleColumnsCount()">
       <div 
@@ -377,6 +376,7 @@
             [class.ticket-minimized]="isTicketMinimized(ticket.id)"
             [class.ticket-not-draggable]="!canDragTicket(ticket)"
             [class]="'ticket-status-' + column.id"
+            [class.resolved-column]="column.id === 'resolved'"
             [attr.draggable]="true"
             (dragstart)="onTicketDragStart($event, ticket)"
             (dragend)="onTicketDragEnd()"
@@ -449,28 +449,33 @@
             <div class="ticket-expanded-view" *ngIf="!isTicketMinimized(ticket.id)">
               <!-- Unified header row with all controls -->
               <div class="ticket-header-unified">
-                <!-- Selection checkbox (admin only, not in deleted column) -->
-                <div 
-                  *ngIf="isAdmin && ticket.status !== 'deleted'" 
-                  class="ticket-select-checkbox-inline"
-                  (click)="selectTicketForDeletion(ticket.id, $event)">
-                  <i 
-                    class="fas" 
-                    [class.fa-square]="!selectedTicketsForDeletion.has(ticket.id)"
-                    [class.fa-check-square]="selectedTicketsForDeletion.has(ticket.id)"
-                    [style.color]="selectedTicketsForDeletion.has(ticket.id) ? '#f44336' : '#ccc'">
-                  </i>
-                </div>
-                
-                <span class="ticket-id">#{{ticket.ticket_number}}</span>
-                
-                <!-- Attachments Badge (expanded) -->
-                <div class="attachments-badge" *ngIf="(ticket.attachments_count ?? 0) > 0" title="{{ticket.attachments_count ?? 0}} allegati">
-                  <i class="fas fa-paperclip"></i>
-                  <span>{{ticket.attachments_count ?? 0}}</span>
-                </div>
-                
-                <!-- Priority badge with dropdown in expanded view -->
+              <!-- Selection checkbox (admin only, not in deleted column) -->
+              <div 
+                *ngIf="isAdmin && ticket.status !== 'deleted'" 
+                class="ticket-select-checkbox-inline"
+                (click)="selectTicketForDeletion(ticket.id, $event)">
+                <i 
+                  class="fas" 
+                  [class.fa-square]="!selectedTicketsForDeletion.has(ticket.id)"
+                  [class.fa-check-square]="selectedTicketsForDeletion.has(ticket.id)"
+                  [style.color]="selectedTicketsForDeletion.has(ticket.id) ? '#f44336' : '#ccc'">
+                </i>
+              </div>
+              
+              <span class="ticket-id">#{{ticket.ticket_number}}</span>
+
+              <!-- Attachments Badge (expanded) -->
+              <div
+                class="attachments-badge"
+                *ngIf="(ticket.attachments_count ?? 0) > 0"
+                title="{{ticket.attachments_count ?? 0}} allegati">
+                <i class="fas fa-paperclip"></i>
+                <span>{{ticket.attachments_count ?? 0}}</span>
+              </div>
+
+              <!-- CONTENITORE DI DESTRA -->
+              <div class="ticket-header-controls">
+                <!-- PRIORITÀ SEMPRE QUI -->
                 <div class="priority-dropdown-wrapper" (click)="$event.stopPropagation()">
                   <span 
                     class="ticket-priority clickable-priority"
@@ -478,10 +483,9 @@
                     [style.background-color]="getPriorityColor(ticket.priority)"
                     (click)="togglePriorityDropdownForTicket(ticket.id, $event)"
                     title="Clicca per cambiare priorità">
-                    {{getPriorityLabel(ticket.priority)}}
+                    {{ getPriorityLabel(ticket.priority) }}
                   </span>
                   
-                  <!-- Priority dropdown menu -->
                   <div class="priority-dropdown-menu" *ngIf="isPriorityDropdownOpen(ticket.id)">
                     <div 
                       class="priority-option"
@@ -491,27 +495,30 @@
                         class="priority-color-indicator"
                         [style.background-color]="priority.color">
                       </div>
-                      <span>{{priority.label}}</span>
+                      <span>{{ priority.label }}</span>
                       <i class="fas fa-check" *ngIf="ticket.priority === priority.value"></i>
                     </div>
                   </div>
                 </div>
-                
-                <div class="ticket-header-controls">
-                  <!-- Close ticket button (green tick - only in resolved column) -->
-                  <div 
-                    *ngIf="ticket.status === 'resolved' && canCloseTicket(ticket)" 
-                    class="ticket-close-btn-inline"
-                    (click)="closeTicket(ticket, $event)"
-                    title="Archivia e chiudi ticket">
-                    <i class="fas fa-check-circle"></i>
-                  </div>
-                  
-                  <button class="btn-minimize" (click)="toggleMinimizeTicket(ticket.id, $event)" title="Minimizza ticket">
-                    <i class="fas fa-chevron-up"></i>
-                  </button>
+
+                <!-- SOLO IN RISOLTO: bottone archivia -->
+                <div 
+                  *ngIf="ticket.status === 'resolved' && canCloseTicket(ticket)" 
+                  class="ticket-close-btn-inline"
+                  (click)="closeTicket(ticket, $event)"
+                  title="Archivia e chiudi ticket">
+                  <i class="fas fa-check-circle"></i>
                 </div>
+                
+                <!-- Sempre per ultimo: minimizza -->
+                <button
+                  class="btn-minimize"
+                  (click)="toggleMinimizeTicket(ticket.id, $event)"
+                  title="Minimizza ticket">
+                  <i class="fas fa-chevron-up"></i>
+                </button>
               </div>
+            </div>
               
               <div class="ticket-info-row">
                 <i class="fas fa-hashtag"></i>
@@ -566,7 +573,7 @@
   </div>
 </div>
 
-<!-- Ticket Detail Modal -->
+<!-- ==================== TICKET DETAIL MODAL ==================== -->
 <div class="modal-overlay" *ngIf="showTicketModal" (click)="closeTicketModal()">
   <div class="modal-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -630,7 +637,7 @@
         </div>
       </div>
 
-      <!-- ATTACHMENTS SECTION -->
+      <!-- ==================== ATTACHMENTS SECTION ==================== -->
       <div class="attachments-section" *ngIf="ticketAttachments.length > 0 || isLoadingAttachments">
         <h3>
           <i class="fas fa-paperclip"></i> 
@@ -676,8 +683,6 @@
           </div>
         </div>
       </div>
-      <!-- END ATTACHMENTS SECTION -->
-
       <div class="messages-section">
         <h3>Conversazione</h3>
         <div class="messages-container">
@@ -685,26 +690,24 @@
             <i class="fas fa-spinner fa-spin"></i> Caricamento messaggi...
           </div>
           <div class="message" 
-               *ngFor="let message of selectedTicket.messages" 
-               [class.message-own]="message.user_id === currentUser.id"
-               [class.status-change-message]="isStatusChangeMessage(message)">
+              *ngFor="let message of selectedTicket.messages" 
+              [class.message-own]="message.user_id === currentUser.id"
+              [class.status-change-message]="isStatusChangeMessage(message)">
             <!-- Avatar for regular messages only -->
             <div class="message-avatar" 
-                 *ngIf="!isStatusChangeMessage(message)"
-                 [style.background-color]="getUserColor(message.user_id)">
-                {{getInitials(message.user_name || 'User')}}
+                *ngIf="!isStatusChangeMessage(message)"
+                [style.background-color]="getUserColor(message.user_id)">
+              {{ message.role_letter || getUserRoleInitial(message.user_role) }}
             </div>
             
             <div class="message-content" [class.status-change-content]="isStatusChangeMessage(message)">
-              <!-- Regular message header -->
-              <div class="message-header" *ngIf="!isStatusChangeMessage(message)">
-                <span class="message-author">{{message.user_name}}</span>
-                <span class="message-time">{{getTimeAgo(message.created_at)}}</span>
+              <div class="message-author-label" *ngIf="!isStatusChangeMessage(message)"> 
+                {{ getMessageAuthor(message) }}
               </div>
               
               <!-- Regular message bubble -->
               <div class="message-bubble" *ngIf="!isStatusChangeMessage(message)">
-                {{message.message}}
+                <div class="bubble-text">{{message.message}}</div>
                 
                 <!-- Display attachments if present -->
                 <div *ngIf="message.attachments && message.attachments.length > 0" 
@@ -730,6 +733,9 @@
                     </div>
                   </div>
                 </div>
+                
+                <!-- Time inside bubble -->
+                <div class="bubble-time">{{formatMessageTime(message.created_at)}}</div>
               </div>
               
               <!-- Status change message bubble with gradient -->
@@ -748,10 +754,13 @@
           Non puoi rispondere a questo ticket perché non è stato assegnato a te
         </div>
         
-        <!-- MESSAGE INPUT WITH ATTACHMENTS -->
         <div class="message-input-container">
-          <!-- Attachment upload area (only if can attach) -->
-          <div class="reply-attachments-area" *ngIf="canAttachToTicket(selectedTicket)">
+          <div class="reply-attachments-area" 
+               *ngIf="canAttachToTicket(selectedTicket)"
+               [class.drag-over]="isDraggingFile"
+               (dragover)="onFileDragOver($event)"
+               (dragleave)="onFileDragLeave($event)"
+               (drop)="onFileDrop($event)">
             <input 
               type="file" 
               #replyFileInput
@@ -760,18 +769,14 @@
               (change)="onReplyFilesSelected($event)"
               accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.zip">
             
-            <button 
-              class="attachment-btn" 
-              (click)="replyFileInput.click()"
-              [disabled]="!canReplyToTicket(selectedTicket) || replyAttachments.length >= maxFiles"
-              title="Allega file (max {{maxFiles}})">
-              <i class="fas fa-paperclip"></i>
-              <span *ngIf="replyAttachments.length > 0" class="attachment-count">
-                {{replyAttachments.length}}
-              </span>
-            </button>
+            <div class="attachment-drop-zone" 
+                 *ngIf="replyAttachments.length === 0"
+                 (click)="replyFileInput.click()">
+              <i class="fas fa-paperclip attachment-icon-large"></i>
+              <p>Clicca o trascina qui il file che vuoi allegare</p>
+              <span class="attachment-hint">Max {{maxFiles}} file, {{formatFileSize(maxFileSize)}} ciascuno</span>
+            </div>
             
-            <!-- Selected files chips -->
             <div class="selected-files-chips" *ngIf="replyAttachments.length > 0">
               <div *ngFor="let file of replyAttachments; let i = index" class="file-chip">
                 <i class="fas fa-file"></i>
@@ -780,6 +785,12 @@
                   <i class="fas fa-times"></i>
                 </button>
               </div>
+              <button 
+                class="add-more-btn"
+                (click)="replyFileInput.click()"
+                *ngIf="replyAttachments.length < maxFiles">
+                <i class="fas fa-plus"></i> Aggiungi
+              </button>
             </div>
           </div>
           
@@ -806,7 +817,7 @@
   </div>
 </div>
 
-<!-- New Ticket Modal -->
+<!-- ==================== NEW TICKET MODAL ==================== -->
 <div class="modal-overlay" *ngIf="showNewTicketModal" (click)="closeNewTicketModal()">
   <div class="modal-container" [class.shake]="isShaking" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -895,7 +906,6 @@
           </select>
         </div>
 
-        <!-- ATTACHMENTS SECTION IN NEW TICKET MODAL -->
         <div class="form-group">
           <label>
             <i class="fas fa-paperclip"></i> 
@@ -919,7 +929,6 @@
               Aggiungi Allegati (max {{maxFiles}})
             </button>
             
-            <!-- Selected files list -->
             <div class="selected-files-list" *ngIf="newTicketAttachments.length > 0">
               <div *ngFor="let file of newTicketAttachments; let i = index" class="file-item">
                 <i class="fas fa-file"></i>
@@ -940,8 +949,6 @@
             </p>
           </div>
         </div>
-        <!-- END ATTACHMENTS SECTION -->
-
         <div class="validation-message" *ngIf="showValidationError">
           <i class="fas fa-exclamation-triangle"></i>
           Compila tutti i campi obbligatori contrassegnati con *
@@ -962,7 +969,7 @@
   </div>
 </div>
 
-<!-- Access Denied Message -->
+<!-- ==================== ACCESS DENIED MESSAGE ==================== -->
 <div class="access-denied" *ngIf="!canManageTickets()">
   <div class="access-denied-content">
     <i class="fas fa-lock"></i>

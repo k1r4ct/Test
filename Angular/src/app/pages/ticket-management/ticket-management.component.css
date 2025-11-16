@@ -1,6 +1,5 @@
-/* ticket-management.component.css */
+/* ==================== TICKET MANAGEMENT LAYOUT ==================== */
 
-/* Main container for the entire ticket management page */
 .ticket-management-container {
   height: 100vh;
   display: flex;
@@ -9,11 +8,8 @@
   overflow: hidden;
 }
 
-/* ========================================
-    HEADER SECTION
-   ======================================== */
+/* ==================== HEADER SECTION ==================== */
 
-/* Top header bar containing title and new ticket button */
 .top-header {
   background: white;
   padding: 20px 30px;
@@ -24,20 +20,17 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-/* Container for header title and icon */
 .header-title {
   display: flex;
   align-items: center;
   gap: 15px;
 }
 
-/* Icon in the header */
 .header-title i {
   font-size: 28px;
   color: #28a745;
 }
 
-/* Main heading in the header */
 .header-title h2 {
   margin: 0;
   font-size: 22px;
@@ -45,21 +38,18 @@
   font-weight: 600;
 }
 
-/* Subtitle text in the header */
 .header-title p {
   margin: 0;
   color: #666;
   font-size: 14px;
 }
 
-/* Container for header action buttons */
 .header-actions {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-/* Ticket count display in header */
 .ticket-count {
   display: flex;
   align-items: center;
@@ -221,11 +211,7 @@
 }
 
 
-/* ========================================
-    FILTERS SECTION
-   ======================================== */
-
-/* Container for all filter controls */
+/* ==================== FILTERS SECTION ==================== */
 .filters-section {
   background: white;
   border-bottom: 1px solid #e9ecef;
@@ -236,7 +222,6 @@
   overflow: visible !important;
 }
 
-/* Header bar for the filters section */
 .filter-header {
   padding: 15px 30px;
   display: flex;
@@ -245,7 +230,6 @@
   border-bottom: 1px solid #f1f3f5;
 }
 
-/* Title heading for filters section */
 .filter-header h3 {
   margin: 0;
   color: #333;
@@ -256,12 +240,10 @@
   gap: 8px;
 }
 
-/* Icon in the filter header */
 .filter-header h3 i {
   color: #28a745;
 }
 
-/* Grid layout for filter inputs */
 .filters-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -275,7 +257,6 @@
   z-index: 10;
 }
 
-/* Visible state for filters grid - IMPORTANT: overflow visible */
 .filters-grid-visible {
   max-height: 1000px;
   opacity: 1;
@@ -284,7 +265,6 @@
   overflow: visible !important; /* Critical for dropdowns */
 }
 
-/* Individual filter input group with cascade effect */
 .filter-group {
   display: flex;
   flex-direction: column;
@@ -298,12 +278,10 @@
   z-index: 1;
 }
 
-/* Higher z-index when dropdown is open */
 .filter-group.dropdown-open {
   z-index: 100 !important;
 }
 
-/* Cascade animation keyframes */
 @keyframes fadeInCascade {
   from {
     opacity: 0;
@@ -315,7 +293,6 @@
   }
 }
 
-/* Progressive delay for cascade effect */
 .filter-group:nth-child(1) { animation-delay: 0s; }
 .filter-group:nth-child(2) { animation-delay: 0.05s; }
 .filter-group:nth-child(3) { animation-delay: 0.1s; }
@@ -327,7 +304,6 @@
 .filter-group:nth-child(9) { animation-delay: 0.4s; }
 .filter-group:nth-child(10) { animation-delay: 0.45s; }
 
-/* Label for filter input */
 .filter-label {
   font-weight: 600;
   color: #333;
@@ -337,13 +313,11 @@
   gap: 6px;
 }
 
-/* Icon in the filter label */
 .filter-label i {
   color: #666;
   font-size: 12px;
 }
 
-/* Input field for filters */
 .filter-input {
   padding: 8px 12px;
   border: 1px solid #dee2e6;
@@ -352,19 +326,16 @@
   transition: all 0.3s ease;
 }
 
-/* Focus state for filter inputs */
 .filter-input:focus {
   outline: none;
   border-color: #28a745;
   box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
 }
 
-/* Date input cursor style */
 .filter-input[type="date"] {
   cursor: pointer;
 }
 
-/* Container for filter action buttons with fade animation */
 .filter-actions {
   display: flex;
   gap: 10px;
@@ -377,7 +348,6 @@
   overflow: hidden;
 }
 
-/* Visible state for filter actions */
 .filter-actions-visible {
   max-height: 100px;
   opacity: 1;
@@ -385,7 +355,6 @@
   padding: 0px 30px 20px;
 }
 
-/* Filter action button */
 .btn-filter {
   padding: 8px 16px;
   border: 1px solid #dee2e6;
@@ -421,18 +390,13 @@
 }
 
 
-/* ========================================
-    MULTI-SELECT SECTION - FIXED
-   ======================================== */
-
-/* Container for multi-select dropdown */
+/* ==================== MULTI-SELECT CONTROLS ==================== */
 .multi-select-container {
   position: relative;
   width: 100%;
   z-index: 100;
 }
 
-/* Trigger button for multi-select dropdown */
 .multi-select-trigger {
   display: flex;
   align-items: center;
@@ -448,7 +412,6 @@
   overflow: hidden;
 }
 
-/* Decorative gradient bar on hover */
 .multi-select-trigger::before {
   content: '';
   position: absolute;
@@ -461,25 +424,21 @@
   transition: transform 0.3s ease;
 }
 
-/* Show gradient bar on hover */
 .multi-select-trigger:hover::before {
   transform: translateX(0);
 }
 
-/* Hover state for multi-select trigger */
 .multi-select-trigger:hover {
   border-color: #28a745;
   box-shadow: 0 2px 8px rgba(40, 167, 69, 0.15);
 }
 
-/* Focus state for multi-select trigger */
 .multi-select-trigger:focus {
   outline: none;
   border-color: #28a745;
   box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
 }
 
-/* Label text in multi-select trigger */
 .multi-select-label {
   flex: 1;
   font-size: 14px;
@@ -489,24 +448,18 @@
   text-overflow: ellipsis;
 }
 
-/* Chevron icon in multi-select trigger */
 .multi-select-trigger i {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: #666;
   margin-left: 8px;
 }
 
-/* Rotate chevron icon when dropdown is open */
 .multi-select-trigger i.fa-chevron-up {
   transform: rotate(180deg);
 }
 
 
-/* ========================================
-    DROPDOWN OPTIONS SECTION - FIXED POSITIONING
-   ======================================== */
-
-/* Dropdown menu for multi-select - Back to absolute positioning */
+/* ==================== DROPDOWN OPTIONS ==================== */
 .multi-select-dropdown {
   position: absolute;
   top: calc(100% + 4px);
@@ -651,11 +604,7 @@
 }
 
 
-/* ========================================
-   KANBAN BOARD SECTION
-   ======================================== */
-
-/* Main container for kanban board */
+/* ==================== KANBAN BOARD ==================== */
 .kanban-container {
   flex: 1;
   overflow-x: auto;
@@ -698,17 +647,12 @@
   pointer-events: none;
 }
 
-/* ========================================
-   ADAPTIVE COLUMN WIDTH -GENERAL RULES
-   ======================================== */
-
-/* Reset base constraints for adaptive columns */
+/* ==================== ADAPTIVE COLUMN WIDTH ==================== */
 .kanban-column:not(.column-hidden) {
   min-width: unset !important;
   max-width: unset !important;
 }
 
-/* Single visible column layout - FULL WIDTH with padding */
 .kanban-board[data-visible-columns="1"] .kanban-column:not(.column-hidden) {
   flex: 1 1 100% !important;
   max-width: calc(100% - 40px) !important;
@@ -717,7 +661,6 @@
   width: calc(100% - 40px) !important;
 }
 
-/* Two visible columns layout - split 50/50 */
 .kanban-board[data-visible-columns="2"] .kanban-column:not(.column-hidden) {
   flex: 1 1 calc(50% - 10px) !important;
   max-width: calc(50% - 10px) !important;
@@ -725,21 +668,18 @@
   width: calc(50% - 10px) !important;
 }
 
-/* Three visible columns - normal flex */
 .kanban-board[data-visible-columns="3"] .kanban-column:not(.column-hidden) {
   flex: 1 1 calc(33.333% - 14px) !important;
   max-width: calc(33.333% - 14px) !important;
   min-width: 300px !important;
 }
 
-/* Four or more columns - normal flex */
 .kanban-board[data-visible-columns="4"] .kanban-column:not(.column-hidden) {
   flex: 1 1 calc(25% - 15px) !important;
   max-width: calc(25% - 15px) !important;
   min-width: 280px !important;
 }
 
-/* Five or more columns - normal flex */
 .kanban-board[data-visible-columns="4"] .kanban-column:not(.column-hidden) {
   flex: 1 1 calc(25% - 15px) !important;
   max-width: calc(25% - 15px) !important;
@@ -750,13 +690,7 @@
   margin-left: -20px;
 }
 
-/* ========================================
-   ADAPTIVE COLUMN WIDTH - TEXT & ICON SIZES
-   ======================================== */
-
-/* ============================================
-   TWO COLUMNS VISIBLE - Moderate size increase
-   ============================================ */
+/* ==================== ADAPTIVE TEXT & ICON SIZES ==================== */
 .kanban-board[data-visible-columns="2"] .column-title {
   font-size: 18px !important;
 }
@@ -1057,11 +991,7 @@
   transform: translateY(-2px);
 }
 
-/* ========================================
-   TICKET SELECTION & CLOSE BUTTONS
-   ======================================== */
-
-/* Checkbox for minimized tickets */
+/* ==================== TICKET SELECTION & CLOSE BUTTONS ==================== */
 .ticket-select-checkbox-mini {
   width: 20px;
   height: 20px;
@@ -1083,7 +1013,6 @@
   transition: all 0.3s ease;
 }
 
-/* Checkbox for expanded tickets - inline version */
 .ticket-select-checkbox-inline {
   width: 22px;
   height: 22px;
@@ -1137,7 +1066,6 @@
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
   flex-shrink: 0;
-  margin-right: 8px;
 }
 
 .ticket-close-btn-inline:hover {
@@ -1163,18 +1091,30 @@
 .ticket-header-unified {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  min-height: 30px;
+  width: 100%;
+  column-gap: 8px;
 }
 
-/* Controls container in unified header */
 .ticket-header-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-left: auto;
+  column-gap: 8px;
+  margin-left: auto; 
 }
+
+.ticket-header-unified {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  column-gap: 8px;
+}
+
+.ticket-header-controls {
+  display: flex;
+  align-items: center;
+  column-gap: 8px;
+}
+
 
 /* Ticket ID display */
 .ticket-id {
@@ -1184,15 +1124,11 @@
   flex-shrink: 0;
 }
 
-/* ========================================
-   PRIORITY DROPDOWN SECTION
-   ======================================== */
-
-/* Wrapper for priority badge and dropdown */
+/* ==================== PRIORITY DROPDOWN ==================== */
 .priority-dropdown-wrapper {
   position: relative;
-  display: inline-block;
-  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 /* Clickable priority badge */
@@ -1219,7 +1155,7 @@
 .priority-dropdown-menu {
   position: absolute;
   top: calc(100% + 4px);
-  left: -45px;
+  right: 0;
   background: white;
   border: 1px solid #dee2e6;
   border-radius: 8px;
@@ -1230,7 +1166,6 @@
   animation: priorityDropdownSlide 0.2s ease-out;
 }
 
-/* Slide down animation for priority dropdown */
 @keyframes priorityDropdownSlide {
   from {
     opacity: 0;
@@ -1242,7 +1177,6 @@
   }
 }
 
-/* Individual priority option */
 .priority-option {
   display: flex;
   align-items: center;
@@ -1312,11 +1246,6 @@
     transform: scale(1);
   }
 }
-
-/* ========================================
-   TICKET CARD CONTENT
-   ======================================== */
-/* Priority badge on ticket */
 
 .ticket-priority {
   padding: 2px 8px;
@@ -1712,11 +1641,7 @@
   font-size: 14px;
 }
 
-/* ========================================
-   MESSAGES / CHAT SECTION
-   ======================================== */
-
-/* Container for messages/chat section */
+/* ==================== MESSAGES / CHAT ==================== */
 .messages-section {
   flex: 1;
   display: flex;
@@ -1759,7 +1684,6 @@
   box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* Custom scrollbar for messages - NUOVO */
 .messages-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -1778,25 +1702,21 @@
   background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
-/* Loading state for messages */
 .loading-messages {
   text-align: center;
   padding: 20px;
   color: #666;
 }
 
-/* Spinning icon for loading state */
 .loading-messages i {
   animation: spin 1s linear infinite;
 }
 
-/* Spin animation for loading icon */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-/* Individual message bubble */
 .message {
   display: flex;
   gap: 12px;
@@ -1805,7 +1725,6 @@
   align-items: flex-start;
 }
 
-/* Slide in animation for messages */
 @keyframes messageSlideIn {
   from {
     opacity: 0;
@@ -1900,8 +1819,108 @@
 .message.message-own .message-bubble {
   color: white;
   background: linear-gradient(135deg, #268730 10%, #027cad);
-  border-radius: 0px 18px 0px 18px;
+  border-radius: 18px 18px 4px 18px; /* Flipped for right side */
   border: none;
+}
+
+/* Text content inside bubble */
+.bubble-text {
+  display: block;
+  margin-bottom: 4px;
+  word-wrap: break-word;
+}
+
+/* Time inside bubble - WhatsApp style */
+.bubble-time {
+  display: block;
+  text-align: right;
+  font-size: 11px;
+  color: #8696a0;
+  margin-top: 4px;
+  font-style: normal;
+}
+
+/* Time inside own message bubble */
+.message.message-own .bubble-time {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Author label above message bubble - WhatsApp style */
+.message-author-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #7a7f9a;
+  margin-bottom: 4px;
+  margin-left: 8px;
+  display: inline-block;
+}
+
+/* Attachment drop zone styles */
+.attachment-drop-zone {
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  padding: 30px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #f8f9fa;
+  width: 100%;
+  box-sizing: border-box;
+  margin-left: 0;  
+}
+
+.attachment-drop-zone:hover {
+  border-color: #28a745;
+  background: #f0f8f0;
+}
+
+.attachment-drop-zone.drag-over,
+.reply-attachments-area.drag-over .attachment-drop-zone {
+  border-color: #28a745;
+  background: #e8f5e9;
+  transform: scale(1.02);
+}
+
+.attachment-icon-large {
+  font-size: 40px;
+  color: #6c757d;
+  margin-bottom: 10px;
+}
+
+.attachment-drop-zone p {
+  margin: 0;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.attachment-hint {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 10px;
+  display: block;
+}
+
+/* Add more button for attachments */
+.add-more-btn {
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  color: #495057;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-more-btn:hover {
+  background: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.add-more-btn i {
+  margin-right: 4px;
 }
 
 /* Status Change Messages */
@@ -2732,6 +2751,7 @@
   gap: 12px;
   margin-bottom: 12px;
   flex-wrap: wrap;
+  padding: 0 2% 0 2%;
 }
 
 .attachment-btn {
@@ -3203,8 +3223,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
-  background: linear-gradient(180deg, #268730 10%, #027cad);
+  padding: 2px 8px;
+  background: #0c0c0c;
   color: white;
   border-radius: 12px;
   font-size: 11px;
@@ -3230,7 +3250,6 @@
 /* Badge positioning in different views */
 .ticket-minimized-view .attachments-badge {
   margin-left: auto;
-  margin-right: 8px;
 }
 
 .ticket-header-unified .attachments-badge {

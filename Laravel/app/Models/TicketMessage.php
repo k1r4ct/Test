@@ -13,7 +13,7 @@ class TicketMessage extends Model
         'user_id',
         'message',
         'message_type',
-        'has_attachments',  // New field replacing individual attachment fields
+        'has_attachments', 
     ];
 
     protected $casts = [
@@ -21,6 +21,8 @@ class TicketMessage extends Model
         'updated_at' => 'datetime',
         'has_attachments' => 'boolean',
     ];
+
+    protected $appends = ['user_name', 'user_role', 'role_letter'];
 
     /**
      * Get the ticket that owns the message.
@@ -69,6 +71,28 @@ class TicketMessage extends Model
         return $this->user && $this->user->role
             ? $this->user->role->descrizione
             : 'N/A';
+    }
+
+    /**
+     * Get a single-letter code for the user's role (for avatars, etc.).
+     */
+    public function getRoleLetterAttribute()
+    {
+        // Se esiste l'utente e il suo role, prendo l'id del ruolo
+        $roleId = $this->user && $this->user->role ? $this->user->role->id : null;
+
+        switch ($roleId) {
+            case 1: // Admin
+                return 'A';
+            case 2: // Backoffice
+                return 'B';
+            case 3: // Operatore web
+                return 'O';
+            case 4: // SEU
+                return 'S';
+            default:
+                return 'U'; // Utente generico
+        }
     }
 
     /**

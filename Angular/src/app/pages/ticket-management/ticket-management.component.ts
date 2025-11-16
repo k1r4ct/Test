@@ -1,4 +1,3 @@
-// ticket-management.component.ts
 import { Component, OnInit, OnDestroy, AfterViewChecked, HostListener, ElementRef, ViewChild } from '@angular/core';
 import { ApiService } from 'src/app/servizi/api.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -37,6 +36,7 @@ export interface TicketMessage {
   user_id: number;
   user_name: string;
   user_role: string;
+  role_letter?: string; 
   message: string;
   message_type: 'text' | 'attachment' | 'status_change';  
   attachment_path?: string;
@@ -46,6 +46,7 @@ export interface TicketMessage {
   created_at: string;
   has_attachments?: boolean;
   attachments?: TicketAttachment[];
+  user?: any;
 }
 
 export interface TicketAttachment {
@@ -174,8 +175,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
 
   newMessage: string = '';
   isLoadingMessages: boolean = false;
-
-  // ==================== ATTACHMENT MANAGEMENT PROPERTIES ====================
   
   // Attachments for new ticket creation
   newTicketAttachments: File[] = [];
@@ -192,8 +191,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   // Max file configuration
   maxFiles: number = 5;
   maxFileSize: number = 10 * 1024 * 1024; // 10MB
-
-  // ==================== END ADDED PROPERTIES ====================
 
   columns = [
     {
@@ -295,6 +292,42 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return message.message_type === 'status_change';
   }
 
+  // Get message author display name
+  getMessageAuthor(message: TicketMessage): string {
+    let displayName = '';
+
+    // First choice: name calculated by backend (user_name accessor in Laravel)
+    if (message.user_name && message.user_name.trim().length > 0) {
+      displayName = message.user_name.trim();
+    } else {
+      // Fallback: if there's a nested user object
+      const anyMsg: any = message as any;
+      const user = anyMsg.user;
+      if (user) {
+        const fullName = `${user.name || ''} ${user.cognome || ''}`.trim();
+        if (fullName) {
+          displayName = fullName;
+        } else if (user.ragione_sociale) {
+          displayName = user.ragione_sociale;
+        } else if (user.email) {
+          displayName = user.email;
+        }
+      }
+    }
+
+    // Generic fallback if still no name found
+    if (!displayName) {
+      displayName = 'Utente';
+    }
+
+    // If it's my message, add "(tu)" after the name
+    if (this.currentUser && message.user_id === this.currentUser.id) {
+      return `${displayName} (tu)`;
+    }
+
+    return displayName;
+  }
+
   // Gets the column title for a given status
   getColumnTitle(status: string): string {
     const column = this.columns.find(c => c.id === status);
@@ -315,7 +348,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     const currentStatus = this.selectedTicket.status || 'waiting';
     const statusColor = this.statusColorMap[currentStatus] || this.statusColorMap['waiting'];
     
-    return `linear-gradient(180deg, ${statusColor} 0%, rgb(20 20 20) 100%)`;
+    return `linear-gradient(180deg, ${statusColor} 0%, rgb(20 20 20) 130%)`;
   }
 
   canManageTickets(): boolean {
@@ -367,7 +400,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   }
 
   /**
-   *  Check if current user can reply to a ticket
+   * Check if current user can reply to a ticket
    * Admin (role 1) can always reply
    * BackOffice (role 5) and Operatore Web (role 4) can only reply if ticket is assigned to them
    */
@@ -731,9 +764,9 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.subscriptions.push(ticketsSub);
   }
 
-  processTicketsData(ticketsData: any[]): Ticket[] {     
+  processTicketsData(ticketsData: any[]): Ticket[] {
     return ticketsData.map(ticket => {
-      // Try to find the SEU user based on inserito_da_user_id
+      // Try to find the SEU user based on created_by user ID
       let seuName = 'N/A';
       if (ticket.contract?.inserito_da_user_id) {
         // Find the user in the seuList by ID
@@ -783,8 +816,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         product_name: ticket.contract?.product?.descrizione || 'N/A',
         seu_name: seuName,
         messages: ticket.messages || [],
-        attachment_count: ticket.attachment_count || 0,
-        has_attachments: ticket.has_attachments || false
+        attachments_count: ticket.attachments_count || ticket.attachment_count || 0,
+        has_attachments: (ticket.attachments_count || ticket.attachment_count || 0) > 0
       };
     });
   }
@@ -804,7 +837,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return colors[Math.floor(Math.random() * colors.length)];
   }
 
-  //Get consistent color for user based on user ID
+  // Get consistent color for user based on user ID
   getUserColor(userId: number): string {
     const colors = ['#ff6b6b', '#4ecdc4', '#95afc0', '#f368e0', '#feca57', '#00d2d3'];
     return colors[userId % colors.length];
@@ -932,9 +965,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.applyFilters();
   }
 
-  // ========================================
-  // PRIORITY CHANGE METHODS
-  // ========================================
+  // ==================== PRIORITY CHANGE METHODS ====================
 
   /**
    * Toggle priority dropdown for a specific ticket
@@ -1041,9 +1072,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.subscriptions.push(prioritySub);
   }
 
-  // ========================================
-  // COLUMN VISIBILITY METHODS (CLOSED & DELETED)
-  // ========================================
+  // ==================== COLUMN VISIBILITY METHODS ====================
 
   /**
    * Toggle closed column visibility (Archive)
@@ -1315,9 +1344,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.subscriptions.push(deleteSub);
   }
 
-  // ========================================
-  // STATUS MULTI-SELECT METHODS
-  // ========================================
+  // ==================== STATUS MULTI-SELECT METHODS ====================
 
   toggleStatusDropdown() {
     const wasOpen = this.showStatusDropdown;
@@ -1391,9 +1418,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       .join(', ');
   }
 
-  // ========================================
-  // PRODUCT MULTI-SELECT METHODS
-  // ========================================
+  // ==================== PRODUCT MULTI-SELECT METHODS ====================
 
   toggleProductDropdown() {
     const wasOpen = this.showProductDropdown;
@@ -1495,9 +1520,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return `${firstPriority?.label || 'Priorità'} (+${this.filters.priority.length - 1})`;
   }
 
-  // ========================================
-  // SEU MULTI-SELECT METHODS
-  // ========================================
+  // ==================== SEU MULTI-SELECT METHODS ====================
 
   toggleSeuDropdown() {
     const wasOpen = this.showSeuDropdown;
@@ -1543,9 +1566,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return `${firstSeu?.name || 'SEU'} (+${this.filters.seu.length - 1})`;
   }
 
-  // ========================================
-  // GENERATED BY MULTI-SELECT METHODS
-  // ========================================
+  // ==================== GENERATED BY MULTI-SELECT METHODS ====================
 
   toggleGeneratedByDropdown() {
     const wasOpen = this.showGeneratedByDropdown;
@@ -1591,9 +1612,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return `${firstUser?.name || 'Utente'} (+${this.filters.generatedBy.length - 1})`;
   }
 
-  // ========================================
-  // ASSIGNED TO MULTI-SELECT METHODS
-  // ========================================
+  // ==================== ASSIGNED TO MULTI-SELECT METHODS ====================
 
   toggleAssignedToDropdown() {
     const wasOpen = this.showAssignedToDropdown;
@@ -1645,9 +1664,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return `${firstUser?.name || 'Utente'} (+${this.filters.assignedTo.length - 1})`;
   }
 
-  // ========================================
-  // CLOSE DROPDOWNS
-  // ========================================
+  // ==================== DROPDOWN MANAGEMENT ====================
 
   closeAllDropdowns() {
     this.showStatusDropdown = false;
@@ -1664,9 +1681,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
    * Updates CSS classes for filter groups based on dropdown state
    */
   updateDropdownClasses() {
-    // Use setTimeout to ensure DOM is updated
     setTimeout(() => {
-      // Remove all dropdown-open classes first
       const allFilterGroups = document.querySelectorAll('.filter-group');
       allFilterGroups.forEach(group => {
         group.classList.remove('dropdown-open');
@@ -1748,14 +1763,13 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
 
   createNewTicket() {
     this.showNewTicketModal = true;
-    this.newTicketAttachments = []; // Reset attachments
+    this.newTicketAttachments = [];
     if (!this.contractSearchInitialized) {
       this.setupContractSearchPipeline();
     }
     this.onContractSearch('');
   }
 
-  // Updated to handle attachments
   saveNewTicket() {
     if (!this.newTicket.title || !this.newTicket.description || !this.newTicket.contract_id) {
       this.showValidationError = true;
@@ -1831,7 +1845,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.subscriptions.push(createSub);
   }
 
-  // Upload attachments for newly created ticket
   private uploadNewTicketAttachments(ticketId: number): void {
     this.isUploadingNewTicketAttachments = true;
 
@@ -1885,7 +1898,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.selectedTicket = ticket;
     this.showTicketModal = true;
     this.loadTicketMessages(ticket.id);
-    this.loadTicketAttachments(); // Load attachments when opening ticket
+    this.loadTicketAttachments();
   }
 
   loadTicketMessages(ticketId: number) {
@@ -1901,16 +1914,13 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.subscriptions.push(messagesSub);
   }
 
-  // Updated to handle attachments
   sendMessage() {
     if (!this.selectedTicket) return;
     
-    // Check if there's a message or attachments
     if (!this.newMessage.trim() && this.replyAttachments.length === 0) {
       return;
     }
 
-    //  Check if user can reply to this ticket
     if (!this.canReplyToTicket(this.selectedTicket)) {
       this.snackBar.open(
         'Solo il backoffice assegnato può rispondere a questo ticket',
@@ -1925,7 +1935,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       return;
     }
 
-    // If there are attachments, upload them with message
     if (this.replyAttachments.length > 0) {
       this.uploadReplyAttachmentsAndSendMessage();
     } else {
@@ -1933,7 +1942,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     }
   }
 
-  // Send message without attachments
   private sendMessageWithoutAttachments(): void {
     if (!this.selectedTicket || !this.newMessage.trim()) return;
 
@@ -1975,7 +1983,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.subscriptions.push(messageSub);
   }
 
-  // Upload reply attachments and send message
   private uploadReplyAttachmentsAndSendMessage(): void {
     if (!this.selectedTicket) return;
 
@@ -1984,9 +1991,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     const formData = new FormData();
     formData.append('ticket_id', this.selectedTicket.id.toString());
 
-    // Add message if present
     if (this.newMessage.trim()) {
-      // First create the message
       const messageData = {
         ticket_id: this.selectedTicket.id,
         user_id: this.currentUser.id,
@@ -2030,7 +2035,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     }
   }
 
-  // Upload attachments helper
   private uploadAttachments(formData: FormData): void {
     this.apiService.uploadTicketAttachments(formData).subscribe(
       (response: any) => {
@@ -2070,8 +2074,8 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.showTicketModal = false;
     this.selectedTicket = null;
     this.newMessage = '';
-    this.ticketAttachments = []; // Clear attachments when closing
-    this.replyAttachments = []; // Clear pending reply attachments
+    this.ticketAttachments = [];
+    this.replyAttachments = [];
   }
 
   closeNewTicketModal() {
@@ -2079,7 +2083,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.showValidationError = false;
     this.isShaking = false;
     this.contractSearchQuery = '';
-    this.newTicketAttachments = []; // Clear attachments
+    this.newTicketAttachments = [];
     this.newTicket = {
       title: '',
       description: '',
@@ -2094,13 +2098,11 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     const ticket = this.tickets.find(t => t.id.toString() === ticketId);
     
     if (!ticket) {
-        //  Reset dragging state
         this.isDragging = false;
         this.currentDraggingTicket = null;
         return;
     }
     
-    //  Check if ticket can be dropped on this column
     if (!this.canDropOnColumn(ticket, newStatus)) {
         this.snackBar.open(
         'Non puoi spostare un ticket assegnato su "Nuovo"',
@@ -2112,13 +2114,11 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
             panelClass: ['error-snackbar']
         }
         );
-        //  Reset dragging state
         this.isDragging = false;
         this.currentDraggingTicket = null;
         return;
     }
     
-    // Check if user can move this ticket
     if (!this.canDragTicket(ticket)) {
         this.snackBar.open(
         'Non hai i permessi per spostare questo ticket',
@@ -2130,7 +2130,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
             panelClass: ['error-snackbar']
         }
         );
-        //  Reset dragging state
         this.isDragging = false;
         this.currentDraggingTicket = null;
         return;
@@ -2140,7 +2139,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         this.updateTicketStatus(ticket, newStatus);
     }
     
-    //  Reset dragging state
     this.isDragging = false;
     this.currentDraggingTicket = null;
   }
@@ -2175,19 +2173,11 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     event.preventDefault();
   }
   
-  /**
-   * Handle drag end event (called when drag ends, regardless of where it ends)
-   * This ensures isDragging is always reset, even if drop doesn't happen
-   */
   onTicketDragEnd() {
     this.isDragging = false;
     this.currentDraggingTicket = null;
   }
 
-  /**
-   * Update ticket status (drag & drop)
-   * UPDATED: Properly handles 204 No Content response
-   */
   updateTicketStatus(ticket: Ticket, newStatus: string) {
     const updateData = {
       ticket_id: ticket.id,
@@ -2196,8 +2186,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     };
 
     const updateSub = this.apiService.updateTicketStatus(updateData).subscribe((response: any) => {
-      // Handle both 204 No Content and 200 OK with response
-      // Update local ticket regardless
       ticket.status = newStatus as any;
       ticket.assigned_to_user_id = this.currentUser.id;
       ticket.assigned_to_user_name = `${this.currentUser.name || ''} ${this.currentUser.cognome || ''}`.trim() || this.currentUser.email;
@@ -2392,5 +2380,100 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       return text;
     }
     return text.substring(0, maxLength) + '...';
+  }
+
+  isDraggingFile: boolean = false;
+
+  getUserRoleInitial(userRole: string | number): string {
+    const roleStr = typeof userRole === 'number' ? userRole.toString() : userRole;
+    
+    switch(roleStr) {
+      case '1':
+      case 'admin':
+        return 'A';
+      case '2':
+      case 'backoffice':
+        return 'B';
+      case '3':
+      case 'operatore_web':
+        return 'O';
+      case '4':
+      case 'seu':
+        return 'S';
+      default:
+        // Try to get from current user role if role not specified
+        if (this.isAdmin) return 'A';
+        if (this.userRole === 2) return 'B';
+        if (this.userRole === 3) return 'O';
+        if (this.userRole === 4) return 'S';
+        return 'U'; // Unknown
+    }
+  }
+
+  formatMessageTime(dateString: string): string {
+    const date = new Date(dateString);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+
+  onFileDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingFile = true;
+  }
+
+  onFileDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingFile = false;
+  }
+
+  onFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingFile = false;
+
+    if (!this.canAttachToTicket(this.selectedTicket)) {
+      return;
+    }
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files);
+      
+      // Check max files limit
+      if (this.replyAttachments.length + fileArray.length > this.maxFiles) {
+        this.snackBar.open(
+          `Puoi allegare massimo ${this.maxFiles} file`,
+          'Chiudi',
+          { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          }
+        );
+        return;
+      }
+
+      // Add files to reply attachments
+      fileArray.forEach(file => {
+        if (file.size > this.maxFileSize) {
+          this.snackBar.open(
+            `Il file ${file.name} supera la dimensione massima di ${this.formatFileSize(this.maxFileSize)}`,
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['error-snackbar']
+            }
+          );
+        } else {
+          this.replyAttachments.push(file);
+        }
+      });
+    }
   }
 }
