@@ -1,4 +1,4 @@
-<!-- ==================== CONTRATTI RICERCA SECTION ==================== -->
+<!-- ==================== CONTRACT SEARCH SECTION ==================== -->
 <div *ngIf="data.reparto==='ricercaContratti'">
   <div mat-dialog-content>
     <div class="card contrattoselezionato">
@@ -543,7 +543,8 @@
               
               <div class="file-items">
                 <div *ngFor="let file of pendingAttachments; let i = index" 
-                     class="file-item">
+                     class="file-item"
+                     (click)="openAttachmentPreview(file, true); $event.stopPropagation()">
                   <mat-icon class="file-icon" [class]="'file-type-' + getFileIcon(file)">
                     {{ getFileIcon(file) }}
                   </mat-icon>
@@ -607,7 +608,7 @@
   <div *ngIf="ticketStep === 'existing'" class="ticket-modal-content">
     <div mat-dialog-content class="ticket-dialog-content existing-chat-content">
       
-      <!-- Header con info ticket -->
+      <!-- Header with ticket info -->
       <div class="existing-ticket-header">
         <div class="ticket-info-header">
           <div class="ticket-number-section">
@@ -619,7 +620,10 @@
           </div>
           
           <div class="ticket-badges">
-            <mat-chip [color]="getStatusColor(existingTicket?.status)">
+            <!-- Da capire se conviene tenere questi badge o meno. 
+             Gli stati in effetti non ha senso visualizzarli dal momento che l'utente vedrà sempre il ticket aperto.
+             Magari altri badges in futuro? Intanto lo spazio lo conservo-->
+            <!-- <mat-chip [color]="getStatusColor(existingTicket?.status)">
               <mat-icon class="status-icon">
                 {{ existingTicket?.status === 'new' ? 'fiber_new' : 
                    existingTicket?.status === 'waiting' ? 'schedule' : 
@@ -628,14 +632,14 @@
               {{ existingTicket?.status === 'new' ? 'Nuovo' : 
                  existingTicket?.status === 'waiting' ? 'In Lavorazione' : 
                  existingTicket?.status === 'resolved' ? 'Risolto' : 'Info' }}
-            </mat-chip>
+            </mat-chip> -->
             
-            <mat-chip [color]="getPriorityColor(existingTicket?.priority)">
+            <!-- <mat-chip [color]="getPriorityColor(existingTicket?.priority)">
               <mat-icon>flag</mat-icon>
               {{ existingTicket?.priority === 'high' ? 'Alta' : 
                  existingTicket?.priority === 'medium' ? 'Media' : 
                  existingTicket?.priority === 'low' ? 'Bassa' : 'Non Assegnata' }}
-            </mat-chip>
+            </mat-chip> -->
           </div>
         </div>
 
@@ -656,7 +660,7 @@
         </div>
       </div>
 
-      <!-- Area messaggi -->
+      <!-- Messages area -->
       <div class="chat-messages-container" id="chatMessagesContainer">
         
         <!-- Loading spinner -->
@@ -697,9 +701,7 @@
                   <mat-icon class="user-icon">
                     {{ message.user_id === currentUser?.id ? 'person' : 'support_agent' }}
                   </mat-icon>
-                  <strong>{{ message.user?.nome && message.user?.cognome ? 
-                            message.user.nome + ' ' + message.user.cognome : 
-                            message.user?.email || 'Utente' }}</strong>
+                  <strong>{{ getMessageAuthor(message) }}</strong>
                   <span class="role-badge">
                     {{ message.user?.role?.descrizione || 
                        (message.user_id === currentUser?.id ? 'SEU' : 'Backoffice') }}
@@ -720,21 +722,21 @@
                   <span>{{ message.attachments.length }} {{ message.attachments.length === 1 ? 'allegato' : 'allegati' }}</span>
                 </div>
                 <div class="attachments-list">
-                  <a *ngFor="let attachment of message.attachments"
-                     class="attachment-item"
-                     [href]="'/api/attachments/' + attachment.id + '/download'"
-                     target="_blank"
-                     [matTooltip]="attachment.original_name">
+                  <div *ngFor="let attachment of message.attachments"
+                       class="attachment-item clickable-attachment"
+                       (click)="openAttachmentPreview(attachment, false)"
+                       [matTooltip]="'Clicca per visualizzare: ' + attachment.original_name">
                     <mat-icon class="attachment-icon">
                       {{ getAttachmentIcon(attachment.original_name) }}
                     </mat-icon>
                     <span class="attachment-name">{{ attachment.original_name }}</span>
                     <span class="attachment-size">({{ formatFileSize(attachment.file_size) }})</span>
-                  </a>
+                    <mat-icon class="preview-icon">visibility</mat-icon>
+                  </div>
                 </div>
               </div>
 
-              <!-- Compatibilità con attachment singolo -->
+              <!-- Legacy single attachment compatibility -->
               <div *ngIf="message.attachment_name && !message.attachments" class="message-attachment">
                 <mat-icon>attach_file</mat-icon>
                 <span>{{ message.attachment_name }}</span>
@@ -744,74 +746,105 @@
         </div>
       </div>
 
-      <!-- Input nuovo messaggio con allegati -->
+      <!-- New message input with attachments -->
       <div class="chat-input-section">
-        <div class="chat-input-wrapper">
-          <mat-form-field appearance="outline" class="message-input-field">
-            <mat-label>Scrivi un messaggio...</mat-label>
-            <textarea matInput 
-                      [(ngModel)]="chatMessage" 
-                      (keydown.enter)="handleEnterKey($event)"
-                      rows="3"
-                      placeholder="Scrivi qui il tuo messaggio..."
-                      [disabled]="isSendingMessage"></textarea>
-            <mat-hint>Premi Invio per inviare, Shift+Invio per andare a capo</mat-hint>
-          </mat-form-field>
-
-          <!-- Attachment strip for existing ticket -->
-          <div class="attachment-strip" *ngIf="ticketStep === 'existing'">
-            <!-- Hidden file input -->
-            <input type="file" 
-                   #fileInput
-                   style="display: none"
-                   multiple
-                   (change)="onFilesSelected($event)"
-                   accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar">
+        
+        <!-- Attachment dropzone - Always visible above -->
+        <div class="attachment-dropzone-container">
+          <!-- Hidden file input -->
+          <input type="file" 
+                 #fileInput
+                 style="display: none"
+                 multiple
+                 (change)="onFilesSelected($event)"
+                 accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar">
+          
+          <!-- Dropzone area -->
+          <div class="compact-dropzone"
+               (click)="openFileSelector()"
+               (dragover)="onDragOver($event)"
+               (drop)="onDrop($event)"
+               [class.has-files]="pendingAttachments.length > 0"
+               [class.disabled]="isSendingMessage">
             
-            <!-- Compact attachment area -->
-            <div class="attachment-compact">
-              <!-- Show selected files count -->
-              <div *ngIf="pendingAttachments.length > 0" class="selected-files">
+            <!-- Empty state - No files -->
+            <div *ngIf="pendingAttachments.length === 0" class="dropzone-empty">
+              <mat-icon class="dropzone-icon">attach_file</mat-icon>
+              <span class="dropzone-text">Clicca o trascina file qui (max 3)</span>
+            </div>
+            
+            <!-- Files preview - With files -->
+            <div *ngIf="pendingAttachments.length > 0" class="dropzone-files">
+              <div class="files-header-compact">
+                <span class="files-count-text">
+                  <mat-icon>attachment</mat-icon>
+                  {{ pendingAttachments.length }} {{ pendingAttachments.length === 1 ? 'file' : 'files' }}
+                </span>
+                <button mat-icon-button 
+                        (click)="clearAttachments(); $event.stopPropagation()"
+                        [disabled]="isSendingMessage"
+                        matTooltip="Rimuovi tutti"
+                        class="clear-all-btn">
+                  <mat-icon>clear_all</mat-icon>
+                </button>
+              </div>
+              
+              <div class="files-chips-row">
                 <mat-chip-listbox>
                   <mat-chip *ngFor="let file of pendingAttachments; let i = index"
                             [removable]="!isSendingMessage"
-                            (removed)="removeAttachment(i)">
+                            (removed)="removeAttachment(i)"
+                            (click)="openAttachmentPreview(file, true); $event.stopPropagation()">
                     <mat-icon matChipAvatar>{{ getFileIcon(file) }}</mat-icon>
-                    {{ file.name }}
+                    <span class="chip-filename">{{ file.name }}</span>
                     <mat-icon matChipRemove *ngIf="!isSendingMessage">cancel</mat-icon>
                   </mat-chip>
                 </mat-chip-listbox>
               </div>
               
-              <!-- Attachment button -->
-              <button mat-icon-button 
-                      (click)="openFileSelector()"
-                      [disabled]="isSendingMessage || pendingAttachments.length >= 3"
-                      matTooltip="Allega file (max 3)"
-                      class="attach-button">
-                <mat-icon>attach_file</mat-icon>
-                <span class="attach-count" *ngIf="pendingAttachments.length > 0">
-                  {{ pendingAttachments.length }}
-                </span>
+              <!-- Add more button if under limit -->
+              <button *ngIf="pendingAttachments.length < maxFiles"
+                      mat-button
+                      class="add-more-files-btn"
+                      (click)="openFileSelector(); $event.stopPropagation()"
+                      [disabled]="isSendingMessage">
+                <mat-icon>add_circle_outline</mat-icon>
+                Aggiungi altri
               </button>
             </div>
-            
-            <!-- Upload progress -->
-            <mat-progress-bar *ngIf="isUploadingAttachments" 
-                              mode="indeterminate" 
-                              class="attachment-progress">
-            </mat-progress-bar>
           </div>
+          
+          <!-- Upload progress -->
+          <mat-progress-bar *ngIf="isUploadingAttachments" 
+                            mode="indeterminate" 
+                            class="attachment-progress-bar">
+          </mat-progress-bar>
         </div>
 
-        <button mat-fab 
-                color="primary" 
-                (click)="sendMessageToExistingTicket()"
-                [disabled]="(!chatMessage.trim() && pendingAttachments.length === 0) || isSendingMessage"
-                class="send-button">
-          <mat-spinner diameter="24" *ngIf="isSendingMessage"></mat-spinner>
-          <mat-icon *ngIf="!isSendingMessage">send</mat-icon>
-        </button>
+        <!-- Message input + Send button - Below, side by side -->
+        <div class="message-input-row">
+          <mat-form-field appearance="outline" class="message-input-field-inline">
+            <mat-label>Scrivi un messaggio...</mat-label>
+            <textarea matInput 
+                      [(ngModel)]="chatMessage" 
+                      (keydown.enter)="handleEnterKey($event)"
+                      rows="2"
+                      placeholder="Scrivi qui..."
+                      [disabled]="isSendingMessage"
+                      class="inline-textarea"></textarea>
+            <mat-hint>Invio per inviare, Shift+Invio per nuova riga</mat-hint>
+          </mat-form-field>
+
+          <button mat-fab 
+                  color="primary" 
+                  (click)="sendMessageToExistingTicket()"
+                  [disabled]="(!chatMessage.trim() && pendingAttachments.length === 0) || isSendingMessage"
+                  class="send-button-inline"
+                  matTooltip="Invia messaggio">
+            <mat-spinner diameter="24" *ngIf="isSendingMessage"></mat-spinner>
+            <mat-icon *ngIf="!isSendingMessage">send</mat-icon>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -819,7 +852,7 @@
     <div mat-dialog-actions class="dialog-actions">
       <div class="status-info">
         <mat-icon>info</mat-icon>
-        <span>I messaggi vengono aggiornati automaticamente</span>
+        <span>Si verrà notificati via mail in merito all'avanzamento del ticket.</span>
       </div>
       
       <button mat-raised-button (click)="onClose()" class="close-chat-btn">

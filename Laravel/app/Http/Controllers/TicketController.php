@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class TicketController extends Controller
 {
@@ -209,7 +210,9 @@ class TicketController extends Controller
 
             $user = Auth::user();
             $userRole = $user->role->id;
-            $ticket = Ticket::findOrFail($request->ticket_id);
+            $ticket = Ticket::with(['createdBy', 'assignedTo','contract.customer_data'])->findOrFail($request->ticket_id);
+            $mailCreatoreTicket=$ticket->createdBy->email;
+            $userCreatoreTicket=$ticket->createdBy;
 
             $oldStatus = $ticket->status;
             $newStatus = $request->status;
@@ -263,7 +266,10 @@ class TicketController extends Controller
             $statusLabels = Ticket::getStatusOptions();
             $statusLabel = $statusLabels[$newStatus] ?? $newStatus;
             $oldStatusLabel = $statusLabels[$oldStatus] ?? $oldStatus;
-            
+            Log::info("stato contratto in " . $statusLabel);
+            if ($statusLabel=='Risolto') {
+                Mail::to($mailCreatoreTicket)->send(new \App\Mail\CambioStatoTicket($userCreatoreTicket,$ticket));
+            }
             TicketMessage::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
@@ -583,8 +589,9 @@ class TicketController extends Controller
             }
 
             $user = Auth::user();
-            $ticket = Ticket::findOrFail($request->ticket_id);
-
+            $ticket = Ticket::with(['createdBy', 'assignedTo','contract.customer_data'])->findOrFail($request->ticket_id);
+            $mailCreatoreTicket=$ticket->createdBy->email;
+            $userCreatoreTicket=$ticket->createdBy;
             // Check permissions
             if (!$this->canAccessTicket($user, $ticket)) {
                 return response()->json([
@@ -604,8 +611,11 @@ class TicketController extends Controller
             // Send notification
             $this->notifyTicketParticipants($ticket, 'new_message');
 
-            $message->load(['user.role']);
-
+            $message->load(['user.role', 'ticket']);
+            
+            // Correzione: passa l'oggetto $message invece di $request->message
+            Mail::to($mailCreatoreTicket)->send(new \App\Mail\MailNewMessageTicket($userCreatoreTicket, $message,$ticket));
+            
             return response()->json([
                 "response" => "ok",
                 "status" => "200", 
@@ -827,7 +837,7 @@ class TicketController extends Controller
             $user = Auth::user();
             $userRole = $user->role->id;
 
-            // Only Admin (roles 1,6) can restore tickets
+            // Only Admin (1,6) can restore tickets
             if (!in_array($userRole, [1, 6])) {
                 return response()->json([
                     "response" => "error",

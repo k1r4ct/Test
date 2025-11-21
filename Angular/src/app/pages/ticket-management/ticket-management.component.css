@@ -1943,7 +1943,7 @@
 /* Bubble styling for status change messages */
 .message-bubble.status-change-bubble {
   background: linear-gradient(135deg, #2196F3 0%, #ffffff 100%);
-  color: #1976d2;
+  color: #ffffff;
   padding: 14px 20px;
   border-radius: 20px;
   border: 1px solid #ffffff;
@@ -2068,8 +2068,7 @@
 /* Focus state for message input */
 .message-input:focus {
   outline: none;
-  border-color: #000000;
-  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+  border-color: #ffffff;
 }
 
 /* Send message button */

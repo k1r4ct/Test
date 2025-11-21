@@ -126,6 +126,7 @@ import Aura  from '@primeng/themes/aura';
 import { QrcodeGeneratorComponent } from "./pages/qrcode-generator/qrcode-generator.component";
 import { TicketManagementComponent } from "./pages/ticket-management/ticket-management.component";
 import { WalletClienteComponent } from "./pages/user/clienti/wallet-cliente/wallet-cliente.component";
+import { AttachmentPreviewModalComponent } from './attachment-preview-modal/attachment-preview-modal.component';
 
 @NgModule({
   declarations: [
@@ -171,6 +172,7 @@ import { WalletClienteComponent } from "./pages/user/clienti/wallet-cliente/wall
     ContrattiPersonaliComponent,
     TicketManagementComponent,
     WalletClienteComponent,
+    AttachmentPreviewModalComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent],

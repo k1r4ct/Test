@@ -1,5 +1,5 @@
 import { Component, Inject, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { ApiService } from '../servizi/api.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FormGroup, Validators, FormBuilder } from '@angular/forms';
@@ -85,7 +85,8 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
     public apiService: ApiService,
     private snackBar: MatSnackBar,
     private fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: any
+    @Inject(MAT_DIALOG_DATA) public data: any,
+    private dialog: MatDialog // ADDED for attachment preview
   ) {
     this.form = this.fb.group({
       data_appuntamento_mat: ['', Validators.required],
@@ -236,8 +237,8 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
    * Start polling for new messages every second
    */
   startPolling(): void {
-    // Poll every 1 second
-    this.pollingSubscription = interval(1000).subscribe(() => {
+    // Poll every 5 seconds
+    this.pollingSubscription = interval(5000).subscribe(() => {
       this.checkForNewMessages();
     });
     
@@ -931,6 +932,61 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
         minute: '2-digit'
       });
     }
+  }
+
+  /**
+   * Get message author name (nome + cognome) without email
+   * NEW METHOD - Replaces inline logic in template
+   */
+  getMessageAuthor(message: any): string {
+    if (message.user) {
+      // First check if we have nome and cognome
+      if (message.user.nome && message.user.cognome) {
+        return `${message.user.nome} ${message.user.cognome}`;
+      }
+      // Check for name property (sometimes used instead of nome)
+      if (message.user.name && message.user.cognome) {
+        return `${message.user.name} ${message.user.cognome}`;
+      }
+      // Check for ragione_sociale (business name)
+      if (message.user.ragione_sociale) {
+        return message.user.ragione_sociale;
+      }
+    }
+    
+    // Fallback to user_name if available
+    if (message.user_name && message.user_name !== 'Utente Sconosciuto') {
+      return message.user_name;
+    }
+    
+    // Last resort fallback
+    return 'Utente';
+  }
+
+  /**
+   * Open attachment preview modal
+   * NEW METHOD - Opens preview modal for attachments
+   */
+  openAttachmentPreview(attachment: any, isPending: boolean = false): void {
+    // Import the preview component dynamically
+    import('../attachment-preview-modal/attachment-preview-modal.component').then(m => {
+      const dialogRef = this.dialog.open(m.AttachmentPreviewModalComponent, {
+        width: '90vw',
+        maxWidth: '1200px',
+        height: '90vh',
+        data: {
+          attachment: attachment,
+          isPending: isPending
+        },
+        panelClass: 'attachment-preview-dialog'
+      });
+    }).catch(err => {
+      console.error('Error loading preview component:', err);
+      // Fallback: just download the file if it's not pending
+      if (!isPending && attachment.id) {
+        window.open(`/api/attachments/${attachment.id}/download`, '_blank');
+      }
+    });
   }
 
   /**

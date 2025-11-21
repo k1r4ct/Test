@@ -1,0 +1,78 @@
+<div class="preview-modal-container">
+  <!-- Header -->
+  <div class="preview-header">
+    <div class="preview-title">
+      <mat-icon>{{ getFileIcon() }}</mat-icon>
+      <span>{{ attachment?.name || attachment?.original_name || attachment?.file_name || 'Allegato' }}</span>
+    </div>
+    <div class="preview-actions">
+      <button mat-icon-button 
+              (click)="download()" 
+              matTooltip="Scarica"
+              class="action-button download-button">
+        <mat-icon>download</mat-icon>
+      </button>
+      <button mat-icon-button 
+              (click)="close()" 
+              matTooltip="Chiudi"
+              class="action-button close-button">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Preview Content -->
+  <div class="preview-content">
+    <!-- Image Preview -->
+    <div *ngIf="isImage && isPreviewable" class="image-preview">
+      <img [src]="previewUrl" [alt]="attachment?.name || 'Image preview'" />
+    </div>
+
+    <!-- PDF Preview -->
+    <div *ngIf="isPdf && isPreviewable" class="pdf-preview">
+      <iframe [src]="previewUrl" frameborder="0"></iframe>
+    </div>
+
+    <!-- No Preview Available -->
+    <div *ngIf="!isPreviewable" class="no-preview">
+      <div class="no-preview-content">
+        <mat-icon class="no-preview-icon">{{ getFileIcon() }}</mat-icon>
+        <h3>Anteprima non disponibile</h3>
+        <p class="file-info">
+          <strong>{{ attachment?.name || attachment?.original_name || 'File' }}</strong>
+        </p>
+        <p class="file-info" *ngIf="attachment?.size || attachment?.file_size">
+          Dimensione: {{ formatFileSize(attachment?.size || attachment?.file_size) }}
+        </p>
+        <p class="file-info" *ngIf="fileExtension">
+          Formato: .{{ fileExtension }}
+        </p>
+        <button mat-raised-button 
+                color="primary" 
+                (click)="download()"
+                class="download-action-button">
+          <mat-icon>download</mat-icon>
+          Scarica File
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="preview-footer" *ngIf="isPreviewable">
+    <div class="file-metadata">
+      <span *ngIf="attachment?.size || attachment?.file_size">
+        <mat-icon>data_usage</mat-icon>
+        {{ formatFileSize(attachment?.size || attachment?.file_size) }}
+      </span>
+      <span *ngIf="fileExtension">
+        <mat-icon>description</mat-icon>
+        .{{ fileExtension }}
+      </span>
+      <span *ngIf="!isPending && attachment?.created_at">
+        <mat-icon>schedule</mat-icon>
+        {{ attachment?.created_at | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+    </div>
+  </div>
+</div>

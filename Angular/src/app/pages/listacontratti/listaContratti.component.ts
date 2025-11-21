@@ -956,7 +956,8 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           // può contenere dati in colonna maggiori rispetto alle colonne visualizzate in tabella ( lato html )
           // che hanno UN EFFETTO in base hai filtri sulla visualizzazione.
           this.checkAndApplySavedFilters();
-
+          console.log(contratti.body.risposta.data);
+          
           this.LISTACONTRATTI = contratti.body.risposta.data.map(
             (contratto: any) => ({
               id: contratto.id,
@@ -985,10 +986,10 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
               supplier: contratto.product.supplier.nome_fornitore,
               specific_data: contratto.specific_data || [],
               customer_data: contratto.customer_data || {},
-              ticketExists: contratto.ticket.length > 0 ? true : false,
+              ticketExists: contratto.ticket && contratto.ticket.length > 0 && contratto.ticket[0]?.created_by_user_id === this.User.id,
               // nuovo campo, può essere 0 se non fornito da questo endpoint
               ticketUnreadCount:
-                contratto.ticket[0]?.messages.length > 0 ? 1 : 0,
+               contratto.ticket && contratto.ticket.length > 0 && contratto.ticket[0]?.created_by_user_id === this.User.id ? contratto.ticket[0]?.messages.length > 0 ? 1 : 0 : 0,
             })
           );
 
@@ -2938,7 +2939,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
       supplier: contratto.product.supplier.nome_fornitore,
       specific_data: contratto.specific_data || [],
       customer_data: contratto.customer_data,
-      ticketExists: contratto.ticket?.length > 0 ? true : false,
+      ticketExists: contratto.ticket && contratto.ticket.length > 0 && contratto.ticket[0]?.created_by_user_id === this.User.id,
     });
 
     const risultati: any[] = Array.isArray(contrattiData)
@@ -3287,9 +3288,9 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           supplier: contratto.product.supplier.nome_fornitore,
           specific_data: contratto.specific_data || [],
           customer_data: contratto.customer_data,
-          ticketExists: contratto.ticket?.length > 0 ? true : false,
+          ticketExists: contratto.ticket && contratto.ticket.length > 0 && contratto.ticket[0]?.created_by_user_id === this.User.id,
           // usa il conteggio fornito da Laravel (withCount)
-          ticketUnreadCount: contratto.ticket[0]?.messages.length > 0 ? 1 : 0,
+          ticketUnreadCount: contratto.ticket && contratto.ticket.length > 0 && contratto.ticket[0]?.created_by_user_id === this.User.id ? contratto.ticket[0]?.messages.length > 0 ? 1 : 0 : 0,
         };
       });
 

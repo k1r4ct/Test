@@ -3,37 +3,38 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Models\lead;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\product;
 use App\Models\contract;
+use App\Models\supplier;
+use App\Models\lead_status;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
+use App\Models\notification;
+use App\Models\payment_mode;
 use Hamcrest\Type\IsNumeric;
 use Illuminate\Http\Request;
 use App\Models\customer_data;
+use App\Models\leadConverted;
 use App\Models\macro_product;
 use App\Models\qualification;
 use App\Models\specific_data;
-use App\Http\Controllers\Controller;
+use App\Models\DetailQuestion;
 use App\Models\backoffice_note;
+use App\Models\status_contract;
+use App\Models\log as ModelsLog;
+use App\Models\supplier_category;
+use Illuminate\Support\Facades\DB;
 use App\Models\contract_management;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Models\option_status_contract;
 use Illuminate\Support\Facades\Storage;
 use App\Models\contract_type_information;
-use App\Models\DetailQuestion;
-use App\Models\lead;
-use App\Models\lead_status;
-use App\Models\leadConverted;
-use App\Models\log as ModelsLog;
-use App\Models\notification;
-use App\Models\option_status_contract;
-use App\Models\payment_mode;
-use App\Models\status_contract;
-use App\Models\supplier;
-use App\Models\supplier_category;
 
 
 class ContractController extends Controller
@@ -564,12 +565,25 @@ class ContractController extends Controller
         //return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $request->all()]]);
         if (is_numeric($request->stato_avanzamento)) {
             $updateContratto = Contract::where('id', $request->idContratto)->update(['status_contract_id' => $request->stato_avanzamento]);
-            $contrattoNew = Contract::with('status_contract')->where('id', $request->idContratto)->get();
-            if ($contrattoNew) {
+            $contrattoNew = Contract::with(['status_contract','User','UserSeu'])->where('id', $request->idContratto)->first();
+            Log::info("contratto ".$contrattoNew);
+            /* if ($contrattoNew) {
                 foreach ($contrattoNew as $newUpdate) {
-                    $statoContrattoNew = $newUpdate->status_contract->micro_stato;
                 }
+            } */
+            $statoContrattoNew = $contrattoNew->status_contract->micro_stato;
+            $mailSeu=$contrattoNew->UserSeu->email;
+            if($request->stato_avanzamento == 2 || 
+               $request->stato_avanzamento == 3 || 
+               $request->stato_avanzamento == 5 ||
+               $request->stato_avanzamento == 7 ||
+               $request->stato_avanzamento == 9 ||
+               $request->stato_avanzamento == 11 ||
+               $request->stato_avanzamento == 12 ||
+               $request->stato_avanzamento == 16 ){
+                Mail::to($mailSeu)->send(new \App\Mail\CambioStatoContratto($contrattoNew));
             }
+            //INSERIRE QUI LA LOGICA DI INVIO MAIL PER IL CAMBIO STATO CONTRATTO GLI ID SARANNO 2,3,5,7,9,11,12,16
         }
         if ($request->note_backoffice) {
             $cercaNotaEsistente = backoffice_note::where('contract_id', $request->idContratto)->where('nota', $request->note_backoffice)->first();
