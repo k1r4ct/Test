@@ -27,8 +27,27 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    height: 70vh;
-    overflow: hidden;
+    max-height: 80vh;
+    overflow-y: auto;
+    
+    // Custom scrollbar for the entire dialog
+    &::-webkit-scrollbar {
+      width: 10px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 5px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #268730 0%, #027cad 100%);
+      border-radius: 5px;
+      
+      &:hover {
+        background: linear-gradient(135deg, #1f6d26 0%, #026391 100%);
+      }
+    }
   }
 }
 
@@ -336,27 +355,195 @@
   }
 }
 
+// ==================== TICKET ATTACHMENTS SECTION - NEWLY ADDED ====================
+
+.ticket-attachments-section {
+  margin: 16px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  flex-shrink: 0;
+  
+  .attachments-header {
+    background: linear-gradient(135deg, #268730 0%, #027cad 100%);
+    padding: 12px 16px;
+    
+    .attachments-title {
+      color: white;
+      font-size: 16px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+  
+  .attachments-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+    color: #666;
+    font-size: 14px;
+  }
+  
+  .attachments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    padding: 16px;
+    max-height: 120px; // Reduced from 200px to be more compact
+    overflow-y: auto;
+    
+    /* Custom scrollbar */
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #268730 0%, #027cad 100%);
+      border-radius: 4px;
+      
+      &:hover {
+        background: linear-gradient(135deg, #1f6d26 0%, #026391 100%);
+      }
+    }
+    
+    .attachment-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-color: #027cad;
+        background: #e3f2fd;
+        
+        .attachment-icon-wrapper {
+          background: linear-gradient(135deg, #268730 0%, #027cad 100%);
+          
+          .attachment-icon {
+            color: white;
+          }
+        }
+      }
+      
+      .attachment-icon-wrapper {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        .attachment-icon {
+          font-size: 24px;
+          width: 24px;
+          height: 24px;
+          color: #666;
+          transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+      }
+      
+      .attachment-info {
+        flex: 1;
+        min-width: 0;
+        
+        .attachment-name {
+          font-size: 14px;
+          font-weight: 500;
+          color: #333;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-bottom: 4px;
+        }
+        
+        .attachment-metadata {
+          font-size: 12px;
+          color: #666;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          
+          .attachment-separator {
+            color: #ccc;
+          }
+          
+          .attachment-size {
+            font-weight: 500;
+            color: #027cad;
+          }
+          
+          .attachment-user {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+      }
+      
+      .download-button {
+        flex-shrink: 0;
+        color: #666;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        &:hover {
+          color: #027cad;
+          background: rgba(2, 124, 173, 0.1);
+        }
+        
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+    }
+  }
+}
+
+// ==================== CHAT MESSAGES CONTAINER ====================
+
 // Chat Messages Container
 .chat-messages-container {
   flex: 1;
+  min-height: 300px; // Ensure minimum height for scrollable area
   overflow-y: auto;
   background: #f0f2f5;
   padding: 1rem;
   scroll-behavior: smooth;
 
-  // Custom scrollbar
+  // Custom scrollbar - Made more visible
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px; // Increased from 6px to be more visible
   }
 
   &::-webkit-scrollbar-track {
     background: #e5e7eb;
-    border-radius: 3px;
+    border-radius: 4px;
   }
 
   &::-webkit-scrollbar-thumb {
     background: #94a3b8;
-    border-radius: 3px;
+    border-radius: 4px;
 
     &:hover {
       background: #64748b;
@@ -451,7 +638,7 @@
     justify-content: flex-end;
 
     .regular-message {
-      max-width: 70%;
+      max-width: 100%;
       background: #268730;
       color: white;
       border-radius: 18px 18px 4px 18px;
@@ -476,7 +663,6 @@
             font-size: 0.625rem;
             font-weight: 600;
             margin-left: 0.5rem;
-            margin-right: 0.5rem;
           }
         }
 
@@ -507,7 +693,7 @@
     justify-content: flex-start;
 
     .regular-message {
-      max-width: 70%;
+      max-width: 100%;
       background: white;
       color: #1e293b;
       border-radius: 18px 18px 18px 4px;
@@ -800,8 +986,8 @@
   }
 
   .clear-all-btn {
-    width: 32px;
-    height: 32px;
+    width: -5%;
+    height: -5%;
 
     mat-icon {
       font-size: 1.125rem;
@@ -847,17 +1033,61 @@
 // Message Input Row (Inline - Input + Send Button)
 .message-input-row {
   display: flex;
-  gap: 0.75rem;
-  align-items: flex-end;
+  gap: 0.5rem;            
+  align-items: center;    
 }
 
 .message-input-field-inline {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  
+  // Force mat-form-field to follow textarea height dynamically
+  ::ng-deep .mat-mdc-text-field-wrapper {
+    height: auto !important;   
+    min-height: 56px;          
+  }
+  
+  ::ng-deep .mat-mdc-form-field-flex {
+    height: auto !important;
+    min-height: 56px;
+    align-items: flex-start;   
+  }
+  
+  ::ng-deep .mat-mdc-form-field-infix {
+    display: flex;
+    flex-direction: column;
+    min-height: auto;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  
+  // REMOVE SUBSCRIPT SPACE (error/hint area)
+  ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  ::ng-deep .mat-mdc-form-field-bottom-align::before {
+    display: none !important;
+  }
+  
+  // Make the outline follow the content
+  ::ng-deep .mat-mdc-notch-piece {
+    border-color: #d1d5db;
+  }
 
+  // Auto-expanding textarea styling
   .inline-textarea {
     resize: none;
     overflow-y: auto;
-    max-height: 120px;
+    min-height: 40px !important;     
+    max-height: 200px !important;    
+    line-height: 1.4;
+    padding: 8px 12px;
+    transition: height 0.1s ease;    
   }
 }
 
@@ -868,6 +1098,8 @@
 
   mat-icon {
     font-size: 1.25rem;
+    width: 2%;
+    height: 2%;
   }
 
   ::ng-deep {
@@ -978,7 +1210,7 @@
           border-radius: 6px;
           border: 1px solid #e5e7eb;
           cursor: pointer;
-          transition: background 0.2s ease;
+          transition: 0.2s ease;
 
           &:hover {
             background: #f3f4f6;
@@ -1161,6 +1393,39 @@
 
       .info-item {
         font-size: 0.75rem;
+      }
+    }
+  }
+
+  // Mobile responsive for ticket attachments section
+  .ticket-attachments-section {
+    .attachments-grid {
+      grid-template-columns: 1fr;
+      max-height: 100px;
+      
+      .attachment-card {
+        padding: 10px;
+        
+        .attachment-icon-wrapper {
+          width: 36px;
+          height: 36px;
+          
+          .attachment-icon {
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+          }
+        }
+        
+        .attachment-info {
+          .attachment-name {
+            font-size: 13px;
+          }
+          
+          .attachment-metadata {
+            font-size: 11px;
+          }
+        }
       }
     }
   }

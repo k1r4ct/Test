@@ -25,6 +25,26 @@ interface FilePreview {
   preview?: string;
 }
 
+// Interface for ticket attachments
+interface TicketAttachment {
+  id: number;
+  ticket_id: number;
+  ticket_message_id?: number;
+  user_id: number;
+  file_name: string;
+  original_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  hash: string;
+  created_at: string;
+  user_name?: string;
+  formatted_size?: string;
+  is_image?: boolean;
+  is_pdf?: boolean;
+  is_document?: boolean;
+}
+
 @Component({
   selector: 'app-contratto-details-dialog',
   templateUrl: './modal.component.html',
@@ -53,6 +73,10 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
   isSendingMessage: boolean = false;
   pollingSubscription: Subscription | null = null;
   lastMessageId: number = 0;
+  
+  // Ticket attachments
+  ticketAttachments: TicketAttachment[] = [];
+  isLoadingAttachments: boolean = false;
   
   // Attachment handling - Local buffer approach
   pendingAttachments: FilePreview[] = [];  // Files waiting to be uploaded
@@ -86,7 +110,7 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     private fb: FormBuilder,
     @Inject(MAT_DIALOG_DATA) public data: any,
-    private dialog: MatDialog // ADDED for attachment preview
+    private dialog: MatDialog
   ) {
     this.form = this.fb.group({
       data_appuntamento_mat: ['', Validators.required],
@@ -102,7 +126,7 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    console.log(this.data);
+    // console.log(this.data);
     
     // Get current user
     this.apiService.PrendiUtente().subscribe((Ruolo: any) => {
@@ -138,7 +162,7 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
       });
 
       this.apiService.getUserForLeads().subscribe((risposta: any) => {
-        console.log(risposta);
+        // console.log(risposta);
         this.userForLeads = risposta.body.risposta.map((risposta: any) => ({
           id: risposta.id,
           nome: risposta.name,
@@ -184,11 +208,69 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
     this.existingTicket = this.data.existingTicket;
     this.ticketStep = 'existing';
     
+    // Load ticket attachments
+    this.loadTicketAttachments();
+    
     // Load initial messages
     this.loadTicketMessages();
     
     // Start polling for new messages
     this.startPolling();
+  }
+
+  /**
+   * Load ticket attachments
+   */
+  loadTicketAttachments(): void {
+    if (!this.existingTicket) return;
+    
+    this.isLoadingAttachments = true;
+    
+    const attachmentsSub = this.apiService.getTicketAttachments(this.existingTicket.id).subscribe(
+      (response: any) => {
+        if (response.response === 'ok' && response.body?.attachments) {
+          this.ticketAttachments = response.body.attachments;
+        }
+        this.isLoadingAttachments = false;
+      },
+      (error) => {
+        console.error('Error loading attachments:', error);
+        this.isLoadingAttachments = false;
+      }
+    );
+    
+    this.subscriptions.push(attachmentsSub);
+  }
+
+  /**
+   * Download attachment
+   */
+  downloadAttachment(attachment: TicketAttachment): void {
+    this.apiService.downloadTicketAttachment(attachment.id).subscribe(
+      (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = attachment.original_name;
+        link.click();
+        window.URL.revokeObjectURL(url);
+        
+        this.snackBar.open('Download avviato', 'Chiudi', {
+          duration: 2000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['success-snackbar']
+        });
+      },
+      (error) => {
+        this.snackBar.open('Errore durante il download', 'Chiudi', {
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        });
+      }
+    );
   }
 
   /**
@@ -418,8 +500,9 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
     this.clearAttachments();
     this.isSendingMessage = false;
     
-    // Reload messages to show new one
+    // Reload messages and attachments to show new ones
     this.loadTicketMessages();
+    this.loadTicketAttachments();
     
     this.snackBar.open(
       'Messaggio inviato con successo!',
@@ -936,7 +1019,6 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
 
   /**
    * Get message author name (nome + cognome) without email
-   * NEW METHOD - Replaces inline logic in template
    */
   getMessageAuthor(message: any): string {
     if (message.user) {
@@ -965,7 +1047,6 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
 
   /**
    * Open attachment preview modal
-   * NEW METHOD - Opens preview modal for attachments
    */
   openAttachmentPreview(attachment: any, isPending: boolean = false): void {
     // Import the preview component dynamically
@@ -984,7 +1065,7 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
       console.error('Error loading preview component:', err);
       // Fallback: just download the file if it's not pending
       if (!isPending && attachment.id) {
-        window.open(`/api/attachments/${attachment.id}/download`, '_blank');
+        this.downloadAttachment(attachment);
       }
     });
   }
@@ -1070,9 +1151,9 @@ export class ContrattoDetailsDialogComponent implements OnInit, OnDestroy {
   }
 
   cambiaAssegnazione(stato: any, lead: any) {
-    console.log(this.data);
-    console.log(stato.stato);
-    console.log(lead);
+    // console.log(this.data);
+    // console.log(stato.stato);
+    // console.log(lead);
     const formData2 = new FormData();
 
     formData2.append('id_user', stato.stato);

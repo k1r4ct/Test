@@ -104,7 +104,7 @@
                     <label class="uppercase">Macro Stato</label>
                   </div>
                   <div class="col-9">
-                    <input type="text" class="form-control input" Name="nome" placeholder="Nome Cliente"
+                    <input type="text" class="form-control input" Nome="nome" placeholder="Nome Cliente"
                       value="{{data.row.macrostato}}" readonly>
                   </div>
                 </div>
@@ -660,6 +660,53 @@
         </div>
       </div>
 
+      <!-- ==================== ATTACHMENTS SECTION ==================== -->
+      <div class="ticket-attachments-section" *ngIf="ticketAttachments.length > 0 || isLoadingAttachments">
+        <div class="attachments-header">
+        </div>
+        
+        <!-- Loading state -->
+        <div *ngIf="isLoadingAttachments" class="attachments-loading">
+          <mat-spinner diameter="30"></mat-spinner>
+          <span>Caricamento allegati...</span>
+        </div>
+        
+        <!-- Attachments grid -->
+        <div *ngIf="!isLoadingAttachments && ticketAttachments.length > 0" class="attachments-grid">
+          <div *ngFor="let attachment of ticketAttachments" 
+               class="attachment-card"
+               (click)="openAttachmentPreview(attachment, false)"
+               matTooltip="Clicca per visualizzare">
+            
+            <!-- File icon -->
+            <div class="attachment-icon-wrapper">
+              <mat-icon class="attachment-icon">{{ getAttachmentIcon(attachment.original_name) }}</mat-icon>
+            </div>
+            
+            <!-- File info -->
+            <div class="attachment-info">
+              <div class="attachment-name" [matTooltip]="attachment.original_name">
+                {{ attachment.original_name }}
+              </div>
+              <div class="attachment-metadata">
+                <span class="attachment-size">{{ formatFileSize(attachment.file_size) }}</span>
+                <span class="attachment-separator">•</span>
+                <span class="attachment-user">{{ attachment.user_name || 'Utente' }}</span>
+              </div>
+            </div>
+            
+            <!-- Download button -->
+            <button mat-icon-button 
+                    class="download-button"
+                    (click)="downloadAttachment(attachment); $event.stopPropagation()"
+                    matTooltip="Scarica">
+              <mat-icon>download</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- ==================== END ATTACHMENTS SECTION ==================== -->
+
       <!-- Messages area -->
       <div class="chat-messages-container" id="chatMessagesContainer">
         
@@ -828,10 +875,12 @@
             <textarea matInput 
                       [(ngModel)]="chatMessage" 
                       (keydown.enter)="handleEnterKey($event)"
+                      (input)="autoResizeTextarea($event)"
                       rows="2"
                       placeholder="Scrivi qui..."
                       [disabled]="isSendingMessage"
-                      class="inline-textarea"></textarea>
+                      class="inline-textarea">
+            </textarea>
             <mat-hint>Invio per inviare, Shift+Invio per nuova riga</mat-hint>
           </mat-form-field>
 

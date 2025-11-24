@@ -1,6 +1,8 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ApiService } from '../servizi/api.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-attachment-preview-modal',
@@ -8,7 +10,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
   styleUrls: ['./attachment-preview-modal.component.scss'],
   standalone: false
 })
-export class AttachmentPreviewModalComponent implements OnInit {
+export class AttachmentPreviewModalComponent implements OnInit, OnDestroy {
   attachment: any;
   isPending: boolean = false;
   previewUrl: SafeResourceUrl | string | null = null;
@@ -17,11 +19,15 @@ export class AttachmentPreviewModalComponent implements OnInit {
   isPreviewable: boolean = false;
   fileExtension: string = '';
   downloadUrl: string = '';
+  isLoading: boolean = false;
+  
+  private subscriptions: Subscription[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<AttachmentPreviewModalComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private apiService: ApiService  // ADDED: Inject ApiService
   ) {
     this.attachment = data.attachment;
     this.isPending = data.isPending || false;
@@ -29,6 +35,16 @@ export class AttachmentPreviewModalComponent implements OnInit {
 
   ngOnInit(): void {
     this.initializePreview();
+  }
+
+  ngOnDestroy(): void {
+    // Clean up subscriptions
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    
+    // Revoke object URLs to prevent memory leaks
+    if (this.previewUrl && typeof this.previewUrl === 'string' && this.previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(this.previewUrl);
+    }
   }
 
   /**
@@ -39,7 +55,7 @@ export class AttachmentPreviewModalComponent implements OnInit {
       // Pending file - use local preview
       this.initializePendingPreview();
     } else {
-      // Existing attachment - use server URL
+      // Existing attachment - fetch from server
       this.initializeExistingPreview();
     }
   }
@@ -90,14 +106,11 @@ export class AttachmentPreviewModalComponent implements OnInit {
   }
 
   /**
-   * Initialize preview for existing attachment
+   * Initialize preview for existing attachment - FIXED VERSION
    */
   private initializeExistingPreview(): void {
     const fileName = this.attachment.original_name || this.attachment.file_name || '';
     this.fileExtension = this.getFileExtension(fileName);
-    
-    // Set download URL
-    this.downloadUrl = `/api/attachments/${this.attachment.id}/download`;
     
     // Determine file type from mime_type or extension
     const mimeType = this.attachment.mime_type || '';
@@ -106,18 +119,64 @@ export class AttachmentPreviewModalComponent implements OnInit {
     if (mimeType.startsWith('image/') || this.isImageExtension(this.fileExtension)) {
       this.isImage = true;
       this.isPreviewable = true;
-      this.previewUrl = this.downloadUrl;
+      this.loadImagePreview();
     }
     // Check if it's a PDF
     else if (mimeType === 'application/pdf' || this.fileExtension === 'pdf') {
       this.isPdf = true;
       this.isPreviewable = true;
-      this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.downloadUrl);
+      this.loadPdfPreview();
     }
     // Other file types - not previewable
     else {
       this.isPreviewable = false;
     }
+  }
+
+  /**
+   * Load image preview using ApiService - ADDED METHOD
+   */
+  private loadImagePreview(): void {
+    this.isLoading = true;
+    
+    const downloadSub = this.apiService.downloadTicketAttachment(this.attachment.id).subscribe(
+      (blob: Blob) => {
+        // Create blob URL for image
+        const blobUrl = URL.createObjectURL(blob);
+        this.previewUrl = blobUrl;
+        this.isLoading = false;
+      },
+      (error) => {
+        console.error('Error loading image preview:', error);
+        this.isLoading = false;
+        this.isPreviewable = false;
+      }
+    );
+    
+    this.subscriptions.push(downloadSub);
+  }
+
+  /**
+   * Load PDF preview using ApiService - ADDED METHOD
+   */
+  private loadPdfPreview(): void {
+    this.isLoading = true;
+    
+    const downloadSub = this.apiService.downloadTicketAttachment(this.attachment.id).subscribe(
+      (blob: Blob) => {
+        // Create blob URL for PDF and bypass security
+        const blobUrl = URL.createObjectURL(blob);
+        this.previewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(blobUrl);
+        this.isLoading = false;
+      },
+      (error) => {
+        console.error('Error loading PDF preview:', error);
+        this.isLoading = false;
+        this.isPreviewable = false;
+      }
+    );
+    
+    this.subscriptions.push(downloadSub);
   }
 
   /**
@@ -129,88 +188,84 @@ export class AttachmentPreviewModalComponent implements OnInit {
   }
 
   /**
-   * Check if extension is an image
+   * Check if extension is an image type
    */
-  private isImageExtension(ext: string): boolean {
-    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
-    return imageExtensions.includes(ext);
+  private isImageExtension(extension: string): boolean {
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'];
+    return imageExtensions.includes(extension.toLowerCase());
   }
 
   /**
-   * Download file
+   * Get appropriate icon for file type
+   */
+  getFileIcon(): string {
+    if (this.isImage) return 'image';
+    if (this.isPdf) return 'picture_as_pdf';
+    
+    const extension = this.fileExtension.toLowerCase();
+    const iconMap: { [key: string]: string } = {
+      'doc': 'description',
+      'docx': 'description',
+      'xls': 'table_chart',
+      'xlsx': 'table_chart',
+      'ppt': 'slideshow',
+      'pptx': 'slideshow',
+      'txt': 'text_snippet',
+      'zip': 'folder_zip',
+      'rar': 'folder_zip',
+    };
+    
+    return iconMap[extension] || 'insert_drive_file';
+  }
+
+  /**
+   * Format file size for display
+   */
+  formatFileSize(bytes: number): string {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  /**
+   * Download attachment - MODIFIED to use ApiService
    */
   download(): void {
     if (this.isPending) {
-      // For pending files, trigger browser download
+      // For pending files, trigger browser download from the file object
       const file = this.attachment.file;
-      const url = URL.createObjectURL(file);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if (file) {
+        const url = URL.createObjectURL(file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
     } else {
-      // For existing attachments, open download URL
-      window.open(this.downloadUrl, '_blank');
+      // For existing attachments, use ApiService
+      this.apiService.downloadTicketAttachment(this.attachment.id).subscribe(
+        (blob: Blob) => {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = this.attachment.original_name || this.attachment.file_name || 'download';
+          link.click();
+          URL.revokeObjectURL(url);
+        },
+        (error) => {
+          console.error('Error downloading attachment:', error);
+        }
+      );
     }
   }
 
   /**
-   * Close modal
+   * Close the modal
    */
   close(): void {
     this.dialogRef.close();
-  }
-
-  /**
-   * Get file icon based on extension
-   */
-  getFileIcon(): string {
-    const iconMap: {[key: string]: string} = {
-      // Images
-      'jpg': 'image',
-      'jpeg': 'image',
-      'png': 'image',
-      'gif': 'image',
-      'webp': 'image',
-      'svg': 'image',
-      
-      // Documents
-      'pdf': 'picture_as_pdf',
-      'doc': 'description',
-      'docx': 'description',
-      'txt': 'description',
-      
-      // Spreadsheets
-      'xls': 'table_chart',
-      'xlsx': 'table_chart',
-      'csv': 'table_chart',
-      
-      // Presentations
-      'ppt': 'slideshow',
-      'pptx': 'slideshow',
-      
-      // Archives
-      'zip': 'folder_zip',
-      'rar': 'folder_zip',
-      '7z': 'folder_zip'
-    };
-    
-    return iconMap[this.fileExtension] || 'insert_drive_file';
-  }
-
-  /**
-   * Format file size
-   */
-  formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 B';
-    
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }

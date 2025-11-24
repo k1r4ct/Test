@@ -3286,6 +3286,346 @@
   }
 }
 
+/* ==================== CLICKABLE ATTACHMENTS STYLES ==================== */
+
+/* Base clickable attachment class */
+.clickable-attachment {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.clickable-attachment:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Attachment cards in grid (ticket detail modal) */
+.attachments-grid .attachment-card.clickable-attachment:hover {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-color: #007bff;
+}
+
+.attachments-grid .attachment-card.clickable-attachment:hover .attachment-icon i {
+  color: #007bff;
+  transform: scale(1.1);
+}
+
+/* Attachment items in message bubbles */
+.message-attachments .attachment-item.clickable-attachment {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.message-attachments .attachment-item.clickable-attachment:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(4px);
+}
+
+.message-attachments .attachment-item.clickable-attachment:active {
+  transform: translateX(2px) scale(0.98);
+}
+
+/* Preview icon for attachments */
+.preview-icon {
+  margin-left: auto;
+  color: #28a745;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  font-size: 14px;
+}
+
+.clickable-attachment:hover .preview-icon {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Preview icon for file chips in reply area */
+.preview-icon-chip {
+  margin-left: auto;
+  color: #007bff;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  font-size: 12px;
+}
+
+.file-chip.clickable-attachment:hover .preview-icon-chip {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* Preview icon for pending files in new ticket modal */
+.preview-icon-inline {
+  margin-left: 8px;
+  color: #007bff;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  font-size: 14px;
+}
+
+.file-item.clickable-attachment:hover .preview-icon-inline {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* File chips in reply area - make them more interactive */
+.selected-files-chips .file-chip.clickable-attachment {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border: 1px solid #90caf9;
+  padding: 8px 12px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.selected-files-chips .file-chip.clickable-attachment:hover {
+  background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+  border-color: #64b5f6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+}
+
+/* File items in new ticket modal */
+.selected-files-list .file-item.clickable-attachment {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.selected-files-list .file-item.clickable-attachment:hover {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+  border-color: #007bff;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+/* Hover effect for attachment name */
+.clickable-attachment:hover .attachment-name {
+  color: #007bff;
+  text-decoration: underline;
+}
+
+.clickable-attachment:hover .file-name {
+  color: #007bff;
+  font-weight: 500;
+}
+
+/* Add visual feedback on click */
+.clickable-attachment:active {
+  transform: scale(0.97);
+}
+
+/* Tooltip-like effect */
+.clickable-attachment::before {
+  content: 'Clicca per visualizzare';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 1000;
+}
+
+.clickable-attachment::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.clickable-attachment:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-12px);
+}
+
+.clickable-attachment:hover::after {
+  opacity: 1;
+}
+
+/* Disable tooltip for file chips and small items */
+.file-chip.clickable-attachment::before,
+.file-chip.clickable-attachment::after {
+  display: none;
+}
+
+/* Eye icon animation on hover */
+@keyframes eyeBlink {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.clickable-attachment:hover .preview-icon,
+.clickable-attachment:hover .preview-icon-chip,
+.clickable-attachment:hover .preview-icon-inline {
+  animation: eyeBlink 0.6s ease-in-out;
+}
+
+/* Improve attachment icon visibility */
+.clickable-attachment .attachment-icon i {
+  transition: all 0.3s ease;
+}
+
+.clickable-attachment:hover .attachment-icon i {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+/* Add a subtle glow effect for images */
+.clickable-attachment .fa-file-image {
+  color: #17a2b8;
+}
+
+.clickable-attachment:hover .fa-file-image {
+  color: #138496;
+  filter: drop-shadow(0 0 4px rgba(23, 162, 184, 0.5));
+}
+
+/* PDF specific styling */
+.clickable-attachment .fa-file-pdf {
+  color: #dc3545;
+}
+
+.clickable-attachment:hover .fa-file-pdf {
+  color: #c82333;
+  filter: drop-shadow(0 0 4px rgba(220, 53, 69, 0.5));
+}
+
+/* Word document styling */
+.clickable-attachment .fa-file-word {
+  color: #2b579a;
+}
+
+.clickable-attachment:hover .fa-file-word {
+  color: #1e3f6f;
+  filter: drop-shadow(0 0 4px rgba(43, 87, 154, 0.5));
+}
+
+/* Excel document styling */
+.clickable-attachment .fa-file-excel {
+  color: #217346;
+}
+
+.clickable-attachment:hover .fa-file-excel {
+  color: #185c37;
+  filter: drop-shadow(0 0 4px rgba(33, 115, 70, 0.5));
+}
+
+/* Archive files styling */
+.clickable-attachment .fa-file-archive {
+  color: #ffc107;
+}
+
+.clickable-attachment:hover .fa-file-archive {
+  color: #e0a800;
+  filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
+}
+
+/* Loading state for attachments */
+.clickable-attachment.loading {
+  pointer-events: none;
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.clickable-attachment.loading::before,
+.clickable-attachment.loading::after {
+  display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .clickable-attachment:hover {
+    transform: translateY(-1px);
+  }
+  
+  /* Remove tooltip on mobile */
+  .clickable-attachment::before,
+  .clickable-attachment::after {
+    display: none !important;
+  }
+  
+  /* Make preview icons always visible on mobile */
+  .preview-icon,
+  .preview-icon-chip,
+  .preview-icon-inline {
+    opacity: 0.7;
+  }
+}
+
+/* Accessibility improvements */
+.clickable-attachment:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+.clickable-attachment:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .clickable-attachment:hover {
+    border: 2px solid currentColor;
+  }
+  
+  .preview-icon,
+  .preview-icon-chip,
+  .preview-icon-inline {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .clickable-attachment,
+  .preview-icon,
+  .preview-icon-chip,
+  .preview-icon-inline,
+  .attachment-icon i {
+    transition: none;
+    animation: none;
+  }
+  
+  .clickable-attachment:hover {
+    transform: none;
+  }
+}
+
+/* ==================== END CLICKABLE ATTACHMENTS STYLES ==================== */
+
 /* ========================================
    RESPONSIVE STYLES SECTION
    ======================================== */
