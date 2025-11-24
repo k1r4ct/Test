@@ -12,7 +12,15 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Assegnamento automatico priorità ticket - eseguito ogni giorno alle 01:00
+        $schedule->command('tickets:auto-assign-priority')
+            ->daily()
+            ->at('01:00');
+
+        // Gestione ticket archiviati e cancellati - eseguito ogni giorno alle 02:00
+        $schedule->command('tickets:manage-archived')
+            ->daily()
+            ->at('02:00');
     }
 
     /**
