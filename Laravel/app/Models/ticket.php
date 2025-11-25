@@ -19,12 +19,35 @@ class Ticket extends Model
         'contract_id',
         'created_by_user_id',
         'assigned_to_user_id',
+        'closed_at',
+        'restored_at',
+        'deleted_at',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'closed_at' => 'datetime',
+        'restored_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
+
+    /**
+     * Status constants for better code readability
+     */
+    public const STATUS_NEW = 'new';
+    public const STATUS_WAITING = 'waiting';
+    public const STATUS_RESOLVED = 'resolved';
+    public const STATUS_CLOSED = 'closed';
+    public const STATUS_DELETED = 'deleted';
+
+    /**
+     * Priority constants
+     */
+    public const PRIORITY_UNASSIGNED = 'unassigned';
+    public const PRIORITY_LOW = 'low';
+    public const PRIORITY_MEDIUM = 'medium';
+    public const PRIORITY_HIGH = 'high';
 
     // Relationships
     public function contract()
@@ -135,6 +158,30 @@ class Ticket extends Model
         return $query->has('attachments');
     }
 
+    /**
+     * Scope for open tickets (new or waiting)
+     */
+    public function scopeOpen($query)
+    {
+        return $query->whereIn('status', [self::STATUS_NEW, self::STATUS_WAITING]);
+    }
+
+    /**
+     * Scope for archived tickets (closed)
+     */
+    public function scopeArchived($query)
+    {
+        return $query->where('status', self::STATUS_CLOSED);
+    }
+
+    /**
+     * Scope for tickets in deleted status
+     */
+    public function scopeInDeletedStatus($query)
+    {
+        return $query->where('status', self::STATUS_DELETED);
+    }
+
     // Attributes
     public function getCustomerNameAttribute()
     {
@@ -180,6 +227,60 @@ class Ticket extends Model
             return $this->createdBy->email;
         }
         return 'N/A';
+    }
+
+    /**
+     * Get the number of days since the ticket was created
+     */
+    public function getDaysOpenAttribute(): int
+    {
+        return $this->created_at->diffInDays(now());
+    }
+
+    /**
+     * Get the number of days since the ticket was archived (closed)
+     */
+    public function getDaysArchivedAttribute(): ?int
+    {
+        if (!$this->closed_at) {
+            return null;
+        }
+        return $this->closed_at->diffInDays(now());
+    }
+
+    /**
+     * Get the number of days since the ticket was soft-deleted
+     */
+    public function getDaysDeletedAttribute(): ?int
+    {
+        if (!$this->deleted_at) {
+            return null;
+        }
+        return $this->deleted_at->diffInDays(now());
+    }
+
+    /**
+     * Check if ticket is open
+     */
+    public function isOpen(): bool
+    {
+        return in_array($this->status, [self::STATUS_NEW, self::STATUS_WAITING]);
+    }
+
+    /**
+     * Check if ticket is archived
+     */
+    public function isArchived(): bool
+    {
+        return $this->status === self::STATUS_CLOSED;
+    }
+
+    /**
+     * Check if ticket is in deleted status
+     */
+    public function isDeleted(): bool
+    {
+        return $this->status === self::STATUS_DELETED;
     }
 
     public static function generateTicketNumber()

@@ -11,33 +11,23 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\User;
 use App\Models\Ticket;
 
-class CambioStatoTicket extends Mailable
+class NuovoTicketCreato extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $creatoreTicket;
-    public $originalTicket;
+    public $ticket;
 
     /**
      * Create a new message instance.
      *
      * @param User $creatoreTicket The user who created the ticket
-     * @param Ticket $originalTicket The ticket
+     * @param Ticket $ticket The ticket that was created
      */
-    public function __construct($creatoreTicket, $originalTicket)
+    public function __construct(User $creatoreTicket, Ticket $ticket)
     {
-        // Validate that $creatoreTicket is a User instance
-        if (!$creatoreTicket instanceof User) {
-            throw new \InvalidArgumentException('$creatoreTicket deve essere un\'istanza di User');
-        }
-
-        // Validate that $originalTicket is a Ticket instance
-        if (!$originalTicket instanceof Ticket) {
-            throw new \InvalidArgumentException('$originalTicket deve essere un\'istanza di Ticket');
-        }
-
         $this->creatoreTicket = $creatoreTicket;
-        $this->originalTicket = $originalTicket;
+        $this->ticket = $ticket;
     }
 
     /**
@@ -46,7 +36,7 @@ class CambioStatoTicket extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Ticket Risolto #' . $this->originalTicket->ticket_number,
+            subject: 'Ticket Creato #' . $this->ticket->ticket_number . ' - ' . $this->ticket->title,
         );
     }
 
@@ -55,12 +45,10 @@ class CambioStatoTicket extends Mailable
      */
     public function content(): Content
     {
-        $ticket = $this->originalTicket;
-
-        // Get customer name 
+        // Get customer name from contract relationship
         $nomeCustomer = 'N/A';
-        if ($ticket->contract && $ticket->contract->customer_data) {
-            $customerData = $ticket->contract->customer_data;
+        if ($this->ticket->contract && $this->ticket->contract->customer_data) {
+            $customerData = $this->ticket->contract->customer_data;
             $nomeCustomer = trim(($customerData->nome ?? '') . ' ' . ($customerData->cognome ?? ''));
             if (empty($nomeCustomer)) {
                 $nomeCustomer = $customerData->ragione_sociale ?? 'N/A';
@@ -68,16 +56,15 @@ class CambioStatoTicket extends Mailable
         }
 
         return new Content(
-            view: 'emails.cambioStatoTicket',
+            view: 'emails.nuovoTicketCreato',
             with: [
                 'nomeUtente' => trim(($this->creatoreTicket->name ?? '') . ' ' . ($this->creatoreTicket->cognome ?? '')),
-                'numeroTicket' => $ticket->ticket_number,
-                'oggettoTicket' => $ticket->title, 
-                'statoTicket' => $ticket->status,
-                'dataApertura' => $ticket->created_at->format('d/m/Y H:i'),
-                'linkTicket' => url('/tickets/' . $ticket->id),
-                'nomeCustomer' => $nomeCustomer, 
-                'contractID' => $ticket->contract_id,
+                'numeroTicket' => $this->ticket->ticket_number,
+                'titoloTicket' => $this->ticket->title,
+                'descrizioneTicket' => $this->ticket->description,
+                'dataApertura' => $this->ticket->created_at->format('d/m/Y H:i'),
+                'nomeCustomer' => $nomeCustomer,
+                'contractID' => $this->ticket->contract_id,
             ]
         );
     }

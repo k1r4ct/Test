@@ -52,7 +52,7 @@ class TicketController extends Controller
             // Only Admin (1,6) can see deleted tickets
             // BackOffice and WebOps cannot see deleted tickets
             if (!in_array($userRole, [1, 6])) {
-                $query->where('status', '!=', 'deleted');
+                $query->where('status', '!=', Ticket::STATUS_DELETED);
             }
 
             $tickets = $query->orderBy('created_at', 'desc')->get();
@@ -117,7 +117,7 @@ class TicketController extends Controller
             
             if (in_array($user->role->id, $restrictedRoles)) {
                 $existingTicket = Ticket::where('contract_id', $request->contract_id)
-                    ->where('status', '!=', 'deleted')
+                    ->where('status', '!=', Ticket::STATUS_DELETED)
                     ->first();
                     
                 if ($existingTicket) {
@@ -135,12 +135,12 @@ class TicketController extends Controller
             $ticket = Ticket::create([
                 'title' => $request->title,
                 'description' => $request->description,
-                'priority' => $request->priority ?? 'unassigned',
+                'priority' => $request->priority ?? Ticket::PRIORITY_UNASSIGNED,
                 'contract_id' => $request->contract_id,
                 'created_by_user_id' => $user->id,
             ]);
 
-            // Load relationships for response
+            // Load relationships for response and email
             $ticket->load([
                 'contract.customer_data',
                 'contract.product',
@@ -160,14 +160,23 @@ class TicketController extends Controller
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
                 'previous_status' => null,
-                'new_status' => 'new',
+                'new_status' => Ticket::STATUS_NEW,
                 'previous_priority' => null,
                 'new_priority' => $ticket->priority,
-                'change_type' => 'both'
+                'change_type' => TicketChangeLog::CHANGE_TYPE_BOTH
             ]);
 
             // Send notification
             $this->notifyTicketParticipants($ticket, 'new_ticket');
+
+            // Send confirmation email to ticket creator
+            try {
+                Mail::to($user->email)->send(new \App\Mail\NuovoTicketCreato($user, $ticket));
+                Log::info("NuovoTicketCreato email sent to: " . $user->email . " for ticket #" . $ticket->ticket_number);
+            } catch (\Exception $mailException) {
+                Log::error('Error sending NuovoTicketCreato email: ' . $mailException->getMessage());
+                // Don't fail the ticket creation if email fails
+            }
 
             return response()->json([
                 "response" => "ok",
@@ -191,6 +200,9 @@ class TicketController extends Controller
      * Special rules:
      * - Only admin can move tickets back to 'new'
      * - Only admin can move tickets to 'deleted'
+     * - Sets closed_at when moving to 'closed'
+     * - Sets deleted_at when moving to 'deleted'
+     * - Clears timestamps when restoring
      */
     public function updateTicketStatus(Request $request)
     {
@@ -211,14 +223,14 @@ class TicketController extends Controller
             $user = Auth::user();
             $userRole = $user->role->id;
             $ticket = Ticket::with(['createdBy', 'assignedTo','contract.customer_data'])->findOrFail($request->ticket_id);
-            $mailCreatoreTicket=$ticket->createdBy->email;
-            $userCreatoreTicket=$ticket->createdBy;
+            $mailCreatoreTicket = $ticket->createdBy->email;
+            $userCreatoreTicket = $ticket->createdBy;
 
             $oldStatus = $ticket->status;
             $newStatus = $request->status;
 
             // Only Admin (1,6) can move tickets back to 'new'
-            if ($oldStatus !== 'new' && $newStatus === 'new' && !in_array($userRole, [1, 6])) {
+            if ($oldStatus !== Ticket::STATUS_NEW && $newStatus === Ticket::STATUS_NEW && !in_array($userRole, [1, 6])) {
                 return response()->json([
                     "response" => "error",
                     "status" => "403", 
@@ -227,7 +239,7 @@ class TicketController extends Controller
             }
 
             // Only Admin (1,6) can delete tickets
-            if ($newStatus === 'deleted' && !in_array($userRole, [1, 6])) {
+            if ($newStatus === Ticket::STATUS_DELETED && !in_array($userRole, [1, 6])) {
                 return response()->json([
                     "response" => "error",
                     "status" => "403", 
@@ -244,12 +256,18 @@ class TicketController extends Controller
                 ]);
             }
 
-            // Update ticket status WITH previous_status
-            $ticket->update([
+            // Prepare update data
+            $updateData = [
                 'previous_status' => $oldStatus,
                 'status' => $newStatus,
                 'assigned_to_user_id' => $user->id
-            ]);
+            ];
+
+            // Handle timestamp updates based on status change
+            $updateData = $this->handleStatusTimestamps($updateData, $oldStatus, $newStatus);
+
+            // Update ticket
+            $ticket->update($updateData);
 
             // Log the status change
             TicketChangeLog::create([
@@ -259,17 +277,21 @@ class TicketController extends Controller
                 'new_status' => $newStatus,
                 'previous_priority' => null,
                 'new_priority' => null,
-                'change_type' => 'status'
+                'change_type' => TicketChangeLog::CHANGE_TYPE_STATUS
             ]);
 
             // Create system message about status change
             $statusLabels = Ticket::getStatusOptions();
             $statusLabel = $statusLabels[$newStatus] ?? $newStatus;
             $oldStatusLabel = $statusLabels[$oldStatus] ?? $oldStatus;
-            Log::info("stato contratto in " . $statusLabel);
-            if ($statusLabel=='Risolto') {
-                Mail::to($mailCreatoreTicket)->send(new \App\Mail\CambioStatoTicket($userCreatoreTicket,$ticket));
+            
+            Log::info("Ticket status changed to: " . $statusLabel);
+            
+            // Send email when ticket is resolved
+            if ($newStatus === Ticket::STATUS_RESOLVED) {
+                Mail::to($mailCreatoreTicket)->send(new \App\Mail\CambioStatoTicket($userCreatoreTicket, $ticket));
             }
+            
             TicketMessage::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
@@ -294,6 +316,39 @@ class TicketController extends Controller
                 "message" => "Server error"
             ]);
         }
+    }
+
+    /**
+     * Handle timestamp updates based on status transitions
+     * 
+     * @param array $updateData Current update data
+     * @param string $oldStatus Previous status
+     * @param string $newStatus New status
+     * @return array Updated data with timestamps
+     */
+    private function handleStatusTimestamps(array $updateData, string $oldStatus, string $newStatus): array
+    {
+        $now = now();
+
+        // Moving TO closed status - set closed_at
+        if ($newStatus === Ticket::STATUS_CLOSED && $oldStatus !== Ticket::STATUS_CLOSED) {
+            $updateData['closed_at'] = $now;
+        }
+
+        // Moving TO deleted status - set deleted_at
+        if ($newStatus === Ticket::STATUS_DELETED && $oldStatus !== Ticket::STATUS_DELETED) {
+            $updateData['deleted_at'] = $now;
+        }
+
+        // Restoring FROM closed or deleted - set restored_at and clear timestamps
+        if (in_array($oldStatus, [Ticket::STATUS_CLOSED, Ticket::STATUS_DELETED]) 
+            && !in_array($newStatus, [Ticket::STATUS_CLOSED, Ticket::STATUS_DELETED])) {
+            $updateData['restored_at'] = $now;
+            $updateData['closed_at'] = null;
+            $updateData['deleted_at'] = null;
+        }
+
+        return $updateData;
     }
 
     /**
@@ -335,7 +390,7 @@ class TicketController extends Controller
                 'new_status' => null,
                 'previous_priority' => $oldPriority,
                 'new_priority' => $newPriority,
-                'change_type' => 'priority'
+                'change_type' => TicketChangeLog::CHANGE_TYPE_PRIORITY
             ]);
 
             // Get priority labels for response
@@ -364,6 +419,7 @@ class TicketController extends Controller
     /**
      * Close a ticket (move from resolved to closed)
      * Only admin or assigned backoffice can close tickets
+     * Sets closed_at timestamp
      */
     public function closeTicket(Request $request)
     {
@@ -397,7 +453,7 @@ class TicketController extends Controller
             }
 
             // Check if ticket is in resolved status
-            if ($ticket->status !== 'resolved') {
+            if ($ticket->status !== Ticket::STATUS_RESOLVED) {
                 return response()->json([
                     "response" => "error",
                     "status" => "400", 
@@ -409,7 +465,8 @@ class TicketController extends Controller
 
             $ticket->update([
                 'previous_status' => $oldStatus,
-                'status' => 'closed'
+                'status' => Ticket::STATUS_CLOSED,
+                'closed_at' => now()  // Set closed_at timestamp
             ]);
 
             // Log the closure
@@ -417,10 +474,10 @@ class TicketController extends Controller
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
                 'previous_status' => $oldStatus,
-                'new_status' => 'closed',
+                'new_status' => Ticket::STATUS_CLOSED,
                 'previous_priority' => null,
                 'new_priority' => null,
-                'change_type' => 'status'
+                'change_type' => TicketChangeLog::CHANGE_TYPE_STATUS
             ]);
 
             // Log the closure in messages
@@ -450,6 +507,7 @@ class TicketController extends Controller
     /**
      * Bulk delete tickets (move to deleted status)
      * Only admin can perform this action
+     * Sets deleted_at timestamp for each ticket
      */
     public function bulkDeleteTickets(Request $request)
     {
@@ -487,7 +545,8 @@ class TicketController extends Controller
                 
                 $ticket->update([
                     'previous_status' => $oldStatus,
-                    'status' => 'deleted',
+                    'status' => Ticket::STATUS_DELETED,
+                    'deleted_at' => now(),  // Set deleted_at timestamp
                     'assigned_to_user_id' => $user->id
                 ]);
 
@@ -496,10 +555,10 @@ class TicketController extends Controller
                     'ticket_id' => $ticket->id,
                     'user_id' => $user->id,
                     'previous_status' => $oldStatus,
-                    'new_status' => 'deleted',
+                    'new_status' => Ticket::STATUS_DELETED,
                     'previous_priority' => null,
                     'new_priority' => null,
-                    'change_type' => 'status'
+                    'change_type' => TicketChangeLog::CHANGE_TYPE_STATUS
                 ]);
 
                 // Log the deletion in messages
@@ -589,9 +648,8 @@ class TicketController extends Controller
             }
 
             $user = Auth::user();
-            $ticket = Ticket::with(['createdBy', 'assignedTo','contract.customer_data'])->findOrFail($request->ticket_id);
-            $mailCreatoreTicket=$ticket->createdBy->email;
-            $userCreatoreTicket=$ticket->createdBy;
+            $ticket = Ticket::with(['createdBy', 'assignedTo', 'contract.customer_data'])->findOrFail($request->ticket_id);
+            
             // Check permissions
             if (!$this->canAccessTicket($user, $ticket)) {
                 return response()->json([
@@ -613,8 +671,8 @@ class TicketController extends Controller
 
             $message->load(['user.role', 'ticket']);
             
-            // Correzione: passa l'oggetto $message invece di $request->message
-            Mail::to($mailCreatoreTicket)->send(new \App\Mail\MailNewMessageTicket($userCreatoreTicket, $message,$ticket));
+            // Send email notification using intelligent logic
+            $this->sendMessageNotificationEmail($user, $ticket, $message);
             
             return response()->json([
                 "response" => "ok",
@@ -634,9 +692,54 @@ class TicketController extends Controller
     }
 
     /**
+     * Send email notification for new message with intelligent logic
+     * 
+     * Rules:
+     * - Never send email to the message sender themselves
+     * - If sender is the ticket creator (SEU): notify assigned backoffice (if any)
+     * - If sender is NOT the ticket creator (backoffice): notify the ticket creator
+     * 
+     * @param \App\Models\User $sender The user who sent the message
+     * @param \App\Models\Ticket $ticket The ticket
+     * @param \App\Models\TicketMessage $message The message that was sent
+     */
+    private function sendMessageNotificationEmail($sender, $ticket, $message)
+    {
+        try {
+            $ticketCreatorId = $ticket->created_by_user_id;
+            $senderId = $sender->id;
+
+            if ($senderId == $ticketCreatorId) {
+                // Sender is the ticket creator (SEU/Advisor)
+                // Notify the assigned backoffice operator if one exists
+                if ($ticket->assignedTo && $ticket->assigned_to_user_id) {
+                    Mail::to($ticket->assignedTo->email)->send(
+                        new \App\Mail\MailNewMessageTicket($ticket->assignedTo, $message, $ticket)
+                    );
+                    Log::info("MailNewMessageTicket sent to assigned backoffice: " . $ticket->assignedTo->email . " for ticket #" . $ticket->ticket_number);
+                } else {
+                    // No one assigned yet - ticket is still 'new'
+                    // Don't send email - backoffice will see it in the board
+                    Log::info("No assigned backoffice for ticket #" . $ticket->ticket_number . " - email not sent (ticket status: " . $ticket->status . ")");
+                }
+            } else {
+                // Notify the ticket creator
+                if ($ticket->createdBy && $ticket->createdBy->email) {
+                    Mail::to($ticket->createdBy->email)->send(
+                        new \App\Mail\MailNewMessageTicket($ticket->createdBy, $message, $ticket)
+                    );
+                    Log::info("MailNewMessageTicket sent to ticket creator: " . $ticket->createdBy->email . " for ticket #" . $ticket->ticket_number);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error sending message notification email: ' . $e->getMessage());
+            // Don't fail the message send if email fails
+        }
+    }
+
+    /**
      * Get complete change history for a ticket
      * Returns all status and priority changes
-     * OPTIONAL: Use this to show full history to administrators
      */
     public function getTicketChangeLogs($ticketId)
     {
@@ -665,7 +768,7 @@ class TicketController extends Controller
             $formattedLogs = $logs->map(function($log) use ($statusLabels, $priorityLabels) {
                 $data = [
                     'id' => $log->id,
-                    'user_name' => $log->user->nome . ' ' . $log->user->cognome,
+                    'user_name' => $log->user ? $log->user->nome . ' ' . $log->user->cognome : 'Sistema',
                     'change_type' => $log->change_type,
                     'changed_at' => $log->created_at->format('d/m/Y H:i')
                 ];
@@ -786,7 +889,7 @@ class TicketController extends Controller
             // Exclude both deleted AND closed tickets
             // This allows creating a new ticket once the previous one is closed
             $ticket = Ticket::where('contract_id', $contractId)
-                        ->whereNotIn('status', ['deleted', 'closed'])
+                        ->whereNotIn('status', [Ticket::STATUS_DELETED, Ticket::STATUS_CLOSED])
                         ->with(['messages.user', 'contract'])
                         ->first();
             
@@ -816,7 +919,7 @@ class TicketController extends Controller
     /**
      * Restore a closed or deleted ticket
      * Only administrators can perform this action
-     * If force_replace is true, will delete any active ticket
+     * Sets restored_at timestamp and clears closed_at/deleted_at
      */
     public function restoreTicket(Request $request)
     {
@@ -849,7 +952,7 @@ class TicketController extends Controller
             $ticket = Ticket::findOrFail($request->ticket_id);
             
             // Can only restore closed or deleted tickets
-            if (!in_array($ticket->status, ['closed', 'deleted'])) {
+            if (!in_array($ticket->status, [Ticket::STATUS_CLOSED, Ticket::STATUS_DELETED])) {
                 return response()->json([
                     "response" => "error",
                     "status" => "400", 
@@ -859,7 +962,7 @@ class TicketController extends Controller
 
             // Check if there's an active ticket for this contract
             $activeTicket = Ticket::where('contract_id', $ticket->contract_id)
-                                  ->whereNotIn('status', ['deleted', 'closed'])
+                                  ->whereNotIn('status', [Ticket::STATUS_DELETED, Ticket::STATUS_CLOSED])
                                   ->first();
 
             if ($activeTicket && !$request->force_replace) {
@@ -874,8 +977,9 @@ class TicketController extends Controller
             // If force_replace, delete the active ticket
             if ($activeTicket && $request->force_replace) {
                 $activeTicket->update([
-                    'status' => 'deleted',
-                    'previous_status' => $activeTicket->status
+                    'status' => Ticket::STATUS_DELETED,
+                    'previous_status' => $activeTicket->status,
+                    'deleted_at' => now()
                 ]);
 
                 // Log the deletion
@@ -883,20 +987,21 @@ class TicketController extends Controller
                     'ticket_id' => $activeTicket->id,
                     'user_id' => $user->id,
                     'previous_status' => $activeTicket->status,
-                    'new_status' => 'deleted',
-                    'change_type' => 'status'
+                    'new_status' => Ticket::STATUS_DELETED,
+                    'change_type' => TicketChangeLog::CHANGE_TYPE_STATUS
                 ]);
             }
 
             $oldStatus = $ticket->status;
             
-            // Restore to 'new' status as requested
-            $newStatus = 'new';
-
+            // Restore to 'new' status
             $ticket->update([
-                'status' => $newStatus,
+                'status' => Ticket::STATUS_NEW,
                 'previous_status' => $oldStatus,
-                'assigned_to_user_id' => null  // Reset assignment when restoring to new
+                'assigned_to_user_id' => null,
+                'restored_at' => now(),    // Set restored_at timestamp
+                'closed_at' => null,       // Clear closed_at
+                'deleted_at' => null       // Clear deleted_at
             ]);
 
             // Log the restoration
@@ -904,17 +1009,20 @@ class TicketController extends Controller
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
                 'previous_status' => $oldStatus,
-                'new_status' => $newStatus,
+                'new_status' => Ticket::STATUS_NEW,
                 'previous_priority' => null,
                 'new_priority' => null,
-                'change_type' => 'status'
+                'change_type' => TicketChangeLog::CHANGE_TYPE_STATUS
             ]);
 
             // Add system message
+            $statusLabels = Ticket::getStatusOptions();
+            $oldStatusLabel = $statusLabels[$oldStatus] ?? $oldStatus;
+            
             TicketMessage::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
-                'message' => "Ticket ripristinato da stato '{$oldStatus}' a 'Nuovo'",
+                'message' => "Ticket ripristinato da stato '{$oldStatusLabel}' a 'Nuovo'",
                 'message_type' => 'status_change'
             ]);
 
@@ -980,7 +1088,7 @@ class TicketController extends Controller
 
     /**
      * Delete active ticket for a contract
-     * Admin only
+     * Admin only - sets deleted_at timestamp
      */
     public function deleteTicketByContractId(Request $request)
     {
@@ -1011,7 +1119,7 @@ class TicketController extends Controller
 
             // Find active ticket
             $ticket = Ticket::where('contract_id', $request->contract_id)
-                           ->whereNotIn('status', ['deleted', 'closed'])
+                           ->whereNotIn('status', [Ticket::STATUS_DELETED, Ticket::STATUS_CLOSED])
                            ->first();
 
             if (!$ticket) {
@@ -1025,8 +1133,9 @@ class TicketController extends Controller
             $oldStatus = $ticket->status;
 
             $ticket->update([
-                'status' => 'deleted',
-                'previous_status' => $oldStatus
+                'status' => Ticket::STATUS_DELETED,
+                'previous_status' => $oldStatus,
+                'deleted_at' => now()  // Set deleted_at timestamp
             ]);
 
             // Log the deletion
@@ -1034,8 +1143,8 @@ class TicketController extends Controller
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
                 'previous_status' => $oldStatus,
-                'new_status' => 'deleted',
-                'change_type' => 'status'
+                'new_status' => Ticket::STATUS_DELETED,
+                'change_type' => TicketChangeLog::CHANGE_TYPE_STATUS
             ]);
 
             // Add system message
@@ -1064,7 +1173,7 @@ class TicketController extends Controller
 
     /**
      * Restore the last closed/deleted ticket for a contract
-     * Admin only
+     * Admin only - sets restored_at and clears closed_at/deleted_at
      */
     public function restoreLastTicketByContractId(Request $request)
     {
@@ -1096,7 +1205,7 @@ class TicketController extends Controller
 
             // Find the last closed/deleted ticket
             $lastTicket = Ticket::where('contract_id', $request->contract_id)
-                               ->whereIn('status', ['closed', 'deleted'])
+                               ->whereIn('status', [Ticket::STATUS_CLOSED, Ticket::STATUS_DELETED])
                                ->orderBy('updated_at', 'desc')
                                ->first();
 
@@ -1110,7 +1219,7 @@ class TicketController extends Controller
 
             // Check for active ticket
             $activeTicket = Ticket::where('contract_id', $request->contract_id)
-                                  ->whereNotIn('status', ['deleted', 'closed'])
+                                  ->whereNotIn('status', [Ticket::STATUS_DELETED, Ticket::STATUS_CLOSED])
                                   ->first();
 
             if ($activeTicket && !$request->force_replace) {
@@ -1125,8 +1234,9 @@ class TicketController extends Controller
             // If force_replace, delete the active ticket
             if ($activeTicket && $request->force_replace) {
                 $activeTicket->update([
-                    'status' => 'deleted',
-                    'previous_status' => $activeTicket->status
+                    'status' => Ticket::STATUS_DELETED,
+                    'previous_status' => $activeTicket->status,
+                    'deleted_at' => now()
                 ]);
 
                 // Log the deletion
@@ -1134,17 +1244,20 @@ class TicketController extends Controller
                     'ticket_id' => $activeTicket->id,
                     'user_id' => $user->id,
                     'previous_status' => $activeTicket->status,
-                    'new_status' => 'deleted',
-                    'change_type' => 'status'
+                    'new_status' => Ticket::STATUS_DELETED,
+                    'change_type' => TicketChangeLog::CHANGE_TYPE_STATUS
                 ]);
             }
 
             // Restore the last ticket to 'new' status
             $oldStatus = $lastTicket->status;
             $lastTicket->update([
-                'status' => 'new',
+                'status' => Ticket::STATUS_NEW,
                 'previous_status' => $oldStatus,
-                'assigned_to_user_id' => null
+                'assigned_to_user_id' => null,
+                'restored_at' => now(),    // Set restored_at timestamp
+                'closed_at' => null,       // Clear closed_at
+                'deleted_at' => null       // Clear deleted_at
             ]);
 
             // Log the restoration
@@ -1152,8 +1265,8 @@ class TicketController extends Controller
                 'ticket_id' => $lastTicket->id,
                 'user_id' => $user->id,
                 'previous_status' => $oldStatus,
-                'new_status' => 'new',
-                'change_type' => 'status'
+                'new_status' => Ticket::STATUS_NEW,
+                'change_type' => TicketChangeLog::CHANGE_TYPE_STATUS
             ]);
 
             // Add system message
@@ -1464,5 +1577,4 @@ class TicketController extends Controller
 
         return true;
     }
-
 }
