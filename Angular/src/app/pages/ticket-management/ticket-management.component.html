@@ -637,7 +637,7 @@
         </div>
       </div>
 
-      <!-- ==================== ATTACHMENTS SECTION ==================== -->
+      <!-- ==================== ATTACHMENTS SECTION (MODIFIED) ==================== -->
       <div class="attachments-section" *ngIf="ticketAttachments.length > 0 || isLoadingAttachments">
         <h3>
           <i class="fas fa-paperclip"></i> 
@@ -650,8 +650,9 @@
         
         <div class="attachments-grid" *ngIf="!isLoadingAttachments && ticketAttachments.length > 0">
           <div *ngFor="let attachment of ticketAttachments" 
-               class="attachment-card"
-               (click)="downloadAttachment(attachment)">
+               class="attachment-card clickable-attachment"
+               (click)="openAttachmentPreview(attachment, false)"
+               [title]="'Clicca per visualizzare: ' + attachment.original_name">
             <div class="attachment-icon">
               <i class="fas" [class]="getAttachmentIcon(attachment.original_name)"></i>
             </div>
@@ -683,6 +684,8 @@
           </div>
         </div>
       </div>
+
+      <!-- ==================== MESSAGES SECTION (MODIFIED) ==================== -->
       <div class="messages-section">
         <h3>Conversazione</h3>
         <div class="messages-container">
@@ -709,7 +712,7 @@
               <div class="message-bubble" *ngIf="!isStatusChangeMessage(message)">
                 <div class="bubble-text">{{message.message}}</div>
                 
-                <!-- Display attachments if present -->
+                <!-- Display attachments if present (MODIFIED) -->
                 <div *ngIf="message.attachments && message.attachments.length > 0" 
                      class="message-attachments">
                   <div class="attachments-header">
@@ -718,11 +721,13 @@
                   </div>
                   <div class="attachments-list">
                     <div *ngFor="let attachment of message.attachments"
-                         class="attachment-item"
-                         (click)="downloadAttachment(attachment); $event.stopPropagation()">
+                         class="attachment-item clickable-attachment"
+                         (click)="openAttachmentPreview(attachment, false)"
+                         [title]="'Clicca per visualizzare: ' + attachment.original_name">
                       <i class="fas" [class]="getAttachmentIcon(attachment.original_name)"></i>
                       <span class="attachment-name">{{ attachment.original_name }}</span>
                       <span class="attachment-size">({{ formatFileSize(attachment.file_size) }})</span>
+                      <i class="fas fa-eye preview-icon"></i>
                       <button 
                         *ngIf="canDeleteAttachment(attachment)"
                         class="delete-attachment-btn"
@@ -754,6 +759,7 @@
           Non puoi rispondere a questo ticket perché non è stato assegnato a te
         </div>
         
+        <!-- ==================== MESSAGE INPUT WITH ATTACHMENTS (MODIFIED) ==================== -->
         <div class="message-input-container">
           <div class="reply-attachments-area" 
                *ngIf="canAttachToTicket(selectedTicket)"
@@ -777,11 +783,16 @@
               <span class="attachment-hint">Max {{maxFiles}} file, {{formatFileSize(maxFileSize)}} ciascuno</span>
             </div>
             
+            <!-- Selected files preview (MODIFIED) -->
             <div class="selected-files-chips" *ngIf="replyAttachments.length > 0">
-              <div *ngFor="let file of replyAttachments; let i = index" class="file-chip">
+              <div *ngFor="let file of replyAttachments; let i = index" 
+                   class="file-chip clickable-attachment"
+                   (click)="openPendingAttachmentPreview(file, i)"
+                   [title]="'Clicca per visualizzare: ' + file.name">
                 <i class="fas fa-file"></i>
                 <span>{{file.name}}</span>
-                <button (click)="replyAttachments.splice(i, 1)" class="remove-chip">
+                <i class="fas fa-eye preview-icon-chip"></i>
+                <button (click)="replyAttachments.splice(i, 1); $event.stopPropagation()" class="remove-chip">
                   <i class="fas fa-times"></i>
                 </button>
               </div>
@@ -817,7 +828,7 @@
   </div>
 </div>
 
-<!-- ==================== NEW TICKET MODAL ==================== -->
+<!-- ==================== NEW TICKET MODAL (MODIFIED) ==================== -->
 <div class="modal-overlay" *ngIf="showNewTicketModal" (click)="closeNewTicketModal()">
   <div class="modal-container" [class.shake]="isShaking" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -906,6 +917,7 @@
           </select>
         </div>
 
+        <!-- Attachments for new ticket (MODIFIED) -->
         <div class="form-group">
           <label>
             <i class="fas fa-paperclip"></i> 
@@ -930,13 +942,17 @@
             </button>
             
             <div class="selected-files-list" *ngIf="newTicketAttachments.length > 0">
-              <div *ngFor="let file of newTicketAttachments; let i = index" class="file-item">
+              <div *ngFor="let file of newTicketAttachments; let i = index" 
+                   class="file-item clickable-attachment"
+                   (click)="openPendingAttachmentPreview(file, i)"
+                   [title]="'Clicca per visualizzare: ' + file.name">
                 <i class="fas fa-file"></i>
                 <span class="file-name">{{file.name}}</span>
                 <span class="file-size">({{formatFileSize(file.size)}})</span>
+                <i class="fas fa-eye preview-icon-inline"></i>
                 <button 
                   type="button"
-                  (click)="newTicketAttachments.splice(i, 1)" 
+                  (click)="newTicketAttachments.splice(i, 1); $event.stopPropagation()" 
                   class="remove-file-btn">
                   <i class="fas fa-times"></i>
                 </button>
@@ -949,6 +965,7 @@
             </p>
           </div>
         </div>
+
         <div class="validation-message" *ngIf="showValidationError">
           <i class="fas fa-exclamation-triangle"></i>
           Compila tutti i campi obbligatori contrassegnati con *

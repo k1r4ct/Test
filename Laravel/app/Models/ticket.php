@@ -19,12 +19,37 @@ class Ticket extends Model
         'contract_id',
         'created_by_user_id',
         'assigned_to_user_id',
+        'resolved_at',
+        'closed_at',
+        'restored_at',
+        'deleted_at',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'resolved_at' => 'datetime',
+        'closed_at' => 'datetime',
+        'restored_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
+
+    /**
+     * Status constants for better code readability
+     */
+    public const STATUS_NEW = 'new';
+    public const STATUS_WAITING = 'waiting';
+    public const STATUS_RESOLVED = 'resolved';
+    public const STATUS_CLOSED = 'closed';
+    public const STATUS_DELETED = 'deleted';
+
+    /**
+     * Priority constants
+     */
+    public const PRIORITY_UNASSIGNED = 'unassigned';
+    public const PRIORITY_LOW = 'low';
+    public const PRIORITY_MEDIUM = 'medium';
+    public const PRIORITY_HIGH = 'high';
 
     // Relationships
     public function contract()
@@ -135,6 +160,75 @@ class Ticket extends Model
         return $query->has('attachments');
     }
 
+    /**
+     * Scope for open tickets (new or waiting)
+     */
+    public function scopeOpen($query)
+    {
+        return $query->whereIn('status', [self::STATUS_NEW, self::STATUS_WAITING]);
+    }
+
+    /**
+     * Scope for resolved tickets
+     */
+    public function scopeResolved($query)
+    {
+        return $query->where('status', self::STATUS_RESOLVED);
+    }
+
+    /**
+     * Scope for archived tickets (closed)
+     */
+    public function scopeArchived($query)
+    {
+        return $query->where('status', self::STATUS_CLOSED);
+    }
+
+    /**
+     * Scope for tickets in deleted status
+     */
+    public function scopeInDeletedStatus($query)
+    {
+        return $query->where('status', self::STATUS_DELETED);
+    }
+
+    /**
+     * Scope for tickets eligible for priority escalation
+     * Only tickets in 'new' or 'waiting' with 'unassigned' priority
+     */
+    public function scopeEligibleForPriorityEscalation($query)
+    {
+        return $query->whereIn('status', [self::STATUS_NEW, self::STATUS_WAITING])
+                     ->where('priority', self::PRIORITY_UNASSIGNED);
+    }
+
+    /**
+     * Scope for tickets eligible for auto-close (resolved > X days)
+     */
+    public function scopeEligibleForAutoClose($query, int $days = 10)
+    {
+        return $query->where('status', self::STATUS_RESOLVED)
+                     ->where('resolved_at', '<=', now()->subDays($days));
+    }
+
+    /**
+     * Scope for tickets eligible for auto-delete (closed > X days)
+     */
+    public function scopeEligibleForAutoDelete($query, int $days = 10)
+    {
+        return $query->where('status', self::STATUS_CLOSED)
+                     ->where('closed_at', '<=', now()->subDays($days));
+    }
+
+    /**
+     * Scope for tickets eligible for permanent removal (deleted > X days)
+     */
+    public function scopeEligibleForPermanentRemoval($query, int $days = 40)
+    {
+        return $query->where('status', self::STATUS_DELETED)
+                     ->where('deleted_at', '<=', now()->subDays($days));
+    }
+
     // Attributes
     public function getCustomerNameAttribute()
     {
@@ -180,6 +274,105 @@ class Ticket extends Model
             return $this->createdBy->email;
         }
         return 'N/A';
+    }
+
+    /**
+     * Get the number of days since the ticket was created
+     */
+    public function getDaysOpenAttribute(): int
+    {
+        return $this->created_at->diffInDays(now());
+    }
+
+    /**
+     * Get the number of days since the ticket was last updated
+     * Used for priority escalation
+     */
+    public function getDaysSinceUpdateAttribute(): int
+    {
+        return $this->updated_at->diffInDays(now());
+    }
+
+    /**
+     * Get the number of days since the ticket was resolved
+     */
+    public function getDaysResolvedAttribute(): ?int
+    {
+        if (!$this->resolved_at) {
+            return null;
+        }
+        return $this->resolved_at->diffInDays(now());
+    }
+
+    /**
+     * Get the number of days since the ticket was archived (closed)
+     */
+    public function getDaysArchivedAttribute(): ?int
+    {
+        if (!$this->closed_at) {
+            return null;
+        }
+        return $this->closed_at->diffInDays(now());
+    }
+
+    /**
+     * Get the number of days since the ticket was soft-deleted
+     */
+    public function getDaysDeletedAttribute(): ?int
+    {
+        if (!$this->deleted_at) {
+            return null;
+        }
+        return $this->deleted_at->diffInDays(now());
+    }
+
+    /**
+     * Check if ticket is open
+     */
+    public function isOpen(): bool
+    {
+        return in_array($this->status, [self::STATUS_NEW, self::STATUS_WAITING]);
+    }
+
+    /**
+     * Check if ticket is resolved
+     */
+    public function isResolved(): bool
+    {
+        return $this->status === self::STATUS_RESOLVED;
+    }
+
+    /**
+     * Check if ticket is archived
+     */
+    public function isArchived(): bool
+    {
+        return $this->status === self::STATUS_CLOSED;
+    }
+
+    /**
+     * Check if ticket is in deleted status
+     */
+    public function isDeleted(): bool
+    {
+        return $this->status === self::STATUS_DELETED;
+    }
+
+    /**
+     * Check if priority was manually assigned
+     * Returns true if priority is anything other than 'unassigned'
+     */
+    public function hasPriorityManuallyAssigned(): bool
+    {
+        return $this->priority !== self::PRIORITY_UNASSIGNED;
+    }
+
+    /**
+     * Check if ticket is eligible for priority escalation
+     */
+    public function isEligibleForPriorityEscalation(): bool
+    {
+        return $this->isOpen() && !$this->hasPriorityManuallyAssigned();
     }
 
     public static function generateTicketNumber()

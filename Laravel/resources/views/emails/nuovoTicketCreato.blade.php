@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Ticket Risolto</title>
+    <title>Ticket Creato</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,7 +18,7 @@
             padding: 20px;
         }
         .header {
-            background-color: #28a745;
+            background-color: #17a2b8;
             padding: 20px;
             text-align: center;
             margin-bottom: 20px;
@@ -36,9 +36,9 @@
             border-radius: 0 0 4px 4px;
         }
         .success-box {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-left: 4px solid #28a745;
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-left: 4px solid #17a2b8;
             padding: 15px;
             margin: 20px 0;
             border-radius: 0 4px 4px 0;
@@ -63,8 +63,30 @@
             font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
-            background-color: #28a745;
+            background-color: #17a2b8;
             color: #fff;
+        }
+        .description-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .next-steps {
+            background-color: #e7f3ff;
+            border: 1px solid #b8daff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .next-steps ul {
+            margin: 10px 0 0 0;
+            padding-left: 20px;
+        }
+        .next-steps li {
+            margin: 5px 0;
         }
         .footer {
             text-align: center;
@@ -73,54 +95,45 @@
             font-size: 12px;
             padding: 15px;
         }
-        .info-note {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .cta-button {
-            display: inline-block;
-            background-color: #28a745;
-            color: #ffffff;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 4px;
-            margin-top: 15px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>✅ Ticket #{{$numeroTicket}} Risolto</h1>
+            <h1>🎫 Ticket #{{$numeroTicket}} Creato</h1>
         </div>
         
         <div class="content">
             <h2 style="margin-top: 0;">Salve {{$nomeUtente}},</h2>
             
             <div class="success-box">
-                <p style="margin: 0;"><strong>Buone notizie!</strong> Il tuo ticket è stato risolto dal nostro team di supporto.</p>
+                <p style="margin: 0;"><strong>Conferma:</strong> Il tuo ticket è stato creato correttamente e verrà preso in carico dal nostro team di supporto.</p>
             </div>
 
-            <p>Il ticket relativo al contratto <strong>ID {{$contractID}}</strong> intestato a <strong>{{$nomeCustomer}}</strong> è stato chiuso e archiviato dal backoffice.</p>
+            <p>Hai aperto un nuovo ticket per il contratto <strong>ID {{$contractID}}</strong> intestato a <strong>{{$nomeCustomer}}</strong>.</p>
             
             <div class="ticket-info">
                 <p><span class="label">Numero Ticket:</span> #{{$numeroTicket}}</p>
-                <p><span class="label">Oggetto:</span> {{$oggettoTicket}}</p>
-                <p><span class="label">Stato:</span> <span class="status-badge">RISOLTO</span></p>
+                <p><span class="label">Oggetto:</span> {{$titoloTicket}}</p>
+                <p><span class="label">Stato:</span> <span class="status-badge">NUOVO</span></p>
                 <p><span class="label">Data Apertura:</span> {{$dataApertura}}</p>
             </div>
 
-            <div class="info-note">
-                <strong>💡 Nota:</strong> In caso di ulteriori problemi, puoi riaprire il ticket in qualsiasi momento dalla piattaforma. Ti consigliamo di accedere per leggere la conversazione completa.
+            @if($descrizioneTicket)
+            <div class="description-box">
+                <p style="margin: 0 0 10px 0;"><span class="label">📝 Descrizione:</span></p>
+                <p style="margin: 0;">{{$descrizioneTicket}}</p>
             </div>
+            @endif
 
-            <center>
-                <a href="{{$linkTicket}}" class="cta-button">Visualizza Ticket</a>
-            </center>
+            <div class="next-steps">
+                <p style="margin: 0;"><strong>📬 Cosa succederà ora?</strong></p>
+                <ul>
+                    <li>Il tuo ticket verrà esaminato dal nostro team di supporto</li>
+                    <li>Riceverai una notifica via email quando ci saranno aggiornamenti</li>
+                    <li>Puoi rispondere direttamente dalla piattaforma per aggiungere informazioni</li>
+                </ul>
+            </div>
         </div>
 
         <div class="footer">

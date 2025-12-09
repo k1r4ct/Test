@@ -105,7 +105,7 @@ export class UserComponent implements OnInit, OnDestroy {
   isHidden = false;
   DropEnable = true;
   urlImageProfile: any;
-  urlImageProfileUrl="https://clearportal.visinnova.it/storage/app/public/";
+  urlImageProfileUrl="https://semprechiaro.com/storage/app/public/";
   //dati utente
   name: string | undefined;
   email: string | undefined;

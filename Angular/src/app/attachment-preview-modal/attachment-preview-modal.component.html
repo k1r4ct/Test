@@ -9,7 +9,8 @@
       <button mat-icon-button 
               (click)="download()" 
               matTooltip="Scarica"
-              class="action-button download-button">
+              class="action-button download-button"
+              [disabled]="isLoading">
         <mat-icon>download</mat-icon>
       </button>
       <button mat-icon-button 
@@ -23,18 +24,28 @@
 
   <!-- Preview Content -->
   <div class="preview-content">
+    <!-- Loading State - ADDED -->
+    <div *ngIf="isLoading" class="loading-preview">
+      <mat-progress-spinner 
+        mode="indeterminate" 
+        diameter="50"
+        color="primary">
+      </mat-progress-spinner>
+      <p>Caricamento preview...</p>
+    </div>
+
     <!-- Image Preview -->
-    <div *ngIf="isImage && isPreviewable" class="image-preview">
+    <div *ngIf="!isLoading && isImage && isPreviewable" class="image-preview">
       <img [src]="previewUrl" [alt]="attachment?.name || 'Image preview'" />
     </div>
 
     <!-- PDF Preview -->
-    <div *ngIf="isPdf && isPreviewable" class="pdf-preview">
+    <div *ngIf="!isLoading && isPdf && isPreviewable" class="pdf-preview">
       <iframe [src]="previewUrl" frameborder="0"></iframe>
     </div>
 
     <!-- No Preview Available -->
-    <div *ngIf="!isPreviewable" class="no-preview">
+    <div *ngIf="!isLoading && !isPreviewable" class="no-preview">
       <div class="no-preview-content">
         <mat-icon class="no-preview-icon">{{ getFileIcon() }}</mat-icon>
         <h3>Anteprima non disponibile</h3>
@@ -59,7 +70,7 @@
   </div>
 
   <!-- Footer -->
-  <div class="preview-footer" *ngIf="isPreviewable">
+  <div class="preview-footer" *ngIf="!isLoading && isPreviewable">
     <div class="file-metadata">
       <span *ngIf="attachment?.size || attachment?.file_size">
         <mat-icon>data_usage</mat-icon>
