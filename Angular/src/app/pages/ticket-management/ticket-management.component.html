@@ -637,7 +637,7 @@
         </div>
       </div>
 
-      <!-- ==================== ATTACHMENTS SECTION (MODIFIED) ==================== -->
+      <!-- ==================== ATTACHMENTS SECTION ==================== -->
       <div class="attachments-section" *ngIf="ticketAttachments.length > 0 || isLoadingAttachments">
         <h3>
           <i class="fas fa-paperclip"></i> 
@@ -685,7 +685,7 @@
         </div>
       </div>
 
-      <!-- ==================== MESSAGES SECTION (MODIFIED) ==================== -->
+      <!-- ==================== MESSAGES SECTION ==================== -->
       <div class="messages-section">
         <h3>Conversazione</h3>
         <div class="messages-container">
@@ -712,7 +712,7 @@
               <div class="message-bubble" *ngIf="!isStatusChangeMessage(message)">
                 <div class="bubble-text">{{message.message}}</div>
                 
-                <!-- Display attachments if present (MODIFIED) -->
+                <!-- Display attachments if present -->
                 <div *ngIf="message.attachments && message.attachments.length > 0" 
                      class="message-attachments">
                   <div class="attachments-header">
@@ -739,8 +739,8 @@
                   </div>
                 </div>
                 
-                <!-- Time inside bubble -->
-                <div class="bubble-time">{{formatMessageTime(message.created_at)}}</div>
+                <!-- Date and time inside bubble -->
+                <div class="bubble-time">{{formatMessageDateTime(message.created_at)}}</div>
               </div>
               
               <!-- Status change message bubble with gradient -->
@@ -749,7 +749,8 @@
                    [ngStyle]="{'background': getStatusChangeGradient(message)}">
                 <i class="fas fa-exchange-alt status-change-icon"></i>
                 <span class="status-change-text">{{message.message}}</span>
-                <span class="status-change-time">{{getTimeAgo(message.created_at)}}</span>
+                <!-- Date and time for status change -->
+                <span class="status-change-time">{{formatMessageDateTime(message.created_at)}}</span>
               </div>
             </div>
           </div>
@@ -759,7 +760,7 @@
           Non puoi rispondere a questo ticket perché non è stato assegnato a te
         </div>
         
-        <!-- ==================== MESSAGE INPUT WITH ATTACHMENTS (MODIFIED) ==================== -->
+        <!-- ==================== MESSAGE INPUT WITH ATTACHMENTS ==================== -->
         <div class="message-input-container">
           <div class="reply-attachments-area" 
                *ngIf="canAttachToTicket(selectedTicket)"
@@ -783,7 +784,7 @@
               <span class="attachment-hint">Max {{maxFiles}} file, {{formatFileSize(maxFileSize)}} ciascuno</span>
             </div>
             
-            <!-- Selected files preview (MODIFIED) -->
+            <!-- Selected files preview -->
             <div class="selected-files-chips" *ngIf="replyAttachments.length > 0">
               <div *ngFor="let file of replyAttachments; let i = index" 
                    class="file-chip clickable-attachment"
@@ -828,7 +829,7 @@
   </div>
 </div>
 
-<!-- ==================== NEW TICKET MODAL (MODIFIED) ==================== -->
+<!-- ==================== NEW TICKET MODAL ==================== -->
 <div class="modal-overlay" *ngIf="showNewTicketModal" (click)="closeNewTicketModal()">
   <div class="modal-container" [class.shake]="isShaking" (click)="$event.stopPropagation()">
     <div class="modal-header">
@@ -917,7 +918,7 @@
           </select>
         </div>
 
-        <!-- Attachments for new ticket (MODIFIED) -->
+        <!-- Attachments for new ticket -->
         <div class="form-group">
           <label>
             <i class="fas fa-paperclip"></i> 

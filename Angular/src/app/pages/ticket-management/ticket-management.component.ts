@@ -1604,6 +1604,11 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     return priorityObj ? priorityObj.color : '#666';
   }
 
+  // ==================== DATE/TIME FORMATTING METHODS ====================
+
+  /**
+   * Get relative time ago string (e.g., "5 min fa", "2 ore fa")
+   */
   getTimeAgo(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();
@@ -1620,6 +1625,42 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       return `${diffInDays} giorni fa`;
     }
   }
+
+  /**
+   * Format message time only (HH:MM)
+   */
+  formatMessageTime(dateString: string): string {
+    const date = new Date(dateString);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+
+  /**
+   * Format message date and time for display in chat
+   * Shows full date and time (DD/MM/YYYY HH:MM)
+   */
+  formatMessageDateTime(dateString: string): string {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  }
+
+  /**
+   * Smart date formatting: shows relative time + full date/time
+   * Example: "5 min fa • 11/12/2024 14:30"
+   */
+  formatMessageDateTimeFull(dateString: string): string {
+    const timeAgo = this.getTimeAgo(dateString);
+    const dateTime = this.formatMessageDateTime(dateString);
+    return `${timeAgo} • ${dateTime}`;
+  }
+
+  // ==================== END DATE/TIME FORMATTING METHODS ====================
 
   getAssignedUserName(ticket: Ticket): string {
     if (ticket.status === 'new') {
@@ -2103,7 +2144,14 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.filteredTickets.sort((a, b) => {
       const weightA = priorityWeight[a.priority as keyof typeof priorityWeight] || 0;
       const weightB = priorityWeight[b.priority as keyof typeof priorityWeight] || 0;
-      return weightB - weightA;
+      
+      if (weightB !== weightA) {
+        return weightB - weightA;
+      }
+      
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateA - dateB;
     });
   }
 
@@ -2262,13 +2310,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         if (this.userRole === 4) return 'S';
         return 'U';
     }
-  }
-
-  formatMessageTime(dateString: string): string {
-    const date = new Date(dateString);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
   }
 
   onFileDragOver(event: DragEvent): void {
