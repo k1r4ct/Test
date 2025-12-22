@@ -230,10 +230,9 @@ class TicketCleanup extends Command
                 $timestampField => now(),
             ]);
 
-            // Log the change with user_id = null (automatic system change)
             TicketChangeLog::create([
                 'ticket_id' => $ticket->id,
-                'user_id' => null, // NULL = automatic system change
+                'user_id' => 1,
                 'previous_status' => $oldStatus,
                 'new_status' => $newStatus,
                 'previous_priority' => null,
@@ -248,7 +247,7 @@ class TicketCleanup extends Command
 
             TicketMessage::create([
                 'ticket_id' => $ticket->id,
-                'user_id' => 1, // System user (Admin) - adjust if you have a system user
+                'user_id' => 1,
                 'message' => "Ticket spostato automaticamente da '{$oldLabel}' a '{$newLabel}' per inattività",
                 'message_type' => 'status_change',
             ]);
@@ -274,7 +273,7 @@ class TicketCleanup extends Command
             // Log the permanent removal before deleting
             TicketChangeLog::create([
                 'ticket_id' => $ticket->id,
-                'user_id' => null, // NULL = automatic system change
+                'user_id' => 1,
                 'previous_status' => Ticket::STATUS_DELETED,
                 'new_status' => TicketChangeLog::STATUS_REMOVED, // 'removed' status
                 'previous_priority' => $ticket->priority,

@@ -879,20 +879,34 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   }
 
   clearFilters() {
-    this.filters = {
+      this.filters = {
       contractId: '',
       contractCode: '',
       product: [],
       priority: [],
-      status: [],
+      status: ['new', 'waiting', 'resolved'],
       assignedTo: [],
       customer: '',
       seu: [],
       generatedBy: [],
       openingDate: '',
       contract: []
-    };
-    this.applyFilters();
+      };
+
+      this.showClosedColumn = false;
+      this.showDeletedColumn = false;
+
+      this.columns.forEach(column => {
+      if (column.id === 'closed' || column.id === 'deleted') {
+          column.hidden = true;
+      } else {
+          column.hidden = false;
+      }
+      });
+
+      this.selectedTicketsForDeletion.clear();
+
+      this.applyFilters();
   }
 
   // ==================== PRIORITY CHANGE METHODS ====================

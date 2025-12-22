@@ -158,7 +158,7 @@ class TicketPriorityEscalation extends Command
             // Log the change with user_id = null to indicate automatic system change
             TicketChangeLog::create([
                 'ticket_id' => $ticket->id,
-                'user_id' => null, // NULL = automatic system change
+                'user_id' => 1,
                 'previous_status' => null,
                 'new_status' => null,
                 'previous_priority' => $oldPriority,
