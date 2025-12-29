@@ -23,15 +23,25 @@ class TicketPriorityEscalation extends Command
      *
      * @var string
      */
-    protected $description = 'Automatically escalate priority for tickets with unassigned priority based on age';
+    protected $description = 'Automatically escalate priority for active tickets based on age';
 
     /**
-     * Priority escalation thresholds (in days since last update)
+     * Priority escalation thresholds (in days since creation)
      */
     private const PRIORITY_THRESHOLDS = [
         'high'   => 6,  // > 6 days → high priority
         'medium' => 4,  // > 4 days → medium priority
-        'low'    => 2,  // >= 2 days → low priority
+        'low'    => 1,  // >= 1 day → low priority
+    ];
+
+    /**
+     * Priority weight for comparison (higher = more urgent)
+     */
+    private const PRIORITY_WEIGHT = [
+        'unassigned' => 0,
+        'low'        => 1,
+        'medium'     => 2,
+        'high'       => 3,
     ];
 
     /**
@@ -51,35 +61,39 @@ class TicketPriorityEscalation extends Command
             'low' => 0,
             'medium' => 0,
             'high' => 0,
+            'skipped' => 0,
             'errors' => 0,
         ];
 
-        // Get tickets that are eligible for priority escalation:
-        // - Status: new or waiting (active tickets only)
-        // - Priority: unassigned (manual priorities are not touched)
-        $tickets = Ticket::whereIn('status', [Ticket::STATUS_NEW, Ticket::STATUS_WAITING])
-            ->where('priority', Ticket::PRIORITY_UNASSIGNED)
-            ->get();
+        // Get ALL active tickets (Nuovi + In Lavorazione)
+        $tickets = Ticket::whereIn('status', [Ticket::STATUS_NEW, Ticket::STATUS_WAITING])->get();
 
-        $this->info("Found {$tickets->count()} tickets with unassigned priority");
+        $this->info("Found {$tickets->count()} active tickets (Nuovi + In Lavorazione)");
 
         foreach ($tickets as $ticket) {
             try {
-                $daysSinceUpdate = $ticket->updated_at->diffInDays(now());
-                $newPriority = $this->calculatePriority($daysSinceUpdate);
+                $daysSinceCreation = $ticket->created_at->diffInDays(now());
+                $calculatedPriority = $this->calculatePriority($daysSinceCreation);
 
-                // Skip if no priority change needed
-                if ($newPriority === null) {
+                // Skip if ticket is too new (< 2 days)
+                if ($calculatedPriority === null) {
+                    $stats['skipped']++;
                     continue;
                 }
 
-                $this->line("  Ticket #{$ticket->ticket_number}: {$daysSinceUpdate} days old → {$newPriority} priority");
-
-                if (!$isDryRun) {
-                    $this->updateTicketPriority($ticket, $newPriority);
+                // Skip if current priority is already >= calculated priority
+                if (!$this->shouldEscalate($ticket->priority, $calculatedPriority)) {
+                    $stats['skipped']++;
+                    continue;
                 }
 
-                $stats[$newPriority]++;
+                $this->line("  Ticket #{$ticket->ticket_number}: {$daysSinceCreation} days old, {$ticket->priority} → {$calculatedPriority}");
+
+                if (!$isDryRun) {
+                    $this->updateTicketPriority($ticket, $calculatedPriority);
+                }
+
+                $stats[$calculatedPriority]++;
 
             } catch (\Exception $e) {
                 $stats['errors']++;
@@ -94,6 +108,7 @@ class TicketPriorityEscalation extends Command
         $this->line("  Low priority:    {$stats['low']}");
         $this->line("  Medium priority: {$stats['medium']}");
         $this->line("  High priority:   {$stats['high']}");
+        $this->line("  Skipped:         {$stats['skipped']}");
         
         if ($stats['errors'] > 0) {
             $this->error("  Errors: {$stats['errors']}");
@@ -112,28 +127,41 @@ class TicketPriorityEscalation extends Command
     }
 
     /**
-     * Calculate the appropriate priority based on days since last update
+     * Calculate the appropriate priority based on days since creation
      * 
-     * @param int $daysSinceUpdate
-     * @return string|null The new priority or null if no change needed
+     * @param int $daysSinceCreation
+     * @return string|null The calculated priority or null if too new
      */
-    private function calculatePriority(int $daysSinceUpdate): ?string
+    private function calculatePriority(int $daysSinceCreation): ?string
     {
-        // Check thresholds in order (highest first)
-        if ($daysSinceUpdate > self::PRIORITY_THRESHOLDS['high']) {
+        if ($daysSinceCreation > self::PRIORITY_THRESHOLDS['high']) {
             return Ticket::PRIORITY_HIGH;
         }
         
-        if ($daysSinceUpdate > self::PRIORITY_THRESHOLDS['medium']) {
+        if ($daysSinceCreation > self::PRIORITY_THRESHOLDS['medium']) {
             return Ticket::PRIORITY_MEDIUM;
         }
         
-        if ($daysSinceUpdate >= self::PRIORITY_THRESHOLDS['low']) {
+        if ($daysSinceCreation >= self::PRIORITY_THRESHOLDS['low']) {
             return Ticket::PRIORITY_LOW;
         }
 
-        // Less than 2 days - no priority assigned yet
         return null;
+    }
+
+    /**
+     * Check if ticket should be escalated (new priority > current priority)
+     * 
+     * @param string $currentPriority
+     * @param string $newPriority
+     * @return bool
+     */
+    private function shouldEscalate(string $currentPriority, string $newPriority): bool
+    {
+        $currentWeight = self::PRIORITY_WEIGHT[$currentPriority] ?? 0;
+        $newWeight = self::PRIORITY_WEIGHT[$newPriority] ?? 0;
+
+        return $newWeight > $currentWeight;
     }
 
     /**
@@ -155,7 +183,7 @@ class TicketPriorityEscalation extends Command
             $ticket->save();
             $ticket->timestamps = true;
 
-            // Log the change with user_id = null to indicate automatic system change
+            // Log the change with user_id = 1 (Admin/System)
             TicketChangeLog::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => 1,
