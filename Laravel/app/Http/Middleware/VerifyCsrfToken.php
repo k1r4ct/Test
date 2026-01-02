@@ -18,5 +18,7 @@ class VerifyCsrfToken extends Middleware
         'web/forgot-password',
         'storeLeadExternal',
         'web/storeLeadExternal',
+        'api',
+        'api/*',
     ];
 }

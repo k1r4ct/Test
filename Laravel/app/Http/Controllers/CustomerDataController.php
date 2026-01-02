@@ -14,7 +14,6 @@ use App\Models\customer_data;
 use App\Models\macro_product;
 use App\Models\qualification;
 use App\Models\specific_data;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\backoffice_note;
 use App\Models\contract_management;

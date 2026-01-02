@@ -1,10 +1,15 @@
-import { Component, DoCheck, OnChanges, OnInit, SimpleChanges } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthService } from '../servizi/auth.service';
 import { ApiService } from 'src/app/servizi/api.service';
 import { ToastrService } from 'ngx-toastr';
 import { ContractServiceStatus } from '../servizi/contract-status-guard.service';
-import { MatSnackBar,MatSnackBarHorizontalPosition,
-  MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
+import { 
+  MatSnackBar,
+  MatSnackBarHorizontalPosition,
+  MatSnackBarVerticalPosition 
+} from '@angular/material/snack-bar';
+
 export interface RouteInfo {
   path: string;
   title: string;
@@ -12,6 +17,7 @@ export interface RouteInfo {
   class: string;
 }
 
+// Legacy export - used by navbar.component.ts
 export const ROUTES: RouteInfo[] = [
   { path: '/dashboard', title: 'Dashboard', icon: 'nc-chart-bar-32', class: '' },
   { path: '/user', title: 'Dashboard Personale', icon: 'nc-single-02', class: '' },
@@ -21,7 +27,6 @@ export const ROUTES: RouteInfo[] = [
   { path: '/contratti', title: 'Contratti', icon: 'nc-paper', class: '' },
   { path: '/table', title: 'Gestione Prodotti', icon: 'nc-tile-56', class: '' },
   { path: '/utenti', title: 'Gestione Utenti', icon: 'nc-circle-10', class: '' },
-
 ];
 
 export const ROUTES_ADMIN: RouteInfo[] = [
@@ -42,7 +47,6 @@ export const ROUTES_BKOFF: RouteInfo[] = [
   { path: '/contratti', title: 'Contratti', icon: 'nc-paper', class: '' },
   { path: '/table', title: 'Gestione Prodotti', icon: 'nc-tile-56', class: '' },
   { path: '/ticket', title: 'Gestione Ticket', icon: 'nc-send', class: '' },
-
 ];
 
 export const ROUTES_ADVISOR: RouteInfo[] = [
@@ -59,84 +63,91 @@ export const ROUTES_CLI: RouteInfo[] = [
   { path: '/schedapr', title: 'Scheda Personale', icon: 'nc-single-copy-04', class: '' },
 ];
 
-
 @Component({
-    moduleId: module.id,
-    selector: 'app-sidebar',
-    templateUrl: 'sidebar.component.html',
-    standalone: false
+  moduleId: module.id,
+  selector: 'app-sidebar',
+  templateUrl: 'sidebar.component.html',
+  styleUrls: ['sidebar.component.scss'],
+  standalone: false
 })
 export class SidebarComponent implements OnInit {
-  public menuItems!: any[];
+  
+  public menuItems: RouteInfo[] = [];
   public idRole: number = 0;
-  enable=true;
+  public enable: boolean = true;
+  
   horizontalPosition: MatSnackBarHorizontalPosition = 'center';
   verticalPosition: MatSnackBarVerticalPosition = 'top';
-  titleLead:string="Leads";
+
   constructor(
     private authService: AuthService,
-    private ApiService: ApiService,
+    private apiService: ApiService,
     private toastr: ToastrService,
-    private contractService:ContractServiceStatus,
-    private snackbar:MatSnackBar,
+    private contractService: ContractServiceStatus,
+    private snackbar: MatSnackBar,
+    private router: Router
   ) {}
 
-  ngOnInit() {
-    this.ApiService.PrendiUtente().subscribe((Utente: any) => {
-      //console.log(Utente.user.qualification.descrizione);
-      //console.log(Utente.user.role.id);
-      this.idRole = Utente.user.role.id;
-
-      switch (this.idRole) {
-
-        case 1:
-          //console.log(this.idRole);
-          //console.log("menu Administrator");
-          this.menuItems = ROUTES_ADMIN.filter((menuItem) => menuItem);
-          //console.log(this.menuItems);
-
-        break;
-        case 2:
-          //console.log("menu Advisor");
-          this.menuItems = ROUTES_ADVISOR.filter((menuItem) => menuItem);
-        break;
-        case 3:
-          //console.log("menu Cliente");
-          this.titleLead="Amici Invitati";
-          this.menuItems = ROUTES_CLI.filter((menuItem) => menuItem);
-        break;
-        case 4:
-          //console.log("menu Operatore web");
-          this.menuItems = ROUTES_ADVISOR.filter((menuItem) => menuItem);
-        break;
-        case 5:
-          //console.log("menu BackOffice");
-          this.menuItems = ROUTES_BKOFF.filter((menuItem) => menuItem);
-        break;
-      }
-      this.contractService.contrattoSalvato$.subscribe(salvato => {
-        //console.log(salvato);
-
-        this.enable = salvato;
-
-      });
-
-      //this.menuItems = ROUTES.filter((menuItem) => menuItem);
-
-    });
-
-
+  ngOnInit(): void {
+    this.loadUserMenu();
+    this.subscribeToContractStatus();
   }
 
-  opensnackbar(){
+  /**
+   * Load menu items based on user role
+   */
+  private loadUserMenu(): void {
+    this.apiService.PrendiUtente().subscribe({
+      next: (response: any) => {
+        this.idRole = response.user.role.id;
+        this.menuItems = this.getMenuByRole(this.idRole);
+      },
+      error: (err) => {
+        console.error('Error loading user menu:', err);
+      }
+    });
+  }
+
+  /**
+   * Get menu items based on role ID
+   */
+  private getMenuByRole(roleId: number): RouteInfo[] {
+    const menuMap: { [key: number]: RouteInfo[] } = {
+      1: ROUTES_ADMIN,    // Administrator
+      2: ROUTES_ADVISOR,  // Advisor
+      3: ROUTES_CLI,      // Cliente
+      4: ROUTES_ADVISOR,  // Operatore web
+      5: ROUTES_BKOFF,    // BackOffice
+    };
+    
+    return menuMap[roleId] || ROUTES_CLI;
+  }
+
+  /**
+   * Subscribe to contract status for enabling/disabling menu
+   */
+  private subscribeToContractStatus(): void {
+    this.contractService.contrattoSalvato$.subscribe(salvato => {
+      this.enable = salvato;
+    });
+  }
+
+  /**
+   * Show snackbar when menu is disabled
+   */
+  opensnackbar(): void {
     this.snackbar.open('Concludere prima il contratto.', 'Chiudi', {
       duration: 5000,
       horizontalPosition: this.horizontalPosition,
       verticalPosition: this.verticalPosition,
     });
-
   }
-  logout() {
+
+  /**
+   * Logout user and navigate to login page
+   */
+  logout(): void {
     this.authService.logOut();
+    this.router.navigate(['/login']);
   }
 }

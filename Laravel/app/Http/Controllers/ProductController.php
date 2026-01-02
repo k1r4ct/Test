@@ -14,7 +14,6 @@ use App\Models\customer_data;
 use App\Models\macro_product;
 use App\Models\qualification;
 use App\Models\specific_data;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\backoffice_note;
 use App\Models\contract_management;
@@ -93,33 +92,14 @@ class ProductController extends Controller
 
     public function getProdotto($id)
     {
-
         $product = Product::with('supplier', 'macro_product', 'supplier.supplier_category', 'macro_product.supplier_category')->where('id', $id)->get();
-
         return response()->json(["response" => "ok", "status" => "200", "body" => ["prodotto" => $product, "messaggio" => "Prodotto trovato"]]);
     }
     
     public function prodotti()
     {
-
-        //$user=User::with('Role','qualification')->where('email','alessioscionti2@gmail.com')->get(['name','qualification_id','role_id','cognome','email']);
-
-        // $prodotti=Product::with('supplier')->get('descrizione');
-        //$prodotti=Product::with('suppliers:id,nome_fornitore,descrizione')->get(['id','descrizione','supplier','nome_fornitore']);
-        // return response()->json($prodotti);
-
-
         $prodotti = Product::with(['supplier:id,nome_fornitore,descrizione', 'macro_product'])->get();
         return response()->json(["response" => "ok", "status" => "200", "body" => ["prodotti" => $prodotti, "messaggio" => "Prodotto trovato"]]);
-        /* return response()->json($prodotti->map(function ($prodotto) {
-            return [
-                'id' => $prodotto->id,
-                'descrizione' => $prodotto->descrizione,
-                'nome_fornitore' => $prodotto->supplier->nome_fornitore,
-                'macro_product' => $prodotto->macro_product->codice_macro,
-                'macro_descrizione' => $prodotto->macro_product->descrizione,
-            ];
-        })); */
     }
 
     public function storeNewProduct(Request $request)
@@ -145,7 +125,6 @@ class ProductController extends Controller
             'gettone' => $request->gettone,
             'inizio_offerta' => $dataInizioOfferta,
             'fine_offerta' => $dataFineOfferta,
-
         ]);
 
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $newProduct]]);
@@ -153,7 +132,6 @@ class ProductController extends Controller
 
     public function nuovoProdotto()
     {
-
         $supplier_category = supplier_category::all();
         $supplier = supplier::all();
         $macro_product = macro_product::all();
@@ -189,15 +167,12 @@ class ProductController extends Controller
 
     public function updateProdotto(Request $request)
     {
-        //return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => 'prodotto aggiornato']]);
-        Log::info('Update Prodotto', ['request' => $request->all()]);
         $updateProdotto = product::where('id', $request->idProdotto)->update(['descrizione' => $request->descrizione,'attivo'=>$request->attivo]);
         $updateMacroProduct=$this->updateMacroProduct($request->idMacroProdotto,$request->descrizioneMacroProdotto,$updateProdotto);
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $updateProdotto,"updateMacroProd"=>$updateMacroProduct]]);
     }
 
     public function updateMacroProduct($idMacroProduct,$descMacroProduct,$updateProdotto){
-        
         $findAndUpdate=macro_product::find($idMacroProduct);
         if ($descMacroProduct!=$findAndUpdate->descrizione) {
             $findAndUpdate->update(['descrizione'=>$descMacroProduct]);

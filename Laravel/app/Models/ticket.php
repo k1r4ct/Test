@@ -19,6 +19,7 @@ class Ticket extends Model
         'contract_id',
         'created_by_user_id',
         'assigned_to_user_id',
+        'resolved_at',
         'closed_at',
         'restored_at',
         'deleted_at',
@@ -27,6 +28,7 @@ class Ticket extends Model
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'resolved_at' => 'datetime',
         'closed_at' => 'datetime',
         'restored_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -167,6 +169,14 @@ class Ticket extends Model
     }
 
     /**
+     * Scope for resolved tickets
+     */
+    public function scopeResolved($query)
+    {
+        return $query->where('status', self::STATUS_RESOLVED);
+    }
+
+    /**
      * Scope for archived tickets (closed)
      */
     public function scopeArchived($query)
@@ -180,6 +190,43 @@ class Ticket extends Model
     public function scopeInDeletedStatus($query)
     {
         return $query->where('status', self::STATUS_DELETED);
+    }
+
+    /**
+     * Scope for tickets eligible for priority escalation
+     * Only tickets in 'new' or 'waiting' with 'unassigned' priority
+     */
+    public function scopeEligibleForPriorityEscalation($query)
+    {
+        return $query->whereIn('status', [self::STATUS_NEW, self::STATUS_WAITING])
+                     ->where('priority', self::PRIORITY_UNASSIGNED);
+    }
+
+    /**
+     * Scope for tickets eligible for auto-close (resolved > X days)
+     */
+    public function scopeEligibleForAutoClose($query, int $days = 10)
+    {
+        return $query->where('status', self::STATUS_RESOLVED)
+                     ->where('resolved_at', '<=', now()->subDays($days));
+    }
+
+    /**
+     * Scope for tickets eligible for auto-delete (closed > X days)
+     */
+    public function scopeEligibleForAutoDelete($query, int $days = 10)
+    {
+        return $query->where('status', self::STATUS_CLOSED)
+                     ->where('closed_at', '<=', now()->subDays($days));
+    }
+
+    /**
+     * Scope for tickets eligible for permanent removal (deleted > X days)
+     */
+    public function scopeEligibleForPermanentRemoval($query, int $days = 40)
+    {
+        return $query->where('status', self::STATUS_DELETED)
+                     ->where('deleted_at', '<=', now()->subDays($days));
     }
 
     // Attributes
@@ -238,6 +285,26 @@ class Ticket extends Model
     }
 
     /**
+     * Get the number of days since the ticket was last updated
+     * Used for priority escalation
+     */
+    public function getDaysSinceUpdateAttribute(): int
+    {
+        return $this->updated_at->diffInDays(now());
+    }
+
+    /**
+     * Get the number of days since the ticket was resolved
+     */
+    public function getDaysResolvedAttribute(): ?int
+    {
+        if (!$this->resolved_at) {
+            return null;
+        }
+        return $this->resolved_at->diffInDays(now());
+    }
+
+    /**
      * Get the number of days since the ticket was archived (closed)
      */
     public function getDaysArchivedAttribute(): ?int
@@ -268,6 +335,14 @@ class Ticket extends Model
     }
 
     /**
+     * Check if ticket is resolved
+     */
+    public function isResolved(): bool
+    {
+        return $this->status === self::STATUS_RESOLVED;
+    }
+
+    /**
      * Check if ticket is archived
      */
     public function isArchived(): bool
@@ -281,6 +356,23 @@ class Ticket extends Model
     public function isDeleted(): bool
     {
         return $this->status === self::STATUS_DELETED;
+    }
+
+    /**
+     * Check if priority was manually assigned
+     * Returns true if priority is anything other than 'unassigned'
+     */
+    public function hasPriorityManuallyAssigned(): bool
+    {
+        return $this->priority !== self::PRIORITY_UNASSIGNED;
+    }
+
+    /**
+     * Check if ticket is eligible for priority escalation
+     */
+    public function isEligibleForPriorityEscalation(): bool
+    {
+        return $this->isOpen() && !$this->hasPriorityManuallyAssigned();
     }
 
     public static function generateTicketNumber()

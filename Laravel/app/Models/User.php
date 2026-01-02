@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Laravel\Sanctum\HasApiTokens;
 use App\Notifications\ResetPassword;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Services\SystemLogService;
+use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -42,7 +43,6 @@ class User extends Authenticatable implements JWTSubject
         'punti_valore_maturati',
         'punti_carriera_maturati',
         'user_id_padre',
-        'ragione_sociale',
         'punti_bonus',
         'punti_spesi',
     ];
@@ -76,6 +76,32 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $appends = ['pv_bloccati', 'pv_disponibili', 'pv_totali'];
 
+    /**
+     * Sensitive fields to mask in logs
+     */
+    protected static $sensitiveFields = ['codice_fiscale', 'partita_iva', 'telefono', 'cellulare'];
+
+    /**
+     * Critical fields that warrant warning level logging
+     */
+    protected static $criticalFields = [
+        'role_id', 
+        'qualification_id', 
+        'stato_user', 
+        'punti_valore_maturati', 
+        'punti_carriera_maturati',
+        'punti_bonus',
+        'punti_spesi',
+        'user_id_padre',
+    ];
+
+    /**
+     * Fields to exclude from logging
+     */
+    protected static $excludeFromLog = ['password', 'remember_token'];
+
+    // ==================== RELATIONSHIPS ====================
+
     public function Role()
     {
         return $this->belongsTo(Role::class);
@@ -103,12 +129,17 @@ class User extends Authenticatable implements JWTSubject
 
     public function log()
     {
-        return $this->hasMany(log::class);
+        return $this->hasMany(Log::class);
     }
 
     public function teamMembers()
     {
         return $this->hasMany(User::class, 'user_id_padre');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(User::class, 'user_id_padre');
     }
 
     public function contract_management()
@@ -133,31 +164,152 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Order::class);
     }
 
-    // ==================== E-COMMERCE COMPUTED ATTRIBUTES ====================
+    // ==================== EVENTS ====================
+
+    protected static function booted()
+    {
+        // Log user creation
+        static::created(function ($user) {
+            $operatorName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            $user->load(['Role', 'qualification']);
+
+            SystemLogService::database()->info("User created", [
+                'user_id' => $user->id,
+                'codice' => $user->codice,
+                'name' => $user->name,
+                'cognome' => $user->cognome,
+                'email' => $user->email,
+                'role_id' => $user->role_id,
+                'role_name' => $user->Role?->descrizione,
+                'qualification_id' => $user->qualification_id,
+                'qualification_name' => $user->qualification?->descrizione,
+                'stato_user' => $user->stato_user,
+                'user_id_padre' => $user->user_id_padre,
+                'created_by' => $operatorName,
+            ]);
+        });
+
+        // Log user updates
+        static::updated(function ($user) {
+            $changes = $user->getChanges();
+            $original = $user->getOriginal();
+
+            $changesForLog = [];
+            $hasCriticalChanges = false;
+
+            foreach ($changes as $field => $newValue) {
+                // Skip excluded fields
+                if (in_array($field, static::$excludeFromLog) || $field === 'updated_at') {
+                    continue;
+                }
+
+                $oldValue = $original[$field] ?? null;
+
+                // Mask sensitive fields
+                if (in_array($field, static::$sensitiveFields)) {
+                    $oldValue = static::maskSensitiveField($oldValue);
+                    $newValue = static::maskSensitiveField($newValue);
+                }
+
+                $changesForLog[$field] = [
+                    'old' => $oldValue,
+                    'new' => $newValue,
+                ];
+
+                // Check for critical changes
+                if (in_array($field, static::$criticalFields)) {
+                    $hasCriticalChanges = true;
+                }
+            }
+
+            if (!empty($changesForLog)) {
+                $operatorName = Auth::check() 
+                    ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                    : 'Sistema';
+
+                // Use warning for critical changes (role, qualification, points)
+                $level = $hasCriticalChanges ? 'warning' : 'info';
+
+                $logData = [
+                    'user_id' => $user->id,
+                    'codice' => $user->codice,
+                    'user_name' => $user->name . ' ' . $user->cognome,
+                    'email' => $user->email,
+                    'changes' => $changesForLog,
+                    'critical_change' => $hasCriticalChanges,
+                    'updated_by' => $operatorName,
+                ];
+
+                // Add role/qualification names if changed
+                if (isset($changesForLog['role_id'])) {
+                    $logData['new_role_name'] = $user->Role?->descrizione;
+                }
+                if (isset($changesForLog['qualification_id'])) {
+                    $logData['new_qualification_name'] = $user->qualification?->descrizione;
+                }
+
+                SystemLogService::database()->{$level}("User updated", $logData);
+            }
+        });
+
+        // Log user deletion
+        static::deleted(function ($user) {
+            $operatorName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::database()->warning("User deleted", [
+                'user_id' => $user->id,
+                'codice' => $user->codice,
+                'name' => $user->name,
+                'cognome' => $user->cognome,
+                'email' => $user->email,
+                'role_id' => $user->role_id,
+                'contracts_count' => $user->contract()->count(),
+                'team_members_count' => $user->teamMembers()->count(),
+                'deleted_by' => $operatorName,
+            ]);
+        });
+    }
+
+    // ==================== HELPER METHODS ====================
 
     /**
-     * Get total PV currently blocked in active and pending carts
+     * Mask sensitive field for logging (show only last 4 chars)
      */
+    protected static function maskSensitiveField($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        $length = strlen($value);
+        if ($length <= 4) {
+            return str_repeat('*', $length);
+        }
+
+        return str_repeat('*', $length - 4) . substr($value, -4);
+    }
+
+    // ==================== E-COMMERCE COMPUTED ATTRIBUTES ====================
+
     public function getPvBloccatiAttribute()
     {
         return $this->cartItems()
-                    ->whereHas('cartStatus', function($q) {
+                    ->whereHas('cartStatus', function ($q) {
                         $q->whereIn('status_name', ['attivo', 'in_attesa_di_pagamento']);
                     })
                     ->sum('pv_bloccati');
     }
 
-    /**
-     * Get total PV (accumulated + bonus)
-     */
     public function getPvTotaliAttribute()
     {
         return ($this->punti_valore_maturati ?? 0) + ($this->punti_bonus ?? 0);
     }
 
-    /**
-     * Get available PV (total PV - blocked PV)
-     */
     public function getPvDisponibiliAttribute()
     {
         return $this->pv_totali - $this->pv_bloccati;
@@ -165,17 +317,11 @@ class User extends Authenticatable implements JWTSubject
 
     // ==================== E-COMMERCE METHODS ====================
 
-    /**
-     * Check if user has enough available PV for a purchase
-     */
     public function hasEnoughPv($pvAmount)
     {
         return $this->pv_disponibili >= $pvAmount;
     }
 
-    /**
-     * Block PV when adding items to cart
-     */
     public function blockPv($articleId, $quantity)
     {
         $article = Article::find($articleId);
@@ -194,28 +340,24 @@ class User extends Authenticatable implements JWTSubject
             throw new \Exception('Insufficient PV balance. Available: ' . $this->pv_disponibili . ' PV, Required: ' . $pvToBlock . ' PV');
         }
         
-        // Get or create active cart status
         $activeStatus = CartStatus::where('status_name', 'attivo')->first();
         
         if (!$activeStatus) {
             throw new \Exception('Active cart status not found. Please run seeder.');
         }
         
-        // Check if item already exists in active cart
         $cartItem = $this->cartItems()
                          ->where('article_id', $articleId)
                          ->where('cart_status_id', $activeStatus->id)
                          ->first();
         
         if ($cartItem) {
-            // Update existing cart item
             $cartItem->quantity += $quantity;
             $cartItem->pv_bloccati += $pvToBlock;
             $cartItem->save();
             
             return $cartItem;
         } else {
-            // Create new cart item
             return CartItem::create([
                 'user_id' => $this->id,
                 'article_id' => $articleId,
@@ -226,9 +368,6 @@ class User extends Authenticatable implements JWTSubject
         }
     }
 
-    /**
-     * Release blocked PV (when removing from cart)
-     */
     public function releasePv($cartItemId)
     {
         $cartItem = CartItem::where('id', $cartItemId)
@@ -243,9 +382,6 @@ class User extends Authenticatable implements JWTSubject
         return false;
     }
 
-    /**
-     * Update cart item quantity
-     */
     public function updateCartItemQuantity($cartItemId, $newQuantity)
     {
         $cartItem = CartItem::where('id', $cartItemId)
@@ -264,7 +400,6 @@ class User extends Authenticatable implements JWTSubject
         $newPvTotal = $article->pv_price * $newQuantity;
         $pvDifference = $newPvTotal - $cartItem->pv_bloccati;
         
-        // Check if user has enough PV for the increase
         if ($pvDifference > 0 && !$this->hasEnoughPv($pvDifference)) {
             throw new \Exception('Insufficient PV balance for quantity update');
         }
@@ -276,9 +411,6 @@ class User extends Authenticatable implements JWTSubject
         return $cartItem;
     }
 
-    /**
-     * Get active cart items
-     */
     public function getActiveCart()
     {
         $activeStatus = CartStatus::where('status_name', 'attivo')->first();
@@ -289,17 +421,11 @@ class User extends Authenticatable implements JWTSubject
                     ->get();
     }
 
-    /**
-     * Get total PV of active cart
-     */
     public function getActiveCartTotal()
     {
         return $this->getActiveCart()->sum('pv_bloccati');
     }
 
-    /**
-     * Clear active cart
-     */
     public function clearActiveCart()
     {
         $activeStatus = CartStatus::where('status_name', 'attivo')->first();

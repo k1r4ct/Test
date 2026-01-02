@@ -19,6 +19,9 @@ use App\Http\Controllers\OptionStatusContractController;
 use App\Http\Controllers\ContractTypeInformationController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\WalletController;
+use App\Http\Controllers\ContractDataOverviewController;
+use App\Http\Controllers\LogController;
+use App\Http\Controllers\LogSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +34,16 @@ use App\Http\Controllers\WalletController;
 |
 */
 
+
+// ============================================
+// CONTRACT DATA OVERVIEW - Google Sheets Integration
+// These routes use API key authentication (not JWT)
+// ============================================
+Route::prefix('contract-data-overview')->group(function () {
+    Route::get('/', [ContractDataOverviewController::class, 'index']);
+    Route::post('/bulk-update', [ContractDataOverviewController::class, 'bulkUpdate']);
+    Route::get('/{id}', [ContractDataOverviewController::class, 'show']);
+});
 
 
 Route::group(['middleware'=>'api'],function(){
@@ -127,6 +140,26 @@ Route::group(['middleware'=>'api'],function(){
     Route::get('tickets/{ticket}/attachments', [TicketController::class, 'getTicketAttachments']);
     Route::get('attachments/{attachment}/download', [TicketController::class, 'downloadAttachment']);
     Route::delete('attachments/{attachment}', [TicketController::class, 'deleteAttachment']);
+
+    // GESTIONE LOG
+    Route::get('logs', [LogController::class, 'index'])->name('logs.index');
+    Route::get('logs/stats', [LogController::class, 'getStats'])->name('logs.stats');
+    Route::get('logs/sources', [LogController::class, 'getSources'])->name('logs.sources');
+    Route::get('logs/files', [LogController::class, 'getLogFiles'])->name('logs.files');
+    Route::get('logs/export', [LogController::class, 'export'])->name('logs.export');
+    Route::get('logs/file', [LogController::class, 'getFileContent'])->name('logs.file');
+    Route::delete('logs/clear', [LogController::class, 'clearLogs'])->name('logs.clear');
+    Route::get('logs/{id}', [LogController::class, 'show'])->name('logs.show');
+    Route::delete('logs/{id}', [LogController::class, 'destroy'])->name('logs.destroy');
+
+    // GESTIONE LOG SETTINGS
+    Route::get('log-settings', [LogSettingsController::class, 'index'])->name('log-settings.index');
+    Route::get('log-settings/cleanup-stats', [LogSettingsController::class, 'getCleanupStats'])->name('log-settings.cleanup-stats');
+    Route::get('log-settings/{key}', [LogSettingsController::class, 'show'])->name('log-settings.show');
+    Route::put('log-settings/{key}', [LogSettingsController::class, 'update'])->name('log-settings.update');
+    Route::post('log-settings/bulk-update', [LogSettingsController::class, 'bulkUpdate'])->name('log-settings.bulk-update');
+    Route::post('log-settings/reset', [LogSettingsController::class, 'resetToDefaults'])->name('log-settings.reset');
+    Route::post('log-settings/run-cleanup', [LogSettingsController::class, 'runCleanup'])->name('log-settings.run-cleanup');
 
     //GESTIONE DOMANDE
     Route::get('getDomande{id}',[SpecificDataController::class,'getDomande'])->name('getDomande');

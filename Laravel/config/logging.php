@@ -49,15 +49,38 @@ return [
     |                    "errorlog", "monolog",
     |                    "custom", "stack"
     |
+    | Custom Channels (Semprechiaro CRM):
+    | - auth: Authentication events (login, logout, password changes)
+    | - api: API requests and responses
+    | - database: Database queries, slow queries, errors
+    | - scheduler: Scheduled tasks and cron jobs
+    | - email: Email sending events
+    | - system: General system events
+    | - user_activity: User actions (contract changes, etc.)
+    | - external_api: External API calls (Google Sheets integration, etc.)
+    |
     */
 
     'channels' => [
+
+        /*
+        |--------------------------------------------------------------------------
+        | Stack Channel (Default)
+        |--------------------------------------------------------------------------
+        | Combines multiple channels. By default writes to single file.
+        */
         'stack' => [
             'driver' => 'stack',
             'channels' => ['single'],
             'ignore_exceptions' => false,
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Single File Channel (Laravel default)
+        |--------------------------------------------------------------------------
+        | All logs go to a single laravel.log file
+        */
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
@@ -65,6 +88,12 @@ return [
             'replace_placeholders' => true,
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Daily Rotation Channel (optional, not used by default)
+        |--------------------------------------------------------------------------
+        | Creates a new log file each day, keeps last 14 days
+        */
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
@@ -73,10 +102,96 @@ return [
             'replace_placeholders' => true,
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | SEMPRECHIARO CUSTOM CHANNELS
+        |--------------------------------------------------------------------------
+        | Single file per source - NO daily rotation
+        | La pulizia viene gestita dal comando CleanOldLogs in base alle settings
+        */
+
+        // Authentication logs (login, logout, password changes, failed attempts)
+        'auth' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/auth.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
+        // API logs (requests, responses, errors)
+        'api' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/api.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
+        // Database logs (queries, slow queries, connection errors)
+        'database' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/database.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
+        // Scheduler logs (cron jobs, scheduled tasks)
+        'scheduler' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/scheduler.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
+        // Email logs (sent emails, failures)
+        'email' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/email.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
+        // System logs (general system events, errors)
+        'system' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/system.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
+        // User activity logs (contract changes, user actions)
+        'user_activity' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/user_activity.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
+        // External API logs (Google Sheets integration, external services)
+        'external_api' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/external_api.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
+        // Errors only - aggregates all errors from any source
+        'errors' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/errors.log'),
+            'level' => 'error',
+            'replace_placeholders' => true,
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | STANDARD LARAVEL CHANNELS
+        |--------------------------------------------------------------------------
+        */
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
-            'username' => 'Laravel Log',
+            'username' => 'Semprechiaro CRM',
             'emoji' => ':boom:',
             'level' => env('LOG_LEVEL', 'critical'),
             'replace_placeholders' => true,

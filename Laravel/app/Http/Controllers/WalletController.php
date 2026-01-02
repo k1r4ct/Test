@@ -7,7 +7,6 @@ use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class WalletController extends Controller
@@ -21,8 +20,6 @@ class WalletController extends Controller
     public function getWallet()
     {
         try {
-            Log::info('=== WALLET REQUEST START ===');
-            
             $user = Auth::user();
             
             if (!$user) {
@@ -32,12 +29,6 @@ class WalletController extends Controller
                     "message" => "User not authenticated"
                 ]);
             }
-
-            Log::info('User authenticated', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'role_id' => $user->role_id
-            ]);
 
             // Only clients (role_id = 3) can access wallet
             if ($user->role_id != 3) {
@@ -61,7 +52,6 @@ class WalletController extends Controller
                     ->sum($columnName);
                     
                 $pvBlocked = $pvBlocked ? (int)$pvBlocked : 0;
-                Log::info("Cart PV blocked from cart_items.{$columnName}", ['pv_blocked' => $pvBlocked]);
             }
 
             // Get data from user table
@@ -82,9 +72,6 @@ class WalletController extends Controller
                 'pv_spesi' => $pvSpesi,
             ];
 
-            Log::info('Wallet data prepared', $walletData);
-            Log::info('=== WALLET REQUEST SUCCESS ===');
-
             return response()->json([
                 "response" => "ok",
                 "status" => "200",
@@ -92,10 +79,6 @@ class WalletController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('=== WALLET REQUEST ERROR ===');
-            Log::error('Error: ' . $e->getMessage());
-            Log::error('Trace: ' . $e->getTraceAsString());
-            
             return response()->json([
                 "response" => "error",
                 "status" => "500",
@@ -161,7 +144,6 @@ class WalletController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error getting wallet summary: ' . $e->getMessage());
             return response()->json([
                 "response" => "error",
                 "status" => "500",
@@ -243,7 +225,6 @@ class WalletController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error getting transaction history: ' . $e->getMessage());
             return response()->json([
                 "response" => "error",
                 "status" => "500",
@@ -275,11 +256,6 @@ class WalletController extends Controller
             $user->punti_spesi = ($user->punti_spesi ?? 0) + $request->points_used;
             $user->save();
 
-            Log::info('Points updated', [
-                'user_id' => $user->id,
-                'points_used' => $request->points_used
-            ]);
-
             return response()->json([
                 "response" => "ok",
                 "status" => "200",
@@ -292,7 +268,6 @@ class WalletController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error updating points: ' . $e->getMessage());
             return response()->json([
                 "response" => "error",
                 "status" => "500",
@@ -334,13 +309,6 @@ class WalletController extends Controller
             $user->punti_bonus = ($user->punti_bonus ?? 0) + $request->bonus_points;
             $user->save();
 
-            Log::info('Bonus points added', [
-                'user_id' => $user->id,
-                'bonus_points' => $request->bonus_points,
-                'reason' => $request->reason ?? 'Manual',
-                'added_by' => $currentUser->id
-            ]);
-
             return response()->json([
                 "response" => "ok",
                 "status" => "200",
@@ -353,7 +321,6 @@ class WalletController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error adding bonus points: ' . $e->getMessage());
             return response()->json([
                 "response" => "error",
                 "status" => "500",
