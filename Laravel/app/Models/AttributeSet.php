@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\SystemLogService;
+use Illuminate\Support\Facades\Auth;
 
 class AttributeSet extends Model
 {
@@ -23,9 +25,6 @@ class AttributeSet extends Model
 
     // ==================== RELATIONSHIPS ====================
 
-    /**
-     * Attributes belonging to this set.
-     */
     public function attributes()
     {
         return $this->belongsToMany(Attribute::class, 'attribute_set_attributes')
@@ -34,28 +33,82 @@ class AttributeSet extends Model
                     ->orderBy('attribute_set_attributes.sort_order', 'asc');
     }
 
-    /**
-     * Active attributes belonging to this set.
-     */
     public function activeAttributes()
     {
         return $this->attributes()->where('attributes.is_active', true);
     }
 
-    /**
-     * Articles using this attribute set.
-     */
     public function articles()
     {
         return $this->hasMany(Article::class);
     }
 
-    /**
-     * Pivot records for this set.
-     */
     public function attributeSetAttributes()
     {
         return $this->hasMany(AttributeSetAttribute::class);
+    }
+
+    // ==================== EVENTS ====================
+
+    protected static function booted()
+    {
+        // Log attribute set creation
+        static::created(function ($attributeSet) {
+            $userName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->info("Attribute set created", [
+                'attribute_set_id' => $attributeSet->id,
+                'set_name' => $attributeSet->set_name,
+                'description' => $attributeSet->description,
+                'is_active' => $attributeSet->is_active,
+                'created_by' => $userName,
+            ]);
+        });
+
+        // Log attribute set updates
+        static::updated(function ($attributeSet) {
+            $changes = $attributeSet->getChanges();
+            $original = $attributeSet->getOriginal();
+
+            $changesForLog = [];
+            foreach ($changes as $field => $newValue) {
+                if ($field !== 'updated_at') {
+                    $changesForLog[$field] = [
+                        'old' => $original[$field] ?? null,
+                        'new' => $newValue,
+                    ];
+                }
+            }
+
+            if (!empty($changesForLog)) {
+                $userName = Auth::check() 
+                    ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                    : 'Sistema';
+
+                SystemLogService::ecommerce()->info("Attribute set updated", [
+                    'attribute_set_id' => $attributeSet->id,
+                    'set_name' => $attributeSet->set_name,
+                    'changes' => $changesForLog,
+                    'updated_by' => $userName,
+                ]);
+            }
+        });
+
+        // Log attribute set deletion
+        static::deleted(function ($attributeSet) {
+            $userName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->warning("Attribute set deleted", [
+                'attribute_set_id' => $attributeSet->id,
+                'set_name' => $attributeSet->set_name,
+                'articles_count' => $attributeSet->articles()->count(),
+                'deleted_by' => $userName,
+            ]);
+        });
     }
 
     // ==================== SCOPES ====================
@@ -77,16 +130,12 @@ class AttributeSet extends Model
 
     // ==================== HELPER METHODS ====================
 
-    /**
-     * Get attributes grouped by their requirement status.
-     */
     public function getGroupedAttributes(): array
     {
         $attributes = $this->activeAttributes()->get();
 
         return [
             'required' => $attributes->filter(function ($attr) {
-                // Check pivot override first, then attribute default
                 $pivotRequired = $attr->pivot->is_required;
                 return $pivotRequired !== null ? $pivotRequired : $attr->is_required;
             }),
@@ -98,9 +147,6 @@ class AttributeSet extends Model
         ];
     }
 
-    /**
-     * Get all required attribute IDs for this set.
-     */
     public function getRequiredAttributeIds(): array
     {
         return $this->activeAttributes()
@@ -113,33 +159,21 @@ class AttributeSet extends Model
                     ->toArray();
     }
 
-    /**
-     * Check if this set contains a specific attribute.
-     */
     public function hasAttribute(int $attributeId): bool
     {
         return $this->attributes()->where('attributes.id', $attributeId)->exists();
     }
 
-    /**
-     * Check if this set contains an attribute by code.
-     */
     public function hasAttributeByCode(string $code): bool
     {
         return $this->attributes()->where('attributes.attribute_code', $code)->exists();
     }
 
-    /**
-     * Get attribute by code within this set.
-     */
     public function getAttributeByCode(string $code): ?Attribute
     {
         return $this->attributes()->where('attributes.attribute_code', $code)->first();
     }
 
-    /**
-     * Add an attribute to this set.
-     */
     public function addAttribute(int $attributeId, array $pivotData = []): void
     {
         $defaultPivot = [
@@ -150,27 +184,33 @@ class AttributeSet extends Model
         $this->attributes()->syncWithoutDetaching([
             $attributeId => array_merge($defaultPivot, $pivotData),
         ]);
+
+        // Log attribute addition to set
+        SystemLogService::ecommerce()->info("Attribute added to set", [
+            'attribute_set_id' => $this->id,
+            'set_name' => $this->set_name,
+            'attribute_id' => $attributeId,
+            'pivot_data' => array_merge($defaultPivot, $pivotData),
+        ]);
     }
 
-    /**
-     * Remove an attribute from this set.
-     */
     public function removeAttribute(int $attributeId): void
     {
         $this->attributes()->detach($attributeId);
+
+        // Log attribute removal from set
+        SystemLogService::ecommerce()->info("Attribute removed from set", [
+            'attribute_set_id' => $this->id,
+            'set_name' => $this->set_name,
+            'attribute_id' => $attributeId,
+        ]);
     }
 
-    /**
-     * Update attribute pivot data within this set.
-     */
     public function updateAttributePivot(int $attributeId, array $pivotData): void
     {
         $this->attributes()->updateExistingPivot($attributeId, $pivotData);
     }
 
-    /**
-     * Reorder attributes in this set.
-     */
     public function reorderAttributes(array $attributeIdsInOrder): void
     {
         foreach ($attributeIdsInOrder as $index => $attributeId) {
@@ -178,9 +218,6 @@ class AttributeSet extends Model
         }
     }
 
-    /**
-     * Get filterable attributes in this set.
-     */
     public function getFilterableAttributes()
     {
         return $this->activeAttributes()
@@ -188,9 +225,6 @@ class AttributeSet extends Model
                     ->get();
     }
 
-    /**
-     * Get searchable attributes in this set.
-     */
     public function getSearchableAttributes()
     {
         return $this->activeAttributes()
@@ -198,9 +232,6 @@ class AttributeSet extends Model
                     ->get();
     }
 
-    /**
-     * Get attributes visible on frontend in this set.
-     */
     public function getVisibleAttributes()
     {
         return $this->activeAttributes()
@@ -208,16 +239,12 @@ class AttributeSet extends Model
                     ->get();
     }
 
-    /**
-     * Clone this attribute set with a new name.
-     */
     public function duplicate(string $newName): self
     {
         $newSet = $this->replicate();
         $newSet->set_name = $newName;
         $newSet->save();
 
-        // Copy attribute associations
         foreach ($this->attributes as $attribute) {
             $newSet->attributes()->attach($attribute->id, [
                 'sort_order' => $attribute->pivot->sort_order,
@@ -225,12 +252,18 @@ class AttributeSet extends Model
             ]);
         }
 
+        // Log duplication
+        SystemLogService::ecommerce()->info("Attribute set duplicated", [
+            'original_set_id' => $this->id,
+            'original_set_name' => $this->set_name,
+            'new_set_id' => $newSet->id,
+            'new_set_name' => $newSet->set_name,
+            'attributes_copied' => $this->attributes()->count(),
+        ]);
+
         return $newSet;
     }
 
-    /**
-     * Get validation rules for all attributes in this set.
-     */
     public function getValidationRules(): array
     {
         $rules = [];
@@ -238,7 +271,6 @@ class AttributeSet extends Model
         foreach ($this->activeAttributes as $attribute) {
             $attrRules = $attribute->getValidationRules();
 
-            // Override required status from pivot if set
             $pivotRequired = $attribute->pivot->is_required;
             if ($pivotRequired !== null) {
                 $attrRules = array_filter($attrRules, fn($rule) => !in_array($rule, ['required', 'nullable']));
@@ -251,9 +283,6 @@ class AttributeSet extends Model
         return $rules;
     }
 
-    /**
-     * Find attribute set by name.
-     */
     public static function findByName(string $name): ?self
     {
         return static::where('set_name', $name)->first();

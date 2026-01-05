@@ -741,25 +741,32 @@ class TicketController extends Controller
 
             $currentUserId = Auth::id();
 
+            // Map event to Italian notification messages
+            $eventMessages = [
+                'new_ticket' => 'Nuovo ticket creato',
+                'new_message' => 'Nuovo messaggio nel ticket',
+                'status_changed' => 'Stato del ticket modificato',
+            ];
+
+            $notificationMessage = $eventMessages[$event] ?? 'Aggiornamento ticket';
+
             foreach ($userIds as $userId) {
+                // Don't notify the user who triggered the event
                 if ($userId == $currentUserId) {
                     continue;
                 }
 
                 notification::create([
-                    'user_id' => $userId,
-                    'type' => 'ticket_' . $event,
-                    'data' => json_encode([
-                        'ticket_id' => $ticket->id,
-                        'ticket_number' => $ticket->ticket_number,
-                        'title' => $ticket->title,
-                        'event' => $event
-                    ]),
-                    'read' => false
+                    'from_user_id' => $currentUserId,
+                    'to_user_id' => $userId,
+                    'reparto' => 'ticket',
+                    'notifica' => $notificationMessage . ' #' . $ticket->ticket_number,
+                    'visualizzato' => false,
+                    'notifica_html' => '<strong>' . $notificationMessage . '</strong><br>Ticket #' . $ticket->ticket_number,
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('Error sending notifications: ' . $e->getMessage());
+            Log::error('Error sending ticket notifications: ' . $e->getMessage());
         }
     }
 

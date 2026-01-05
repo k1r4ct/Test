@@ -4,13 +4,14 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Models\LogSetting;
 
 class Kernel extends ConsoleKernel
 {
     /**
      * Define the application's command schedule.
      * 
-     * These commands handle automatic ticket lifecycle management:
+     * These commands handle automatic system maintenance:
      * 
      * 1. Priority Escalation (hourly):
      *    - Tickets in 'new' or 'waiting' with 'unassigned' priority
@@ -20,6 +21,10 @@ class Kernel extends ConsoleKernel
      *    - resolved > 10 days → closed
      *    - closed > 10 days → deleted
      *    - deleted > 40 days → permanently removed from DB
+     * 
+     * 3. Log Cleanup (configurable, default daily at 03:00):
+     *    - Removes old logs based on retention settings per source
+     *    - Cleans both database records and log files
      */
     protected function schedule(Schedule $schedule): void
     {
@@ -38,6 +43,52 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/ticket-cleanup.log'));
+
+        // Log cleanup - runs based on settings (default: daily at 03:00)
+        // Removes old log entries based on retention settings per source
+        $this->scheduleLogCleanup($schedule);
+    }
+
+    /**
+     * Schedule log cleanup based on database settings
+     */
+    protected function scheduleLogCleanup(Schedule $schedule): void
+    {
+        // Get cleanup settings with fallback defaults
+        try {
+            $enabled = LogSetting::get('cleanup_enabled', true);
+            $frequency = LogSetting::get('cleanup_frequency', 'daily');
+            $time = LogSetting::get('cleanup_time', '03:00');
+        } catch (\Exception $e) {
+            // If settings table doesn't exist yet, use defaults
+            $enabled = true;
+            $frequency = 'daily';
+            $time = '03:00';
+        }
+
+        if (!$enabled) {
+            return;
+        }
+
+        $command = $schedule->command('logs:cleanup')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/logs-cleanup.log'));
+
+        // Set frequency based on settings
+        switch ($frequency) {
+            case 'daily':
+                $command->dailyAt($time);
+                break;
+            case 'weekly':
+                $command->weeklyOn(0, $time); // Sunday
+                break;
+            case 'monthly':
+                $command->monthlyOn(1, $time); // First day of month
+                break;
+            default:
+                $command->dailyAt($time);
+        }
     }
 
     /**

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\SystemLogService;
+use Illuminate\Support\Facades\Auth;
 
 class Category extends Model
 {
@@ -40,45 +42,103 @@ class Category extends Model
         return $this->hasMany(Article::class);
     }
 
-    /**
-     * Parent category (for hierarchical structure).
-     */
     public function parent()
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
 
-    /**
-     * Child categories (direct children only).
-     */
     public function children()
     {
         return $this->hasMany(Category::class, 'parent_id')
                     ->orderBy('sort_order', 'asc');
     }
 
-    /**
-     * Active child categories.
-     */
     public function activeChildren()
     {
         return $this->children()->where('is_active', true);
     }
 
-    /**
-     * Recursive relationship to get all descendants.
-     */
     public function descendants()
     {
         return $this->children()->with('descendants');
     }
 
-    /**
-     * Recursive relationship to get all ancestors.
-     */
     public function ancestors()
     {
         return $this->parent()->with('ancestors');
+    }
+
+    // ==================== EVENTS ====================
+
+    protected static function booted()
+    {
+        // Log category creation
+        static::created(function ($category) {
+            $userName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->info("Category created", [
+                'category_id' => $category->id,
+                'category_name' => $category->category_name,
+                'slug' => $category->slug,
+                'parent_id' => $category->parent_id,
+                'filter_id' => $category->filter_id,
+                'is_active' => $category->is_active,
+                'created_by' => $userName,
+            ]);
+        });
+
+        // Log category updates
+        static::updated(function ($category) {
+            $changes = $category->getChanges();
+            $original = $category->getOriginal();
+
+            $changesForLog = [];
+            foreach ($changes as $field => $newValue) {
+                if ($field !== 'updated_at') {
+                    $changesForLog[$field] = [
+                        'old' => $original[$field] ?? null,
+                        'new' => $newValue,
+                    ];
+                }
+            }
+
+            if (!empty($changesForLog)) {
+                $userName = Auth::check() 
+                    ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                    : 'Sistema';
+
+                // Use warning if visibility (is_active) or hierarchy (parent_id) changed
+                $importantFields = ['is_active', 'parent_id', 'filter_id'];
+                $hasImportantChanges = !empty(array_intersect(array_keys($changesForLog), $importantFields));
+                $level = $hasImportantChanges ? 'warning' : 'info';
+
+                SystemLogService::ecommerce()->{$level}("Category updated", [
+                    'category_id' => $category->id,
+                    'category_name' => $category->category_name,
+                    'changes' => $changesForLog,
+                    'important_change' => $hasImportantChanges,
+                    'updated_by' => $userName,
+                ]);
+            }
+        });
+
+        // Log category deletion
+        static::deleted(function ($category) {
+            $userName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->warning("Category deleted", [
+                'category_id' => $category->id,
+                'category_name' => $category->category_name,
+                'slug' => $category->slug,
+                'had_children' => $category->children()->count(),
+                'had_articles' => $category->articles()->count(),
+                'deleted_by' => $userName,
+            ]);
+        });
     }
 
     // ==================== SCOPES ====================
@@ -117,17 +177,12 @@ class Category extends Model
 
     // ==================== HELPER METHODS ====================
 
-    /**
-     * Check if category is visible to a specific user.
-     */
     public function isVisibleToUser($user)
     {
-        // If not active, not visible
         if (!$this->is_active) {
             return false;
         }
 
-        // If no filter, visible to all
         if (!$this->filter_id) {
             return true;
         }
@@ -135,33 +190,21 @@ class Category extends Model
         return $this->filter->matchesUser($user);
     }
 
-    /**
-     * Check if this is a root category (no parent).
-     */
     public function isRoot(): bool
     {
         return $this->parent_id === null;
     }
 
-    /**
-     * Check if this category has children.
-     */
     public function hasChildren(): bool
     {
         return $this->children()->exists();
     }
 
-    /**
-     * Check if this category has active children.
-     */
     public function hasActiveChildren(): bool
     {
         return $this->activeChildren()->exists();
     }
 
-    /**
-     * Get the depth level of this category in the hierarchy.
-     */
     public function getDepth(): int
     {
         $depth = 0;
@@ -171,7 +214,6 @@ class Category extends Model
             $depth++;
             $category = $category->parent;
 
-            // Safety check to prevent infinite loops
             if ($depth > 10) {
                 break;
             }
@@ -180,9 +222,6 @@ class Category extends Model
         return $depth;
     }
 
-    /**
-     * Get the full path of category names from root to this category.
-     */
     public function getPath(): array
     {
         $path = [$this->category_name];
@@ -192,7 +231,6 @@ class Category extends Model
             $category = $category->parent;
             array_unshift($path, $category->category_name);
 
-            // Safety check
             if (count($path) > 10) {
                 break;
             }
@@ -201,17 +239,11 @@ class Category extends Model
         return $path;
     }
 
-    /**
-     * Get the full path as a string.
-     */
     public function getPathString(string $separator = ' > '): string
     {
         return implode($separator, $this->getPath());
     }
 
-    /**
-     * Get all ancestor IDs including self.
-     */
     public function getAncestorIds(): array
     {
         $ids = [$this->id];
@@ -229,9 +261,6 @@ class Category extends Model
         return $ids;
     }
 
-    /**
-     * Get all descendant IDs (children, grandchildren, etc.).
-     */
     public function getDescendantIds(): array
     {
         $ids = [];
@@ -244,9 +273,6 @@ class Category extends Model
         return $ids;
     }
 
-    /**
-     * Get all articles including those in descendant categories.
-     */
     public function getAllArticles()
     {
         $categoryIds = array_merge([$this->id], $this->getDescendantIds());
@@ -257,9 +283,6 @@ class Category extends Model
                       ->get();
     }
 
-    /**
-     * Get count of all articles including descendants.
-     */
     public function getAllArticlesCount(): int
     {
         $categoryIds = array_merge([$this->id], $this->getDescendantIds());
@@ -269,28 +292,32 @@ class Category extends Model
                       ->count();
     }
 
-    /**
-     * Move category to a new parent.
-     */
     public function moveTo(?int $newParentId): bool
     {
-        // Prevent moving to self
         if ($newParentId === $this->id) {
             return false;
         }
 
-        // Prevent moving to own descendant
         if ($newParentId !== null && in_array($newParentId, $this->getDescendantIds())) {
             return false;
         }
 
+        $oldParentId = $this->parent_id;
         $this->parent_id = $newParentId;
-        return $this->save();
+        $result = $this->save();
+
+        if ($result) {
+            SystemLogService::ecommerce()->info("Category moved", [
+                'category_id' => $this->id,
+                'category_name' => $this->category_name,
+                'old_parent_id' => $oldParentId,
+                'new_parent_id' => $newParentId,
+            ]);
+        }
+
+        return $result;
     }
 
-    /**
-     * Generate a unique slug from the category name.
-     */
     public function generateSlug(): string
     {
         $slug = \Str::slug($this->category_name);
@@ -305,17 +332,11 @@ class Category extends Model
         return $slug;
     }
 
-    /**
-     * Get meta title (fallback to category name if not set).
-     */
     public function getMetaTitleAttribute($value): string
     {
         return $value ?: $this->category_name;
     }
 
-    /**
-     * Get meta description (fallback to description if not set).
-     */
     public function getMetaDescriptionForSeo(): string
     {
         return $this->meta_description ?: ($this->description ?: '');
@@ -323,9 +344,6 @@ class Category extends Model
 
     // ==================== STATIC METHODS ====================
 
-    /**
-     * Get all categories as a flat tree (for dropdowns).
-     */
     public static function getFlatTree(): array
     {
         $result = [];
@@ -338,9 +356,6 @@ class Category extends Model
         return $result;
     }
 
-    /**
-     * Helper to build flat tree recursively.
-     */
     protected static function addToFlatTree(array &$result, Category $category, int $depth): void
     {
         $result[] = [
@@ -355,9 +370,6 @@ class Category extends Model
         }
     }
 
-    /**
-     * Get categories as nested tree structure.
-     */
     public static function getNestedTree(): \Illuminate\Database\Eloquent\Collection
     {
         return static::root()
@@ -369,9 +381,6 @@ class Category extends Model
                      ->get();
     }
 
-    /**
-     * Find category by slug.
-     */
     public static function findBySlug(string $slug): ?self
     {
         return static::where('slug', $slug)->first();

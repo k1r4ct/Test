@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\SystemLogService;
 
 class Article extends Model
 {
@@ -33,6 +34,16 @@ class Article extends Model
         'available' => 'boolean',
         'sort_order' => 'integer',
         'is_featured' => 'boolean',
+    ];
+
+    // Fields that are important to track in logs
+    protected static $importantFields = [
+        'pv_price',
+        'euro_price',
+        'available',
+        'is_featured',
+        'category_id',
+        'store_id',
     ];
 
     // ==================== RELATIONSHIPS ====================
@@ -75,29 +86,106 @@ class Article extends Model
 
     // ==================== EAV RELATIONSHIPS ====================
 
-    /**
-     * The attribute set that defines which attributes this article can have.
-     */
     public function attributeSet()
     {
         return $this->belongsTo(AttributeSet::class);
     }
 
-    /**
-     * All attribute values for this article.
-     */
     public function attributeValues()
     {
         return $this->hasMany(ArticleAttributeValue::class);
     }
 
-    /**
-     * Get attributes through attribute values.
-     */
     public function attributes()
     {
         return $this->belongsToMany(Attribute::class, 'article_attribute_values')
                     ->withTimestamps();
+    }
+
+    // ==================== EVENTS ====================
+
+    protected static function booted()
+    {
+        // Log article creation
+        static::created(function ($article) {
+            SystemLogService::ecommerce()->info("Article created", [
+                'article_id' => $article->id,
+                'sku' => $article->sku,
+                'article_name' => $article->article_name,
+                'pv_price' => $article->pv_price,
+                'euro_price' => $article->euro_price,
+                'available' => $article->available,
+                'is_digital' => $article->is_digital,
+                'category_id' => $article->category_id,
+                'store_id' => $article->store_id,
+            ]);
+        });
+
+        // Log article updates (especially price and availability changes)
+        static::updated(function ($article) {
+            $changes = $article->getChanges();
+            $original = $article->getOriginal();
+
+            // Build changes array for logging
+            $changesForLog = [];
+            $hasImportantChanges = false;
+
+            foreach ($changes as $field => $newValue) {
+                if ($field !== 'updated_at') {
+                    $changesForLog[$field] = [
+                        'old' => $original[$field] ?? null,
+                        'new' => $newValue,
+                    ];
+
+                    // Check if it's an important field
+                    if (in_array($field, static::$importantFields)) {
+                        $hasImportantChanges = true;
+                    }
+                }
+            }
+
+            if (!empty($changesForLog)) {
+                // Use warning level for important changes (price, availability)
+                $level = $hasImportantChanges ? 'warning' : 'info';
+                
+                SystemLogService::ecommerce()->{$level}("Article updated", [
+                    'article_id' => $article->id,
+                    'sku' => $article->sku,
+                    'article_name' => $article->article_name,
+                    'changes' => $changesForLog,
+                    'important_change' => $hasImportantChanges,
+                ]);
+            }
+        });
+
+        // Log article deletion (soft delete)
+        static::deleted(function ($article) {
+            SystemLogService::ecommerce()->warning("Article deleted", [
+                'article_id' => $article->id,
+                'sku' => $article->sku,
+                'article_name' => $article->article_name,
+                'pv_price' => $article->pv_price,
+                'was_available' => $article->available,
+            ]);
+        });
+
+        // Log article restore (from soft delete)
+        static::restored(function ($article) {
+            SystemLogService::ecommerce()->info("Article restored", [
+                'article_id' => $article->id,
+                'sku' => $article->sku,
+                'article_name' => $article->article_name,
+            ]);
+        });
+
+        // Log permanent deletion
+        static::forceDeleted(function ($article) {
+            SystemLogService::ecommerce()->critical("Article permanently deleted", [
+                'article_id' => $article->id,
+                'sku' => $article->sku,
+                'article_name' => $article->article_name,
+            ]);
+        });
     }
 
     // ==================== SCOPES ====================
@@ -147,9 +235,6 @@ class Article extends Model
         return $query->whereBetween('pv_price', [$minPv, $maxPv]);
     }
 
-    /**
-     * Scope to filter articles by attribute value.
-     */
     public function scopeWhereAttribute($query, string $attributeCode, $value)
     {
         return $query->whereHas('attributeValues', function ($q) use ($attributeCode, $value) {
@@ -157,7 +242,6 @@ class Article extends Model
                 $attrQ->where('attribute_code', $attributeCode);
             });
 
-            // Determine which column to filter based on attribute type
             $attribute = Attribute::where('attribute_code', $attributeCode)->first();
             if ($attribute) {
                 $column = $attribute->getValueColumn();
@@ -185,16 +269,12 @@ class Article extends Model
 
     public function isVisibleToUser($user)
     {
-        // Check both category and store filters
         $categoryVisible = $this->category && $this->category->isVisibleToUser($user);
         $storeVisible = $this->store && $this->store->isVisibleToUser($user);
 
         return $categoryVisible && $storeVisible && $this->available;
     }
 
-    /**
-     * Get the euro price formatted for display.
-     */
     public function getFormattedEuroPriceAttribute(): string
     {
         if ($this->euro_price === null) {
@@ -203,9 +283,6 @@ class Article extends Model
         return number_format($this->euro_price, 2, ',', '.') . ' €';
     }
 
-    /**
-     * Get the PV price formatted for display.
-     */
     public function getFormattedPvPriceAttribute(): string
     {
         return number_format($this->pv_price, 0, ',', '.') . ' PV';
@@ -213,25 +290,16 @@ class Article extends Model
 
     // ==================== EAV HELPER METHODS ====================
 
-    /**
-     * Get all attribute values as associative array [code => value].
-     */
     public function getAttributeValuesArray(): array
     {
         return ArticleAttributeValue::getAllValues($this->id, true);
     }
 
-    /**
-     * Get a specific attribute value by code.
-     */
     public function getAttributeValue(string $attributeCode)
     {
         return ArticleAttributeValue::getValueByCode($this->id, $attributeCode);
     }
 
-    /**
-     * Get a specific attribute value formatted for display.
-     */
     public function getFormattedAttributeValue(string $attributeCode): string
     {
         $attrValue = $this->attributeValues()
@@ -244,27 +312,16 @@ class Article extends Model
         return $attrValue ? $attrValue->getFormattedValue() : '';
     }
 
-    /**
-     * Set a specific attribute value by code.
-     */
     public function setAttributeValue(string $attributeCode, $value): ArticleAttributeValue
     {
         return ArticleAttributeValue::setValueByCode($this->id, $attributeCode, $value);
     }
 
-    /**
-     * Set multiple attribute values at once.
-     * 
-     * @param array $values [attribute_code => value]
-     */
     public function setAttributeValues(array $values): array
     {
         return ArticleAttributeValue::bulkSetValues($this->id, $values, true);
     }
 
-    /**
-     * Delete a specific attribute value.
-     */
     public function deleteAttributeValue(string $attributeCode): bool
     {
         $attribute = Attribute::findByCode($attributeCode);
@@ -274,13 +331,10 @@ class Article extends Model
         return ArticleAttributeValue::deleteValue($this->id, $attribute->id);
     }
 
-    /**
-     * Check if article has all required attributes filled.
-     */
     public function hasAllRequiredAttributes(): bool
     {
         if (!$this->attributeSet) {
-            return true; // No attribute set = no requirements
+            return true;
         }
 
         $requiredIds = $this->attributeSet->getRequiredAttributeIds();
@@ -300,9 +354,6 @@ class Article extends Model
         return empty(array_diff($requiredIds, $filledIds));
     }
 
-    /**
-     * Get missing required attributes.
-     */
     public function getMissingRequiredAttributes(): array
     {
         if (!$this->attributeSet) {
@@ -316,9 +367,6 @@ class Article extends Model
         return Attribute::whereIn('id', $missingIds)->get()->toArray();
     }
 
-    /**
-     * Get available attributes for this article based on its attribute set.
-     */
     public function getAvailableAttributes()
     {
         if (!$this->attributeSet) {
@@ -328,9 +376,6 @@ class Article extends Model
         return $this->attributeSet->activeAttributes;
     }
 
-    /**
-     * Load article with all EAV data for display.
-     */
     public function loadWithAttributes(): self
     {
         return $this->load([
@@ -344,25 +389,16 @@ class Article extends Model
 
     // ==================== STOCK HELPER METHODS ====================
 
-    /**
-     * Get total available stock across all stores.
-     */
     public function getTotalStock(): int
     {
         return $this->stock()->sum('quantity');
     }
 
-    /**
-     * Check if article is in stock.
-     */
     public function isInStock(): bool
     {
         return $this->getTotalStock() > 0;
     }
 
-    /**
-     * Get stock for a specific store.
-     */
     public function getStockForStore(int $storeId): int
     {
         $stock = $this->stock()->where('store_id', $storeId)->first();

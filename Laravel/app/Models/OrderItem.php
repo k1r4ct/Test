@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\SystemLogService;
+use Illuminate\Support\Facades\Auth;
 
 class OrderItem extends Model
 {
@@ -62,9 +64,6 @@ class OrderItem extends Model
         return $this->belongsTo(Article::class);
     }
 
-    /**
-     * User who fulfilled this item (provided the redemption code).
-     */
     public function fulfilledBy()
     {
         return $this->belongsTo(User::class, 'fulfilled_by_user_id');
@@ -140,65 +139,41 @@ class OrderItem extends Model
 
     // ==================== HELPER METHODS ====================
 
-    /**
-     * Check if item is pending.
-     */
     public function isPending(): bool
     {
         return $this->item_status === self::STATUS_PENDING;
     }
 
-    /**
-     * Check if item is being processed.
-     */
     public function isProcessing(): bool
     {
         return $this->item_status === self::STATUS_PROCESSING;
     }
 
-    /**
-     * Check if item is fulfilled.
-     */
     public function isFulfilled(): bool
     {
         return $this->item_status === self::STATUS_FULFILLED;
     }
 
-    /**
-     * Check if item is cancelled.
-     */
     public function isCancelled(): bool
     {
         return $this->item_status === self::STATUS_CANCELLED;
     }
 
-    /**
-     * Check if item is refunded.
-     */
     public function isRefunded(): bool
     {
         return $this->item_status === self::STATUS_REFUNDED;
     }
 
-    /**
-     * Check if item needs fulfillment.
-     */
     public function needsFulfillment(): bool
     {
         return in_array($this->item_status, [self::STATUS_PENDING, self::STATUS_PROCESSING]);
     }
 
-    /**
-     * Check if item has a redemption code.
-     */
     public function hasRedemptionCode(): bool
     {
         return !empty($this->redemption_code);
     }
 
-    /**
-     * Get status display label.
-     */
     public function getStatusLabel(): string
     {
         $labels = [
@@ -212,9 +187,6 @@ class OrderItem extends Model
         return $labels[$this->item_status] ?? 'Sconosciuto';
     }
 
-    /**
-     * Get status CSS class for styling.
-     */
     public function getStatusClass(): string
     {
         $classes = [
@@ -228,33 +200,21 @@ class OrderItem extends Model
         return $classes[$this->item_status] ?? 'bg-gray-100 text-gray-800';
     }
 
-    /**
-     * Get the article name (use snapshot if available, fallback to current).
-     */
     public function getArticleName(): string
     {
         return $this->article_name_snapshot ?? ($this->article?->article_name ?? 'Articolo non disponibile');
     }
 
-    /**
-     * Get the article SKU (use snapshot if available, fallback to current).
-     */
     public function getArticleSku(): string
     {
         return $this->article_sku_snapshot ?? ($this->article?->sku ?? '');
     }
 
-    /**
-     * Get formatted unit price.
-     */
     public function getFormattedUnitPrice(): string
     {
         return number_format($this->pv_unit_price, 0, ',', '.') . ' PV';
     }
 
-    /**
-     * Get formatted total price.
-     */
     public function getFormattedTotalPrice(): string
     {
         return number_format($this->pv_total_price, 0, ',', '.') . ' PV';
@@ -262,9 +222,6 @@ class OrderItem extends Model
 
     // ==================== FULFILLMENT METHODS ====================
 
-    /**
-     * Start processing this item.
-     */
     public function startProcessing(): self
     {
         $this->item_status = self::STATUS_PROCESSING;
@@ -273,9 +230,6 @@ class OrderItem extends Model
         return $this;
     }
 
-    /**
-     * Fulfill the item with a redemption code.
-     */
     public function fulfill(string $redemptionCode, int $fulfilledByUserId, ?string $customerNote = null): self
     {
         $this->redemption_code = $redemptionCode;
@@ -288,16 +242,11 @@ class OrderItem extends Model
         }
 
         $this->save();
-
-        // Check if all items in order are fulfilled, then mark order as processed
         $this->checkOrderCompletion();
 
         return $this;
     }
 
-    /**
-     * Cancel this item.
-     */
     public function cancel(?string $reason = null): self
     {
         $this->item_status = self::STATUS_CANCELLED;
@@ -313,9 +262,6 @@ class OrderItem extends Model
         return $this;
     }
 
-    /**
-     * Mark item as refunded.
-     */
     public function refund(?string $reason = null): self
     {
         $this->item_status = self::STATUS_REFUNDED;
@@ -331,9 +277,6 @@ class OrderItem extends Model
         return $this;
     }
 
-    /**
-     * Add internal note.
-     */
     public function addInternalNote(string $note, ?int $userId = null): self
     {
         $timestamp = now()->format('d/m/Y H:i');
@@ -350,16 +293,12 @@ class OrderItem extends Model
         return $this;
     }
 
-    /**
-     * Check if order should be marked as completed.
-     */
     protected function checkOrderCompletion(): void
     {
         if (!$this->order) {
             return;
         }
 
-        // Check if all items are fulfilled
         $allFulfilled = $this->order->orderItems()
                                     ->where('item_status', '!=', self::STATUS_FULFILLED)
                                     ->doesntExist();
@@ -374,12 +313,10 @@ class OrderItem extends Model
     protected static function booted()
     {
         static::creating(function ($item) {
-            // Set default status
             if (empty($item->item_status)) {
                 $item->item_status = self::STATUS_PENDING;
             }
 
-            // Snapshot article data
             if ($item->article_id && empty($item->article_name_snapshot)) {
                 $article = Article::find($item->article_id);
                 if ($article) {
@@ -388,18 +325,113 @@ class OrderItem extends Model
                 }
             }
 
-            // Calculate total price if not set
             if (empty($item->pv_total_price) && $item->pv_unit_price && $item->quantity) {
                 $item->pv_total_price = $item->pv_unit_price * $item->quantity;
             }
+        });
+
+        // Log order item creation
+        static::created(function ($item) {
+            SystemLogService::ecommerce()->info("Order item created", [
+                'order_item_id' => $item->id,
+                'order_id' => $item->order_id,
+                'article_id' => $item->article_id,
+                'article_name' => $item->getArticleName(),
+                'article_sku' => $item->getArticleSku(),
+                'quantity' => $item->quantity,
+                'pv_unit_price' => $item->pv_unit_price,
+                'pv_total_price' => $item->pv_total_price,
+            ]);
+        });
+
+        // Log order item updates (especially status changes and fulfillment)
+        static::updated(function ($item) {
+            $changes = $item->getChanges();
+            $original = $item->getOriginal();
+
+            // Check for status change
+            if ($item->isDirty('item_status')) {
+                $oldStatus = $original['item_status'] ?? null;
+                $newStatus = $item->item_status;
+
+                $operatorName = Auth::check() 
+                    ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                    : 'Sistema';
+
+                // Log fulfillment specifically
+                if ($newStatus === self::STATUS_FULFILLED) {
+                    $fulfillerName = $item->fulfilledBy 
+                        ? $item->fulfilledBy->name . ' ' . $item->fulfilledBy->cognome 
+                        : $operatorName;
+
+                    SystemLogService::ecommerce()->info("Order item fulfilled", [
+                        'order_item_id' => $item->id,
+                        'order_id' => $item->order_id,
+                        'article_name' => $item->getArticleName(),
+                        'quantity' => $item->quantity,
+                        'pv_total_price' => $item->pv_total_price,
+                        'redemption_code' => $item->redemption_code ? '***' . substr($item->redemption_code, -4) : null,
+                        'fulfilled_by' => $fulfillerName,
+                        'fulfilled_at' => $item->fulfilled_at?->format('d/m/Y H:i:s'),
+                    ]);
+                } 
+                // Log cancellation
+                elseif ($newStatus === self::STATUS_CANCELLED) {
+                    SystemLogService::ecommerce()->warning("Order item cancelled", [
+                        'order_item_id' => $item->id,
+                        'order_id' => $item->order_id,
+                        'article_name' => $item->getArticleName(),
+                        'quantity' => $item->quantity,
+                        'pv_total_price' => $item->pv_total_price,
+                        'previous_status' => $oldStatus,
+                        'cancelled_by' => $operatorName,
+                    ]);
+                }
+                // Log refund
+                elseif ($newStatus === self::STATUS_REFUNDED) {
+                    SystemLogService::ecommerce()->warning("Order item refunded", [
+                        'order_item_id' => $item->id,
+                        'order_id' => $item->order_id,
+                        'article_name' => $item->getArticleName(),
+                        'quantity' => $item->quantity,
+                        'pv_refunded' => $item->pv_total_price,
+                        'refunded_by' => $operatorName,
+                    ]);
+                }
+                // Log other status changes
+                else {
+                    SystemLogService::ecommerce()->info("Order item status changed", [
+                        'order_item_id' => $item->id,
+                        'order_id' => $item->order_id,
+                        'article_name' => $item->getArticleName(),
+                        'old_status' => $oldStatus,
+                        'new_status' => $newStatus,
+                        'changed_by' => $operatorName,
+                    ]);
+                }
+            }
+        });
+
+        // Log order item deletion
+        static::deleted(function ($item) {
+            $operatorName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->warning("Order item deleted", [
+                'order_item_id' => $item->id,
+                'order_id' => $item->order_id,
+                'article_name' => $item->getArticleName(),
+                'quantity' => $item->quantity,
+                'pv_total_price' => $item->pv_total_price,
+                'was_fulfilled' => $item->isFulfilled(),
+                'deleted_by' => $operatorName,
+            ]);
         });
     }
 
     // ==================== STATIC METHODS ====================
 
-    /**
-     * Get fulfillment statistics for a date range.
-     */
     public static function getFulfillmentStats($startDate, $endDate): array
     {
         $query = static::fulfilledBetween($startDate, $endDate);
@@ -415,9 +447,6 @@ class OrderItem extends Model
         ];
     }
 
-    /**
-     * Get items needing fulfillment, ordered by order priority and creation date.
-     */
     public static function getPendingFulfillments()
     {
         return static::needsFulfillment()

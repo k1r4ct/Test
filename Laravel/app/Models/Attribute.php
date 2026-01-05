@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\SystemLogService;
+use Illuminate\Support\Facades\Auth;
 
 class Attribute extends Model
 {
@@ -11,7 +13,6 @@ class Attribute extends Model
 
     /**
      * Supported attribute types for the EAV system.
-     * Each type determines how the value is stored and rendered.
      */
     public const TYPE_TEXT = 'text';
     public const TYPE_TEXTAREA = 'textarea';
@@ -25,7 +26,7 @@ class Attribute extends Model
     public const TYPE_PRICE = 'price';
 
     /**
-     * Map attribute types to their corresponding value column in article_attribute_values table.
+     * Map attribute types to their corresponding value column.
      */
     public const TYPE_TO_COLUMN_MAP = [
         self::TYPE_TEXT => 'value_text',
@@ -68,9 +69,6 @@ class Attribute extends Model
 
     // ==================== RELATIONSHIPS ====================
 
-    /**
-     * Attribute sets that contain this attribute.
-     */
     public function attributeSets()
     {
         return $this->belongsToMany(AttributeSet::class, 'attribute_set_attributes')
@@ -78,21 +76,84 @@ class Attribute extends Model
                     ->withTimestamps();
     }
 
-    /**
-     * All values for this attribute across all articles.
-     */
     public function values()
     {
         return $this->hasMany(ArticleAttributeValue::class);
     }
 
-    /**
-     * Articles that have a value for this attribute.
-     */
     public function articles()
     {
         return $this->belongsToMany(Article::class, 'article_attribute_values')
                     ->withTimestamps();
+    }
+
+    // ==================== EVENTS ====================
+
+    protected static function booted()
+    {
+        // Log attribute creation
+        static::created(function ($attribute) {
+            $userName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->info("Attribute created", [
+                'attribute_id' => $attribute->id,
+                'attribute_code' => $attribute->attribute_code,
+                'attribute_name' => $attribute->attribute_name,
+                'attribute_type' => $attribute->attribute_type,
+                'is_required' => $attribute->is_required,
+                'is_filterable' => $attribute->is_filterable,
+                'is_searchable' => $attribute->is_searchable,
+                'options_count' => is_array($attribute->options) ? count($attribute->options) : 0,
+                'created_by' => $userName,
+            ]);
+        });
+
+        // Log attribute updates
+        static::updated(function ($attribute) {
+            $changes = $attribute->getChanges();
+            $original = $attribute->getOriginal();
+
+            $changesForLog = [];
+            foreach ($changes as $field => $newValue) {
+                if ($field !== 'updated_at') {
+                    $changesForLog[$field] = [
+                        'old' => $original[$field] ?? null,
+                        'new' => $newValue,
+                    ];
+                }
+            }
+
+            if (!empty($changesForLog)) {
+                $userName = Auth::check() 
+                    ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                    : 'Sistema';
+
+                SystemLogService::ecommerce()->info("Attribute updated", [
+                    'attribute_id' => $attribute->id,
+                    'attribute_code' => $attribute->attribute_code,
+                    'attribute_name' => $attribute->attribute_name,
+                    'changes' => $changesForLog,
+                    'updated_by' => $userName,
+                ]);
+            }
+        });
+
+        // Log attribute deletion
+        static::deleted(function ($attribute) {
+            $userName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->warning("Attribute deleted", [
+                'attribute_id' => $attribute->id,
+                'attribute_code' => $attribute->attribute_code,
+                'attribute_name' => $attribute->attribute_name,
+                'attribute_type' => $attribute->attribute_type,
+                'deleted_by' => $userName,
+            ]);
+        });
     }
 
     // ==================== SCOPES ====================
@@ -139,25 +200,16 @@ class Attribute extends Model
 
     // ==================== HELPER METHODS ====================
 
-    /**
-     * Get the value column name for this attribute type.
-     */
     public function getValueColumn(): string
     {
         return self::TYPE_TO_COLUMN_MAP[$this->attribute_type] ?? 'value_text';
     }
 
-    /**
-     * Check if this attribute type supports multiple options.
-     */
     public function hasOptions(): bool
     {
         return in_array($this->attribute_type, [self::TYPE_SELECT, self::TYPE_MULTISELECT]);
     }
 
-    /**
-     * Check if this attribute type is numeric.
-     */
     public function isNumeric(): bool
     {
         return in_array($this->attribute_type, [
@@ -167,17 +219,11 @@ class Attribute extends Model
         ]);
     }
 
-    /**
-     * Check if this attribute type is date-based.
-     */
     public function isDateType(): bool
     {
         return in_array($this->attribute_type, [self::TYPE_DATE, self::TYPE_DATETIME]);
     }
 
-    /**
-     * Get options as array (for select/multiselect types).
-     */
     public function getOptionsArray(): array
     {
         if (!$this->hasOptions() || empty($this->options)) {
@@ -187,9 +233,6 @@ class Attribute extends Model
         return is_array($this->options) ? $this->options : [];
     }
 
-    /**
-     * Check if a value is valid for this attribute's options.
-     */
     public function isValidOption($value): bool
     {
         if (!$this->hasOptions()) {
@@ -205,9 +248,6 @@ class Attribute extends Model
         return in_array($value, $options);
     }
 
-    /**
-     * Get Laravel validation rules for this attribute.
-     */
     public function getValidationRules(): array
     {
         $rules = [];
@@ -218,7 +258,6 @@ class Attribute extends Model
             $rules[] = 'nullable';
         }
 
-        // Type-specific rules
         switch ($this->attribute_type) {
             case self::TYPE_NUMBER:
                 $rules[] = 'integer';
@@ -248,7 +287,6 @@ class Attribute extends Model
                 $rules[] = 'string';
         }
 
-        // Add custom validation rules if defined
         if (!empty($this->validation_rules)) {
             $customRules = explode('|', $this->validation_rules);
             $rules = array_merge($rules, $customRules);
@@ -257,9 +295,6 @@ class Attribute extends Model
         return $rules;
     }
 
-    /**
-     * Format a value for display based on attribute type.
-     */
     public function formatValue($value): string
     {
         if ($value === null) {
@@ -274,12 +309,12 @@ class Attribute extends Model
             case self::TYPE_DECIMAL:
                 return number_format((float) $value, 2, ',', '.');
             case self::TYPE_DATE:
-                return $value instanceof \DateTime 
-                    ? $value->format('d/m/Y') 
+                return $value instanceof \DateTime
+                    ? $value->format('d/m/Y')
                     : date('d/m/Y', strtotime($value));
             case self::TYPE_DATETIME:
-                return $value instanceof \DateTime 
-                    ? $value->format('d/m/Y H:i') 
+                return $value instanceof \DateTime
+                    ? $value->format('d/m/Y H:i')
                     : date('d/m/Y H:i', strtotime($value));
             case self::TYPE_MULTISELECT:
                 return is_array($value) ? implode(', ', $value) : (string) $value;
@@ -288,9 +323,6 @@ class Attribute extends Model
         }
     }
 
-    /**
-     * Find attribute by code.
-     */
     public static function findByCode(string $code): ?self
     {
         return static::where('attribute_code', $code)->first();

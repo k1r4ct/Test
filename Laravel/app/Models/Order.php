@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\SystemLogService;
+use Illuminate\Support\Facades\Auth;
 
 class Order extends Model
 {
@@ -69,9 +71,6 @@ class Order extends Model
         return $this->belongsTo(payment_mode::class, 'payment_method_id');
     }
 
-    /**
-     * Alias for backward compatibility.
-     */
     public function paymentMode()
     {
         return $this->paymentMethod();
@@ -82,9 +81,6 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    /**
-     * Backoffice user who processed this order.
-     */
     public function processedBy()
     {
         return $this->belongsTo(User::class, 'processed_by_user_id');
@@ -165,9 +161,6 @@ class Order extends Model
         return $query->whereNull('processed_at');
     }
 
-    /**
-     * Orders that need attention (pending, unassigned, or high priority).
-     */
     public function scopeNeedingAttention($query)
     {
         return $query->whereNull('processed_at')
@@ -182,57 +175,36 @@ class Order extends Model
 
     // ==================== HELPER METHODS ====================
 
-    /**
-     * Check if order is completed.
-     */
     public function isCompleted(): bool
     {
         return $this->orderStatus && $this->orderStatus->status_name === 'completato';
     }
 
-    /**
-     * Check if order is cancelled.
-     */
     public function isCancelled(): bool
     {
         return $this->orderStatus && $this->orderStatus->status_name === 'annullato';
     }
 
-    /**
-     * Check if order is pending (not yet processed).
-     */
     public function isPending(): bool
     {
         return $this->processed_at === null && !$this->isCancelled();
     }
 
-    /**
-     * Check if order is currently being processed.
-     */
     public function isInProcessing(): bool
     {
         return $this->processing_started_at !== null && $this->processed_at === null;
     }
 
-    /**
-     * Check if order is assigned to a backoffice user.
-     */
     public function isAssigned(): bool
     {
         return $this->processed_by_user_id !== null;
     }
 
-    /**
-     * Check if order is urgent or high priority.
-     */
     public function isHighPriority(): bool
     {
         return in_array($this->priority, [self::PRIORITY_HIGH, self::PRIORITY_URGENT]);
     }
 
-    /**
-     * Get priority display label.
-     */
     public function getPriorityLabel(): string
     {
         $labels = [
@@ -245,9 +217,6 @@ class Order extends Model
         return $labels[$this->priority] ?? 'Normale';
     }
 
-    /**
-     * Get priority CSS class for styling.
-     */
     public function getPriorityClass(): string
     {
         $classes = [
@@ -260,9 +229,6 @@ class Order extends Model
         return $classes[$this->priority] ?? 'text-blue-500';
     }
 
-    /**
-     * Get formatted total PV.
-     */
     public function getFormattedTotalPv(): string
     {
         return number_format($this->total_pv, 0, ',', '.') . ' PV';
@@ -270,9 +236,6 @@ class Order extends Model
 
     // ==================== PROCESSING METHODS ====================
 
-    /**
-     * Assign order to a backoffice user.
-     */
     public function assignTo(int $userId): self
     {
         $this->processed_by_user_id = $userId;
@@ -281,9 +244,6 @@ class Order extends Model
         return $this;
     }
 
-    /**
-     * Start processing the order.
-     */
     public function startProcessing(int $userId): self
     {
         $this->processed_by_user_id = $userId;
@@ -293,9 +253,6 @@ class Order extends Model
         return $this;
     }
 
-    /**
-     * Mark order as processed/completed.
-     */
     public function markAsProcessed(?string $customerMessage = null): self
     {
         $this->processed_at = now();
@@ -304,7 +261,6 @@ class Order extends Model
             $this->customer_message = $customerMessage;
         }
 
-        // Update status to 'completato' if exists
         $completedStatus = OrderStatus::where('status_name', 'completato')->first();
         if ($completedStatus) {
             $this->order_status_id = $completedStatus->id;
@@ -315,15 +271,11 @@ class Order extends Model
         return $this;
     }
 
-    /**
-     * Cancel the order.
-     */
     public function cancel(string $reason): self
     {
         $this->cancellation_reason = $reason;
         $this->cancelled_at = now();
 
-        // Update status to 'annullato' if exists
         $cancelledStatus = OrderStatus::where('status_name', 'annullato')->first();
         if ($cancelledStatus) {
             $this->order_status_id = $cancelledStatus->id;
@@ -334,9 +286,6 @@ class Order extends Model
         return $this;
     }
 
-    /**
-     * Add internal note (append to existing).
-     */
     public function addAdminNote(string $note, ?int $userId = null): self
     {
         $timestamp = now()->format('d/m/Y H:i');
@@ -353,9 +302,6 @@ class Order extends Model
         return $this;
     }
 
-    /**
-     * Set customer info snapshot at order time.
-     */
     public function snapshotCustomerInfo(): self
     {
         if ($this->user) {
@@ -369,9 +315,6 @@ class Order extends Model
 
     // ==================== ORDER ITEMS METHODS ====================
 
-    /**
-     * Check if all items are fulfilled.
-     */
     public function areAllItemsFulfilled(): bool
     {
         return $this->orderItems()
@@ -379,25 +322,16 @@ class Order extends Model
                     ->doesntExist();
     }
 
-    /**
-     * Get count of fulfilled items.
-     */
     public function getFulfilledItemsCount(): int
     {
         return $this->orderItems()->where('item_status', 'fulfilled')->count();
     }
 
-    /**
-     * Get count of pending items.
-     */
     public function getPendingItemsCount(): int
     {
         return $this->orderItems()->where('item_status', 'pending')->count();
     }
 
-    /**
-     * Get fulfillment progress percentage.
-     */
     public function getFulfillmentProgress(): float
     {
         $total = $this->orderItems()->count();
@@ -413,18 +347,16 @@ class Order extends Model
 
     protected static function booted()
     {
+        // ORDER CREATION
         static::creating(function ($order) {
-            // Generate order number if not set
             if (empty($order->order_number)) {
                 $order->order_number = static::generateOrderNumber();
             }
 
-            // Set default priority
             if (empty($order->priority)) {
                 $order->priority = self::PRIORITY_NORMAL;
             }
 
-            // Snapshot customer info
             if ($order->user_id && empty($order->customer_email)) {
                 $user = User::find($order->user_id);
                 if ($user) {
@@ -434,50 +366,119 @@ class Order extends Model
             }
         });
 
+        // Log order creation
+        static::created(function ($order) {
+            $order->load('user');
+
+            $userName = $order->user 
+                ? $order->user->name . ' ' . $order->user->cognome 
+                : 'User #' . $order->user_id;
+
+            SystemLogService::ecommerce()->info("Order created", [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'user_id' => $order->user_id,
+                'user_name' => $userName,
+                'total_pv' => $order->total_pv,
+                'priority' => $order->priority,
+                'payment_method_id' => $order->payment_method_id,
+            ]);
+        });
+
+        // ORDER UPDATES
         static::updated(function ($order) {
+            $changes = $order->getChanges();
+            $original = $order->getOriginal();
+
+            // Build changes for log
+            $changesForLog = [];
+            foreach ($changes as $field => $newValue) {
+                if (!in_array($field, ['updated_at', 'admin_notes'])) {
+                    $changesForLog[$field] = [
+                        'old' => $original[$field] ?? null,
+                        'new' => $newValue,
+                    ];
+                }
+            }
+
             // Get status names
             $completedStatus = OrderStatus::where('status_name', 'completato')->first();
             $canceledStatus = OrderStatus::where('status_name', 'annullato')->first();
             
-            // ORDER COMPLETED
+            // ORDER COMPLETED - Process PV deduction
             if ($completedStatus && $order->order_status_id == $completedStatus->id) {
                 if ($order->isDirty('order_status_id')) {
                     
                     $user = User::find($order->user_id);
                     if ($user) {
-                        // Deduct PV from user's balance
                         $pvToDeduct = $order->total_pv;
+                        $deductionDetails = [
+                            'from_bonus' => 0,
+                            'from_maturati' => 0,
+                        ];
                         
                         if ($user->punti_bonus && $user->punti_bonus > 0) {
                             if ($user->punti_bonus >= $pvToDeduct) {
                                 $user->decrement('punti_bonus', $pvToDeduct);
+                                $deductionDetails['from_bonus'] = $pvToDeduct;
                             } else {
                                 $remaining = $pvToDeduct - $user->punti_bonus;
+                                $deductionDetails['from_bonus'] = $user->punti_bonus;
+                                $deductionDetails['from_maturati'] = $remaining;
                                 $user->punti_bonus = 0;
                                 $user->decrement('punti_valore_maturati', $remaining);
                                 $user->save();
                             }
                         } else {
                             $user->decrement('punti_valore_maturati', $pvToDeduct);
+                            $deductionDetails['from_maturati'] = $pvToDeduct;
                         }
                         
-                        // Update punti_spesi counter
                         $user->increment('punti_spesi', $order->total_pv);
+
+                        // Log PV deduction
+                        SystemLogService::ecommerce()->info("Order completed - PV deducted", [
+                            'order_id' => $order->id,
+                            'order_number' => $order->order_number,
+                            'user_id' => $user->id,
+                            'user_name' => $user->name . ' ' . $user->cognome,
+                            'total_pv_deducted' => $pvToDeduct,
+                            'deduction_details' => $deductionDetails,
+                            'new_punti_bonus' => $user->punti_bonus,
+                            'new_punti_valore_maturati' => $user->punti_valore_maturati,
+                            'new_punti_spesi' => $user->punti_spesi,
+                        ]);
                     }
                     
                     // Clean up completed cart items
                     $completedCartStatus = CartStatus::where('status_name', 'completato')->first();
                     if ($completedCartStatus) {
-                        CartItem::where('user_id', $order->user_id)
+                        $deletedCount = CartItem::where('user_id', $order->user_id)
                                 ->where('cart_status_id', $completedCartStatus->id)
                                 ->delete();
+                        
+                        if ($deletedCount > 0) {
+                            SystemLogService::ecommerce()->info("Cart items cleaned after order completion", [
+                                'order_id' => $order->id,
+                                'user_id' => $order->user_id,
+                                'deleted_cart_items' => $deletedCount,
+                            ]);
+                        }
                     }
                 }
             }
             
-            // ORDER CANCELED - Release blocked PV
+            // ORDER CANCELED - Log cancellation
             if ($canceledStatus && $order->order_status_id == $canceledStatus->id) {
                 if ($order->isDirty('order_status_id')) {
+                    SystemLogService::ecommerce()->warning("Order cancelled", [
+                        'order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'user_id' => $order->user_id,
+                        'total_pv' => $order->total_pv,
+                        'cancellation_reason' => $order->cancellation_reason,
+                    ]);
+
                     $pendingCartStatus = CartStatus::where('status_name', 'in_attesa_di_pagamento')->first();
                     if ($pendingCartStatus) {
                         CartItem::where('user_id', $order->user_id)
@@ -486,14 +487,41 @@ class Order extends Model
                     }
                 }
             }
+
+            // Log general updates (if not status change already logged)
+            if (!empty($changesForLog) && !$order->isDirty('order_status_id')) {
+                $operatorName = Auth::check() 
+                    ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                    : 'Sistema';
+
+                SystemLogService::ecommerce()->info("Order updated", [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'changes' => $changesForLog,
+                    'updated_by' => $operatorName,
+                ]);
+            }
+        });
+
+        // Log order deletion (soft delete)
+        static::deleted(function ($order) {
+            $operatorName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->warning("Order deleted", [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'user_id' => $order->user_id,
+                'total_pv' => $order->total_pv,
+                'was_completed' => $order->isCompleted(),
+                'deleted_by' => $operatorName,
+            ]);
         });
     }
 
     // ==================== STATIC METHODS ====================
 
-    /**
-     * Generate a unique order number.
-     */
     public static function generateOrderNumber(): string
     {
         $prefix = 'ORD';
@@ -502,7 +530,6 @@ class Order extends Model
         
         $number = "{$prefix}-{$date}-{$random}";
         
-        // Ensure uniqueness
         while (static::where('order_number', $number)->exists()) {
             $random = strtoupper(substr(uniqid(), -4));
             $number = "{$prefix}-{$date}-{$random}";
@@ -511,9 +538,6 @@ class Order extends Model
         return $number;
     }
 
-    /**
-     * Get orders statistics for a date range.
-     */
     public static function getStatistics($startDate, $endDate): array
     {
         $query = static::whereBetween('created_at', [$startDate, $endDate]);

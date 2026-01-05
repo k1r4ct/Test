@@ -26,7 +26,6 @@ use App\Models\backoffice_note;
 use App\Models\status_contract;
 use App\Models\supplier_category;
 use App\Models\contract_management;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Mail\LeadMailInvitante;
 use Illuminate\Support\Facades\Auth;
@@ -62,19 +61,18 @@ class LeadController extends Controller
         // Creazione del nuovo lead
         try {
             $lead = lead::create([
-            'invitato_da_user_id' => $validated['userId'],
-            'nome' => $validated['nome'],
-            'cognome' => $validated['cognome'],
-            'telefono' => $validated['telefono'],
-            'email' => $validated['email'],
-            'lead_status_id' => 2, // Imposta lo stato iniziale del lead
-            'assegnato_a' => $validated['userId'], // Assegna il lead all'utente che lo ha creato
-            'consenso' => $validated['privacy'] ? 1 : 0, // Consenso per la privacy
-        ]);
+                'invitato_da_user_id' => $validated['userId'],
+                'nome' => $validated['nome'],
+                'cognome' => $validated['cognome'],
+                'telefono' => $validated['telefono'],
+                'email' => $validated['email'],
+                'lead_status_id' => 2,
+                'assegnato_a' => $validated['userId'],
+                'consenso' => $validated['privacy'] ? 1 : 0,
+            ]);
 
         } catch (\Exception $e) {
-            Log::error('Errore durante la creazione del lead: ' . $e->getMessage());
-            return response()->json(["response" => "ok", "status" => "500", "body" =>'Errore durante la creazione del lead. Riprova più tardi.']);
+            return response()->json(["response" => "ko", "status" => "500", "body" => 'Errore durante la creazione del lead. Riprova più tardi.']);
         }
 
         return response()->json(["response" => "ok", "status" => "200", "body" => $lead]);
@@ -130,7 +128,6 @@ class LeadController extends Controller
 
     public function nuovoClienteLead(Request $request)
     {
-        //return response()->json(["response" => "ok", "status" => "200", "body" => ["richiesta"=>$request->all()]]);
         $nome = $cognome = $codice_fiscale = $partita_iva = $ragione_sociale = "";
 
         if (request('tipo') == "consumer") {
@@ -243,7 +240,7 @@ class LeadController extends Controller
 
         // Crea un array con l'ID dell'utente loggato e gli ID di tutti i suoi sottoposti
         $userIds = array_merge([$userId], $allTeamMemberIds);
-        Log::info('Team Member IDs: ' . implode(',', $userIds));
+        
         // Ottieni i lead 
         $getLeads = Lead::with([
             'leadstatus' => function ($query) {
@@ -258,7 +255,6 @@ class LeadController extends Controller
 
         foreach ($getLeads as $leadrow) {
             $data_creazione = \Carbon\Carbon::parse($leadrow->created_at);
-            // sovrescrivi nel campo created_at la data formattata
             $leadrow->setAttribute('data_inserimento', $data_creazione->format('d/m/Y'));
         }
 
@@ -268,40 +264,24 @@ class LeadController extends Controller
 
     public function getUserForLeads()
     {
-
         $userForLeads = user::whereIn('role_id', [1, 2, 4, 5])->get();
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $userForLeads]]);
     }
 
     public function updateAssegnazioneLead(Request $request)
     {
-
-        /* $updateAssegnazione = lead::find($request->id_lead);
-        $updateAssegnazione->update(['assegnato_a' => $request->id_user]);
-        if (Auth::User()->id != $request->id_user) {
-            $notifica = notification::create([
-                'from_user_id' => Auth::User()->id,
-                'to_user_id' => $request->id_user,
-                'reparto' => 'Leads',
-                'notifica' => "l'utente " . Auth::User()->name . " ti ha assegnato un nuovo lead id: " . $updateAssegnazione->id . " Lead nome e cognome: " . $updateAssegnazione->nome . " " . $updateAssegnazione->cognome . "",
-                'notifica_html' => "l'utente <b style='color:#6d9ebc'>" . Auth::User()->name . "</b> ti ha assegnato un nuovo lead id: <b style='color:#6d9ebc'>" . $updateAssegnazione->id . "</b> Lead nome e cognome: <b style='color:#6d9ebc'>" . $updateAssegnazione->nome . " " . $updateAssegnazione->cognome . "</b>",
-            ]);
-            return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $notifica]]);
-        } */
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $request->all()]]);
     }
 
     public function getLeadsDayClicked(Request $request)
     {
-
         $getLeads = lead::with('leadstatus', 'User')->whereIn('id', $request->all())->get();
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $getLeads]]);
     }
 
     public function getAppointments()
     {
-
-        $appuntamenti = lead::whereNotNull('data_appuntamento') // Aggiungi questa condizione
+        $appuntamenti = lead::whereNotNull('data_appuntamento')
             ->where(function ($query) {
                 $query->where('invitato_da_user_id', Auth::user()->id)
                     ->orWhere('assegnato_a', Auth::user()->id);
@@ -311,17 +291,13 @@ class LeadController extends Controller
 
     public function updateLead(Request $request)
     {
-
         $updateLead = lead::where('id', $request->idLead)->update(['data_appuntamento' => $request->newDate]);
-
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $request->all()]]);
     }
 
     public function getStatiLeads()
     {
         $leadStatus = lead_status::where('applicabile_da_role_id', Auth::user()->role_id)->select('micro_stato', 'id')->get()->unique('micro_stato');
-
-
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $leadStatus]]);
     }
 
@@ -330,7 +306,6 @@ class LeadController extends Controller
         if (isset($request->data_appuntamento) && isset($request->ora_appuntamento)) {
             $updateLeadAppointment = lead::where('id', $request->id_lead)->update(['data_appuntamento' => $request->data_appuntamento, 'ora_appuntamento' => $request->ora_appuntamento, 'lead_status_id' => $request->stato_id]);
         } else {
-
             $updateLeadAppointment = lead::where('id', $request->id_lead)->update(['lead_status_id' => $request->stato_id, 'data_appuntamento' => NULL]);
         }
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $request->all()]]);
@@ -338,7 +313,6 @@ class LeadController extends Controller
 
     public function getColorRowStatusLead($id)
     {
-
         $color = lead_status::with('Colors')->where('id', $id)->get();
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $color]]);
     }

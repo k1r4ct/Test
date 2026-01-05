@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\SystemLogService;
+use Illuminate\Support\Facades\Auth;
 
 class Store extends Model
 {
@@ -32,6 +34,9 @@ class Store extends Model
         'store_type' => 'string',
         'sort_order' => 'integer',
     ];
+
+    // Important fields to track
+    protected static $importantFields = ['active', 'filter_id', 'store_type'];
 
     // ==================== RELATIONSHIPS ====================
 
@@ -64,6 +69,81 @@ class Store extends Model
     public function logo()
     {
         return $this->belongsTo(Asset::class, 'logo_asset_id');
+    }
+
+    // ==================== EVENTS ====================
+
+    protected static function booted()
+    {
+        // Log store creation
+        static::created(function ($store) {
+            $userName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->info("Store created", [
+                'store_id' => $store->id,
+                'store_name' => $store->store_name,
+                'slug' => $store->slug,
+                'store_type' => $store->store_type,
+                'active' => $store->active,
+                'filter_id' => $store->filter_id,
+                'created_by' => $userName,
+            ]);
+        });
+
+        // Log store updates
+        static::updated(function ($store) {
+            $changes = $store->getChanges();
+            $original = $store->getOriginal();
+
+            $changesForLog = [];
+            $hasImportantChanges = false;
+
+            foreach ($changes as $field => $newValue) {
+                if ($field !== 'updated_at') {
+                    $changesForLog[$field] = [
+                        'old' => $original[$field] ?? null,
+                        'new' => $newValue,
+                    ];
+
+                    if (in_array($field, static::$importantFields)) {
+                        $hasImportantChanges = true;
+                    }
+                }
+            }
+
+            if (!empty($changesForLog)) {
+                $userName = Auth::check() 
+                    ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                    : 'Sistema';
+
+                $level = $hasImportantChanges ? 'warning' : 'info';
+
+                SystemLogService::ecommerce()->{$level}("Store updated", [
+                    'store_id' => $store->id,
+                    'store_name' => $store->store_name,
+                    'changes' => $changesForLog,
+                    'important_change' => $hasImportantChanges,
+                    'updated_by' => $userName,
+                ]);
+            }
+        });
+
+        // Log store deletion
+        static::deleted(function ($store) {
+            $userName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->warning("Store deleted", [
+                'store_id' => $store->id,
+                'store_name' => $store->store_name,
+                'store_type' => $store->store_type,
+                'articles_count' => $store->articles()->count(),
+                'deleted_by' => $userName,
+            ]);
+        });
     }
 
     // ==================== SCOPES ====================
@@ -127,12 +207,10 @@ class Store extends Model
      */
     public function isVisibleToUser($user): bool
     {
-        // If not active, not visible
         if (!$this->active) {
             return false;
         }
 
-        // If no filter, visible to all
         if (!$this->filter_id) {
             return true;
         }
