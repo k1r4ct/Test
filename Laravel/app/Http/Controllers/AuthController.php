@@ -485,8 +485,44 @@ class AuthController extends Controller
             }
         }
 
-        $idContratto = $request->idContratto;
-        $storagePath = '/' . $request->idContratto;
+        return response()->json([
+            'success' => false,
+            'message' => 'Nessun file ricevuto.'
+        ], 400);
+    }
+
+    public function aggiornaFilesContratto(Request $request){
+        $idContratto = $request->input('idContratto');
+
+        if ($request->hasFile('files')) {
+            $file = $request->file('files');
+            $fileName = $file->getClientOriginalName();
+            $uniqueFileName = $idContratto . "_" . time() . "_" . $fileName;
+            $path = $file->storeAs($idContratto, $uniqueFileName);
+
+            // Log file upload
+            SystemLogService::userActivity()->info('Contract file uploaded', [
+                'contract_id' => $idContratto,
+                'file_name' => $fileName,
+                'uploaded_by_user_id' => Auth::id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'File caricato con successo',
+                'path' => $path
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Nessun file ricevuto.'
+        ], 400);
+    }
+
+    public function cancellaFile(Request $request){
+        $idContratto = $request->input('idContratto');
+        $storagePath = '/' . $idContratto;
         $storageFiles = Storage::allFiles($storagePath);
 
         if ($storageFiles) {

@@ -1,5 +1,15 @@
+// Disabled menu link style
 ::ng-deep .disabled-link {
-    pointer-events: none; /* Impedisce il click */
-    cursor: default;      /* Cambia il cursore in default */
-    opacity: 0.5;         /* Opacità ridotta per indicare la disabilitazione */
+  pointer-events: none;
+  cursor: default;
+  opacity: 0.5;
+}
+
+// Logout link style
+.logout-link {
+  cursor: pointer;
+  
+  &:hover {
+    opacity: 0.8;
   }
+}

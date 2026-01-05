@@ -85,7 +85,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.Ruolo = Utente.user.role.descrizione;
       this.Nome = Utente.user.name;
     });
-    this.listTitles = ROUTES.filter((listTitle) => listTitle);
+    this.listTitles = ROUTES.filter((listTitle: any) => listTitle);
     
     // Su mobile: inizializza con sidebar chiusa di default
     const savedSidebarState = localStorage.getItem('sidebarVisible');
