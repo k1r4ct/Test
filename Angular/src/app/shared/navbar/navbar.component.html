@@ -1,75 +1,72 @@
+<header class="navbar">
+  <div class="navbar-left">
+    <!-- Mobile menu button -->
+    <button class="mobile-menu-btn" (click)="onToggleMobileMenu()" title="Menu">
+      <span class="material-icons-round">menu</span>
+    </button>
+  </div>
 
-<nav class="modern-navbar navbar-absolute fixed-top">
-  <div class="navbar-content">
+  <div class="navbar-right">
+    <!-- Theme toggle -->
+    <button class="nav-icon-btn theme-toggle-btn" 
+            [title]="isDarkMode ? 'Passa a Light Mode' : 'Passa a Dark Mode'" 
+            (click)="toggleTheme()">
+      <span class="material-icons-round">{{ isDarkMode ? 'light_mode' : 'dark_mode' }}</span>
+    </button>
     
-    <!-- Sezione sinistra: Toggle sidebar + Branding con tutti i testi -->
-    <div class="navbar-start">
-      <!-- Pulsante menu sidebar (versione compatibile) -->
-      <div class="sidebar-toggle-wrapper navbar-toggle">
-        <button type="button" 
-                class="modern-sidebar-toggle" 
-                (click)="sidebarToggle()"
-                title="Apri/Chiudi menu">
-          <span class="toggle-bar bar1"></span>
-          <span class="toggle-bar bar2"></span>
-          <span class="toggle-bar bar3"></span>
-        </button>
+    <!-- Notifications -->
+    <button class="nav-icon-btn" title="Notifiche" (click)="openNotifications()">
+      <span class="material-icons-round">notifications</span>
+      <span class="badge" *ngIf="notificationCount > 0">{{ notificationCount }}</span>
+    </button>
+    
+    <!-- User menu with dropdown -->
+    <div class="user-menu-container">
+      <!-- User menu trigger -->
+      <div class="user-menu" (click)="toggleUserMenu($event)">
+        <div class="user-avatar">{{ userInitials }}</div>
+        <div class="user-info">
+          <span class="user-name">{{ userName || 'Utente' }}</span>
+          <span class="user-role">{{ userRole || 'Ruolo' }}</span>
+        </div>
+        <span class="material-icons-round dropdown-arrow" [class.rotated]="userMenuOpen">
+          expand_more
+        </span>
       </div>
-      
-      <!-- Branding con tutti i testi originali -->
-      <div class="navbar-brand-modern">
-        <span class="page-title">{{getTitle()}}</span>
-        <span class="separator">/</span>
-        <span class="user-name" style="color:#ccd54f">{{Nome}}</span>
-        <span class="separator">-</span>
-        <span class="user-role" style="color:#6d9ebc">{{Ruolo}}</span>
-      </div>
-    </div>
-    
-    <!-- Spaziatore flessibile -->
-    <span class="navbar-spacer"></span>
-    
-    <!-- Sezione destra: Notifiche + Menu mobile -->
-    <div class="navbar-end">
-      <!-- Notifiche (mantenuto componente originale) -->
-      <!-- <div class="notifications-section">
-        <app-message-notification></app-message-notification>
-      </div> -->
 
-      <!-- Pulsante menu mobile (versione compatibile) -->
-      <div class="mobile-toggle-wrapper">
-        <button type="button" 
-                class="modern-mobile-toggle"
-                (click)="collapse()"
-                [attr.aria-expanded]="!isCollapsed" 
-                aria-controls="collapseExample"
-                title="Menu mobile">
-          <span class="mobile-toggle-bar" [class.rotate]="!isCollapsed"></span>
-          <span class="mobile-toggle-bar" [class.hide]="!isCollapsed"></span>
-          <span class="mobile-toggle-bar" [class.rotate-alt]="!isCollapsed"></span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Menu mobile collassabile -->
-    <div class="mobile-menu-collapse" 
-         id="collapseExample"
-         [ngbCollapse]="isCollapsed">
-      <div class="mobile-menu-content">
-        <!-- Informazioni utente ripetute per mobile -->
-        <div class="mobile-user-info">
-          <div class="user-chips-mobile">
-            <div class="user-chip" *ngIf="Nome">
-              <i class="icon person-icon">👤</i>
-              {{Nome}}
-            </div>
-            <div class="role-chip" *ngIf="Ruolo">
-              <i class="icon badge-icon">🏷️</i>
-              {{Ruolo}}
-            </div>
+      <!-- Dropdown menu -->
+      <div class="user-dropdown" [class.open]="userMenuOpen">
+        <!-- Dropdown header with user info -->
+        <div class="dropdown-header">
+          <div class="dropdown-avatar">{{ userInitials }}</div>
+          <div class="dropdown-user-info">
+            <span class="dropdown-user-name">{{ userName || 'Utente' }}</span>
+            <span class="dropdown-user-email">{{ userEmail || '' }}</span>
           </div>
         </div>
+
+        <div class="dropdown-divider"></div>
+
+        <!-- Profile Settings -->
+        <button class="dropdown-item" (click)="openProfileSettings()">
+          <span class="material-icons-round">settings</span>
+          <span class="dropdown-item-text">Impostazioni Profilo</span>
+        </button>
+
+        <!-- Theme toggle (also in dropdown for mobile) -->
+        <button class="dropdown-item" (click)="toggleTheme()">
+          <span class="material-icons-round">{{ isDarkMode ? 'light_mode' : 'dark_mode' }}</span>
+          <span class="dropdown-item-text">{{ isDarkMode ? 'Modalità Chiara' : 'Modalità Scura' }}</span>
+        </button>
+
+        <div class="dropdown-divider"></div>
+
+        <!-- Logout -->
+        <button class="dropdown-item logout-item" (click)="logout()">
+          <span class="material-icons-round">logout</span>
+          <span class="dropdown-item-text">Esci</span>
+        </button>
       </div>
     </div>
   </div>
-</nav>
+</header>

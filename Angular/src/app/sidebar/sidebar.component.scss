@@ -1,15 +1,258 @@
-// Disabled menu link style
-::ng-deep .disabled-link {
-  pointer-events: none;
-  cursor: default;
-  opacity: 0.5;
+/* ===========================================
+   SIDEBAR - Semprechiaro CRM
+   Modern collapsible sidebar
+   =========================================== */
+
+.sidebar-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #1a6b24 0%, #027cad 100%);
 }
 
-// Logout link style
-.logout-link {
+/* ===========================================
+   HEADER WITH LOGO
+   =========================================== */
+.sidebar-header {
+  height: var(--navbar-height, 64px);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.logo-container {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.logo-text {
+  opacity: 0;
+  white-space: nowrap;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  transition: opacity var(--transition-speed, 0.3s);
+}
+
+/* Show text when sidebar is expanded */
+:host-context(.sidebar-expanded) .logo-text {
+  opacity: 1;
+}
+
+/* ===========================================
+   NAVIGATION
+   =========================================== */
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.nav-section {
+  margin-bottom: 24px;
+}
+
+.nav-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0 12px;
+  margin-bottom: 8px;
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+  transition: opacity var(--transition-speed, 0.3s), height var(--transition-speed, 0.3s);
+  white-space: nowrap;
+}
+
+:host-context(.sidebar-expanded) .nav-section-title {
+  opacity: 1;
+  height: auto;
+  margin-bottom: 8px;
+}
+
+/* ===========================================
+   NAV ITEMS
+   =========================================== */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin-bottom: 4px;
   cursor: pointer;
-  
+  position: relative;
+
   &:hover {
-    opacity: 0.8;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+  }
+
+  &.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+
+    /* Active indicator bar */
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 24px;
+      background: var(--sc-lime, #ccd54f);
+      border-radius: 0 3px 3px 0;
+    }
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+}
+
+.nav-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .material-icons-round {
+    font-size: 22px;
+  }
+}
+
+.nav-label {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  transition: opacity var(--transition-speed, 0.3s), width var(--transition-speed, 0.3s);
+}
+
+:host-context(.sidebar-expanded) .nav-label {
+  opacity: 1;
+  width: auto;
+}
+
+/* ===========================================
+   FOOTER WITH LOGOUT
+   =========================================== */
+.sidebar-footer {
+  padding: 16px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  position: relative;
+
+  .material-icons-round {
+    font-size: 22px;
+  }
+
+  .nav-label {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    transition: opacity 0.3s, width 0.3s;
+  }
+
+  &:hover {
+    background: rgba(199, 56, 102, 0.3);
+    color: white;
+  }
+}
+
+:host-context(.sidebar-expanded) .logout-btn .nav-label {
+  opacity: 1;
+  width: auto;
+}
+
+/* ===========================================
+   MOBILE STYLES
+   =========================================== */
+@media (max-width: 991px) {
+  /* On mobile, sidebar is always expanded when visible */
+  .logo-text,
+  .nav-label {
+    opacity: 1;
+    width: auto;
+  }
+
+  .nav-section-title {
+    opacity: 1;
+    height: auto;
+  }
+
+  .logout-btn .nav-label {
+    opacity: 1;
+    width: auto;
   }
 }

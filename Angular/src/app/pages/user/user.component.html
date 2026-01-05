@@ -7,14 +7,14 @@
        SEZIONE 1: PROFILO UTENTE 
        ========================= -->
   <div class="profile-section">
-    <div class="row">
-      <!-- Colonna sinistra: Card Profilo - Ottimizzata per tutti i dispositivi -->
-      <div class="col-xl-4 col-lg-5 col-md-12 col-sm-12">
+    <div class="row justify-content-center">
+      <!-- Card Profilo Utente - Centrata dopo rimozione form modifica -->
+      <div class="col-12">
         <div class="profile-card-container">
           <!-- Card Profilo Utente -->
           <div class="card card-user" Resize>
             <div class="image">
-              <img src="assets/img/damir-bosnjak.jpg" alt="Background">
+              <img src="assets/img/logo.png" alt="Background">
             </div>
             <div class="card-body">
               <div class="author">
@@ -55,9 +55,6 @@
             </div>
           </div>
 
-          <!-- Card Statistiche (condizionale per ruolo) -->
-          
-
           <!-- Pulsanti Azione (solo per Clienti) - Layout responsive ottimizzato -->
           <div class="action-buttons-section" *ngIf="User.ruolo=='Cliente'">
             <div class="row g-3">
@@ -92,181 +89,9 @@
         </div>
       </div>
 
-      <!-- Colonna destra: Form Modifica Profilo - Ottimizzata per tutti i dispositivi -->
-      <div class="col-xl-8 col-lg-7 col-md-12 col-sm-12">
-        <div class="profile-edit-section">
-          <div class="profile-edit-card">
-            <div class="profile-header" (click)="showProfileForm = !showProfileForm">
-              <div class="header-content">
-                <div class="header-icon">
-                  <i class="material-icons">edit</i>
-                </div>
-                <div class="header-text">
-                  <h3 class="profile-title">Modifica Profilo</h3>
-                  <p class="profile-subtitle">Aggiorna le tue informazioni personali</p>
-                </div>
-                <div class="toggle-icon">
-                  <i class="material-icons" *ngIf="!showProfileForm">expand_more</i>
-                  <i class="material-icons" *ngIf="showProfileForm">expand_less</i>
-                </div>
-              </div>
-            </div>
+      <!-- RIMOSSA: Colonna destra con Form Modifica Profilo -->
+      <!-- La modifica profilo è ora accessibile dal menu dropdown nella navbar -->
 
-            <div class="profile-body" *ngIf="showProfileForm">
-              <form class="modern-form">
-                <!-- Sezione Informazioni Generali -->
-                <div class="form-section">
-                  <div class="section-header">
-                    <div class="section-icon">
-                      <i class="material-icons">person</i>
-                    </div>
-                    <h4 class="section-title">Informazioni Generali</h4>
-                  </div>
-                  
-                  <div class="form-grid">
-                    <div class="form-field">
-                      <label class="modern-label">
-                        <i class="material-icons">business</i>
-                        Ragione Sociale
-                      </label>
-                      <input type="text" class="modern-input disabled" disabled="" placeholder="Ragione Sociale" [value]="User.rag_soc">
-                    </div>
-
-                    <div class="form-field">
-                      <label class="modern-label">
-                        <i class="material-icons">email</i>
-                        Email
-                      </label>
-                      <input type="email" class="modern-input email" placeholder="Email" [value]="User.email">
-                    </div>
-
-                    <div class="form-field">
-                      <label class="modern-label">
-                        <i class="material-icons">person</i>
-                        Nome
-                      </label>
-                      <input type="text" class="modern-input nome" placeholder="Nome" [value]="User.nome">
-                    </div>
-
-                    <div class="form-field">
-                      <label class="modern-label">
-                        <i class="material-icons">person_outline</i>
-                        Cognome
-                      </label>
-                      <input type="text" class="modern-input cognome" placeholder="Cognome" [value]="User.cognome">
-                    </div>
-                  </div>
-
-                  <div class="form-field full-width">
-                    <label class="modern-label">
-                      <i class="material-icons">photo_camera</i>
-                      Immagine Profilo
-                    </label>
-                    <div class="dropzone-container">
-                      <app-filepond-uploader uploadType="profile"></app-filepond-uploader>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Sezione Cambio Password -->
-                <div class="form-section">
-                  <div class="section-header">
-                    <div class="section-icon">
-                      <i class="material-icons">lock</i>
-                    </div>
-                    <h4 class="section-title">Sicurezza Password</h4>
-                  </div>
-                  
-                  <div class="password-grid">
-                    <div class="form-field">
-                      <label class="modern-label">
-                        <i class="material-icons">lock_outline</i>
-                        Vecchia Password
-                      </label>
-                      <input type="password" class="modern-input oldpassword" placeholder="Vecchia Password">
-                    </div>
-                    
-                    <div class="form-field">
-                      <label class="modern-label">
-                        <i class="material-icons">security</i>
-                        Nuova Password
-                      </label>
-                      <input type="password" class="modern-input newPassword" placeholder="Nuova Password">
-                    </div>
-                    
-                    <div class="form-field">
-                      <label class="modern-label">
-                        <i class="material-icons">verified_user</i>
-                        Ripeti Nuova Password
-                      </label>
-                      <input type="password" class="modern-input repeatNewPassword" placeholder="Ripeti Nuova Password">
-                    </div>
-                  </div>
-
-                  <div class="button-container">
-                    <button type="button" class="modern-button password-button" (click)="modificaPassword(User.id)">
-                      <i class="material-icons">security</i>
-                      Modifica Password
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Sezione Indirizzo -->
-                <div class="form-section">
-                  <div class="section-header">
-                    <div class="section-icon">
-                      <i class="material-icons">location_on</i>
-                    </div>
-                    <h4 class="section-title">Informazioni di Residenza</h4>
-                  </div>
-                  
-                  <div class="address-grid">
-                    <div class="form-field full-width">
-                      <label class="modern-label">
-                        <i class="material-icons">home</i>
-                        Indirizzo
-                      </label>
-                      <input type="text" class="modern-input indirizzo" placeholder="Indirizzo completo" [value]="User.indirizzo">
-                    </div>
-
-                    <div class="form-field">
-                      <label class="modern-label">
-                        <i class="material-icons">location_city</i>
-                        Città
-                      </label>
-                      <input type="text" class="modern-input citta" placeholder="Città" [value]="User.citta">
-                    </div>
-
-                    <div class="form-field">
-                      <label class="modern-label">
-                        <i class="material-icons">public</i>
-                        Stato/Provincia
-                      </label>
-                      <input type="text" class="modern-input stato" placeholder="Stato" [value]="User.stato">
-                    </div>
-
-                    <div class="form-field">
-                      <label class="modern-label">
-                        <i class="material-icons">markunread_mailbox</i>
-                        CAP
-                      </label>
-                      <input type="number" class="modern-input cap" placeholder="95121" [value]="User.cap">
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Pulsante Salva -->
-                <div class="form-actions">
-                  <button type="submit" class="modern-button save-button" (click)="prova(User.id)">
-                    <i class="material-icons">save</i>
-                    Salva Modifiche
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -441,7 +266,7 @@
 </div>
 
 <!-- ========================= 
-     SEZIONE 4: WALLET (SOLO PER CLIENTI)
+     SEZIONE 5: WALLET (SOLO PER CLIENTI)
      ========================= -->
 <div class="wallet-section" *ngIf="isCliente">
   <app-wallet-cliente></app-wallet-cliente>

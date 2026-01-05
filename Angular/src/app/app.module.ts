@@ -128,6 +128,9 @@ import { TicketManagementComponent } from "./pages/ticket-management/ticket-mana
 import { WalletClienteComponent } from "./pages/user/clienti/wallet-cliente/wallet-cliente.component";
 import { AttachmentPreviewModalComponent } from './attachment-preview-modal/attachment-preview-modal.component';
 
+// ⭐ STEP 2: Profile Settings Modal Component
+import { ProfileSettingsModalComponent } from "./shared/components/profile-settings-modal/profile-settings-modal.component";
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -173,6 +176,8 @@ import { AttachmentPreviewModalComponent } from './attachment-preview-modal/atta
     TicketManagementComponent,
     WalletClienteComponent,
     AttachmentPreviewModalComponent,
+    // ⭐ STEP 2: Profile Settings Modal
+    ProfileSettingsModalComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent],

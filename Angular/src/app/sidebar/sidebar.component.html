@@ -1,31 +1,67 @@
 <div class="sidebar-wrapper">
-  <div class="logo">
-    <a href="http://semprechiaro.com/clearportal" class="simple-text logo-mini">
-      <div class="logo-image-small">
-        <img class="logo-mini" src="assets/img/angular2-logo.png" width="100" height="100" class="img-responsive">
-      </div>
-    </a>
-    <a class="simple-text logo-normal">
-      SEMPRECHIARO
-    </a>
+  
+  <!-- Header with Logo -->
+  <div class="sidebar-header">
+    <div class="logo-container">
+      <img src="assets/img/logo-icon.png" alt="Semprechiaro" class="logo-icon">
+    </div>
+    <span class="logo-text">SEMPRECHIARO</span>
   </div>
-  <hr class="horizontal light mt-0 mb-2">
-  <ul class="nav">
-    <li *ngFor="let menuItem of menuItems" routerLinkActive="active" class="{{menuItem.class}}">
-      <a *ngIf="enable" [routerLink]="[menuItem.path]">
-        <i class="nc-icon {{menuItem.icon}}"></i>
-        <p>{{menuItem.title}}</p>
-      </a>
-      <a *ngIf="!enable" class="disabled-link" (click)="opensnackbar()"> 
-        <i class="nc-icon {{menuItem.icon}}"></i>
-        <p>{{menuItem.title}}</p>
-      </a>
-    </li>
-    <li>
-      <a (click)="logout()" class="logout-link">
-        <i class="nc-icon nc-button-power"></i>
-        <p>LogOut</p>
-      </a>
-    </li>
-  </ul>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    
+    <!-- Main Menu Section -->
+    <div class="nav-section">
+      <div class="nav-section-title">Menu</div>
+      
+      <ng-container *ngFor="let menuItem of menuItems">
+        <!-- Enabled menu item -->
+        <a *ngIf="enable" 
+           [routerLink]="[menuItem.path]" 
+           routerLinkActive="active"
+           class="nav-item"
+           [matTooltip]="menuItem.title"
+           matTooltipPosition="right"
+           [matTooltipDisabled]="sidebarExpanded"
+           matTooltipClass="sidebar-tooltip"
+           (click)="onNavItemClick()">
+          <span class="nav-icon">
+            <span class="material-icons-round">{{ menuItem.materialIcon }}</span>
+          </span>
+          <span class="nav-label">{{ menuItem.title }}</span>
+        </a>
+        
+        <!-- Disabled menu item (during contract creation) -->
+        <a *ngIf="!enable" 
+           class="nav-item disabled"
+           [matTooltip]="menuItem.title"
+           matTooltipPosition="right"
+           [matTooltipDisabled]="sidebarExpanded"
+           matTooltipClass="sidebar-tooltip"
+           (click)="opensnackbar()">
+          <span class="nav-icon">
+            <span class="material-icons-round">{{ menuItem.materialIcon }}</span>
+          </span>
+          <span class="nav-label">{{ menuItem.title }}</span>
+        </a>
+      </ng-container>
+      
+    </div>
+
+  </nav>
+
+  <!-- Footer with Logout -->
+  <div class="sidebar-footer">
+    <button class="logout-btn" 
+            (click)="logout()"
+            matTooltip="Logout"
+            matTooltipPosition="right"
+            [matTooltipDisabled]="sidebarExpanded"
+            matTooltipClass="sidebar-tooltip-logout">
+      <span class="material-icons-round">logout</span>
+      <span class="nav-label">Logout</span>
+    </button>
+  </div>
+
 </div>

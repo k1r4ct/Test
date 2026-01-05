@@ -1,21 +1,54 @@
-<div class="wrapper" [@pageTransition]="state" #wrapper>
+<div class="app-wrapper" 
+     [class.sidebar-expanded]="sidebarExpanded" 
+     [@pageTransition]="state">
+  
+  <!-- Animated Background -->
+  <div class="app-background">
+    <div class="bg-triangle-left"></div>
+    <div class="bg-triangle-right"></div>
+    <div class="bg-hexagon"></div>
+    <div class="bg-hexagon-2"></div>
+    <div class="bg-pattern"></div>
+  </div>
 
-    <!-- Navbar posizionata al di sopra di tutto -->
-    <app-navbar></app-navbar>
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay" 
+       [class.active]="mobileMenuOpen" 
+       (click)="closeMobileMenu()">
+  </div>
 
-    <!-- data-color="white" -->
-    <div class="sidebar" data-color="sfondo" data-active-color="danger">
+  <!-- Sidebar Toggle Button (external for z-index) -->
+  <button class="sidebar-toggle" 
+          (click)="toggleSidebar()" 
+          [title]="sidebarExpanded ? 'Comprimi menu' : 'Espandi menu'">
+    <span class="material-icons-round">
+      {{ sidebarExpanded ? 'chevron_left' : 'chevron_right' }}
+    </span>
+  </button>
 
-      <app-sidebar></app-sidebar>
+  <!-- Navbar with user info and events -->
+  <app-navbar 
+    (toggleMobileMenu)="toggleMobileMenu()"
+    (openProfileModal)="openProfileModal()"
+    [userName]="userName"
+    [userRole]="userRole"
+    [userEmail]="userEmail">
+  </app-navbar>
 
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.mobile-open]="mobileMenuOpen">
+    <app-sidebar 
+      (closeMobile)="closeMobileMenu()"
+      [sidebarExpanded]="sidebarExpanded">
+    </app-sidebar>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-panel">
+    <div class="content">
+      <router-outlet></router-outlet>
+      <div id="finepagina"></div>
     </div>
-
-    <div class="main-panel">
-        <div class="content">
-            <router-outlet></router-outlet>
-            <div id="finepagina"></div>
-        </div>
-
-    </div>
+  </main>
 
 </div>

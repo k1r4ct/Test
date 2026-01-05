@@ -106,20 +106,19 @@ export class UserComponent implements OnInit, OnDestroy {
   DropEnable = true;
   urlImageProfile: any;
   urlImageProfileUrl="https://semprechiaro.com/storage/app/public/";
-  //dati utente
+  
+  // User data properties (read-only display)
   name: string | undefined;
   email: string | undefined;
   surname: string | undefined;
-  indirizzo: string | undefined;
-  citta: string | undefined;
-  paese: string | undefined;
-  cap: string | undefined;
   countContratti = 0;
   compensopvdiretti: number = 0;
   pcNecessari: any;
   hideTeamMembers=true;
   message="";
-  showProfileForm = false;
+  
+  // REMOVED: showProfileForm - Profile editing is now in modal
+  
   textClienti:string="Amici invitati"
   textLead="";
   numeroClientiAmiciInvitati:number=0;
@@ -333,65 +332,13 @@ export class UserComponent implements OnInit, OnDestroy {
     }
   };
 
-  prova(id:any) {
-    this.servzioAPI.LeggiQualifiche();
-    const idUser = id;
-    const formData2 = new FormData();
-    const Email = (document.querySelector(".email") as HTMLInputElement).value;
-    const Nome = (document.querySelector(".nome") as HTMLInputElement).value;
-    const Cognome = (document.querySelector(".cognome") as HTMLInputElement).value;
-    const Indirizzo = (document.querySelector(".indirizzo") as HTMLInputElement).value;
-    const Citta = (document.querySelector(".citta") as HTMLInputElement).value;
-    const Stato = (document.querySelector(".stato") as HTMLInputElement).value;
-    const Cap = (document.querySelector(".cap") as HTMLInputElement).value;
-    
-    formData2.append("emailUtente", Email);
-    formData2.append("nomeutente", Nome);
-    formData2.append("cognomeUtente", Cognome);
-    formData2.append("indirizzo", Indirizzo);
-    formData2.append("citta", Citta);
-    formData2.append("stato", Stato);
-    formData2.append("cap", Cap);
-    formData2.append("idUtente", idUser);
-
-    this.servzioAPI.updateUtente(formData2).subscribe((Risposta: any) => {
-      if (Risposta.status==200) {
-        this.message="DATI AGGIORNATI";
-        this.showContrast(this.message,'success');
-      }else{
-        this.message="ERRORE DURANTE L'AGGIORNAMENTO DEI DATI";
-        this.showContrast(this.message,"error");
-      }
-    });
-  }
-
-  modificaPassword(id: any) {
-    const formData = new FormData();
-    const oldPassw = (document.querySelector(".oldpassword") as HTMLInputElement).value;
-    const newPassword = (document.querySelector(".newPassword") as HTMLInputElement).value;
-    const repeatNwePassword = (document.querySelector(".repeatNewPassword") as HTMLInputElement).value;
-    const idUser = id;
-    
-    if (newPassword != repeatNwePassword) {
-      this.message="Le password nuove non coincidono";
-      this.showContrast(this.message,'error');
-    }else{
-      formData.append("oldPw", oldPassw);
-      formData.append("newPw", newPassword);
-      formData.append("rNewPw", repeatNwePassword);
-      formData.append("idUser", idUser);
-      
-      this.servzioAPI.updatePassw(formData).subscribe((Risposta: any) => {
-        if (Risposta.status==200) {
-          this.message="PASSWORD MODIFICATA";
-          this.showContrast(this.message,'success');
-        }else{
-          this.message="LA PASSWORD VECCHIA è ERRATA";
-          this.showContrast(this.message,"error");
-        }
-      });
-    }
-  }
+  // =========================================
+  // REMOVED METHODS - Now in ProfileSettingsModalComponent
+  // =========================================
+  // prova(id) - Profile update moved to modal
+  // modificaPassword(id) - Password change moved to modal
+  // toggleProfileForm() - No longer needed
+  // =========================================
 
   openSnackBar(message:any) {
     this._snackBar.open(message, "Chiudi", {
@@ -403,7 +350,7 @@ export class UserComponent implements OnInit, OnDestroy {
   showContrast(message:any,severity:any) {
     this.messageService.add({
       severity: severity,
-      summary: 'Modifica Password',
+      summary: 'Notifica',
       detail: message,
       life: 30000
     });
@@ -415,9 +362,7 @@ export class UserComponent implements OnInit, OnDestroy {
     }
   }
 
-  toggleProfileForm() {
-    this.showProfileForm = !this.showProfileForm;
-  }
+  // REMOVED: toggleProfileForm() - Profile editing is now in modal
 
   createOrgChartData(): void {
     const transformToTreeNode = (member: any): any => {

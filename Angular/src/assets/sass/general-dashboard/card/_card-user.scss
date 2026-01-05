@@ -1,12 +1,19 @@
 .card-user{
     .image{
-        height: 130px;
+        height: 250px !important; 
+        width: 100%;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 
       img {
         border-radius: 12px;
+        width: 100%;
+        height: 108%;
+        transform: scale(1.8) translateY(5px);
+        object-fit: contain;
+        object-position: center center;
       }
     }
-
     .author{
         text-align: center;
         text-transform: none;
@@ -48,5 +55,22 @@
     .button-container{
         margin-bottom: 6px;
         text-align: center;
+    }
+}
+
+@media (max-width: 515px) {
+    .card-user{
+        .image{
+            height: 150px !important; 
+        
+        img {
+          border-radius: 12px;
+          width: 100%;
+          height: 108%;
+          transform: scale(1.4) translateY(5px);
+          object-fit: contain;
+          object-position: center center;
+        }
+      }
     }
 }

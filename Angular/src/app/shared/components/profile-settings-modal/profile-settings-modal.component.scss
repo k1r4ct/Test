@@ -1,0 +1,455 @@
+/* ===========================================
+   PROFILE SETTINGS MODAL - Semprechiaro CRM
+   Matches dashboard user.component styling
+   =========================================== */
+
+.profile-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  background: #f8f9fa;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ===========================================
+   MODAL HEADER - Purple gradient like dashboard
+   =========================================== */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  flex-shrink: 0;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 24px;
+    color: white;
+  }
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+  margin: 4px 0 0 0;
+}
+
+.close-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  span {
+    font-size: 22px;
+  }
+}
+
+/* ===========================================
+   MODAL BODY - Scrollable content
+   =========================================== */
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background: #f8f9fa;
+}
+
+/* ===========================================
+   LOADING STATE
+   =========================================== */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  color: #6b7280;
+
+  p {
+    margin: 16px 0 0 0;
+    font-size: 14px;
+  }
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(102, 126, 234, 0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-spinner-small {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===========================================
+   MODERN FORM - Same as dashboard
+   =========================================== */
+.modern-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ===========================================
+   FORM SECTIONS - Card style like dashboard
+   =========================================== */
+.form-section {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+}
+
+.section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 20px;
+    color: white;
+  }
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+/* ===========================================
+   FORM GRIDS - Same as dashboard
+   =========================================== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 20px;
+}
+
+.password-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 20px;
+}
+
+.address-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 20px;
+}
+
+/* ===========================================
+   FORM FIELDS - Same as dashboard
+   =========================================== */
+.form-field {
+  display: flex;
+  flex-direction: column;
+
+  &.full-width {
+    grid-column: 1 / -1;
+  }
+}
+
+.modern-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+
+  i {
+    font-size: 18px;
+    color: #667eea;
+  }
+}
+
+.modern-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1f2937;
+  background: white;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  &.disabled,
+  &:disabled {
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+  }
+}
+
+/* ===========================================
+   DROPZONE CONTAINER (FilePond)
+   =========================================== */
+.dropzone-container {
+  border: 2px dashed #e5e7eb;
+  border-radius: 12px;
+  padding: 8px;
+  background: #fafafa;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.02);
+  }
+}
+
+/* ===========================================
+   BUTTON CONTAINER & BUTTONS - Same as dashboard
+   =========================================== */
+.button-container {
+  padding: 0 20px 20px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.modern-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 18px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.password-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+}
+
+.save-button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 14px 48px;
+  border-radius: 12px;
+  font-size: 15px;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+}
+
+/* ===========================================
+   FORM ACTIONS - Final save button
+   =========================================== */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+/* ===========================================
+   RESPONSIVE - Same breakpoints as dashboard
+   =========================================== */
+@media (max-width: 992px) {
+  .password-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .address-grid {
+    grid-template-columns: 1fr 1fr;
+
+    .form-field.full-width {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-modal {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .modal-header {
+    padding: 16px 20px;
+  }
+
+  .header-icon {
+    width: 40px;
+    height: 40px;
+
+    i {
+      font-size: 20px;
+    }
+  }
+
+  .modal-title {
+    font-size: 18px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .password-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .address-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+
+    .form-field:not(.full-width) {
+      grid-column: auto;
+    }
+  }
+
+  .section-header {
+    padding: 14px 16px;
+  }
+
+  .button-container {
+    padding: 0 16px 16px;
+    justify-content: center;
+  }
+
+  .modern-button {
+    width: 100%;
+  }
+
+  .save-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-header {
+    padding: 14px 16px;
+  }
+
+  .header-content {
+    gap: 12px;
+  }
+
+  .modal-title {
+    font-size: 16px;
+  }
+
+  .modal-subtitle {
+    font-size: 12px;
+  }
+
+  .section-icon {
+    width: 36px;
+    height: 36px;
+
+    i {
+      font-size: 18px;
+    }
+  }
+}

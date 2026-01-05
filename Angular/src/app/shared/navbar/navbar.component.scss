@@ -1,475 +1,378 @@
-// Modernizzazione conservativa del navbar senza dipendenze Material
-.modern-navbar {
+/* ===========================================
+   NAVBAR - Semprechiaro CRM
+   Clean modern glassmorphism design
+   =========================================== */
+
+.navbar {
   position: fixed !important;
   top: 0 !important;
-  left: 0 !important;
+  left: 72px !important;
   right: 0 !important;
-  width: 100% !important; // Assicura larghezza piena su tutti i dispositivi
-  z-index: 1030 !important; // Sopra la sidebar ma sotto i modal
-  //background: linear-gradient(180deg,#268730 10%,#027cad);
-  background: linear-gradient(180deg,#268730 10%,#027cad);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  overflow: hidden !important; // Previene elementi che fuoriescono
-  
-  // Su mobile: assicura che la navbar sia sempre a larghezza piena
-  @media (max-width: 991px) {
-    position: fixed !important;
-    top: 0 !important;
+  height: 64px !important;
+  background: #ffffff6e !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  z-index: 100 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 24px !important;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@media (max-width: 991px) {
+  .navbar {
     left: 0 !important;
-    right: 0 !important;
-    width: 100vw !important; // Viewport width completa
-    margin: 0 !important;
-    z-index: 1030 !important; // Sopra la sidebar
-  }
-  
-  .navbar-content {
-    background: transparent;
-    color: white;
-    padding: 0 1.5rem;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    overflow: hidden !important; // Sicurezza aggiuntiva
-    position: relative; // Per contenere elementi posizionati assolutamente
-    width: 100%; // Larghezza piena del contenitore
-    
-    @media (max-width: 768px) {
-      padding: 0 1rem;
-      height: 56px;
-      flex-wrap: nowrap; // Mantieni elementi su una riga
-    }
+    padding: 0 16px !important;
   }
 }
 
-// Sezione sinistra
-.navbar-start {
+/* ===========================================
+   LEFT SECTION
+   =========================================== */
+.navbar-left {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 16px;
   flex: 1;
-  
-  .sidebar-toggle-wrapper,
-  .navbar-toggle {
-    // Sempre visibile per gestire la sidebar
-    display: flex;
-    align-items: center;
-    
-    .modern-sidebar-toggle {
-      background: transparent;
-      border: none;
-      padding: 8px;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      width: 40px;
-      height: 40px;
-      
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        transform: scale(1.1);
-      }
-      
-      &:focus {
-        outline: 2px solid rgba(255, 255, 255, 0.3);
-        outline-offset: 2px;
-      }
-      
-      .toggle-bar {
-        display: block;
-        width: 22px;
-        height: 2px;
-        background-color: white;
-        margin: 2px 0;
-        transition: all 0.3s ease;
-        border-radius: 2px;
-        
-        &.bar1 {
-          transform-origin: top left;
-        }
-        
-        &.bar3 {
-          transform-origin: bottom left;
-        }
-      }
-      
-      &:hover .toggle-bar {
-        background-color: #ccd54f;
-      }
-    }
-    
-    // Stato toggled per animazione sidebar
-    &.toggled .modern-sidebar-toggle {
-      .toggle-bar {
-        &.bar1 {
-          transform: rotate(45deg) translate(3px, 3px);
-        }
-        
-        &.bar2 {
-          opacity: 0;
-        }
-        
-        &.bar3 {
-          transform: rotate(-45deg) translate(3px, -3px);
-        }
-      }
-    }
+  overflow: hidden;
+}
+
+.mobile-menu-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(38, 135, 48, 0.1);
+    color: var(--sc-green-primary, #268730);
+  }
+
+  .material-icons-round {
+    font-size: 24px;
   }
 }
 
-// Branding con tutti i testi originali mantenuti
-.navbar-brand-modern {
+@media (max-width: 991px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
+}
+
+/* ===========================================
+   RIGHT SECTION
+   =========================================== */
+.navbar-right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 500;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ===========================================
+   ICON BUTTONS
+   =========================================== */
+.nav-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:hover {
+    background: rgba(38, 135, 48, 0.1);
+    color: var(--sc-green-primary, #268730);
+  }
+
+  .material-icons-round {
+    font-size: 22px;
+  }
+}
+
+/* Notification badge */
+.badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--sc-magenta, #c73866);
   color: white;
-  flex: 1; // Occupa spazio disponibile
-  overflow: hidden; // Previeni overflow
-  
-  @media (max-width: 768px) {
-    font-size: 0.9rem;
-    gap: 0.25rem;
-    flex-wrap: nowrap; // Mantieni su una riga
-    white-space: nowrap; // Previeni a capo
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 0.8rem;
-    gap: 0.2rem;
-    
-    // Nascondi alcuni separatori su schermi molto piccoli
-    .separator:last-of-type {
-      display: none;
-    }
-  }
-  
-  .page-title {
-    font-weight: 600;
-    color: white;
-    
-    @media (max-width: 480px) {
-      max-width: 100px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
-  
-  .separator {
-    color: rgba(255, 255, 255, 0.7);
-    font-weight: 300;
-  }
-  
-  .user-name {
-    font-weight: 600;
-    
-    @media (max-width: 480px) {
-      max-width: 80px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
-  
-  .user-role {
-    font-weight: 500;
-    
-    @media (max-width: 480px) {
-      max-width: 60px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    // Colore mantenuto dallo style inline: #6d9ebc
-  }
-}
-
-// Spaziatore flessibile
-.navbar-spacer {
-  flex: 1;
-}
-
-// Sezione destra
-.navbar-end {
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 9px;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  
-  .notifications-section {
-    display: flex;
-    align-items: center;
-  }
-  
-  .mobile-toggle-wrapper {
-    .modern-mobile-toggle {
-      background: transparent;
-      border: none;
-      padding: 8px;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      width: 36px;
-      height: 36px;
-      
-      // Nascondi questo toggle su mobile per evitare duplicazione
-      @media (max-width: 991px) {
-        display: none;
-      }
-      
-      &:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-      }
-      
-      .mobile-toggle-bar {
-        display: block;
-        width: 18px;
-        height: 2px;
-        background-color: white;
-        margin: 2px 0;
-        transition: all 0.3s ease;
-        border-radius: 2px;
-        
-        &.rotate {
-          transform: rotate(45deg) translate(5px, 5px);
-        }
-        
-        &.hide {
-          opacity: 0;
-        }
-        
-        &.rotate-alt {
-          transform: rotate(-45deg) translate(7px, -6px);
-        }
-      }
-      
-      &:hover .mobile-toggle-bar {
-        background-color: #ccd54f;
-      }
-    }
+  justify-content: center;
+  line-height: 1;
+}
+
+/* ===========================================
+   USER MENU CONTAINER (for dropdown positioning)
+   =========================================== */
+.user-menu-container {
+  position: relative;
+}
+
+/* ===========================================
+   USER MENU TRIGGER
+   =========================================== */
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(38, 135, 48, 0.1) 0%, rgba(2, 124, 173, 0.1) 100%);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  user-select: none;
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(38, 135, 48, 0.15) 0%, rgba(2, 124, 173, 0.15) 100%);
+    border-color: rgba(38, 135, 48, 0.2);
   }
 }
 
-// Menu mobile collassabile
-.mobile-menu-collapse {
-  width: 15%;
-  background: rgba(102, 126, 234, 0.95);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sc-green-primary, #268730) 0%, var(--sc-blue-primary, #027cad) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  line-height: 1.2;
+}
+
+.user-role {
+  font-size: 11px;
+  color: var(--sc-blue-primary, #027cad);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* Dropdown arrow */
+.dropdown-arrow {
+  font-size: 20px;
+  color: var(--text-secondary, #6b7280);
+  transition: transform 0.2s ease;
+  margin-left: 4px;
+
+  &.rotated {
+    transform: rotate(180deg);
+  }
+}
+
+/* ===========================================
+   USER DROPDOWN MENU
+   =========================================== */
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 280px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15),
+              0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  z-index: 1000;
   
-  // Nascondi il menu mobile collassabile su mobile perché usiamo la sidebar
-  @media (max-width: 991px) {
+  /* Animation */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scale(0.95);
+  transform-origin: top right;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Dropdown header */
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(38, 135, 48, 0.08) 0%, rgba(2, 124, 173, 0.08) 100%);
+}
+
+.dropdown-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sc-green-primary, #268730) 0%, var(--sc-blue-primary, #027cad) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.dropdown-user-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dropdown-user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-user-email {
+  font-size: 13px;
+  color: var(--text-secondary, #6b7280);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dropdown divider */
+.dropdown-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 0;
+}
+
+/* Dropdown items */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+
+  &:hover {
+    background: rgba(38, 135, 48, 0.08);
+  }
+
+  .material-icons-round {
+    font-size: 20px;
+    color: var(--text-secondary, #6b7280);
+    transition: color 0.15s ease;
+  }
+
+  &:hover .material-icons-round {
+    color: var(--sc-green-primary, #268730);
+  }
+}
+
+.dropdown-item-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #1f2937);
+}
+
+/* Logout item special styling */
+.logout-item {
+  &:hover {
+    background: rgba(220, 53, 69, 0.08);
+  }
+
+  &:hover .material-icons-round {
+    color: #dc3545;
+  }
+
+  &:hover .dropdown-item-text {
+    color: #dc3545;
+  }
+}
+
+/* ===========================================
+   RESPONSIVE - Mobile
+   =========================================== */
+@media (max-width: 768px) {
+  .user-info {
+    display: none;
+  }
+
+  .user-menu {
+    padding: 4px;
+    border-radius: 50%;
+    gap: 0;
+  }
+  
+  .dropdown-arrow {
     display: none;
   }
   
-  .mobile-menu-content {
-    padding: 1rem;
-  }
-  
-  .mobile-user-info {
-    .user-chips-mobile {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      
-      .user-chip,
-      .role-chip {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0.75rem;
-        border-radius: 16px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        
-        .icon {
-          font-size: 1rem;
-        }
-      }
-      
-      .user-chip {
-        background-color: #ccd54f;
-        color: #333;
-      }
-      
-      .role-chip {
-        background-color: #6d9ebc;
-        color: white;
-      }
-    }
-  }
-}
-
-// 🚀 CSS per gestire sidebar su desktop (corretti per adattamento main panel)
-// Questo CSS risolve il problema del toggle su schermi > 991px
-::ng-deep {
-  // Desktop sidebar management (corretto per il main panel)
-  @media screen and (min-width: 992px) {
-    .sidebar {
-      position: fixed !important;
-      top: 64px !important; // Sotto la navbar moderna
-      left: 0 !important;
-      width: 260px !important;
-      height: calc(100vh - 64px) !important;
-      z-index: 1020 !important; // Sotto la navbar ma sopra i triangoli
-      transition: transform 0.3s ease-in-out !important;
-      transform: translateX(-260px) !important; // Nascosta di default su desktop
-      background: white !important;
-      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1) !important;
-    }
-    
-    .nav-open .sidebar {
-      transform: translateX(0px) !important; // Visibile quando nav-open è attivo
-    }
-    
-    // Main panel che si adatta correttamente
-    .main-panel {
-      margin-left: 30px !important; // Piccolo distacco quando sidebar è chiusa
-      width: calc(100% - 30px) !important; // Compensazione per il margine
-      transition: all 0.3s ease-in-out !important;
-      padding-top: 80px !important; // Spazio per la navbar fissa
-      min-height: calc(100vh - 64px) !important;
-      position: relative !important; // Assicura il contesto di stacking
-      z-index: 1 !important; // Minimo z-index positivo, background trasparente per vedere triangoli
-      background: transparent !important; // IMPORTANTE: trasparente per vedere i triangoli negli spazi vuoti
-    }
-    
-    .nav-open .main-panel {
-      margin-left: 280px !important; // Sposta il contenuto principale quando sidebar è aperta (260px + 20px distacco)
-      width: calc(100% - 280px) !important; // Compensazione per margine e distacco
-    }
-    
-    // Wrapper generale per gestire il layout
-    
-    
-    // Assicura che il body non abbia overflow problematici
-    body.nav-open {
-      overflow-x: hidden !important;
-    }
-    
-    // Controllo generale per evitare scrollbar orizzontali solo dove necessario
-    body {
-      overflow-x: hidden !important;
-    }
-    
-    // Overlay non necessario su desktop
-    #bodyClick {
-      display: none !important;
-    }
-  }
-  
-  // Mobile behavior (preservato)
-  @media screen and (max-width: 991px) {
-    .main-panel {
-      padding-top: 80px !important; // Spazio per navbar su mobile
-    }
-  }
-  
-  // Navbar sempre fissa con massima priority
-  .navbar-absolute {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 1030 !important;
-    width: 100% !important;
-  }
-  
-  // Assicura che la navbar moderna sia sempre sopra
-  .modern-navbar {
-    z-index: 1030 !important;
-  }
-  
-  // 🚨 FIX FINALE AGGRESSIVO - NAVBAR SEMPRE VISIBILE
-  // Override finale per assicurarsi che nulla possa coprire la navbar
-  .navbar,
-  .navbar-absolute,
-  .modern-navbar {
-    z-index: 9999 !important; // Massima priorità assoluta
-    position: fixed !important;
-    
-    // Assicura che anche tutti i figli della navbar siano sopra
-    * {
-      z-index: inherit !important;
-    }
-  }
-  
-  // Compatibilità con stili esistenti
-  .icon-display {
-    transform: scale(1.5);
-    color: #ccd54f;
-    margin-top: 0.5rem;
-  }
-  
-  .navbar-nav {
-    filter: drop-shadow(20px 20px 10px rgba(0, 0, 0, 0.533));
-  }
-  
-  // Stili per le notifiche esistenti
-  app-message-notification {
-    display: flex;
-    align-items: center;
+  .nav-icon-btn:first-child {
+    display: none;
   }
 
-  // Assicura che tutti i contenuti stiano sopra i triangoli ma permettano visibilità negli spazi
-  .modern-card,
-  .card,
-  .container,
-  .container-fluid {
-    position: relative !important;
-    z-index: 2 !important; // Sopra i triangoli (z-index: 0) per le card principali
-    //background: white !important; // Background esplicito bianco per le card
-  }
-  
-  // Altri elementi con z-index minimo positivo
-  [class*="modern-"],
-  .form-group,
-  .btn {
-    position: relative !important;
-    z-index: 1 !important; // Z-index minimo positivo per stare sopra i triangoli
-  }
-  
-  // Assicura che navbar e sidebar abbiano z-index molto alti
-  .sidebar {
-    z-index: 1020 !important;
-    background: white !important;
-  }
-  
-  // Assicura che gli spazi tra i componenti rimangano trasparenti
-  .row,
-  .col,
-  [class*="col-"] {
-    background: transparent !important; // Nessun background per vedere i triangoli
-    z-index: auto !important; // Non interferire con lo stacking
-  }
-}
-
-// Media queries responsive
-@media (max-width: 768px) {
-  .navbar-brand-modern {
-    .page-title,
-    .user-name,
-    .user-role {
-      font-size: 0.9rem;
-    }
+  .user-dropdown {
+    min-width: 260px;
+    right: -8px;
   }
 }
 
 @media (max-width: 480px) {
-  .modern-navbar .navbar-content {
-    padding: 0 0.75rem;
-  }
-  
-  .navbar-brand-modern {
-    .page-title,
-    .user-name,
-    .user-role {
-      font-size: 0.85rem;
+  .user-dropdown {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    min-width: 100%;
+    border-radius: 0px 0px 0 0;
+    transform: translateY(100%);
+    
+    &.open {
+      transform: translateY(170px);
     }
   }
 }

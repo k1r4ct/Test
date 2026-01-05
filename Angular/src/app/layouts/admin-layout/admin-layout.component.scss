@@ -1,76 +1,503 @@
-// Triangoli globali a livello root - fuori da :host per funzionare correttamente
-::ng-deep body {
+/* ===========================================
+   ADMIN LAYOUT - Semprechiaro CRM
+   Modern layout with animated background
+   =========================================== */
+
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.app-wrapper {
   position: relative;
-  
-  &::before,
-  &::after {
-    content: '';
-    position: fixed;
-    z-index: 0; // Z-index neutro per stare sopra il body ma sotto tutti i componenti
-    height: 100vh;
-    pointer-events: none;
-    display: block !important;
-    top: 0;
-    opacity: 0.8; // Opacità per non essere troppo invasivi
-  }
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  &::before { /* Triangolo verde a sinistra */
-    background-color: #ccd54f;
-    clip-path: polygon(0 0, 0 100%, 80% 50%); // Triangolo più esteso verso il centro
-    left: 0 !important;
-    width: 30vw !important; // Larghezza ridotta per compensare l'estensione
-  }
+/* ===========================================
+   ANIMATED BACKGROUND
+   =========================================== */
+.app-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, #e8f5e9 0%, #e0f2f1 50%, #e3f2fd 100%);
+}
 
-  &::after { /* Triangolo blu a destra */
-    background-color: #6D9EBC;
-    clip-path: polygon(100% 0, 100% 100%, 20% 50%); // Triangolo più esteso verso il centro (simmetrico)
-    right: 0 !important;
-    width: 30vw !important; // Larghezza ridotta per compensare l'estensione
+/* Large floating hexagon - top left */
+.bg-hexagon {
+  position: absolute;
+  width: 500px;
+  height: 577px;
+  background: linear-gradient(135deg, var(--sc-lime, #ccd54f) 0%, var(--sc-green-light, #2ea043) 100%);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  top: -150px;
+  left: -100px;
+  opacity: 0.20;
+  animation: floatHex1 15s ease-in-out infinite;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+/* Medium hexagon - bottom right */
+.bg-hexagon-2 {
+  position: absolute;
+  width: 400px;
+  height: 462px;
+  background: linear-gradient(135deg, var(--sc-blue-primary, #027cad) 0%, var(--sc-teal, #6D9EBC) 100%);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  bottom: -100px;
+  right: -80px;
+  opacity: 0.18;
+  animation: floatHex2 18s ease-in-out infinite;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+/* Left triangle - green gradient */
+.bg-triangle-left {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30vw;
+  height: 100vh;
+  background: linear-gradient(180deg, var(--sc-lime, #ccd54f) 0%, var(--sc-green-primary, #268730) 100%);
+  clip-path: polygon(0 0, 100% 20%, 80% 80%, 0 100%);
+  opacity: 0.12;
+  animation: pulseTriangle 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Right triangle - blue gradient */
+.bg-triangle-right {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 30vw;
+  height: 100vh;
+  background: linear-gradient(180deg, var(--sc-teal, #6D9EBC) 0%, var(--sc-blue-primary, #027cad) 100%);
+  clip-path: polygon(20% 20%, 100% 0, 100% 100%, 0 80%);
+  opacity: 0.12;
+  animation: pulseTriangle 10s ease-in-out infinite reverse;
+  pointer-events: none;
+}
+
+/* Dynamic pattern overlay with moving gradients */
+.bg-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(204, 213, 79, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(2, 124, 173, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(38, 135, 48, 0.08) 0%, transparent 50%);
+  animation: shiftPattern 20s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ===========================================
+   FLOATING PARTICLES (extra effect)
+   =========================================== */
+.app-background::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 60%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(204, 213, 79, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: floatParticle1 12s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.app-background::after {
+  content: '';
+  position: absolute;
+  bottom: 30%;
+  left: 30%;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(2, 124, 173, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: floatParticle2 14s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ===========================================
+   KEYFRAME ANIMATIONS
+   =========================================== */
+@keyframes floatHex1 {
+  0%, 100% { 
+    transform: translate(0, 0) rotate(0deg) scale(1); 
+  }
+  25% { 
+    transform: translate(30px, -40px) rotate(5deg) scale(1.05); 
+  }
+  50% { 
+    transform: translate(-20px, 20px) rotate(-3deg) scale(0.98); 
+  }
+  75% { 
+    transform: translate(40px, 10px) rotate(3deg) scale(1.02); 
   }
 }
 
-:host {
-    /* Stile per il body dell'applicazione */
-    body {
-      background: linear-gradient(120deg, #d4e157, #aed581); /* Gradiente di sfondo */
-      margin: 0; /* Rimuovi margini predefiniti */
-    }
-
-    /* Stile per la sidebar */
-    .sidebar {
-      background-color: #fff; /* Sfondo bianco per la sidebar */
-    }
-
-    /* Wrapper ora pulito senza triangoli */
-    .wrapper {
-        position: relative;
-        overflow: visible;
-        background-attachment: fixed;
-        
-        // Con navbar posizionata al di sopra, aggiustiamo il layout
-        .sidebar {
-          // Su desktop, la sidebar parte sotto la navbar
-          top: 64px;
-          height: calc(100vh - 64px);
-          
-          @media (max-width: 991px) {
-            // Su mobile, la sidebar deve coprire tutto lo schermo quando aperta
-            top: 0;
-            height: 100vh;
-          }
-        }
-        
-        .main-panel {
-          // Su desktop, il main-panel parte sotto la navbar
-          margin-top: 64px;
-          min-height: calc(100vh - 64px);
-          
-          @media (max-width: 991px) {
-            // Su mobile, il main-panel inizia sempre sotto la navbar
-            margin-top: 64px;
-            min-height: calc(100vh - 64px);
-            margin-left: 0; // Rimuovi margine laterale su mobile
-          }
-        }
-      }
+@keyframes floatHex2 {
+  0%, 100% { 
+    transform: translate(0, 0) rotate(0deg) scale(1); 
   }
+  33% { 
+    transform: translate(-40px, -30px) rotate(-5deg) scale(1.08); 
+  }
+  66% { 
+    transform: translate(25px, 35px) rotate(4deg) scale(0.95); 
+  }
+}
+
+@keyframes pulseTriangle {
+  0%, 100% { 
+    opacity: 0.12; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.18; 
+    transform: scale(1.02);
+  }
+}
+
+@keyframes shiftPattern {
+  0%, 100% {
+    background-position: 0% 0%, 100% 100%, 50% 50%;
+  }
+  25% {
+    background-position: 10% 20%, 90% 80%, 60% 40%;
+  }
+  50% {
+    background-position: 20% 10%, 80% 90%, 40% 60%;
+  }
+  75% {
+    background-position: 5% 15%, 95% 85%, 55% 45%;
+  }
+}
+
+@keyframes floatParticle1 {
+  0%, 100% { 
+    transform: translate(0, 0) scale(1);
+    opacity: 0.25;
+  }
+  25% {
+    transform: translate(-50px, 30px) scale(1.2);
+    opacity: 0.35;
+  }
+  50% { 
+    transform: translate(30px, -50px) scale(0.9);
+    opacity: 0.2;
+  }
+  75% {
+    transform: translate(-20px, -30px) scale(1.1);
+    opacity: 0.3;
+  }
+}
+
+@keyframes floatParticle2 {
+  0%, 100% { 
+    transform: translate(0, 0) scale(1);
+    opacity: 0.2;
+  }
+  33% {
+    transform: translate(60px, -40px) scale(1.3);
+    opacity: 0.3;
+  }
+  66% { 
+    transform: translate(-40px, 50px) scale(0.85);
+    opacity: 0.15;
+  }
+}
+
+/* ===========================================
+   SIDEBAR TOGGLE BUTTON (Desktop only)
+   =========================================== */
+.sidebar-toggle {
+  position: fixed;
+  top: 45px;
+  left: 56px; 
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #268730 0%, #027cad 100%);
+  border: 3px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(38, 135, 48, 0.4), 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1050;
+  color: white;
+  padding: 0;
+  margin: 0;
+
+  .material-icons-round {
+    font-size: 18px;
+    transition: transform 0.3s;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #2ea043 0%, #0891b2 100%);
+    transform: scale(1.15);
+    box-shadow: 0 6px 16px rgba(38, 135, 48, 0.5), 0 3px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: scale(1.05);
+  }
+}
+
+// Toggle button position when sidebar is expanded
+.sidebar-expanded .sidebar-toggle {
+  left: 244px;
+}
+
+/* ===========================================
+   MOBILE MENU BUTTON (Mobile only)
+   =========================================== */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #268730 0%, #027cad 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(38, 135, 48, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1050;
+  color: white;
+  padding: 0;
+
+  .material-icons-round {
+    font-size: 24px;
+  }
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(38, 135, 48, 0.4);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* ===========================================
+   MOBILE OVERLAY
+   =========================================== */
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1035;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  cursor: pointer;
+
+  &.active {
+    display: block;
+    opacity: 1;
+  }
+}
+
+/* ===========================================
+   CONTENT LAYER
+   =========================================== */
+.content {
+  position: relative;
+  z-index: 10;
+}
+
+/* ===========================================
+   RESPONSIVE: Tablet (< 1200px)
+   =========================================== */
+@media (max-width: 1199px) {
+  .sidebar-toggle {
+    top: 45px;
+    left: 52px;
+  }
+
+  .sidebar-expanded .sidebar-toggle {
+    left: 224px;
+  }
+
+  .bg-hexagon {
+    width: 400px;
+    height: 462px;
+  }
+
+  .bg-hexagon-2 {
+    width: 300px;
+    height: 346px;
+  }
+}
+
+/* ===========================================
+   RESPONSIVE: Mobile (< 992px)
+   =========================================== */
+@media (max-width: 991px) {
+  .sidebar-toggle {
+    display: none !important;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .bg-hexagon {
+    width: 250px;
+    height: 288px;
+    top: -80px;
+    left: -60px;
+    opacity: 0.15;
+  }
+
+  .bg-hexagon-2 {
+    width: 200px;
+    height: 231px;
+    bottom: -50px;
+    right: -50px;
+    opacity: 0.12;
+  }
+
+  .bg-triangle-left,
+  .bg-triangle-right {
+    width: 25vw;
+    opacity: 0.08;
+  }
+
+  .app-background::before,
+  .app-background::after {
+    width: 100px;
+    height: 100px;
+    opacity: 0.15;
+  }
+}
+
+/* ===========================================
+   RESPONSIVE: Small tablets (< 768px)
+   =========================================== */
+@media (max-width: 767px) {
+  .mobile-menu-btn {
+    top: 12px;
+    left: 12px;
+    width: 40px;
+    height: 40px;
+
+    .material-icons-round {
+      font-size: 22px;
+    }
+  }
+
+  .bg-hexagon,
+  .bg-hexagon-2 {
+    opacity: 0.1;
+  }
+
+  .bg-triangle-left,
+  .bg-triangle-right {
+    display: none;
+  }
+
+  .app-background::before,
+  .app-background::after {
+    display: none;
+  }
+}
+
+/* ===========================================
+   RESPONSIVE: Small phones (< 576px)
+   =========================================== */
+@media (max-width: 575px) {
+  .mobile-menu-btn {
+    top: 10px;
+    left: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+
+    .material-icons-round {
+      font-size: 20px;
+    }
+  }
+
+  .bg-hexagon {
+    width: 150px;
+    height: 173px;
+    opacity: 0.08;
+  }
+
+  .bg-hexagon-2 {
+    width: 120px;
+    height: 138px;
+    opacity: 0.08;
+  }
+}
+
+/* ===========================================
+   GLOBAL OVERRIDES FOR CHILD COMPONENTS
+   =========================================== */
+::ng-deep {
+  .card,
+  .mat-card,
+  .mat-mdc-card,
+  .content-card,
+  .stat-card,
+  .modern-card {
+    position: relative;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+  }
+
+  .page-header,
+  .page-header-modern {
+    position: relative;
+    z-index: 10;
+  }
+
+  .table-container,
+  .mat-table,
+  .mat-mdc-table {
+    position: relative;
+    z-index: 10;
+    background: white;
+  }
+}
+
+/* ===========================================
+   REDUCED MOTION PREFERENCE
+   =========================================== */
+@media (prefers-reduced-motion: reduce) {
+  .bg-hexagon,
+  .bg-hexagon-2,
+  .bg-triangle-left,
+  .bg-triangle-right,
+  .bg-pattern,
+  .app-background::before,
+  .app-background::after {
+    animation: none;
+  }
+}

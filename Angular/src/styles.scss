@@ -1,18 +1,134 @@
-/* You can add global styles to this file, and also import other style files */
+/* ===========================================
+   SEMPRECHIARO CRM - Global Styles
+   =========================================== */
+
+/* Google Fonts - Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Material Icons Round */
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Round');
+
+/* CSS Custom Properties - Semprechiaro Brand */
+:root {
+  /* Brand Colors */
+  --sc-green-primary: #268730;
+  --sc-green-light: #2ea043;
+  --sc-blue-primary: #027cad;
+  --sc-blue-light: #0891b2;
+  --sc-lime: #ccd54f;
+  --sc-teal: #6D9EBC;
+  --sc-magenta: #c73866;
+  --sc-dark-green: #1a6b24;
+  
+  /* Sidebar */
+  --sidebar-bg: linear-gradient(180deg, #1a6b24 0%, #027cad 100%);
+  --sidebar-width-collapsed: 72px;
+  --sidebar-width-expanded: 280px;
+  --navbar-height: 64px;
+  --transition-speed: 0.3s;
+  
+  /* Surfaces */
+  --surface-primary: rgba(255, 255, 255, 0.95);
+  --surface-secondary: rgba(255, 255, 255, 0.8);
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+}
+
+/* Base font family update */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.mat-mdc-tooltip-panel-right {
+  margin-left: -10px !important; 
+}
+
+/* Default sidebar tooltip */
+.sidebar-tooltip {
+  background: rgba(0, 0, 0, 0.589) !important;
+  color: white !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 10px 16px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Logout tooltip - red theme */
+.sidebar-tooltip-logout {
+  background: linear-gradient(135deg, #991b1b 0%, #c73866 50%) !important;
+  color: white !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 10px 16px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Tooltip arrow - optional enhancement */
+.mat-mdc-tooltip {
+  --mdc-plain-tooltip-container-color: transparent;
+}
+
+/* Faster tooltip appearance */
+.mat-mdc-tooltip-panel {
+  transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Dialog container styling */
+.profile-settings-dialog {
+  .mat-mdc-dialog-container {
+    padding: 0 !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+  }
+
+  .mat-mdc-dialog-surface {
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    background: transparent !important;
+  }
+
+  .mdc-dialog__surface {
+    border-radius: 16px !important;
+    overflow: hidden !important;
+  }
+}
+
+/* Mobile responsive - Bottom sheet style */
+@media (max-width: 768px) {
+  .profile-settings-dialog {
+    .mat-mdc-dialog-container,
+    .mat-mdc-dialog-surface,
+    .mdc-dialog__surface {
+      border-radius: 16px 16px 0 0 !important;
+    }
+  }
+
+  .cdk-overlay-pane.profile-settings-dialog {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+/* Backdrop styling */
+.cdk-overlay-dark-backdrop {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
 
 @import "bootstrap/dist/css/bootstrap.css";
 @import "filepond/dist/filepond.min.css";
 @import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
 
 html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
-
-
-/* Importing Bootstrap SCSS file. */
-@import 'bootstrap/scss/bootstrap';
-
-/* Importing Bootstrap SCSS file. */
-@import 'bootstrap/scss/bootstrap';
 
 /* Importing Bootstrap SCSS file. */
 @import 'bootstrap/scss/bootstrap';
@@ -44,4 +160,60 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
 .mat-icon{
   display:inline-table!important;
+}
+
+
+/* ===========================================
+   DARK MODE - Global Styles
+   Like Dark Reader browser extension
+   =========================================== */
+
+/* Smooth transition when toggling theme */
+html {
+  transition: filter 0.3s ease-in-out;
+}
+
+/* Dark Mode Filter - Applied to entire page */
+html.dark-mode {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #111;
+}
+
+/* Re-invert images and videos to show them correctly */
+html.dark-mode img,
+html.dark-mode video,
+html.dark-mode picture,
+html.dark-mode svg image,
+html.dark-mode .avatar,
+html.dark-mode .user-avatar,
+html.dark-mode .dropdown-avatar,
+html.dark-mode .no-invert,
+html.dark-mode [style*="background-image"],
+html.dark-mode .image img,
+html.dark-mode .card-user .image img,
+html.dark-mode .filepond--root,
+html.dark-mode canvas {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Fix for charts and graphs */
+html.dark-mode .p-chart canvas,
+html.dark-mode #jsChartingContainer,
+html.dark-mode .chart-container canvas,
+html.dark-mode .jscharting-container canvas {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Optional: Adjust scrollbar for dark mode */
+html.dark-mode::-webkit-scrollbar {
+  background-color: #2d2d2d;
+}
+
+html.dark-mode::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 4px;
+}
+
+html.dark-mode::-webkit-scrollbar-thumb:hover {
+  background-color: #777;
 }

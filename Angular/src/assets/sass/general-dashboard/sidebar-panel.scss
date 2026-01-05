@@ -1,53 +1,63 @@
 .wrapper {
   position: relative;
   top: 0;
-  // height: 100vh;
-  // height: 110%;
-  // background-color: $default-body-bg;
 
   &.wrapper-full-page {
-    // min-height: 100vh;
-    min-height: 110%;;
+    min-height: 110%;
     height: auto;
-    //background-color: $default-body-bg;
   }
 }
 
+// ===========================================
+// SIDEBAR - Desktop Default (> 991px)
+// Collapsible: 72px collapsed / 260px expanded
+// ===========================================
 .sidebar,
 .off-canvas-sidebar {
   position: fixed;
-  top: 60px !important; // 🚀 Spazio per la navbar fissa moderna
-  height: calc(100% - 64px) !important; // 🚀 Altezza corretta considerando la navbar
+  top: -10px;
+  left: -10px;
+  height: 100vh;
   bottom: 0;
-  width: 280px;
-  left: -9px;
-  z-index: 1030; // Z-index sotto la navbar (che è 9999)
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  width: 78px; 
+  z-index: 1030;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Kill pseudo-elements
+  &:before,
+  &:after {
+    display: none !important;
+    content: none !important;
+  }
 
   .sidebar-wrapper {
     position: relative;
     height: 100%;
+    width: 100%;
+    overflow-x: hidden;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-    //background: linear-gradient(180deg,#268730 10%,#027cad);
-    background: linear-gradient(180deg,#268730 10%,#027cad);
+    background: linear-gradient(180deg, #268730 10%, #027cad);
     transition: all 0.3s ease;
-    border-radius: 0 12px 12px 0;
-    
+    border-radius: 0px 10px 0px 0px !important;
+    z-index: 4;
+    padding-bottom: 100px;
+
     &::-webkit-scrollbar {
       width: 6px;
     }
-    
+
     &::-webkit-scrollbar-track {
       background: rgba(255, 255, 255, 0.1);
       border-radius: 3px;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.3);
       border-radius: 3px;
-      
+
       &:hover {
         background: rgba(255, 255, 255, 0.5);
       }
@@ -63,20 +73,8 @@
     }
 
     .light {
-      background-image: linear-gradient(90deg,hsla(0,0%,100%,0),#fff,hsla(0,0%,100%,0));
+      background-image: linear-gradient(90deg, hsla(0, 0%, 100%, 0), #fff, hsla(0, 0%, 100%, 0));
     }
-
-    // rgba(0, 156, 130, 1) 7%,
-    // rgba(0, 128, 200, 1) 22%,
-    // rgba(0, 92, 159, 1) 40%,
-    // rgba(185, 33, 133, 1) 64%,
-    // rgba(240, 126, 35, 1) 93%,
-    // rgba(162, 184, 25, 1) 100%
-
-
-    width: 280px;
-    z-index: 4;
-    padding-bottom: 100px;
 
     .dropdown .dropdown-backdrop {
       display: none !important;
@@ -86,7 +84,7 @@
       border: none;
     }
 
-    .timer{
+    .timer {
       background: white;
       border: none;
       color: #212529;
@@ -97,17 +95,13 @@
       font-weight: 600;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
       transition: all 0.3s ease;
-      
+
       &:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
       }
     }
-
   }
-
-
-
 
   .navbar-minimize {
     position: absolute;
@@ -115,6 +109,7 @@
     top: 2px;
     opacity: 1;
   }
+
   .logo-tim {
     border-radius: 50%;
     border: 1px solid #333;
@@ -133,7 +128,7 @@
   .nav {
     margin-top: 24px;
     display: block;
-    padding: 0 1rem;
+    padding: 0 8px;
 
     .caret {
       top: 14px;
@@ -143,7 +138,7 @@
     }
 
     li {
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       border-radius: 12px;
       overflow: hidden;
       transition: all 0.3s ease;
@@ -163,17 +158,24 @@
         cursor: pointer;
         font-size: 14px;
         font-weight: 600;
-        padding: 12px 16px;
+        padding: 12px;
         line-height: 1.5;
         color: rgba(255, 255, 255, 0.9);
         border-radius: 12px;
         transition: all 0.3s ease;
-        
+
         &:hover {
           background: rgba(255, 255, 255, 0.1);
           color: #ffffff;
-          transform: translateX(4px);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        p {
+          opacity: 0;
+          width: 0;
+          overflow: hidden;
+          white-space: nowrap;
+          margin-bottom: 0;
+          transition: opacity 0.3s, width 0.3s;
         }
       }
 
@@ -184,7 +186,7 @@
       &.active {
         background: rgba(255, 255, 255, 0.15);
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-        
+
         > a {
           background: rgba(255, 255, 255, 0.1);
           color: #ffffff;
@@ -206,10 +208,11 @@
     }
 
     i {
-      font-size: 20px;
-      margin-right: 12px;
+      font-size: 22px;
+      margin-right: 0;
       line-height: 1;
-      width: 20px;
+      width: 24px;
+      min-width: 24px;
       text-align: center;
       color: rgba(255, 255, 255, 0.9);
       position: relative;
@@ -232,70 +235,50 @@
   }
 
   .sidebar-background {
-    position: absolute;
-    z-index: 1;
-    height: 100%;
-    width: 100%;
-    display: block;
-    top: 0;
-    left: 0;
-    background-size: cover;
-    background-position: center center;
-
-    &:after {
-      position: absolute;
-      z-index: 3;
-      width: 100%;
-      height: 100%;
-      content: "";
-      display: block;
-      background: #ffffff;
-      opacity: 1;
-    }
+    display: none;
   }
 
   .logo {
     position: relative;
-    padding: 1.5rem 1rem;
+    padding: 16px 12px;
     z-index: 4;
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 1rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    height: 64px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
     .logo-mini {
       opacity: 1;
       width: 40px;
       height: 40px;
-      margin-right: 12px;
+      min-width: 40px;
+      margin-right: 0;
       border-radius: 8px;
       overflow: hidden;
-      background: rgba(255, 255, 255, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
-      
+
       img {
         width: 40px;
         height: 40px;
         object-fit: contain;
-        position:relative;
-        top:-0.5rem!important;
       }
     }
 
     .logo-normal {
       display: block;
-      opacity: 1;
+      opacity: 0;
+      width: 0;
+      overflow: hidden;
+      white-space: nowrap;
       padding: 0;
-      flex: 1;
       color: #ffffff;
       font-weight: 700;
       font-size: 16px;
       letter-spacing: 0.5px;
-      transition: all 0.3s ease;
+      transition: opacity 0.3s, width 0.3s, margin 0.3s;
+      margin-left: 0;
     }
 
     &:after {
@@ -308,6 +291,10 @@
       color: #ffffff;
       line-height: 1.4;
       font-weight: 700;
+      opacity: 0;
+      width: 0;
+      overflow: hidden;
+      transition: opacity 0.3s, width 0.3s;
     }
 
     .simple-text {
@@ -321,41 +308,13 @@
       font-weight: $font-weight-normal;
       line-height: 30px;
       overflow: hidden;
+      opacity: 0;
+      width: 0;
+      transition: opacity 0.3s, width 0.3s;
     }
   }
 
-  .logo-tim {
-    border-radius: 50%;
-    border: 1px solid #333;
-    display: block;
-    height: 61px;
-    width: 61px;
-    float: left;
-    overflow: hidden;
-
-    img {
-      width: 60px;
-      height: 60px;
-    }
-  }
-
-  &:before,
-  &:after {
-    display: block;
-    content: "";
-    opacity: 1;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-  }
-
-  &:after {
-    @include icon-gradient($default-color);
-    z-index: 3;
-  }
-
+  // Data color variants
   &[data-color="white"] {
     @include sidebar-color($white-color);
     @include sidebar-text-color($white-color);
@@ -368,8 +327,7 @@
     @include sidebar-color($default-body-bg);
   }
 
-  // Active color changing
-
+  // Active color variants
   &[data-active-color="primary"] {
     @include sidebar-active-color($primary-color);
   }
@@ -384,6 +342,56 @@
   }
   &[data-active-color="danger"] {
     @include sidebar-active-color($warning-color);
+  }
+}
+
+// ===========================================
+// SIDEBAR EXPANDED STATE (Desktop)
+// ===========================================
+.sidebar-expanded {
+  .sidebar,
+  .off-canvas-sidebar {
+    width: 260px;
+
+    .nav {
+      padding: 0 1rem;
+
+      li > a {
+        padding: 12px 16px;
+
+        p {
+          opacity: 1;
+          width: auto;
+          margin-left: 12px;
+        }
+      }
+
+      i {
+        margin-right: 12px;
+      }
+    }
+
+    .logo {
+      padding: 1.5rem 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      height: auto;
+      border-bottom: none;
+
+      .logo-normal,
+      p,
+      .simple-text {
+        opacity: 1;
+        width: auto;
+        margin-left: 12px;
+      }
+    }
+
+    .sidebar-wrapper {
+      border-radius: 0 10px 0 0;
+    }
   }
 }
 
@@ -407,34 +415,39 @@
   }
 }
 
+// ===========================================
+// MAIN PANEL - Desktop
+// ===========================================
 .main-panel {
   position: relative;
   float: right;
-  width: calc(100% - 280px);
-  background-color: #f8f9fa;
-  margin-left: 280px;
-  margin-top: 64px !important; // 🚀 Spazio per la navbar fissa
-  transition: all 0.3s ease;
+  width: calc(100% - 72px);
+  background-color: transparent;
+  margin-left: 72px;
+  margin-top: 50px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   .content {
-    padding: 1.5rem;
-    min-height: calc(100vh - 64px - 80px) !important; // 🚀 Altezza corretta: 100vh - navbar - padding
-    margin-top: 0 !important; // 🚀 Reset margin-top perché già gestito dal main-panel
-    //background: #ffffff;
-    border-radius: 12px 0 0 0;
-    //box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    min-height: calc(100vh - 88px - 48px);
+    margin-top: 0;
   }
 
   .navbar {
     margin-bottom: 0;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
+    background: #ffffff;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
 
   .header {
     margin-bottom: 40px;
   }
+}
+
+// Main panel when sidebar is expanded
+.sidebar-expanded .main-panel {
+  width: calc(100% - 260px);
+  margin-left: 260px;
 }
 
 .perfect-scrollbar-on {
@@ -448,8 +461,7 @@
 .panel-header {
   height: 280px;
   padding: 2rem 2.5rem;
-  //background: linear-gradient(180deg,#268730 10%,#027cad);
-  background: linear-gradient(180deg,#268730 10%,#027cad);
+  background: linear-gradient(180deg, #268730 10%, #027cad);
   position: relative;
   overflow: hidden;
   border-radius: 0 0 12px 12px;
@@ -470,7 +482,7 @@
       a {
         color: $white-color;
         text-decoration: none;
-        
+
         &:hover {
           text-decoration: underline;
         }
@@ -489,153 +501,230 @@
   padding: 3rem 2.5rem;
 }
 
-// Responsive Design
-@media (max-width: 1199px) {
+// ===========================================
+// RESPONSIVE: Tablet (992px - 1199px)
+// ===========================================
+@media (max-width: 1199px) and (min-width: 992px) {
   .sidebar,
   .off-canvas-sidebar {
-    width: 260px;
+    width: 72px;
   }
-  
+
+  .sidebar-expanded {
+    .sidebar,
+    .off-canvas-sidebar {
+      width: 240px;
+    }
+
+    .main-panel {
+      width: calc(100% - 240px);
+      margin-left: 240px;
+    }
+  }
+
   .main-panel {
-    width: calc(100% - 260px);
-    margin-left: 260px;
+    width: calc(100% - 72px);
+    margin-left: 72px;
   }
 }
 
+// ===========================================
+// RESPONSIVE: Mobile/Tablet (< 992px)
+// ===========================================
 @media (max-width: 991px) {
   .sidebar,
   .off-canvas-sidebar {
     position: fixed;
-    left: 0;
-    top: 64px; // Posiziona sotto la navbar (64px di altezza navbar)
-    height: calc(100vh - 64px); // Altezza viewport meno l'altezza della navbar
+    left: -10px;
+    top: -10px;
+    width: 280px !important;
+    height: 100vh;
     transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
-    z-index: 1029; // Sotto la navbar (1030) ma sopra il contenuto
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    
-    // Supporto per touch/swipe
+    z-index: 1040;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
-    
-    &.show {
+
+    .nav {
+      padding: 0 1rem;
+
+      li > a {
+        padding: 12px 16px;
+
+        p {
+          opacity: 1;
+          width: auto;
+          margin-left: 12px;
+        }
+      }
+
+      i {
+        margin-right: 12px;
+      }
+    }
+
+    .logo {
+      padding: 1.5rem 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 1rem;
+      border-radius: 12px;
+      height: auto;
+      border-bottom: none;
+
+      .logo-normal,
+      p,
+      .simple-text {
+        opacity: 1;
+        width: auto;
+        margin-left: 12px;
+      }
+    }
+
+    .sidebar-wrapper {
+      border-radius: 0 10px 0px 0;
+    }
+
+    &.show,
+    &.mobile-open {
       transform: translateX(0);
-    }
-    
-    // Su schermi più piccoli, altezza navbar ridotta
-    @media (max-width: 768px) {
-      top: 56px;
-      height: calc(100vh - 56px);
-    }
-  }
-  
-  .main-panel {
-    width: 100%;
-    margin-left: 0;
-    margin-top: 64px; // Spazio per la navbar fissa
-    transition: none; // Rimuoviamo la transizione per evitare problemi
-    
-    @media (max-width: 768px) {
-      margin-top: 56px; // Spazio ridotto per navbar più piccola
-    }
-    
-    .content {
-      border-radius: 0;
-      padding: 1rem; // Riduce padding su mobile
     }
   }
 
-  // Gestione stato nav-open su mobile
   .nav-open {
     .sidebar,
     .off-canvas-sidebar {
       transform: translateX(0);
     }
-    
-    // Rimuoviamo il transform del main-panel che causava problemi
-    .main-panel {
-      // transform: translateX(280px); // RIMOSSO
-      overflow: hidden; // Previene scroll orizzontale
-    }
-    
-    // Previeni scroll del body quando sidebar è aperta
+
     body {
       overflow: hidden;
     }
   }
-  
-  // Overlay per chiudere sidebar (gestito da JS)
-  #mobile-sidebar-overlay {
+
+  // ✅ Mobile: adjusted margin-top
+  .main-panel {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-top: 80px; // ✅ Navbar (64px) + spacing (16px)
+    transition: none;
+
+    .content {
+      border-radius: 0;
+      padding: 16px;
+    }
+  }
+
+  .sidebar-expanded .main-panel {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  #mobile-sidebar-overlay,
+  .mobile-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1032; // Sopra la navbar (1030) e la sidebar (1029)
+    z-index: 1035;
     cursor: pointer;
     opacity: 0;
-    animation: fadeIn 0.3s ease-in-out forwards;
-  }
-  
-  @keyframes fadeIn {
-    to {
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+
+    &.active,
+    .nav-open & {
       opacity: 1;
+      pointer-events: auto;
     }
+  }
+
+  #bodyClick {
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    opacity: 1;
+    top: 0;
+    left: 0;
+    content: "";
+    z-index: 1035;
+    background-color: rgba(0, 0, 0, 0.5);
   }
 }
 
+// ===========================================
+// RESPONSIVE: Small tablets (< 768px)
+// ===========================================
 @media (max-width: 767px) {
   .sidebar {
-    width: 280px; // Mantiene larghezza consistente
-    
+    width: 260px !important;
+
     .nav li > a {
       padding: 12px 16px;
       font-size: 14px;
-      
+
       i {
         font-size: 18px;
         margin-right: 10px;
       }
     }
-    
+
     .logo {
       padding: 1rem;
       margin: 0.5rem;
-      
+
       .logo-mini img {
         width: 35px;
         height: 35px;
       }
-      
+
       .logo-normal {
         font-size: 14px;
       }
     }
-    
+
     .timer {
       margin: 0.5rem;
       padding: 0.75rem;
       font-size: 14px;
     }
   }
-  
+
   .main-panel {
+    margin-top: 72px; // ✅ Slightly less on small tablets
+
     .content {
-      padding: 0.75rem;
-    }
-  }
-  
-  // Su schermi molto piccoli, sidebar più stretta
-  @media (max-width: 375px) {
-    .sidebar {
-      width: 260px;
-    }
-    
-    .nav-open .main-panel {
-      transform: translateX(260px);
+      padding: 12px;
     }
   }
 }
 
+// ===========================================
+// RESPONSIVE: Small phones (< 576px)
+// ===========================================
+@media (max-width: 575px) {
+  .sidebar {
+    width: 85vw !important;
+    max-width: 280px;
+  }
 
+  .main-panel {
+    margin-top: 70px; // ✅ Compact on phones
+
+    .content {
+      padding: 10px;
+    }
+  }
+}
+
+// ===========================================
+// RESPONSIVE: Very small phones (< 375px)
+// ===========================================
+@media (max-width: 374px) {
+  .sidebar {
+    width: 90vw !important;
+    max-width: 260px;
+  }
+}
