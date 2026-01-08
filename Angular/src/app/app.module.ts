@@ -38,6 +38,7 @@ import { FilePondModule } from 'ngx-filepond';
 import { MatGridListModule } from "@angular/material/grid-list";
 import { HTTP_INTERCEPTORS } from "@angular/common/http";
 import { AuthInterceptor } from "./servizi/interceptor.service";
+import { DeviceTrackingInterceptor } from "./servizi/device-tracking.interceptor";
 import { MatSnackBarModule } from "@angular/material/snack-bar";
 import { MatButtonModule } from "@angular/material/button";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
@@ -57,7 +58,7 @@ import { GestioneProdottiComponent } from "./pages/gestione-prodotti/gestione-pr
 import { GestioneMacroprodottiComponent } from "./pages/gestione-macroprodotti/gestione-macroprodotti.component";
 import { NuovoprodottoComponent } from "./pages/nuovoprodotto/nuovoprodotto.component";
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import {MatSlideToggleModule} from '@angular/material/slide-toggle';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import {
   MatDialogModule,
   MatDialog,
@@ -119,17 +120,16 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { SchedaUtenteComponent } from "./pages/scheda-utente/scheda-utente.component";
 import { ContrattiPersonaliComponent } from "./pages/user/clienti/contratti-personali/contratti-personali.component";
 import { ChartsModule } from "./pages/user/chart/chart.module";
-import Nora  from '@primeng/themes/nora';
-import Lara  from '@primeng/themes/lara';
-import Material  from '@primeng/themes/lara';
-import Aura  from '@primeng/themes/aura';
+import Nora from '@primeng/themes/nora';
+import Lara from '@primeng/themes/lara';
+import Material from '@primeng/themes/lara';
+import Aura from '@primeng/themes/aura';
 import { QrcodeGeneratorComponent } from "./pages/qrcode-generator/qrcode-generator.component";
 import { TicketManagementComponent } from "./pages/ticket-management/ticket-management.component";
 import { WalletClienteComponent } from "./pages/user/clienti/wallet-cliente/wallet-cliente.component";
 import { AttachmentPreviewModalComponent } from './attachment-preview-modal/attachment-preview-modal.component';
-
-// ⭐ STEP 2: Profile Settings Modal Component
 import { ProfileSettingsModalComponent } from "./shared/components/profile-settings-modal/profile-settings-modal.component";
+import { SystemLogsComponent } from "./pages/system-logs/system-logs.component";
 
 @NgModule({
   declarations: [
@@ -176,8 +176,9 @@ import { ProfileSettingsModalComponent } from "./shared/components/profile-setti
     TicketManagementComponent,
     WalletClienteComponent,
     AttachmentPreviewModalComponent,
-    // ⭐ STEP 2: Profile Settings Modal
     ProfileSettingsModalComponent,
+    // System Logs Component
+    SystemLogsComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent],
@@ -189,7 +190,7 @@ import { ProfileSettingsModalComponent } from "./shared/components/profile-setti
     SidebarModule,
     BrowserAnimationsModule,
     RouterModule.forRoot(AppRoutes, {
-        useHash: false,
+      useHash: false,
     }),
     NgbModule,
     ToastrModule.forRoot(),
@@ -197,7 +198,6 @@ import { ProfileSettingsModalComponent } from "./shared/components/profile-setti
     ReactiveFormsModule,
     MaterialComponentsModule,
     FormsModule,
-    /* TimerComponent, */
     MatFormFieldModule,
     MatChipsModule,
     FilePondModule,
@@ -237,17 +237,22 @@ import { ProfileSettingsModalComponent } from "./shared/components/profile-setti
     DatePickerModule,
     ToggleSwitchModule,
     CalendarModule.forRoot({
-        provide: DateAdapter,
-        useFactory: adapterFactory,
+      provide: DateAdapter,
+      useFactory: adapterFactory,
     }),
     QrcodeGeneratorComponent,
     FilepondUploaderComponent
-],
+  ],
   providers: [
     provideAnimations(),
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
+      multi: true,
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: DeviceTrackingInterceptor,
       multi: true,
     },
     provideHttpClient(withInterceptorsFromDi()),
@@ -276,11 +281,10 @@ import { ProfileSettingsModalComponent } from "./shared/components/profile-setti
         clear: 'Cancella',
         weekHeader: 'Sm'
       }
-  })
+    })
   ],
-
 })
-export class AppModule {}
+export class AppModule { }
 
 export interface ExampleTab {
   label: string;

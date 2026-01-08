@@ -27,6 +27,9 @@ class Log extends Model
     protected $fillable = [
         'level',
         'source',
+        'entity_type',
+        'entity_id',
+        'contract_id',
         'message',
         'datetime',
         'user_id',
@@ -36,6 +39,24 @@ class Log extends Model
         'request_url',
         'request_method',
         'stack_trace',
+        // Device tracking fields
+        'device_fingerprint',
+        'device_type',
+        'device_os',
+        'device_browser',
+        'screen_resolution',
+        'cpu_cores',
+        'ram_gb',
+        'timezone_client',
+        'language',
+        'touch_support',
+        // Geolocation fields
+        'geo_country',
+        'geo_country_code',
+        'geo_region',
+        'geo_city',
+        'geo_isp',
+        'geo_timezone',
     ];
 
     /**
@@ -48,6 +69,9 @@ class Log extends Model
         'datetime' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'cpu_cores' => 'integer',
+        'ram_gb' => 'integer',
+        'touch_support' => 'boolean',
     ];
 
     // ==================== LEVEL CONSTANTS ====================
@@ -126,6 +150,38 @@ class Log extends Model
         ];
     }
 
+    // ==================== ENTITY TYPE CONSTANTS ====================
+
+    public const ENTITY_CONTRACT = 'contract';
+    public const ENTITY_USER = 'user';
+    public const ENTITY_CUSTOMER_DATA = 'customer_data';
+    public const ENTITY_SPECIFIC_DATA = 'specific_data';
+    public const ENTITY_LEAD = 'lead';
+    public const ENTITY_ORDER = 'order';
+    public const ENTITY_ARTICLE = 'article';
+    public const ENTITY_PRODUCT = 'product';
+    public const ENTITY_BACKOFFICE_NOTE = 'backoffice_note';
+
+    /**
+     * Get all available entity types.
+     *
+     * @return array<string, string>
+     */
+    public static function getEntityTypes(): array
+    {
+        return [
+            self::ENTITY_CONTRACT => 'Contratto',
+            self::ENTITY_USER => 'Utente',
+            self::ENTITY_CUSTOMER_DATA => 'Dati Cliente',
+            self::ENTITY_SPECIFIC_DATA => 'Dati Specifici',
+            self::ENTITY_BACKOFFICE_NOTE => 'Nota Backoffice',
+            self::ENTITY_LEAD => 'Lead',
+            self::ENTITY_ORDER => 'Ordine',
+            self::ENTITY_ARTICLE => 'Articolo',
+            self::ENTITY_PRODUCT => 'Prodotto',
+        ];
+    }
+
     // ==================== RELATIONSHIPS ====================
 
     /**
@@ -134,6 +190,14 @@ class Log extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the related contract (if any).
+     */
+    public function contract()
+    {
+        return $this->belongsTo(contract::class, 'contract_id');
     }
 
     // ==================== SCOPES ====================
@@ -273,6 +337,158 @@ class Log extends Model
         return $query->where('source', self::SOURCE_ECOMMERCE);
     }
 
+    // ==================== AUDIT TRAIL SCOPES ====================
+
+    /**
+     * Scope: Filter by entity type.
+     */
+    public function scopeForEntityType(Builder $query, string $entityType): Builder
+    {
+        return $query->where('entity_type', $entityType);
+    }
+
+    /**
+     * Scope: Filter by specific entity (type + id).
+     */
+    public function scopeForEntity(Builder $query, string $entityType, int $entityId): Builder
+    {
+        return $query->where('entity_type', $entityType)
+                     ->where('entity_id', $entityId);
+    }
+
+    /**
+     * Scope: Filter by contract ID (direct or via entity).
+     */
+    public function scopeForContract(Builder $query, int $contractId): Builder
+    {
+        return $query->where(function ($q) use ($contractId) {
+            $q->where('contract_id', $contractId)
+              ->orWhere(function ($q2) use ($contractId) {
+                  $q2->where('entity_type', self::ENTITY_CONTRACT)
+                     ->where('entity_id', $contractId);
+              });
+        });
+    }
+
+    /**
+     * Scope: Filter by contract code (searches in context JSON).
+     */
+    public function scopeForContractCode(Builder $query, string $contractCode): Builder
+    {
+        return $query->where(function ($q) use ($contractCode) {
+            $q->whereJsonContains('context->contract_code', $contractCode)
+              ->orWhere('message', 'LIKE', "%{$contractCode}%");
+        });
+    }
+
+    /**
+     * Scope: Only logs with entity tracking (audit logs).
+     */
+    public function scopeWithEntityTracking(Builder $query): Builder
+    {
+        return $query->whereNotNull('entity_type');
+    }
+
+    /**
+     * Scope: Only contract-related logs.
+     */
+    public function scopeContractLogs(Builder $query): Builder
+    {
+        return $query->where(function ($q) {
+            $q->whereNotNull('contract_id')
+              ->orWhere('entity_type', self::ENTITY_CONTRACT);
+        });
+    }
+
+    /**
+     * Scope: Logs with changes (audit trail entries).
+     */
+    public function scopeWithChanges(Builder $query): Builder
+    {
+        return $query->whereNotNull('context')
+                     ->whereRaw("JSON_EXTRACT(context, '$.changes') IS NOT NULL");
+    }
+
+    // ==================== DEVICE TRACKING SCOPES ====================
+
+    /**
+     * Scope: Filter by device fingerprint.
+     */
+    public function scopeForFingerprint(Builder $query, string $fingerprint): Builder
+    {
+        return $query->where('device_fingerprint', 'LIKE', "%{$fingerprint}%");
+    }
+
+    /**
+     * Scope: Filter by country.
+     */
+    public function scopeForCountry(Builder $query, string $country): Builder
+    {
+        return $query->where(function ($q) use ($country) {
+            $q->where('geo_country', 'LIKE', "%{$country}%")
+              ->orWhere('geo_country_code', $country);
+        });
+    }
+
+    /**
+     * Scope: Filter by city.
+     */
+    public function scopeForCity(Builder $query, string $city): Builder
+    {
+        return $query->where('geo_city', 'LIKE', "%{$city}%");
+    }
+
+    /**
+     * Scope: Filter by ISP.
+     */
+    public function scopeForIsp(Builder $query, string $isp): Builder
+    {
+        return $query->where('geo_isp', 'LIKE', "%{$isp}%");
+    }
+
+    /**
+     * Scope: Filter by device type.
+     */
+    public function scopeForDeviceType(Builder $query, string $deviceType): Builder
+    {
+        return $query->where('device_type', $deviceType);
+    }
+
+    /**
+     * Scope: Filter by OS.
+     */
+    public function scopeForOS(Builder $query, string $os): Builder
+    {
+        return $query->where('device_os', 'LIKE', "%{$os}%");
+    }
+
+    /**
+     * Scope: Filter by browser.
+     */
+    public function scopeForBrowser(Builder $query, string $browser): Builder
+    {
+        return $query->where('device_browser', 'LIKE', "%{$browser}%");
+    }
+
+    /**
+     * Scope: Filter by screen resolution.
+     */
+    public function scopeForScreenResolution(Builder $query, string $resolution): Builder
+    {
+        return $query->where('screen_resolution', $resolution);
+    }
+
+    /**
+     * Scope: Filter by timezone.
+     */
+    public function scopeForTimezone(Builder $query, string $timezone): Builder
+    {
+        return $query->where(function ($q) use ($timezone) {
+            $q->where('timezone_client', 'LIKE', "%{$timezone}%")
+              ->orWhere('geo_timezone', 'LIKE', "%{$timezone}%");
+        });
+    }
+
     // ==================== HELPER METHODS ====================
 
     /**
@@ -300,6 +516,25 @@ class Log extends Model
     }
 
     /**
+     * Check if this log has entity tracking.
+     */
+    public function hasEntityTracking(): bool
+    {
+        return !empty($this->entity_type) && !empty($this->entity_id);
+    }
+
+    /**
+     * Check if this log has tracked changes recorded in context.
+     * 
+     * IMPORTANT: Renamed from hasChanges() to avoid conflict with 
+     * Eloquent's built-in Model::hasChanges($changes, $attributes) method.
+     */
+    public function hasTrackedChanges(): bool
+    {
+        return isset($this->context['changes']) && !empty($this->context['changes']);
+    }
+
+    /**
      * Get the level label.
      */
     public function getLevelLabelAttribute(): string
@@ -316,11 +551,46 @@ class Log extends Model
     }
 
     /**
+     * Get the entity type label.
+     */
+    public function getEntityTypeLabelAttribute(): ?string
+    {
+        if (!$this->entity_type) {
+            return null;
+        }
+        return self::getEntityTypes()[$this->entity_type] ?? $this->entity_type;
+    }
+
+    /**
+     * Accessor for has_tracked_changes attribute (for JSON serialization).
+     */
+    public function getHasTrackedChangesAttribute(): bool
+    {
+        return $this->hasTrackedChanges();
+    }
+
+    /**
      * Get context value by key.
      */
     public function getContextValue(string $key, mixed $default = null): mixed
     {
         return $this->context[$key] ?? $default;
+    }
+
+    /**
+     * Get changes from context.
+     */
+    public function getTrackedChanges(): array
+    {
+        return $this->context['changes'] ?? [];
+    }
+
+    /**
+     * Get changed fields list.
+     */
+    public function getChangedFields(): array
+    {
+        return array_keys($this->getTrackedChanges());
     }
 
     /**
@@ -370,6 +640,18 @@ class Log extends Model
     }
 
     /**
+     * Get log counts grouped by entity type.
+     */
+    public static function getCountsByEntityType(): array
+    {
+        return self::whereNotNull('entity_type')
+                   ->selectRaw('entity_type, COUNT(*) as count')
+                   ->groupBy('entity_type')
+                   ->pluck('count', 'entity_type')
+                   ->toArray();
+    }
+
+    /**
      * Get statistics for dashboard.
      */
     public static function getStats(?string $source = null): array
@@ -383,6 +665,7 @@ class Log extends Model
         $total = $query->count();
         $byLevel = self::getCountsByLevel($source);
         $bySource = $source ? [] : self::getCountsBySource();
+        $byEntityType = self::getCountsByEntityType();
 
         return [
             'total' => $total,
@@ -394,7 +677,53 @@ class Log extends Model
                 'critical' => $byLevel[self::LEVEL_CRITICAL] ?? 0,
             ],
             'by_source' => $bySource,
+            'by_entity_type' => $byEntityType,
             'errors_today' => self::errors()->today()->count(),
+            'audit_logs_today' => self::withEntityTracking()->today()->count(),
+        ];
+    }
+
+    /**
+     * Get contract history (all logs related to a contract).
+     */
+    public static function getContractHistory(int $contractId, int $limit = 100): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::forContract($contractId)
+                   ->with('user:id,name,cognome,email')
+                   ->recent()
+                   ->limit($limit)
+                   ->get();
+    }
+
+    /**
+     * Get entity history.
+     */
+    public static function getEntityHistory(string $entityType, int $entityId, int $limit = 100): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::forEntity($entityType, $entityId)
+                   ->with('user:id,name,cognome,email')
+                   ->recent()
+                   ->limit($limit)
+                   ->get();
+    }
+
+    /**
+     * Get available filters for frontend dropdown.
+     */
+    public static function getAvailableFilters(): array
+    {
+        return [
+            'users' => User::select('id', 'name', 'cognome', 'email')
+                          ->whereIn('id', self::distinct()->pluck('user_id')->filter())
+                          ->get()
+                          ->map(fn($u) => [
+                              'id' => $u->id,
+                              'name' => trim($u->name . ' ' . $u->cognome),
+                              'email' => $u->email,
+                          ]),
+            'sources' => self::distinct()->pluck('source')->filter()->values(),
+            'levels' => self::distinct()->pluck('level')->filter()->values(),
+            'entity_types' => self::distinct()->pluck('entity_type')->filter()->values(),
         ];
     }
 
@@ -412,6 +741,5 @@ class Log extends Model
     public static function cleanBySource(string $source): int
     {
         return self::where('source', $source)->delete();
-        
     }
 }

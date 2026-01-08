@@ -17,7 +17,7 @@
     .author{
         text-align: center;
         text-transform: none;
-        margin-top: -77px;
+        margin-top: -20px;
 
         a +  p.description{
             margin-top: -7px;
@@ -72,5 +72,7 @@
           object-position: center center;
         }
       }
+      .author{
+          margin-top: 0px;}
     }
 }

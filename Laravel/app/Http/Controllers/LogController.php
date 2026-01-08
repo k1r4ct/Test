@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Log;
 use App\Models\User;
+use App\Models\contract;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -17,17 +18,6 @@ class LogController extends Controller
      * Display a paginated listing of logs with filters.
      * 
      * GET /api/logs
-     * 
-     * Query params:
-     * - source: string (auth, api, database, scheduler, email, system, user_activity)
-     * - level: string or comma-separated (debug, info, warning, error, critical)
-     * - search: string (search in message)
-     * - user_id: int
-     * - date_from: string (Y-m-d)
-     * - date_to: string (Y-m-d)
-     * - per_page: int (default 15)
-     * - sort_by: string (default 'datetime')
-     * - sort_dir: string (default 'desc')
      */
     public function index(Request $request): JsonResponse
     {
@@ -43,7 +33,7 @@ class LogController extends Controller
                 ], 403);
             }
 
-            $query = Log::with('user:id,name,email');
+            $query = Log::with('user:id,name,cognome,email');
 
             // Filter by source
             if ($request->filled('source') && $request->source !== 'all') {
@@ -75,10 +65,77 @@ class LogController extends Controller
                 $query->toDate($request->date_to);
             }
 
+            // ==================== AUDIT TRAIL FILTERS ====================
+
+            // Filter by entity type
+            if ($request->filled('entity_type') && $request->entity_type !== 'all') {
+                $query->forEntityType($request->entity_type);
+            }
+
+            // Filter by specific entity (requires both type and id)
+            if ($request->filled('entity_id')) {
+                $query->where('entity_id', $request->entity_id);
+            }
+
+            // Filter by contract ID (direct or via entity)
+            if ($request->filled('contract_id')) {
+                $query->forContract($request->contract_id);
+            }
+
+            // Filter by contract code (searches in context JSON and message)
+            if ($request->filled('contract_code')) {
+                $query->forContractCode($request->contract_code);
+            }
+
+            // Only logs with changes tracked (audit trail entries)
+            if ($request->boolean('with_changes')) {
+                $query->withChanges();
+            }
+
+            // ==================== DEVICE TRACKING FILTERS ====================
+
+            if ($request->filled('device_fingerprint')) {
+                $query->forFingerprint($request->device_fingerprint);
+            }
+
+            if ($request->filled('geo_country')) {
+                $query->forCountry($request->geo_country);
+            }
+
+            if ($request->filled('geo_city')) {
+                $query->forCity($request->geo_city);
+            }
+
+            if ($request->filled('geo_isp')) {
+                $query->forIsp($request->geo_isp);
+            }
+
+            if ($request->filled('device_type')) {
+                $query->forDeviceType($request->device_type);
+            }
+
+            if ($request->filled('device_os')) {
+                $query->forOS($request->device_os);
+            }
+
+            if ($request->filled('device_browser')) {
+                $query->forBrowser($request->device_browser);
+            }
+
+            if ($request->filled('screen_resolution')) {
+                $query->forScreenResolution($request->screen_resolution);
+            }
+
+            if ($request->filled('timezone')) {
+                $query->forTimezone($request->timezone);
+            }
+
+            // ==================== END FILTERS ====================
+
             // Sorting
             $sortBy = $request->input('sort_by', 'datetime');
             $sortDir = $request->input('sort_dir', 'desc');
-            $allowedSortFields = ['id', 'datetime', 'level', 'source', 'created_at'];
+            $allowedSortFields = ['id', 'datetime', 'level', 'source', 'entity_type', 'created_at'];
             
             if (in_array($sortBy, $allowedSortFields)) {
                 $query->orderBy($sortBy, $sortDir);
@@ -123,12 +180,268 @@ class LogController extends Controller
     }
 
     /**
+     * Get available filters for frontend dropdowns.
+     * 
+     * GET /api/logs/filters
+     */
+    public function getFilters(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
+            if (!in_array($user->role_id, [1, 2])) {
+                return response()->json([
+                    'response' => 'error',
+                    'status' => '403',
+                    'message' => 'Access denied.'
+                ], 403);
+            }
+
+            // Get entity types with counts
+            $entityTypeCounts = Log::whereNotNull('entity_type')
+                ->selectRaw('entity_type, COUNT(*) as count')
+                ->groupBy('entity_type')
+                ->pluck('count', 'entity_type')
+                ->toArray();
+
+            $entityTypes = [];
+            foreach (Log::getEntityTypes() as $key => $label) {
+                $entityTypes[] = [
+                    'key' => $key,
+                    'label' => $label,
+                    'count' => $entityTypeCounts[$key] ?? 0,
+                ];
+            }
+
+            // Add "all" option
+            array_unshift($entityTypes, [
+                'key' => 'all',
+                'label' => 'Tutti i tipi',
+                'count' => array_sum($entityTypeCounts),
+            ]);
+
+            // Get sources with counts
+            $sourceCounts = Log::selectRaw('source, COUNT(*) as count')
+                ->groupBy('source')
+                ->pluck('count', 'source')
+                ->toArray();
+
+            $sources = [];
+            foreach (Log::getSources() as $key => $label) {
+                $sources[] = [
+                    'key' => $key,
+                    'label' => $label,
+                    'count' => $sourceCounts[$key] ?? 0,
+                ];
+            }
+
+            array_unshift($sources, [
+                'key' => 'all',
+                'label' => 'Tutte le sorgenti',
+                'count' => array_sum($sourceCounts),
+            ]);
+
+            // Get levels with counts
+            $levelCounts = Log::selectRaw('level, COUNT(*) as count')
+                ->groupBy('level')
+                ->pluck('count', 'level')
+                ->toArray();
+
+            $levels = [];
+            foreach (Log::getLevels() as $key => $label) {
+                $levels[] = [
+                    'key' => $key,
+                    'label' => $label,
+                    'count' => $levelCounts[$key] ?? 0,
+                ];
+            }
+
+            // Get users who have logs
+            $usersWithLogs = User::select('id', 'name', 'cognome', 'email')
+                ->whereIn('id', Log::distinct()->pluck('user_id')->filter())
+                ->orderBy('name')
+                ->get()
+                ->map(fn($u) => [
+                    'id' => $u->id,
+                    'name' => trim($u->name . ' ' . $u->cognome),
+                    'email' => $u->email,
+                ]);
+
+            // ==================== DEVICE TRACKING FILTER OPTIONS ====================
+
+            $countries = Log::whereNotNull('geo_country')
+                ->selectRaw('geo_country, geo_country_code, COUNT(*) as count')
+                ->groupBy('geo_country', 'geo_country_code')
+                ->orderBy('count', 'desc')
+                ->limit(50)
+                ->get();
+
+            $cities = Log::whereNotNull('geo_city')
+                ->selectRaw('geo_city, COUNT(*) as count')
+                ->groupBy('geo_city')
+                ->orderBy('count', 'desc')
+                ->limit(50)
+                ->get();
+
+            $isps = Log::whereNotNull('geo_isp')
+                ->selectRaw('geo_isp, COUNT(*) as count')
+                ->groupBy('geo_isp')
+                ->orderBy('count', 'desc')
+                ->limit(30)
+                ->get();
+
+            $deviceTypes = Log::whereNotNull('device_type')
+                ->selectRaw('device_type, COUNT(*) as count')
+                ->groupBy('device_type')
+                ->orderBy('count', 'desc')
+                ->get();
+
+            $browsers = Log::whereNotNull('device_browser')
+                ->selectRaw('device_browser, COUNT(*) as count')
+                ->groupBy('device_browser')
+                ->orderBy('count', 'desc')
+                ->limit(20)
+                ->get();
+
+            $operatingSystems = Log::whereNotNull('device_os')
+                ->selectRaw('device_os, COUNT(*) as count')
+                ->groupBy('device_os')
+                ->orderBy('count', 'desc')
+                ->limit(20)
+                ->get();
+
+            $screenResolutions = Log::whereNotNull('screen_resolution')
+                ->selectRaw('screen_resolution, COUNT(*) as count')
+                ->groupBy('screen_resolution')
+                ->orderBy('count', 'desc')
+                ->limit(20)
+                ->get();
+
+            $timezones = Log::whereNotNull('timezone_client')
+                ->selectRaw('timezone_client, COUNT(*) as count')
+                ->groupBy('timezone_client')
+                ->orderBy('count', 'desc')
+                ->limit(30)
+                ->get();
+
+            // ==================== END DEVICE TRACKING FILTER OPTIONS ====================
+
+            return response()->json([
+                'response' => 'ok',
+                'status' => '200',
+                'body' => [
+                    'entity_types' => $entityTypes,
+                    'sources' => $sources,
+                    'levels' => $levels,
+                    'users' => $usersWithLogs,
+                    // Device tracking options
+                    'countries' => $countries,
+                    'cities' => $cities,
+                    'isps' => $isps,
+                    'device_types' => $deviceTypes,
+                    'browsers' => $browsers,
+                    'operating_systems' => $operatingSystems,
+                    'screen_resolutions' => $screenResolutions,
+                    'timezones' => $timezones,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'response' => 'error',
+                'status' => '500',
+                'message' => 'Error fetching filters: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get complete history for a specific contract (audit trail).
+     * 
+     * GET /api/logs/contract/{id}
+     */
+    public function getContractHistory(int $contractId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
+            if (!in_array($user->role_id, [1, 2])) {
+                return response()->json([
+                    'response' => 'error',
+                    'status' => '403',
+                    'message' => 'Access denied.'
+                ], 403);
+            }
+
+            // Verify contract exists
+            $contract = contract::find($contractId);
+            
+            if (!$contract) {
+                return response()->json([
+                    'response' => 'error',
+                    'status' => '404',
+                    'message' => 'Contract not found.'
+                ], 404);
+            }
+
+            $limit = min(request()->input('limit', 100), 500);
+
+            // Get all logs related to this contract
+            $logs = Log::forContract($contractId)
+                ->with('user:id,name,cognome,email')
+                ->recent()
+                ->limit($limit)
+                ->get();
+
+            // Format logs
+            $formattedLogs = $logs->map(function ($log) {
+                return $this->formatLog($log, true);
+            });
+
+            // Group by date for timeline view
+            $groupedByDate = $formattedLogs->groupBy(function ($log) {
+                return Carbon::parse($log['datetime'])->format('Y-m-d');
+            });
+
+            // Get summary stats
+            $stats = [
+                'total_logs' => $logs->count(),
+                'by_entity_type' => $logs->groupBy('entity_type')->map->count(),
+                'by_level' => $logs->groupBy('level')->map->count(),
+                'logs_with_changes' => $logs->filter(fn($l) => $l->hasTrackedChanges())->count(),
+                'date_range' => [
+                    'first_log' => $logs->last()?->datetime?->format('Y-m-d H:i:s'),
+                    'last_log' => $logs->first()?->datetime?->format('Y-m-d H:i:s'),
+                ],
+            ];
+
+            return response()->json([
+                'response' => 'ok',
+                'status' => '200',
+                'body' => [
+                    'contract' => [
+                        'id' => $contract->id,
+                        'codice_contratto' => $contract->codice_contratto,
+                    ],
+                    'logs' => $formattedLogs,
+                    'grouped_by_date' => $groupedByDate,
+                    'stats' => $stats,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'response' => 'error',
+                'status' => '500',
+                'message' => 'Error fetching contract history: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get log statistics for dashboard.
      * 
      * GET /api/logs/stats
-     * 
-     * Query params:
-     * - source: string (optional, filter stats by source)
      */
     public function getStats(Request $request): JsonResponse
     {
@@ -163,6 +476,13 @@ class LogController extends Controller
                 ->pluck('count', 'source')
                 ->toArray();
 
+            // Get counts by entity type
+            $entityTypeCounts = Log::whereNotNull('entity_type')
+                ->selectRaw('entity_type, COUNT(*) as count')
+                ->groupBy('entity_type')
+                ->pluck('count', 'entity_type')
+                ->toArray();
+
             // Get total count
             $totalCount = Log::query()
                 ->when($source, fn($q) => $q->where('source', $source))
@@ -184,6 +504,17 @@ class LogController extends Controller
                 ->when($source, fn($q) => $q->where('source', $source))
                 ->count();
 
+            // Audit trail stats
+            $auditLogsToday = Log::withEntityTracking()
+                ->today()
+                ->when($source, fn($q) => $q->where('source', $source))
+                ->count();
+
+            $logsWithChangesToday = Log::withChanges()
+                ->today()
+                ->when($source, fn($q) => $q->where('source', $source))
+                ->count();
+
             return response()->json([
                 'response' => 'ok',
                 'status' => '200',
@@ -197,9 +528,12 @@ class LogController extends Controller
                         'critical' => $levelCounts[Log::LEVEL_CRITICAL] ?? 0,
                     ],
                     'by_source' => $sourceCounts,
+                    'by_entity_type' => $entityTypeCounts,
                     'errors_today' => $errorsToday,
                     'logs_today' => $logsToday,
                     'logs_last_week' => $logsLastWeek,
+                    'audit_logs_today' => $auditLogsToday,
+                    'logs_with_changes_today' => $logsWithChangesToday,
                 ]
             ]);
 
@@ -208,6 +542,104 @@ class LogController extends Controller
                 'response' => 'error',
                 'status' => '500',
                 'message' => 'Error fetching stats: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get log volume for chart (last 24 hours, grouped by hour).
+     * 
+     * GET /api/logs/volume
+     */
+    public function getVolume(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
+            if (!in_array($user->role_id, [1, 2])) {
+                return response()->json([
+                    'response' => 'error',
+                    'status' => '403',
+                    'message' => 'Access denied.'
+                ], 403);
+            }
+
+            $source = $request->input('source');
+            $hours = min($request->input('hours', 24), 168);
+
+            if ($source === 'all') {
+                $source = null;
+            }
+
+            $startTime = Carbon::now()->subHours($hours)->startOfHour();
+
+            $query = Log::query()
+                ->where('datetime', '>=', $startTime)
+                ->when($source, fn($q) => $q->where('source', $source));
+
+            $volumeData = $query
+                ->selectRaw('DATE_FORMAT(datetime, "%Y-%m-%d %H:00") as hour')
+                ->selectRaw('COUNT(*) as count')
+                ->selectRaw('SUM(CASE WHEN level IN ("error", "critical") THEN 1 ELSE 0 END) as errors')
+                ->selectRaw('SUM(CASE WHEN level = "warning" THEN 1 ELSE 0 END) as warnings')
+                ->groupBy('hour')
+                ->orderBy('hour', 'asc')
+                ->get()
+                ->keyBy('hour');
+
+            $volume = [];
+            $current = $startTime->copy();
+            $now = Carbon::now();
+
+            while ($current <= $now) {
+                $hourKey = $current->format('Y-m-d H:00');
+                $hourData = $volumeData->get($hourKey);
+
+                $volume[] = [
+                    'hour' => $hourKey,
+                    'hour_formatted' => $current->format('H:i'),
+                    'date_formatted' => $current->format('d/m'),
+                    'count' => $hourData ? (int) $hourData->count : 0,
+                    'errors' => $hourData ? (int) $hourData->errors : 0,
+                    'warnings' => $hourData ? (int) $hourData->warnings : 0,
+                ];
+
+                $current->addHour();
+            }
+
+            $totalLogs = array_sum(array_column($volume, 'count'));
+            $totalErrors = array_sum(array_column($volume, 'errors'));
+            $totalWarnings = array_sum(array_column($volume, 'warnings'));
+            $peakHour = !empty($volume) ? max(array_column($volume, 'count')) : 0;
+            $avgPerHour = count($volume) > 0 ? round($totalLogs / count($volume), 1) : 0;
+
+            return response()->json([
+                'response' => 'ok',
+                'status' => '200',
+                'body' => [
+                    'volume' => $volume,
+                    'summary' => [
+                        'total_logs' => $totalLogs,
+                        'total_errors' => $totalErrors,
+                        'total_warnings' => $totalWarnings,
+                        'peak_hour' => $peakHour,
+                        'avg_per_hour' => $avgPerHour,
+                        'hours_covered' => count($volume),
+                    ],
+                    'filters' => [
+                        'source' => $source ?? 'all',
+                        'hours' => $hours,
+                        'from' => $startTime->format('Y-m-d H:i:s'),
+                        'to' => $now->format('Y-m-d H:i:s'),
+                    ]
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'response' => 'error',
+                'status' => '500',
+                'message' => 'Error fetching volume data: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -244,7 +676,6 @@ class LogController extends Controller
                 ];
             }
 
-            // Add "all" option
             array_unshift($sources, [
                 'key' => 'all',
                 'label' => 'Log di Sistema',
@@ -284,7 +715,7 @@ class LogController extends Controller
                 ], 403);
             }
 
-            $log = Log::with('user:id,name,email')->findOrFail($id);
+            $log = Log::with('user:id,name,cognome,email')->findOrFail($id);
 
             return response()->json([
                 'response' => 'ok',
@@ -318,7 +749,6 @@ class LogController extends Controller
         try {
             $user = Auth::user();
 
-            // Only admin can delete logs
             if ($user->role_id !== 1) {
                 return response()->json([
                     'response' => 'error',
@@ -361,16 +791,12 @@ class LogController extends Controller
      * Clear logs by source or all logs.
      * 
      * DELETE /api/logs/clear
-     * 
-     * Query params:
-     * - source: string (optional, if not provided clears all logs)
      */
     public function clearLogs(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
 
-            // Only admin can clear logs
             if ($user->role_id !== 1) {
                 return response()->json([
                     'response' => 'error',
@@ -416,14 +842,6 @@ class LogController extends Controller
      * Export logs in various formats.
      * 
      * GET /api/logs/export
-     * 
-     * Query params:
-     * - format: string (txt, csv, json) - pdf and xls require additional libraries
-     * - source: string (optional)
-     * - level: string (optional, comma-separated)
-     * - date_from: string (optional)
-     * - date_to: string (optional)
-     * - search: string (optional)
      */
     public function export(Request $request)
     {
@@ -440,8 +858,7 @@ class LogController extends Controller
 
             $format = $request->input('format', 'csv');
             
-            // Build query with filters
-            $query = Log::with('user:id,name,email');
+            $query = Log::with('user:id,name,cognome,email');
 
             if ($request->filled('source') && $request->source !== 'all') {
                 $query->source($request->source);
@@ -464,17 +881,34 @@ class LogController extends Controller
                 $query->toDate($request->date_to);
             }
 
+            if ($request->filled('entity_type') && $request->entity_type !== 'all') {
+                $query->forEntityType($request->entity_type);
+            }
+
+            if ($request->filled('contract_id')) {
+                $query->forContract($request->contract_id);
+            }
+
             $logs = $query->orderBy('datetime', 'desc')->get();
 
-            // Generate filename
             $source = $request->input('source', 'all');
             $filename = $source === 'all' ? 'laravel' : $source;
+            
+            if ($request->filled('entity_type') && $request->entity_type !== 'all') {
+                $filename .= '_' . $request->entity_type;
+            }
+            
+            if ($request->filled('contract_id')) {
+                $filename .= '_contract_' . $request->contract_id;
+            }
+            
             $timestamp = Carbon::now()->format('Y-m-d_His');
 
-            // Log the export action
             SystemLogService::system()->info('Logs exported', [
                 'format' => $format,
                 'source' => $source,
+                'entity_type' => $request->entity_type,
+                'contract_id' => $request->contract_id,
                 'count' => $logs->count(),
                 'exported_by' => $user->id,
             ]);
@@ -510,12 +944,6 @@ class LogController extends Controller
      * Get log file content (raw file view).
      * 
      * GET /api/logs/file
-     * 
-     * Query params:
-     * - source: string (optional) - which log file to read
-     * - from_db: bool (default true) - if true reads from DB, if false reads from file
-     * - level: string (optional, comma-separated) - filter by level (only for DB mode)
-     * - limit: int (default 500) - max lines to return
      */
     public function getFileContent(Request $request): JsonResponse
     {
@@ -534,14 +962,11 @@ class LogController extends Controller
             $fromDb = $request->boolean('from_db', true);
             $limit = min($request->input('limit', 500), 1000);
 
-            // Determine filename
             $filename = $this->getLogFilename($source);
 
             if ($fromDb) {
-                // Read from database
                 return $this->getFileContentFromDb($request, $source, $filename, $limit);
             } else {
-                // Read from actual log file
                 return $this->getFileContentFromFile($source, $filename, $limit);
             }
 
@@ -572,7 +997,6 @@ class LogController extends Controller
 
         $logs = $query->orderBy('datetime', 'desc')->limit($limit)->get();
 
-        // Format as file content
         $lines = $logs->map(function ($log, $index) {
             $line = "[{$log->datetime}] " . 
                     strtoupper($log->source) . "." . 
@@ -589,6 +1013,7 @@ class LogController extends Controller
                 'content' => $line,
                 'level' => $log->level,
                 'source' => $log->source,
+                'entity_type' => $log->entity_type,
                 'has_stack_trace' => !empty($log->stack_trace),
             ];
         });
@@ -626,10 +1051,8 @@ class LogController extends Controller
             ]);
         }
 
-        // Read file from the end (most recent entries)
         $lines = $this->readLastLines($filePath, $limit);
 
-        // Parse and format lines
         $formattedLines = [];
         $lineNumber = 1;
 
@@ -641,7 +1064,7 @@ class LogController extends Controller
             $parsed = $this->parseLogLine($line);
             
             $formattedLines[] = [
-                'id' => null, // No DB id for file lines
+                'id' => null,
                 'line_number' => $lineNumber++,
                 'content' => $line,
                 'level' => $parsed['level'],
@@ -659,7 +1082,7 @@ class LogController extends Controller
                 'file_path' => $filePath,
                 'file_size' => $this->formatFileSize(filesize($filePath)),
                 'last_modified' => date('Y-m-d H:i:s', filemtime($filePath)),
-                'lines' => array_reverse($formattedLines), // Most recent first
+                'lines' => array_reverse($formattedLines),
                 'total_lines' => count($formattedLines),
             ]
         ]);
@@ -702,7 +1125,7 @@ class LogController extends Controller
     {
         $result = [];
         $file = new \SplFileObject($filePath, 'r');
-        $file->seek(PHP_INT_MAX); // Go to end
+        $file->seek(PHP_INT_MAX);
         $totalLines = $file->key();
 
         $startLine = max(0, $totalLines - $lines);
@@ -727,29 +1150,24 @@ class LogController extends Controller
         $source = null;
         $hasStackTrace = false;
 
-        // Try to match Laravel log format: [YYYY-MM-DD HH:MM:SS] environment.LEVEL: message
         if (preg_match('/\[\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\]\s+\w+\.(\w+):/i', $line, $matches)) {
             $level = strtolower($matches[1]);
         }
 
-        // Try to match our custom format: [SOURCE.LEVEL]
         if (preg_match('/\[(\w+)\].*?\.(\w+):/i', $line, $matches)) {
             $source = strtolower($matches[1]);
             $level = strtolower($matches[2]);
         }
 
-        // Check for stack trace indicators
         if (strpos($line, '#0 ') !== false || strpos($line, 'Stack trace:') !== false) {
             $hasStackTrace = true;
         }
 
-        // Normalize level
         $validLevels = ['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'];
         if (!in_array($level, $validLevels)) {
             $level = 'info';
         }
 
-        // Map notice/alert/emergency to our levels
         if ($level === 'notice') $level = 'info';
         if (in_array($level, ['alert', 'emergency'])) $level = 'critical';
 
@@ -812,7 +1230,6 @@ class LogController extends Controller
                     ];
                 }
 
-                // Sort by last modified (most recent first)
                 usort($files, function ($a, $b) {
                     return filemtime($b['path']) - filemtime($a['path']);
                 });
@@ -882,10 +1299,22 @@ class LogController extends Controller
             'formatted_datetime' => $log->formatted_datetime,
             'user' => $log->user ? [
                 'id' => $log->user->id,
-                'name' => $log->user->name,
+                'name' => trim($log->user->name . ' ' . ($log->user->cognome ?? '')),
                 'email' => $log->user->email,
             ] : null,
             'has_stack_trace' => $log->hasStackTrace(),
+            // Audit trail fields
+            'entity_type' => $log->entity_type,
+            'entity_type_label' => $log->entity_type_label,
+            'entity_id' => $log->entity_id,
+            'contract_id' => $log->contract_id,
+            'contract_code' => $log->context['contract_code'] ?? null,
+            'has_tracked_changes' => $log->hasTrackedChanges(),
+            // Device tracking (summary)
+            'device_fingerprint' => $log->device_fingerprint,
+            'device_type' => $log->device_type,
+            'geo_city' => $log->geo_city,
+            'geo_country' => $log->geo_country,
         ];
 
         if ($full) {
@@ -898,6 +1327,35 @@ class LogController extends Controller
             $data['stack_trace'] = $log->stack_trace;
             $data['created_at'] = $log->created_at?->format('Y-m-d H:i:s');
             $data['updated_at'] = $log->updated_at?->format('Y-m-d H:i:s');
+            
+            // Include changes if present
+            if ($log->hasTrackedChanges()) {
+                $data['changes'] = $log->getTrackedChanges();
+            }
+
+            // Device info (full)
+            $data['device_info'] = [
+                'fingerprint' => $log->device_fingerprint,
+                'type' => $log->device_type,
+                'os' => $log->device_os,
+                'browser' => $log->device_browser,
+                'screen_resolution' => $log->screen_resolution,
+                'cpu_cores' => $log->cpu_cores,
+                'ram_gb' => $log->ram_gb,
+                'timezone' => $log->timezone_client,
+                'language' => $log->language,
+                'touch_support' => $log->touch_support,
+            ];
+
+            // Geo info (full)
+            $data['geo_info'] = [
+                'country' => $log->geo_country,
+                'country_code' => $log->geo_country_code,
+                'region' => $log->geo_region,
+                'city' => $log->geo_city,
+                'isp' => $log->geo_isp,
+                'timezone' => $log->geo_timezone,
+            ];
         }
 
         return $data;
@@ -914,8 +1372,16 @@ class LogController extends Controller
                     strtoupper($log->level) . ": " . 
                     $log->message;
             
+            if ($log->entity_type) {
+                $line .= " [Entity: {$log->entity_type}#{$log->entity_id}]";
+            }
+            
+            if ($log->contract_id) {
+                $line .= " [Contract: {$log->contract_id}]";
+            }
+            
             if ($log->user) {
-                $line .= " (User: {$log->user->name})";
+                $line .= " (User: " . trim($log->user->name . ' ' . ($log->user->cognome ?? '')) . ")";
             }
 
             if ($log->stack_trace) {
@@ -936,7 +1402,7 @@ class LogController extends Controller
      */
     private function exportAsCsv($logs, string $filename)
     {
-        $headers = ['ID', 'Datetime', 'Level', 'Source', 'Message', 'User', 'IP Address'];
+        $headers = ['ID', 'Datetime', 'Level', 'Source', 'Entity Type', 'Entity ID', 'Contract ID', 'Message', 'User', 'IP Address', 'City', 'Country', 'Device'];
         
         $rows = $logs->map(function ($log) {
             return [
@@ -944,9 +1410,15 @@ class LogController extends Controller
                 $log->datetime?->format('Y-m-d H:i:s'),
                 $log->level,
                 $log->source,
-                str_replace(["\r", "\n"], ' ', $log->message), // Remove newlines for CSV
-                $log->user?->name ?? 'System',
+                $log->entity_type ?? '-',
+                $log->entity_id ?? '-',
+                $log->contract_id ?? '-',
+                str_replace(["\r", "\n"], ' ', $log->message),
+                $log->user ? trim($log->user->name . ' ' . ($log->user->cognome ?? '')) : 'System',
                 $log->ip_address ?? '-',
+                $log->geo_city ?? '-',
+                $log->geo_country ?? '-',
+                $log->device_type ?? '-',
             ];
         });
 
@@ -954,7 +1426,6 @@ class LogController extends Controller
         
         foreach ($rows as $row) {
             $escapedRow = array_map(function ($field) {
-                // Escape quotes and wrap in quotes if contains comma
                 $field = str_replace('"', '""', $field ?? '');
                 if (strpos($field, ',') !== false || strpos($field, '"') !== false) {
                     return '"' . $field . '"';

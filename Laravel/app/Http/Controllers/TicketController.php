@@ -47,6 +47,15 @@ class TicketController extends Controller
                 $query->where('status', '!=', Ticket::STATUS_DELETED);
             }
 
+            // Filter by category (supports multiselect - comma separated or array)
+            if (request()->has('category') && request()->category !== '' && request()->category !== 'all') {
+                $categories = request()->category;
+                if (is_string($categories)) {
+                    $categories = explode(',', $categories);
+                }
+                $query->whereIn('category', $categories);
+            }
+
             $tickets = $query->orderBy('created_at', 'desc')->get();
 
             return response()->json([
@@ -364,6 +373,104 @@ class TicketController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error updating ticket priority: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500", 
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    /**
+     * Update ticket category
+     * Only admin (role 1, 6) or assigned backoffice (role 2) can change category
+     */
+    public function updateTicketCategory(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'ticket_id' => 'required|exists:tickets,id',
+                'category' => 'required|in:ordinary,extraordinary'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "errors" => $validator->errors()
+                ]);
+            }
+
+            $user = Auth::user();
+            $userRole = $user->role->id;
+            $ticket = Ticket::findOrFail($request->ticket_id);
+
+            // Permission check: admin (1, 6) OR assigned backoffice (role 2)
+            $isAdmin = in_array($userRole, [1, 6]);
+            $isAssignedBackoffice = $userRole == 2 && $ticket->assigned_to_user_id == $user->id;
+
+            if (!$isAdmin && !$isAssignedBackoffice) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Access denied. Only administrators or assigned backoffice can change ticket category."
+                ]);
+            }
+
+            $oldCategory = $ticket->category;
+            $newCategory = $request->category;
+
+            // Check if category actually changed
+            if ($oldCategory === $newCategory) {
+                return response()->json([
+                    "response" => "ok",
+                    "status" => "200", 
+                    "message" => "Category unchanged",
+                    "category" => $newCategory
+                ]);
+            }
+
+            $ticket->update([
+                'category' => $newCategory
+            ]);
+
+            // Log the category change
+            TicketChangeLog::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'previous_status' => null,
+                'new_status' => null,
+                'previous_priority' => null,
+                'new_priority' => null,
+                'previous_category' => $oldCategory,
+                'new_category' => $newCategory,
+                'change_type' => TicketChangeLog::CHANGE_TYPE_CATEGORY
+            ]);
+
+            $categoryLabels = Ticket::getCategoryOptions();
+            $oldLabel = $categoryLabels[$oldCategory] ?? $oldCategory;
+            $newLabel = $categoryLabels[$newCategory] ?? $newCategory;
+
+            // Create a message for the category change
+            TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'message' => "Categoria cambiata da '{$oldLabel}' a '{$newLabel}'",
+                'message_type' => 'status_change'
+            ]);
+
+            Log::info("Ticket #{$ticket->ticket_number} category changed from '{$oldCategory}' to '{$newCategory}' by user #{$user->id}");
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200", 
+                "message" => "Category updated successfully",
+                "old_category" => $oldLabel,
+                "new_category" => $newLabel
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error updating ticket category: ' . $e->getMessage());
             return response()->json([
                 "response" => "error",
                 "status" => "500", 

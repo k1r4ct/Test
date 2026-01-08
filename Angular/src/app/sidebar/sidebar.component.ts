@@ -40,6 +40,7 @@ export const ROUTES_ADMIN: RouteInfo[] = [
   { path: '/macroprodotti', title: 'Gestione MacroProdotti', icon: 'nc-tile-56', materialIcon: 'category', class: '' },
   { path: '/utenti', title: 'Gestione Utenti', icon: 'nc-circle-10', materialIcon: 'manage_accounts', class: '' },
   { path: '/ticket', title: 'Gestione Ticket', icon: 'nc-send', materialIcon: 'support_agent', class: '' },
+  { path: '/logs', title: 'Gestione Log', icon: 'nc-paper', materialIcon: 'article', class: '' },
 ];
 
 export const ROUTES_BKOFF: RouteInfo[] = [

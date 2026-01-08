@@ -168,7 +168,7 @@ class User extends Authenticatable implements JWTSubject
 
     protected static function booted()
     {
-        // Log user creation
+        // Log user creation with entity tracking
         static::created(function ($user) {
             $operatorName = Auth::check() 
                 ? Auth::user()->name . ' ' . Auth::user()->cognome 
@@ -176,23 +176,26 @@ class User extends Authenticatable implements JWTSubject
 
             $user->load(['Role', 'qualification']);
 
-            SystemLogService::database()->info("User created", [
-                'user_id' => $user->id,
-                'codice' => $user->codice,
-                'name' => $user->name,
-                'cognome' => $user->cognome,
-                'email' => $user->email,
-                'role_id' => $user->role_id,
-                'role_name' => $user->Role?->descrizione,
-                'qualification_id' => $user->qualification_id,
-                'qualification_name' => $user->qualification?->descrizione,
-                'stato_user' => $user->stato_user,
-                'user_id_padre' => $user->user_id_padre,
-                'created_by' => $operatorName,
-            ]);
+            // Use forEntity to populate the new audit columns
+            SystemLogService::userActivity()
+                ->forEntity('user', $user->id)
+                ->info("User created", [
+                    'user_id' => $user->id,
+                    'codice' => $user->codice,
+                    'name' => $user->name,
+                    'cognome' => $user->cognome,
+                    'email' => $user->email,
+                    'role_id' => $user->role_id,
+                    'role_name' => $user->Role?->descrizione,
+                    'qualification_id' => $user->qualification_id,
+                    'qualification_name' => $user->qualification?->descrizione,
+                    'stato_user' => $user->stato_user,
+                    'user_id_padre' => $user->user_id_padre,
+                    'created_by' => $operatorName,
+                ]);
         });
 
-        // Log user updates
+        // Log user updates with change tracking and entity tracking
         static::updated(function ($user) {
             $changes = $user->getChanges();
             $original = $user->getOriginal();
@@ -251,27 +254,33 @@ class User extends Authenticatable implements JWTSubject
                     $logData['new_qualification_name'] = $user->qualification?->descrizione;
                 }
 
-                SystemLogService::database()->{$level}("User updated", $logData);
+                // Use forEntity to populate the new audit columns
+                SystemLogService::userActivity()
+                    ->forEntity('user', $user->id)
+                    ->{$level}("User updated", $logData);
             }
         });
 
-        // Log user deletion
+        // Log user deletion with entity tracking
         static::deleted(function ($user) {
             $operatorName = Auth::check() 
                 ? Auth::user()->name . ' ' . Auth::user()->cognome 
                 : 'Sistema';
 
-            SystemLogService::database()->warning("User deleted", [
-                'user_id' => $user->id,
-                'codice' => $user->codice,
-                'name' => $user->name,
-                'cognome' => $user->cognome,
-                'email' => $user->email,
-                'role_id' => $user->role_id,
-                'contracts_count' => $user->contract()->count(),
-                'team_members_count' => $user->teamMembers()->count(),
-                'deleted_by' => $operatorName,
-            ]);
+            // Use forEntity to populate the new audit columns
+            SystemLogService::userActivity()
+                ->forEntity('user', $user->id)
+                ->warning("User deleted", [
+                    'user_id' => $user->id,
+                    'codice' => $user->codice,
+                    'name' => $user->name,
+                    'cognome' => $user->cognome,
+                    'email' => $user->email,
+                    'role_id' => $user->role_id,
+                    'contracts_count' => $user->contract()->count(),
+                    'team_members_count' => $user->teamMembers()->count(),
+                    'deleted_by' => $operatorName,
+                ]);
         });
     }
 
@@ -292,6 +301,17 @@ class User extends Authenticatable implements JWTSubject
         }
 
         return str_repeat('*', $length - 4) . substr($value, -4);
+    }
+
+    /**
+     * Get full name.
+     */
+    public function getFullNameAttribute(): string
+    {
+        if ($this->ragione_sociale) {
+            return $this->ragione_sociale;
+        }
+        return trim(($this->name ?? '') . ' ' . ($this->cognome ?? ''));
     }
 
     // ==================== E-COMMERCE COMPUTED ATTRIBUTES ====================

@@ -16,6 +16,7 @@ class Ticket extends Model
         'status',
         'previous_status',
         'priority',
+        'category',
         'contract_id',
         'created_by_user_id',
         'assigned_to_user_id',
@@ -50,6 +51,12 @@ class Ticket extends Model
     public const PRIORITY_LOW = 'low';
     public const PRIORITY_MEDIUM = 'medium';
     public const PRIORITY_HIGH = 'high';
+
+    /**
+     * Category constants
+     */
+    public const CATEGORY_ORDINARY = 'ordinary';
+    public const CATEGORY_EXTRAORDINARY = 'extraordinary';
 
     // Relationships
     public function contract()
@@ -135,6 +142,18 @@ class Ticket extends Model
     public function scopeByPriority($query, $priority)
     {
         return $query->where('priority', $priority);
+    }
+
+    /**
+     * Scope to filter by category
+     * Supports single category or array of categories
+     */
+    public function scopeByCategory($query, $category)
+    {
+        if (is_array($category)) {
+            return $query->whereIn('category', $category);
+        }
+        return $query->where('category', $category);
     }
 
     public function scopeByContract($query, $contractId)
@@ -229,6 +248,22 @@ class Ticket extends Model
                      ->where('deleted_at', '<=', now()->subDays($days));
     }
 
+    /**
+     * Scope for ordinary tickets
+     */
+    public function scopeOrdinary($query)
+    {
+        return $query->where('category', self::CATEGORY_ORDINARY);
+    }
+
+    /**
+     * Scope for extraordinary tickets
+     */
+    public function scopeExtraordinary($query)
+    {
+        return $query->where('category', self::CATEGORY_EXTRAORDINARY);
+    }
+
     // Attributes
     public function getCustomerNameAttribute()
     {
@@ -274,6 +309,31 @@ class Ticket extends Model
             return $this->createdBy->email;
         }
         return 'N/A';
+    }
+
+    /**
+     * Get the category label in Italian
+     */
+    public function getCategoryLabelAttribute(): string
+    {
+        $labels = self::getCategoryOptions();
+        return $labels[$this->category] ?? $this->category;
+    }
+
+    /**
+     * Check if ticket is ordinary
+     */
+    public function isOrdinary(): bool
+    {
+        return $this->category === self::CATEGORY_ORDINARY;
+    }
+
+    /**
+     * Check if ticket is extraordinary
+     */
+    public function isExtraordinary(): bool
+    {
+        return $this->category === self::CATEGORY_EXTRAORDINARY;
     }
 
     /**
@@ -403,6 +463,17 @@ class Ticket extends Model
         ];
     }
 
+    /**
+     * Get available category options
+     */
+    public static function getCategoryOptions()
+    {
+        return [
+            self::CATEGORY_ORDINARY      => 'Ordinario',
+            self::CATEGORY_EXTRAORDINARY => 'Straordinario',
+        ];
+    }
+
     // Boot method to auto-generate ticket number and handle cascading deletes
     protected static function boot()
     {
@@ -411,6 +482,10 @@ class Ticket extends Model
         static::creating(function ($ticket) {
             if (empty($ticket->ticket_number)) {
                 $ticket->ticket_number = self::generateTicketNumber();
+            }
+            // Set default category if not provided
+            if (empty($ticket->category)) {
+                $ticket->category = self::CATEGORY_ORDINARY;
             }
         });
 

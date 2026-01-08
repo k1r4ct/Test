@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Services\SystemLogService;
 use Illuminate\Support\Facades\Auth;
+use App\Services\SystemLogService;
 
 class backoffice_note extends Model
 {
@@ -27,38 +27,107 @@ class backoffice_note extends Model
 
     protected static function booted()
     {
-        // Log note creation
+        // Log note creation with contract tracking
         static::created(function ($note) {
-            $userName = Auth::check() ? Auth::user()->name . ' ' . Auth::user()->cognome : 'Sistema';
+            $operatorName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
             
-            SystemLogService::database()->info("Backoffice note created", [
+            // Build logger with entity and contract tracking
+            $logger = SystemLogService::userActivity()
+                ->forEntity('backoffice_note', $note->id);
+
+            // Link to contract for filtering
+            if ($note->contract_id) {
+                $logger->forContract($note->contract_id);
+            }
+
+            // Get contract code for context
+            $contractCode = $note->contract?->codice_contratto;
+
+            $logger->info("Backoffice note created", [
                 'note_id' => $note->id,
                 'contract_id' => $note->contract_id,
-                'created_by' => $userName,
+                'contract_code' => $contractCode,
+                'created_by' => $operatorName,
                 'note_preview' => static::truncateNote($note->nota),
             ]);
         });
 
-        // Log note updates
+        // Log note updates with contract tracking
         static::updated(function ($note) {
-            $userName = Auth::check() ? Auth::user()->name . ' ' . Auth::user()->cognome : 'Sistema';
-            
-            SystemLogService::database()->info("Backoffice note updated", [
-                'note_id' => $note->id,
-                'contract_id' => $note->contract_id,
-                'updated_by' => $userName,
-                'note_preview' => static::truncateNote($note->nota),
-            ]);
+            $changes = $note->getChanges();
+            $original = $note->getOriginal();
+
+            $changesForLog = [];
+            foreach ($changes as $field => $newValue) {
+                if ($field !== 'updated_at') {
+                    $oldValue = $original[$field] ?? null;
+                    
+                    // Truncate nota field in changes
+                    if ($field === 'nota') {
+                        $oldValue = static::truncateNote($oldValue);
+                        $newValue = static::truncateNote($newValue);
+                    }
+                    
+                    $changesForLog[$field] = [
+                        'old' => $oldValue,
+                        'new' => $newValue,
+                    ];
+                }
+            }
+
+            if (!empty($changesForLog)) {
+                $operatorName = Auth::check() 
+                    ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                    : 'Sistema';
+                
+                // Build logger with entity and contract tracking
+                $logger = SystemLogService::userActivity()
+                    ->forEntity('backoffice_note', $note->id);
+
+                // Link to contract for filtering
+                if ($note->contract_id) {
+                    $logger->forContract($note->contract_id);
+                }
+
+                // Get contract code for context
+                $contractCode = $note->contract?->codice_contratto;
+
+                $logger->info("Backoffice note updated", [
+                    'note_id' => $note->id,
+                    'contract_id' => $note->contract_id,
+                    'contract_code' => $contractCode,
+                    'changes' => $changesForLog,
+                    'updated_by' => $operatorName,
+                ]);
+            }
         });
 
-        // Log note deletion
+        // Log note deletion with contract tracking
         static::deleted(function ($note) {
-            $userName = Auth::check() ? Auth::user()->name . ' ' . Auth::user()->cognome : 'Sistema';
+            $operatorName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
             
-            SystemLogService::database()->warning("Backoffice note deleted", [
+            // Build logger with entity and contract tracking
+            $logger = SystemLogService::userActivity()
+                ->forEntity('backoffice_note', $note->id);
+
+            // Link to contract for filtering
+            if ($note->contract_id) {
+                $logger->forContract($note->contract_id);
+            }
+
+            // Get contract code for context
+            $contractCode = $note->contract?->codice_contratto;
+
+            $logger->warning("Backoffice note deleted", [
                 'note_id' => $note->id,
                 'contract_id' => $note->contract_id,
-                'deleted_by' => $userName,
+                'contract_code' => $contractCode,
+                'deleted_by' => $operatorName,
+                'note_preview' => static::truncateNote($note->nota),
             ]);
         });
     }

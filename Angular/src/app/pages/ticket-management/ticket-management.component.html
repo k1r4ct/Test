@@ -169,6 +169,36 @@
         </div>
       </div>
       
+      <!-- Categoria Multi-Select -->
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-certificate"></i> Categoria
+        </label>
+        <div class="multi-select-container">
+          <div class="multi-select-trigger" (click)="toggleCategoryDropdown(); $event.stopPropagation()">
+            <span class="multi-select-label">{{getSelectedCategoryLabels()}}</span>
+            <i class="fas fa-chevron-down" [class.fa-chevron-up]="showCategoryDropdown"></i>
+          </div>
+          <div class="multi-select-dropdown" *ngIf="showCategoryDropdown" (click)="$event.stopPropagation()">
+            <div class="multi-select-option" 
+                 *ngFor="let category of categories"
+                 (click)="toggleCategoryFilter(category.value)">
+              <div class="custom-checkbox" 
+                   [style.background-color]="isCategorySelected(category.value) ? category.color : 'transparent'"
+                   [style.border-color]="category.color">
+                <i class="fas fa-check" *ngIf="isCategorySelected(category.value)"></i>
+              </div>
+              <span>
+                <i [class]="getCategoryIcon(category.value)" 
+                   [class.category-extraordinary-icon]="category.value === 'extraordinary'"
+                   style="margin-right: 6px;"></i>
+                {{category.label}}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- Stato Multi-Select -->
       <div class="filter-group">
         <label class="filter-label">
@@ -327,15 +357,29 @@
           placeholder="Nome cliente">
       </div>
       
-      <!-- Data Apertura Ticket -->
+      <!-- Date Range Filter - From -->
       <div class="filter-group">
         <label class="filter-label">
-          <i class="fas fa-calendar-alt"></i> Data Apertura Ticket
+          <i class="fas fa-calendar-alt"></i> Data Da
         </label>
         <input 
           type="date" 
           class="filter-input" 
-          [(ngModel)]="filters.openingDate"
+          [(ngModel)]="filters.openingDateFrom"
+          [max]="filters.openingDateTo || ''"
+          (change)="applyFilters()">
+      </div>
+
+      <!-- Date Range Filter - To -->
+      <div class="filter-group">
+        <label class="filter-label">
+          <i class="fas fa-calendar-check"></i> Data A
+        </label>
+        <input 
+          type="date" 
+          class="filter-input" 
+          [(ngModel)]="filters.openingDateTo"
+          [min]="filters.openingDateFrom || ''"
           (change)="applyFilters()">
       </div>
     </div>
@@ -442,6 +486,15 @@
                 </div>
               </div>
               
+              <!-- Category Badge (minimized) -->
+              <span 
+                class="ticket-category-badge-mini"
+                [class.category-ordinary]="ticket.category === 'ordinary'"
+                [class.category-extraordinary]="ticket.category === 'extraordinary'"
+                [title]="getCategoryLabel(ticket.category)">
+                <i [class]="getCategoryIcon(ticket.category)"></i>
+              </span>
+              
               <button class="btn-expand" (click)="toggleMinimizeTicket(ticket.id, $event)" title="Espandi ticket">
                 <i class="fas fa-chevron-down"></i>
               </button>
@@ -502,6 +555,15 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- Category Badge -->
+                <span 
+                  class="ticket-category-badge"
+                  [class.category-ordinary]="ticket.category === 'ordinary'"
+                  [class.category-extraordinary]="ticket.category === 'extraordinary'"
+                  [title]="getCategoryLabel(ticket.category)">
+                  <i [class]="getCategoryIcon(ticket.category)"></i>
+                </span>
 
                 <!-- SOLO IN RISOLTO: bottone archivia -->
                 <div 
@@ -605,6 +667,30 @@
             <label>Priorità:</label>
             <span class="priority-badge" [style.background-color]="getPriorityColor(selectedTicket.priority)">
               {{getPriorityLabel(selectedTicket.priority)}}
+            </span>
+          </div>
+          <div class="info-item">
+            <label>Categoria:</label>
+            <!-- Editable select if user has permission -->
+            <select 
+              *ngIf="canChangeCategory(selectedTicket)"
+              class="category-select"
+              [class.category-ordinary]="selectedTicket.category === 'ordinary'"
+              [class.category-extraordinary]="selectedTicket.category === 'extraordinary'"
+              [ngModel]="selectedTicket.category"
+              (ngModelChange)="updateTicketCategory(selectedTicket, $event)">
+              <option *ngFor="let cat of categories" [value]="cat.value">
+                {{cat.label}}
+              </option>
+            </select>
+            <!-- Read-only badge if no permission -->
+            <span 
+              *ngIf="!canChangeCategory(selectedTicket)"
+              class="category-badge"
+              [class.category-ordinary]="selectedTicket.category === 'ordinary'"
+              [class.category-extraordinary]="selectedTicket.category === 'extraordinary'">
+              <i [class]="getCategoryIcon(selectedTicket.category)"></i>
+              {{getCategoryLabel(selectedTicket.category)}}
             </span>
           </div>
           <div class="info-item">

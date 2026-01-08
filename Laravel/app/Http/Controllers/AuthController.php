@@ -248,10 +248,22 @@ class AuthController extends Controller
         return $teamMembers;
     }
 
+    /**
+     * Search for client/contractor by Codice Fiscale or Partita IVA.
+     * 
+     * POST /api/codFPIva
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function codFPIva(Request $request){
 
         $codFPIva = request('codFPIva');
         $tipoRichiesta = request('tiporicerca');
+        $tipo = null;
+        $result = collect();
+        $result2 = collect();
+        
         if ($tipoRichiesta == "CODICE FISCALE") {
             $result = User::where('codice_fiscale', "=", $codFPIva)->Where('codice_fiscale', "!=", "")->get();
             $tipo = "consumer";
@@ -281,19 +293,47 @@ class AuthController extends Controller
             $trovatoContraente = true;
         }
 
-        $message = [];
-        if ($trovatoCliente) {
-            $message[] = ["Cliente" => $id, "esito" => "Cliente presente in database"];
+        // Log the search with outcome
+        SystemLogService::userActivity()->info('Client/Contractor search by fiscal code', [
+            'search_type' => $tipoRichiesta,
+            'search_value' => $codFPIva,
+            'client_type' => $tipo,
+            'client_found' => $trovatoCliente,
+            'contractor_found' => $trovatoContraente,
+            'client_id' => $trovatoCliente ? $id : null,
+            'contractor_id' => $trovatoContraente ? $id2 : null,
+            'outcome' => ($trovatoCliente || $trovatoContraente) ? 'found' : 'not_found',
+            'searched_by_user_id' => Auth::id(),
+        ]);
+
+        // Maintain original response structure for frontend compatibility
+        if ($trovatoCliente || ($trovatoCliente && $trovatoContraente)) {
+            return response()->json([
+                "response" => "ok", 
+                "status" => "200", 
+                "body" => ["id" => $id, "tipo" => $tipo], 
+                "contraente" => ["id" => $id2]
+            ]);
+        } elseif (!$trovatoCliente && $trovatoContraente) {
+            return response()->json([
+                "response" => "ok", 
+                "status" => "200", 
+                "body" => ["id" => $id, "tipo" => $tipo], 
+                "contraente" => ["id" => $id2]
+            ]);
+        } else {
+            // Not found - frontend will enable new client registration
+            return response()->json(["response" => "ko"]);
         }
-        if ($trovatoContraente) {
-            $message[] = ["Contraente" => $id2, "esito" => "Contraente presente in database"];
-        }
-        if (!$trovatoCliente && !$trovatoContraente) {
-            $message[] = ["esito" => "Nessun dato in archivio"];
-        }
-        return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $message, "cod_cf_piva" => $codFPIva, "tipo_utente" => $tipo, "trovato_cliente" => $trovatoCliente, "trovato_contraente" => $trovatoContraente, "id_cliente" => $id, "id_contraente" => $id2]]);
     }
 
+    /**
+     * Create a new client.
+     * 
+     * POST /api/nuovoCliente
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function nuovoCliente(){
         $nome = $cognome = $codice_fiscale = $partita_iva = $ragione_sociale = "";
 
@@ -347,16 +387,35 @@ class AuthController extends Controller
                 "password" => $password,
             ]);
 
-            // Log new client creation
+            // Log new client creation with full details
             SystemLogService::userActivity()->info('New client created', [
                 'created_user_id' => $utente->id,
-                'tipo' => request('tipo'),
+                'client_type' => request('tipo'),
+                'name' => request('tipo') == 'consumer' ? trim($nome . ' ' . $cognome) : $ragione_sociale,
                 'email' => $email,
+                'telefono' => $telefono,
+                'codice_fiscale' => $codice_fiscale,
+                'partita_iva' => $partita_iva,
+                'citta' => $citta,
+                'provincia' => $provincia,
+                'role_id' => $ruolo,
+                'qualification_id' => $qualifica,
+                'parent_user_id' => $user_padre,
                 'created_by_user_id' => Auth::id(),
             ]);
 
             return response()->json(["response" => "ok", "status" => "200", "body" => ["id" => $utente->id, "tipo" => request('tipo')]]);
         } else {
+            // Log attempt to create duplicate client
+            SystemLogService::userActivity()->warning('Duplicate client creation attempt', [
+                'client_type' => request('tipo'),
+                'codice_fiscale' => $codice_fiscale,
+                'partita_iva' => $partita_iva,
+                'email' => $email,
+                'existing_user_id' => $controlloEsistente->first()->id,
+                'attempted_by_user_id' => Auth::id(),
+            ]);
+
             return response()->json(["response" => "ko", "body" => "Utente gia esistente"]);
         }
     }
@@ -485,44 +544,8 @@ class AuthController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Nessun file ricevuto.'
-        ], 400);
-    }
-
-    public function aggiornaFilesContratto(Request $request){
-        $idContratto = $request->input('idContratto');
-
-        if ($request->hasFile('files')) {
-            $file = $request->file('files');
-            $fileName = $file->getClientOriginalName();
-            $uniqueFileName = $idContratto . "_" . time() . "_" . $fileName;
-            $path = $file->storeAs($idContratto, $uniqueFileName);
-
-            // Log file upload
-            SystemLogService::userActivity()->info('Contract file uploaded', [
-                'contract_id' => $idContratto,
-                'file_name' => $fileName,
-                'uploaded_by_user_id' => Auth::id(),
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'File caricato con successo',
-                'path' => $path
-            ]);
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Nessun file ricevuto.'
-        ], 400);
-    }
-
-    public function cancellaFile(Request $request){
-        $idContratto = $request->input('idContratto');
-        $storagePath = '/' . $idContratto;
+        $idContratto = $request->idContratto;
+        $storagePath = '/' . $request->idContratto;
         $storageFiles = Storage::allFiles($storagePath);
 
         if ($storageFiles) {

@@ -13,6 +13,7 @@ export interface Ticket {
   status: 'new' | 'waiting' | 'resolved' | 'closed' | 'deleted';
   previous_status?: string;
   priority: 'low' | 'medium' | 'high' | 'unassigned';
+  category: 'ordinary' | 'extraordinary';
   contract_id: number;
   contract_code: string;
   created_by_user_id: number;
@@ -74,12 +75,14 @@ export interface TicketFilters {
   contractCode: string;
   product: string[];
   priority: string[];
+  category: string[];
   status: string[];
   assignedTo: string[];
   customer: string;
   seu: string[];
   generatedBy: string[];
-  openingDate: string;
+  openingDateFrom: string;
+  openingDateTo: string;
   contract: string[];
 }
 
@@ -103,12 +106,14 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     contractCode: '',
     product: [],
     priority: [],
+    category: [],
     status: ['new', 'waiting', 'resolved'],
     assignedTo: [],
     customer: '',
     seu: [],
     generatedBy: [],
-    openingDate: '',
+    openingDateFrom: '',
+    openingDateTo: '',
     contract: []
   };
 
@@ -237,6 +242,14 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     { value: 'low', label: 'Bassa', color: '#28a745' },
     { value: 'unassigned', label: 'N/A', color: '#9e9e9e' }
   ];
+
+  categories = [
+    { value: 'ordinary', label: 'Ordinario', color: '#6c757d', icon: 'fa-badge' },
+    { value: 'extraordinary', label: 'Straordinario', color: '#ffc107', icon: 'fa-badge' }
+  ];
+
+  showCategoryDropdown: boolean = false;
+  showCategoryDropdownForTicket: number | null = null;
 
   contracts: any[] = [];
   users: any[] = [];
@@ -733,6 +746,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         description: ticket.description,
         status: ticket.status,
         priority: ticket.priority,
+        category: ticket.category || 'ordinary',
         contract_id: ticket.contract_id,
         contract_code: ticket.contract?.codice_contratto || 'N/A',
         created_by_user_id: ticket.created_by_user_id,
@@ -806,6 +820,11 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         return false;
       }
       
+      // Category filter
+      if (this.filters.category.length > 0 && !this.filters.category.includes(ticket.category)) {
+        return false;
+      }
+      
       if (this.filters.status.length > 0 && !this.filters.status.includes(ticket.status)) {
         return false;
       }
@@ -845,15 +864,25 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
         }
       }
       
-      if (this.filters.openingDate) {
-        const filterDate = new Date(this.filters.openingDate);
+      // Date range filter
+      if (this.filters.openingDateFrom || this.filters.openingDateTo) {
         const ticketDate = new Date(ticket.created_at);
+        ticketDate.setHours(0, 0, 0, 0);
         
-        const filterDateString = filterDate.toISOString().split('T')[0];
-        const ticketDateString = ticketDate.toISOString().split('T')[0];
+        if (this.filters.openingDateFrom) {
+          const fromDate = new Date(this.filters.openingDateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          if (ticketDate < fromDate) {
+            return false;
+          }
+        }
         
-        if (filterDateString !== ticketDateString) {
-          return false;
+        if (this.filters.openingDateTo) {
+          const toDate = new Date(this.filters.openingDateTo);
+          toDate.setHours(23, 59, 59, 999);
+          if (ticketDate > toDate) {
+            return false;
+          }
         }
       }
       
@@ -884,12 +913,14 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
       contractCode: '',
       product: [],
       priority: [],
+      category: [],
       status: ['new', 'waiting', 'resolved'],
       assignedTo: [],
       customer: '',
       seu: [],
       generatedBy: [],
-      openingDate: '',
+      openingDateFrom: '',
+      openingDateTo: '',
       contract: []
       };
 
@@ -1556,6 +1587,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
     this.showStatusDropdown = false;
     this.showProductDropdown = false;
     this.showPriorityDropdown = false;
+    this.showCategoryDropdown = false;
     this.showSeuDropdown = false;
     this.showGeneratedByDropdown = false;
     this.showAssignedToDropdown = false;
@@ -1616,6 +1648,142 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
   getPriorityColor(priority: string): string {
     const priorityObj = this.priorities.find(p => p.value === priority);
     return priorityObj ? priorityObj.color : '#666';
+  }
+
+  // ==================== CATEGORY METHODS ====================
+
+  getCategoryLabel(category: string): string {
+    const categoryObj = this.categories.find(c => c.value === category);
+    return categoryObj ? categoryObj.label : category;
+  }
+
+  getCategoryColor(category: string): string {
+    const categoryObj = this.categories.find(c => c.value === category);
+    return categoryObj ? categoryObj.color : '#6c757d';
+  }
+
+  getCategoryIcon(category: string): string {
+    return 'fas fa-star';
+  }
+
+  toggleCategoryDropdown(): void {
+    this.showCategoryDropdown = !this.showCategoryDropdown;
+    if (this.showCategoryDropdown) {
+      this.closeAllDropdowns();
+      this.showCategoryDropdown = true;
+    }
+  }
+
+  toggleCategoryFilter(categoryValue: string): void {
+    const index = this.filters.category.indexOf(categoryValue);
+    if (index > -1) {
+      this.filters.category.splice(index, 1);
+    } else {
+      this.filters.category.push(categoryValue);
+    }
+    this.applyFilters();
+  }
+
+  isCategorySelected(categoryValue: string): boolean {
+    return this.filters.category.includes(categoryValue);
+  }
+
+  getSelectedCategoryLabels(): string {
+    if (this.filters.category.length === 0) {
+      return 'Tutte le categorie';
+    }
+    if (this.filters.category.length === this.categories.length) {
+      return 'Tutte le categorie';
+    }
+    return this.filters.category
+      .map(c => this.getCategoryLabel(c))
+      .join(', ');
+  }
+
+  /**
+   * Check if user can change ticket category
+   * Only admin (role 1, 6) or assigned backoffice (role 2) can change
+   */
+  canChangeCategory(ticket: Ticket): boolean {
+    if (!this.currentUser || !ticket) return false;
+    
+    // Admin can always change
+    if (this.isAdmin) return true;
+    
+    // Backoffice (role 2) can change only if assigned
+    if (this.userRole === 2 && ticket.assigned_to_user_id === this.currentUser.id) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Update ticket category
+   */
+  updateTicketCategory(ticket: Ticket, newCategory: string): void {
+    if (!this.canChangeCategory(ticket)) {
+      this.snackBar.open(
+        'Non hai i permessi per modificare la categoria',
+        'Chiudi',
+        { 
+          duration: 3000,
+          horizontalPosition: 'center',
+          verticalPosition: 'bottom',
+          panelClass: ['error-snackbar']
+        }
+      );
+      return;
+    }
+
+    const oldCategory = ticket.category;
+    if (oldCategory === newCategory) return;
+
+    const updateSub = this.apiService.updateTicketCategory({
+      ticket_id: ticket.id,
+      category: newCategory as 'ordinary' | 'extraordinary'
+    }).subscribe(
+      (response: any) => {
+        if (response.response === 'ok') {
+          ticket.category = newCategory as 'ordinary' | 'extraordinary';
+          
+          this.snackBar.open(
+            `Categoria aggiornata a "${this.getCategoryLabel(newCategory)}"`,
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['success-snackbar']
+            }
+          );
+        } else {
+          this.snackBar.open(
+            response.message || 'Errore nell\'aggiornamento della categoria',
+            'Chiudi',
+            { 
+              duration: 3000,
+              horizontalPosition: 'center',
+              verticalPosition: 'bottom',
+              panelClass: ['error-snackbar']
+            }
+          );
+        }
+      },
+      (error) => {
+        this.snackBar.open(
+          error.error?.message || 'Errore nell\'aggiornamento della categoria',
+          'Chiudi',
+          { 
+            duration: 3000,
+            horizontalPosition: 'center',
+            verticalPosition: 'bottom',
+            panelClass: ['error-snackbar']
+          }
+        );
+      }
+    );
+    this.subscriptions.push(updateSub);
   }
 
   // ==================== DATE/TIME FORMATTING METHODS ====================

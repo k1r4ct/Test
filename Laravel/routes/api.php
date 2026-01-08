@@ -125,7 +125,8 @@ Route::group(['middleware'=>'api'],function(){
     Route::get('getTickets', [TicketController::class, 'getTickets'])->name('getTickets');
     Route::post('createTicket', [TicketController::class, 'createTicket'])->name('createTicket');
     Route::post('updateTicketStatus', [TicketController::class, 'updateTicketStatus'])->name('updateTicketStatus');
-    Route::post('updateTicketPriority', [TicketController::class, 'updateTicketPriority'])->name('updateTicketPriority'); 
+    Route::post('updateTicketPriority', [TicketController::class, 'updateTicketPriority'])->name('updateTicketPriority');
+    Route::post('updateTicketCategory', [TicketController::class, 'updateTicketCategory'])->name('updateTicketCategory'); 
     Route::post('closeTicket', [TicketController::class, 'closeTicket'])->name('closeTicket');
     Route::post('bulkDeleteTickets', [TicketController::class, 'bulkDeleteTickets'])->name('bulkDeleteTickets');
     Route::get('getTicketMessages/{ticketId}', [TicketController::class, 'getTicketMessages'])->name('getTicketMessages');
@@ -145,9 +146,12 @@ Route::group(['middleware'=>'api'],function(){
     Route::get('logs', [LogController::class, 'index'])->name('logs.index');
     Route::get('logs/stats', [LogController::class, 'getStats'])->name('logs.stats');
     Route::get('logs/sources', [LogController::class, 'getSources'])->name('logs.sources');
+    Route::get('logs/volume', [LogController::class, 'getVolume'])->name('logs.volume');
     Route::get('logs/files', [LogController::class, 'getLogFiles'])->name('logs.files');
     Route::get('logs/export', [LogController::class, 'export'])->name('logs.export');
     Route::get('logs/file', [LogController::class, 'getFileContent'])->name('logs.file');
+    Route::get('logs/filters', [LogController::class, 'getFilters'])->name('logs.filters'); // NEW: Get available filters for dropdowns
+    Route::get('logs/contract/{id}', [LogController::class, 'getContractHistory'])->name('logs.contract-history'); // NEW: Get contract audit trail
     Route::delete('logs/clear', [LogController::class, 'clearLogs'])->name('logs.clear');
     Route::get('logs/{id}', [LogController::class, 'show'])->name('logs.show');
     Route::delete('logs/{id}', [LogController::class, 'destroy'])->name('logs.destroy');

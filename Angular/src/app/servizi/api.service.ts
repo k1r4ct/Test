@@ -163,11 +163,6 @@ export class ApiService implements OnDestroy {
   getDomandeMacro(idMacroProdotto: any, domande: any): Observable<any> {
     let headers = this.headers;
 
-    // console.log(' detro chiamata api getDomandeMacro ');
-    // console.log(' macroprodotto: ' + idMacroProdotto);
-    // console.log(' domande da escludere: ' + domande);
-    // console.log(domande);
-
     return this.http
       .post(
         this.global.API_URL + "getDomandeMacro/" + idMacroProdotto,
@@ -180,10 +175,6 @@ export class ApiService implements OnDestroy {
   getRisposteSelect(idDomanda: any, risposta: any): Observable<any> {
     let headers = this.headers;
 
-    // console.log("-------------------------------- ger risp select");
-    // console.log(" idDomanda: " + idDomanda);
-    // console.log(" risposta: " + risposta);
-
     return this.http
       .post(
         this.global.API_URL + "getRisposteSelect/" + idDomanda,
@@ -192,6 +183,7 @@ export class ApiService implements OnDestroy {
       )
       .pipe(takeUntil(this.destroy$));
   }
+
   //  LISTA DELLE CHIAMATE API PER DEI VARI COMPONENTI
 
   ListaProdotti(): Observable<any> {
@@ -286,7 +278,6 @@ export class ApiService implements OnDestroy {
   }
 
   storeContratto(form: any): Observable<any> {
-    //console.log(form);
     let headers = this.headers;
     return this.http
       .post(this.global.API_URL + "nuovoContratto", form, { headers })
@@ -301,7 +292,6 @@ export class ApiService implements OnDestroy {
   }
 
   salvaDomande(form: any): Observable<any> {
-    //console.log(form);
     let headers = this.headers;
     return this.http
       .post(this.global.API_URL + "salvaDomande", form, { headers })
@@ -319,19 +309,14 @@ export class ApiService implements OnDestroy {
       per_page: perPage.toString(),
     };
 
-    //console.log(`API - Richiesta contratti: page=${page}, per_page=${perPage}`);
-
     return this.http
       .post(this.global.API_URL + "getContratti" + id, params, { headers })
       .pipe(
         tap((response: any) => {
-          //console.log('API - Risposta contratti ricevuta:', response);
-
-          // Verifica struttura dati della risposta
           if (response && response.body && response.body.pagination) {
-            //console.log('API - Dati paginazione:', response.body.pagination);
+            // Pagination data available
           } else {
-            //console.warn('API - Nessun dato di paginazione nella risposta');
+            // No pagination data
           }
         }),
         takeUntil(this.destroy$)
@@ -365,21 +350,16 @@ export class ApiService implements OnDestroy {
       sort_direction: sortDirection,
     };
 
-    //console.log(`API - Ricerca contratti: userId=${userId}, page=${page}, per_page=${perPage}, sort=${sortField}:${sortDirection}, filters=`, filters);
-
     return this.http
       .post(this.global.API_URL + "searchContratti/" + userId, params, {
         headers,
       })
       .pipe(
         tap((response: any) => {
-          //console.log('API - Risposta ricerca contratti ricevuta:', response);
-
-          // Verifica struttura dati della risposta
           if (response && response.body && response.body.pagination) {
-            //console.log('API - Dati paginazione ricerca:', response.body.pagination);
+            // Pagination data available
           } else {
-            //console.warn('API - Nessun dato di paginazione nella risposta di ricerca');
+            // No pagination data
           }
         }),
         takeUntil(this.destroy$)
@@ -387,7 +367,6 @@ export class ApiService implements OnDestroy {
   }
 
   updateContratto(form: any): Observable<any> {
-    //console.log(form);
     let headers = this.headers;
     return this.http
       .post(this.global.API_URL + "updateContratto", form, { headers })
@@ -426,6 +405,7 @@ export class ApiService implements OnDestroy {
       .get(this.global.API_URL + "getPagamentoSystem", { headers })
       .pipe(takeUntil(this.destroy$));
   }
+
   uploadProfileImage(form: any): Observable<any> {
     let headers = this.headers;
     return this.http
@@ -441,7 +421,7 @@ export class ApiService implements OnDestroy {
   }
 
   getFilesForContract(contractId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.global.API_URL}getFiles${contractId}`); // O l'endpoint corretto
+    return this.http.get<any[]>(`${this.global.API_URL}getFiles${contractId}`);
   }
 
   getContCodFPIva(form: any): Observable<any> {
@@ -471,6 +451,7 @@ export class ApiService implements OnDestroy {
       .post(this.global.API_URL + "allMacroProduct" + id, { headers })
       .pipe(takeUntil(this.destroy$));
   }
+
   GetallMacroProduct(): Observable<any> {
     let headers = this.headers;
     return this.http
@@ -514,12 +495,14 @@ export class ApiService implements OnDestroy {
       .post(this.global.API_URL + "disabilitaProdotto" + id, { headers })
       .pipe(takeUntil(this.destroy$));
   }
+
   abilitaProdotto(id: any): Observable<any> {
     let headers = this.headers;
     return this.http
       .post(this.global.API_URL + "abilitaProdotto" + id, { headers })
       .pipe(takeUntil(this.destroy$));
   }
+
   cancellaProdotto(id: any): Observable<any> {
     let headers = this.headers;
     return this.http
@@ -529,9 +512,6 @@ export class ApiService implements OnDestroy {
 
   updateProdotto(form: any): Observable<any> {
     let headers = this.headers;
-    //console.log(" update prodotto ");
-    //console.log(form);
-
     return this.http
       .post(this.global.API_URL + "updateProdotto", form, { headers })
       .pipe(takeUntil(this.destroy$));
@@ -539,7 +519,6 @@ export class ApiService implements OnDestroy {
 
   updateMacroProdotto(form: any): Observable<any> {
     let headers = this.headers;
-    //console.log(form);
     return this.http
       .post(this.global.API_URL + "updateMacroProdotto", form, { headers })
       .pipe(takeUntil(this.destroy$));
@@ -565,6 +544,7 @@ export class ApiService implements OnDestroy {
       .get(this.global.API_URL + "getStatiLeads", { headers })
       .pipe(takeUntil(this.destroy$));
   }
+
   appuntamentoLead(form: any): Observable<any> {
     let headers = this.headers;
     return this.http
@@ -593,12 +573,6 @@ export class ApiService implements OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
-  /* getColorRowStatusLead(id: any): Observable<any> {
-    let headers = this.headers;
-    return this.http.get(this.global.API_URL + 'getColorRowStatusLead' + id, { headers }).pipe(
-      takeUntil(this.destroy$)
-    );
-  } */
   getMessageNotification(): Observable<any> {
     let headers = this.headers;
     return this.http
@@ -703,11 +677,19 @@ export class ApiService implements OnDestroy {
 
   /**
    * Recupera la lista dei ticket
+   * @param filters - Optional filters including category (supports comma-separated for multiselect)
    */
-  getTickets(): Observable<any> {
+  getTickets(filters: { category?: string } = {}): Observable<any> {
     let headers = this.headers;
+    let params = new HttpParams();
+    
+    // Category filter (supports multiselect: 'ordinary,extraordinary')
+    if (filters.category && filters.category !== 'all') {
+      params = params.set('category', filters.category);
+    }
+    
     return this.http
-      .get(this.global.API_URL + "getTickets", { headers })
+      .get(this.global.API_URL + "getTickets", { headers, params })
       .pipe(takeUntil(this.destroy$));
   }
 
@@ -780,6 +762,17 @@ export class ApiService implements OnDestroy {
     let headers = this.headers;
     return this.http
       .post(this.global.API_URL + "updateTicketPriority", form, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Cambia la categoria del ticket (ordinary, extraordinary)
+   * Solo admin o backoffice assegnato possono cambiare
+   */
+  updateTicketCategory(form: { ticket_id: number; category: 'ordinary' | 'extraordinary' }): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + "updateTicketCategory", form, { headers })
       .pipe(takeUntil(this.destroy$));
   }
 
@@ -938,6 +931,305 @@ export class ApiService implements OnDestroy {
     let headers = this.headers;
     return this.http
       .delete(this.global.API_URL + `attachments/${attachmentId}`, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  // -------------------- SYSTEM LOGS API --------------------
+
+  /**
+   * Get paginated logs with filters including audit trail and device tracking fields
+   * @param filters - Optional filters (source, level, search, date_from, date_to, entity_type, contract_id, device tracking, etc.)
+   */
+  getLogs(filters: {
+    source?: string;
+    level?: string;
+    search?: string;
+    user_id?: number;
+    date_from?: string;
+    date_to?: string;
+    per_page?: number;
+    page?: number;
+    sort_by?: string;
+    sort_dir?: 'asc' | 'desc';
+    // Audit trail filters
+    entity_type?: string;
+    entity_id?: number;
+    contract_id?: number;
+    contract_code?: string;
+    with_changes?: boolean;
+    with_entity_tracking?: boolean;
+    // Device tracking filters
+    device_fingerprint?: string;
+    geo_country?: string;
+    geo_city?: string;
+    geo_isp?: string;
+    device_type?: string;
+    device_browser?: string;
+    device_os?: string;
+    screen_resolution?: string;
+    timezone?: string;
+  } = {}): Observable<any> {
+    let headers = this.headers;
+    let params = new HttpParams();
+    
+    // Basic filters
+    if (filters.source) params = params.set('source', filters.source);
+    if (filters.level) params = params.set('level', filters.level);
+    if (filters.search) params = params.set('search', filters.search);
+    if (filters.user_id) params = params.set('user_id', filters.user_id.toString());
+    if (filters.date_from) params = params.set('date_from', filters.date_from);
+    if (filters.date_to) params = params.set('date_to', filters.date_to);
+    if (filters.per_page) params = params.set('per_page', filters.per_page.toString());
+    if (filters.page) params = params.set('page', filters.page.toString());
+    if (filters.sort_by) params = params.set('sort_by', filters.sort_by);
+    if (filters.sort_dir) params = params.set('sort_dir', filters.sort_dir);
+    
+    // Audit trail filters
+    if (filters.entity_type) params = params.set('entity_type', filters.entity_type);
+    if (filters.entity_id) params = params.set('entity_id', filters.entity_id.toString());
+    if (filters.contract_id) params = params.set('contract_id', filters.contract_id.toString());
+    if (filters.contract_code) params = params.set('contract_code', filters.contract_code);
+    if (filters.with_changes !== undefined) params = params.set('with_changes', filters.with_changes ? '1' : '0');
+    if (filters.with_entity_tracking !== undefined) params = params.set('with_entity_tracking', filters.with_entity_tracking ? '1' : '0');
+    
+    // Device tracking filters - FIXED: All filters now included
+    if (filters.device_fingerprint) params = params.set('device_fingerprint', filters.device_fingerprint);
+    if (filters.geo_country) params = params.set('geo_country', filters.geo_country);
+    if (filters.geo_city) params = params.set('geo_city', filters.geo_city);
+    if (filters.geo_isp) params = params.set('geo_isp', filters.geo_isp);
+    if (filters.device_type) params = params.set('device_type', filters.device_type);
+    if (filters.device_browser) params = params.set('device_browser', filters.device_browser);
+    if (filters.device_os) params = params.set('device_os', filters.device_os);
+    if (filters.screen_resolution) params = params.set('screen_resolution', filters.screen_resolution);
+    if (filters.timezone) params = params.set('timezone', filters.timezone);
+
+    return this.http
+      .get(this.global.API_URL + 'logs', { headers, params })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get single log details
+   */
+  getLog(id: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + `logs/${id}`, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get log statistics for dashboard
+   */
+  getLogStats(source?: string): Observable<any> {
+    let headers = this.headers;
+    let params = new HttpParams();
+    if (source) params = params.set('source', source);
+
+    return this.http
+      .get(this.global.API_URL + 'logs/stats', { headers, params })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get log volume data for chart (last 24h by default)
+   */
+  getLogVolume(source?: string, hours: number = 24): Observable<any> {
+    let headers = this.headers;
+    let params = new HttpParams().set('hours', hours.toString());
+    if (source) params = params.set('source', source);
+
+    return this.http
+      .get(this.global.API_URL + 'logs/volume', { headers, params })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get available log sources with counts
+   */
+  getLogSources(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + 'logs/sources', { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get available filters for log dropdown menus
+   * Returns: entity_types, sources, levels, users, device tracking options with counts
+   */
+  getLogFilters(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + 'logs/filters', { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get complete audit history for a specific contract
+   * @param contractId - Contract ID
+   * @param limit - Maximum results (default 100, max 500)
+   */
+  getContractHistory(contractId: number, limit: number = 100): Observable<any> {
+    let headers = this.headers;
+    let params = new HttpParams().set('limit', limit.toString());
+    
+    return this.http
+      .get(this.global.API_URL + `logs/contract/${contractId}`, { headers, params })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get log files list
+   */
+  getLogFiles(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + 'logs/files', { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get log file content
+   */
+  getLogFileContent(source: string = 'all', fromDb: boolean = true, limit: number = 500): Observable<any> {
+    let headers = this.headers;
+    let params = new HttpParams()
+      .set('source', source)
+      .set('from_db', fromDb.toString())
+      .set('limit', limit.toString());
+
+    return this.http
+      .get(this.global.API_URL + 'logs/file', { headers, params })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Export logs in various formats with audit trail filters
+   */
+  exportLogs(format: 'csv' | 'json' | 'txt', filters: {
+    source?: string;
+    level?: string;
+    search?: string;
+    date_from?: string;
+    date_to?: string;
+    // Audit trail filters
+    entity_type?: string;
+    contract_id?: number;
+  } = {}): Observable<Blob> {
+    let headers = this.headers;
+    let params = new HttpParams().set('format', format);
+    
+    if (filters.source) params = params.set('source', filters.source);
+    if (filters.level) params = params.set('level', filters.level);
+    if (filters.search) params = params.set('search', filters.search);
+    if (filters.date_from) params = params.set('date_from', filters.date_from);
+    if (filters.date_to) params = params.set('date_to', filters.date_to);
+    // Audit trail filters
+    if (filters.entity_type) params = params.set('entity_type', filters.entity_type);
+    if (filters.contract_id) params = params.set('contract_id', filters.contract_id.toString());
+
+    return this.http
+      .get(this.global.API_URL + 'logs/export', { 
+        headers, 
+        params, 
+        responseType: 'blob' 
+      })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Delete a single log entry (Admin only)
+   */
+  deleteLog(id: number): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .delete(this.global.API_URL + `logs/${id}`, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Clear logs by source (Admin only)
+   */
+  clearLogs(source?: string): Observable<any> {
+    let headers = this.headers;
+    let params = new HttpParams();
+    if (source) params = params.set('source', source);
+
+    return this.http
+      .delete(this.global.API_URL + 'logs/clear', { headers, params })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  // -------------------- LOG SETTINGS API --------------------
+
+  /**
+   * Get all log settings grouped by category
+   */
+  getLogSettings(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + 'log-settings', { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get a single log setting
+   */
+  getLogSetting(key: string): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + `log-settings/${key}`, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Update a single log setting
+   */
+  updateLogSetting(key: string, value: any): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .put(this.global.API_URL + `log-settings/${key}`, { value }, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Bulk update multiple log settings
+   */
+  bulkUpdateLogSettings(settings: { key: string; value: any }[]): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + 'log-settings/bulk-update', { settings }, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Reset all log settings to defaults (Admin only)
+   */
+  resetLogSettings(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + 'log-settings/reset', {}, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Run manual cleanup (Admin only)
+   */
+  runLogCleanup(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .post(this.global.API_URL + 'log-settings/run-cleanup', {}, { headers })
+      .pipe(takeUntil(this.destroy$));
+  }
+
+  /**
+   * Get cleanup statistics
+   */
+  getLogCleanupStats(): Observable<any> {
+    let headers = this.headers;
+    return this.http
+      .get(this.global.API_URL + 'log-settings/cleanup-stats', { headers })
       .pipe(takeUntil(this.destroy$));
   }
 }

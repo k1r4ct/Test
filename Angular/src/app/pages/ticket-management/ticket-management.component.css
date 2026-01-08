@@ -277,7 +277,12 @@
 }
 
 .filter-group.dropdown-open {
-  z-index: 100 !important;
+  z-index: 1000 !important;
+}
+
+/* Ensure filter groups with open dropdowns stay on top */
+.filter-group:has(.multi-select-dropdown) {
+  z-index: 500;
 }
 
 @keyframes fadeInCascade {
@@ -395,6 +400,17 @@
   z-index: 100;
 }
 
+/* When dropdown is open, container needs higher z-index */
+.multi-select-container:focus-within,
+.multi-select-container:has(.multi-select-dropdown) {
+  z-index: 10000;
+}
+
+/* Fallback for browsers without :has() support */
+.filter-group:hover .multi-select-container {
+  z-index: 500;
+}
+
 .multi-select-trigger {
   display: flex;
   align-items: center;
@@ -467,7 +483,7 @@
   border: 1px solid #dee2e6;
   border-radius: 8px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
-  z-index: 9999;
+  z-index: 99999;
   max-height: 240px;
   overflow-y: auto;
   animation: fadeInScale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -723,6 +739,18 @@
   padding: 3px 10px !important;
 }
 
+.kanban-board[data-visible-columns="2"] .ticket-category-badge {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 9px !important;
+}
+
+.kanban-board[data-visible-columns="2"] .ticket-category-badge-mini {
+  width: 16px !important;
+  height: 16px !important;
+  font-size: 7px !important;
+}
+
 .kanban-board[data-visible-columns="2"] .ticket-info-row {
   font-size: 13px !important;
   gap: 8px !important;
@@ -778,6 +806,18 @@
 .kanban-board[data-visible-columns="1"] .ticket-priority-mini {
   font-size: 12px !important;
   padding: 4px 12px !important;
+}
+
+.kanban-board[data-visible-columns="1"] .ticket-category-badge {
+  width: 26px !important;
+  height: 26px !important;
+  font-size: 12px !important;
+}
+
+.kanban-board[data-visible-columns="1"] .ticket-category-badge-mini {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 9px !important;
 }
 
 .kanban-board[data-visible-columns="1"] .ticket-info-row {
@@ -1612,6 +1652,153 @@
   display: inline-block;
   margin-right: auto;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* ==================== CATEGORY STYLES ==================== */
+
+/* Category badge in ticket details modal */
+.category-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white !important;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.category-badge.category-ordinary {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+}
+
+.category-badge.category-extraordinary {
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+  color: #212529 !important;
+  box-shadow: 0 0 12px rgba(255, 193, 7, 0.5);
+}
+
+/* Category select in modal */
+.category-select {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 2px solid #dee2e6;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 140px;
+}
+
+.category-select:hover {
+  border-color: #adb5bd;
+}
+
+.category-select:focus {
+  outline: none;
+  border-color: #268730;
+  box-shadow: 0 0 0 3px rgba(38, 135, 48, 0.15);
+}
+
+.category-select.category-ordinary {
+  border-color: #6c757d;
+  background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(90, 98, 104, 0.1) 100%);
+}
+
+.category-select.category-extraordinary {
+  border-color: #ffc107;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(224, 168, 0, 0.15) 100%);
+  box-shadow: 0 0 8px rgba(255, 193, 7, 0.3);
+}
+
+/* Category badge in ticket cards (expanded) */
+.ticket-category-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 10px;
+  transition: all 0.2s ease;
+}
+
+.ticket-category-badge.category-ordinary {
+  background: #6c757d;
+  color: white;
+}
+
+.ticket-category-badge.category-ordinary i {
+  color: white;
+}
+
+.ticket-category-badge.category-extraordinary {
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+  color: #212529;
+  box-shadow: 0 0 10px rgba(255, 193, 7, 0.6);
+  animation: category-glow 2s ease-in-out infinite;
+}
+
+.ticket-category-badge.category-extraordinary i {
+  color: #212529;
+}
+
+/* Category badge in minimized tickets */
+.ticket-category-badge-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 8px;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.ticket-category-badge-mini.category-ordinary {
+  background: #6c757d;
+  color: white;
+}
+
+.ticket-category-badge-mini.category-ordinary i {
+  color: white;
+}
+
+.ticket-category-badge-mini.category-extraordinary {
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+  color: #212529;
+  box-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+  animation: category-glow 2s ease-in-out infinite;
+}
+
+.ticket-category-badge-mini.category-extraordinary i {
+  color: #212529;
+}
+
+/* Glow animation for extraordinary category */
+@keyframes category-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(255, 193, 7, 0.8);
+  }
+}
+
+/* Category icon in filter dropdown */
+.category-extraordinary-icon {
+  color: #ffc107;
+  text-shadow: 0 0 6px rgba(255, 193, 7, 0.6);
+}
+
+/* Category ordinary icon in filter dropdown */
+.multi-select-option i.fa-star:not(.category-extraordinary-icon) {
+  color: #6c757d;
 }
 
 /* Description section in ticket details */
@@ -3528,6 +3715,21 @@
 .clickable-attachment.loading::before,
 .clickable-attachment.loading::after {
   display: none;
+}
+
+/* Date range filter styling */
+.filter-group input[type="date"] {
+  cursor: pointer;
+}
+
+.filter-group input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.filter-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
 

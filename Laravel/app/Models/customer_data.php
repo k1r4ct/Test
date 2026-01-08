@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use App\Services\SystemLogService;
 
 class customer_data extends Model
@@ -44,23 +45,31 @@ class customer_data extends Model
 
     protected static function booted()
     {
-        // Log customer creation
+        // Log customer creation with entity tracking
         static::created(function ($customer) {
-            SystemLogService::database()->info("Customer data created", [
-                'customer_data_id' => $customer->id,
-                'nome' => $customer->nome,
-                'cognome' => $customer->cognome,
-                'email' => $customer->email,
-                'ragione_sociale' => $customer->ragione_sociale,
-                'citta' => $customer->citta,
-                'provincia' => $customer->provincia,
-                // Sensitive fields are masked
-                'codice_fiscale' => static::maskSensitiveField($customer->codice_fiscale),
-                'partita_iva' => static::maskSensitiveField($customer->partita_iva),
-            ]);
+            $operatorName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            // Use forEntity for audit trail
+            SystemLogService::userActivity()
+                ->forEntity('customer_data', $customer->id)
+                ->info("Customer data created", [
+                    'customer_data_id' => $customer->id,
+                    'nome' => $customer->nome,
+                    'cognome' => $customer->cognome,
+                    'email' => $customer->email,
+                    'ragione_sociale' => $customer->ragione_sociale,
+                    'citta' => $customer->citta,
+                    'provincia' => $customer->provincia,
+                    // Sensitive fields are masked
+                    'codice_fiscale' => static::maskSensitiveField($customer->codice_fiscale),
+                    'partita_iva' => static::maskSensitiveField($customer->partita_iva),
+                    'created_by' => $operatorName,
+                ]);
         });
 
-        // Log customer updates
+        // Log customer updates with change tracking
         static::updated(function ($customer) {
             $changes = $customer->getChanges();
             $original = $customer->getOriginal();
@@ -85,23 +94,58 @@ class customer_data extends Model
             }
 
             if (!empty($changesForLog)) {
-                SystemLogService::database()->info("Customer data updated", [
+                $operatorName = Auth::check() 
+                    ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                    : 'Sistema';
+
+                // Get related contract IDs for context
+                $relatedContractIds = $customer->contract()->pluck('id')->toArray();
+
+                // Use forEntity for audit trail
+                $logger = SystemLogService::userActivity()
+                    ->forEntity('customer_data', $customer->id);
+
+                // If customer has contracts, link to the first one for filtering
+                if (!empty($relatedContractIds)) {
+                    $logger->forContract($relatedContractIds[0]);
+                }
+
+                $logger->info("Customer data updated", [
                     'customer_data_id' => $customer->id,
-                    'nome' => $customer->nome,
-                    'cognome' => $customer->cognome,
+                    'customer_name' => $customer->display_name,
                     'changes' => $changesForLog,
+                    'related_contract_ids' => $relatedContractIds,
+                    'updated_by' => $operatorName,
                 ]);
             }
         });
 
         // Log customer deletion
         static::deleted(function ($customer) {
-            SystemLogService::database()->warning("Customer data deleted", [
+            $operatorName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            // Get related contract IDs before deletion
+            $relatedContractIds = $customer->contract()->pluck('id')->toArray();
+
+            // Use forEntity for audit trail
+            $logger = SystemLogService::userActivity()
+                ->forEntity('customer_data', $customer->id);
+
+            // If customer has contracts, link to the first one for filtering
+            if (!empty($relatedContractIds)) {
+                $logger->forContract($relatedContractIds[0]);
+            }
+
+            $logger->warning("Customer data deleted", [
                 'customer_data_id' => $customer->id,
                 'nome' => $customer->nome,
                 'cognome' => $customer->cognome,
                 'email' => $customer->email,
                 'ragione_sociale' => $customer->ragione_sociale,
+                'related_contract_ids' => $relatedContractIds,
+                'deleted_by' => $operatorName,
             ]);
         });
     }
@@ -130,7 +174,7 @@ class customer_data extends Model
      */
     public function getFullNameAttribute(): string
     {
-        return trim($this->nome . ' ' . $this->cognome);
+        return trim(($this->nome ?? '') . ' ' . ($this->cognome ?? ''));
     }
 
     /**
@@ -138,6 +182,9 @@ class customer_data extends Model
      */
     public function getDisplayNameAttribute(): string
     {
-        return $this->ragione_sociale ?: $this->full_name;
+        if (!empty($this->ragione_sociale)) {
+            return $this->ragione_sociale;
+        }
+        return $this->full_name;
     }
 }

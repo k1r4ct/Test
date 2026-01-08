@@ -18,6 +18,13 @@ class SystemLogService
     protected ?string $source = null;
 
     /**
+     * Entity tracking properties for audit trail.
+     */
+    protected ?string $entityType = null;
+    protected ?int $entityId = null;
+    protected ?int $contractId = null;
+
+    /**
      * Create a new service instance with a specific source.
      */
     public function __construct(?string $source = null)
@@ -97,6 +104,64 @@ class SystemLogService
     public static function ecommerce(): self
     {
         return new self(Log::SOURCE_ECOMMERCE);
+    }
+
+    // ==================== FLUENT ENTITY SETTERS ====================
+
+    /**
+     * Set the entity being logged (for audit trail).
+     * 
+     * Usage: SystemLogService::userActivity()->forEntity('contract', $id)->info(...)
+     *
+     * @param string $type Entity type (contract, user, customer_data, specific_data, etc.)
+     * @param int $id Entity ID
+     * @return self
+     */
+    public function forEntity(string $type, int $id): self
+    {
+        $this->entityType = $type;
+        $this->entityId = $id;
+        return $this;
+    }
+
+    /**
+     * Set the related contract (for quick filtering).
+     * 
+     * Usage: SystemLogService::userActivity()->forContract($contractId)->info(...)
+     *
+     * @param int $contractId Contract ID
+     * @return self
+     */
+    public function forContract(int $contractId): self
+    {
+        $this->contractId = $contractId;
+        return $this;
+    }
+
+    /**
+     * Shortcut to set both entity and contract for contract logs.
+     * 
+     * Usage: SystemLogService::userActivity()->onContract($contract)->info(...)
+     *
+     * @param \App\Models\contract $contract Contract model instance
+     * @return self
+     */
+    public function onContract($contract): self
+    {
+        $this->entityType = 'contract';
+        $this->entityId = $contract->id;
+        $this->contractId = $contract->id;
+        return $this;
+    }
+
+    /**
+     * Reset entity tracking properties after logging.
+     */
+    protected function resetEntityTracking(): void
+    {
+        $this->entityType = null;
+        $this->entityId = null;
+        $this->contractId = null;
     }
 
     // ==================== LOG LEVEL METHODS ====================
@@ -221,21 +286,63 @@ class SystemLogService
         $source = $this->source ?? Log::SOURCE_SYSTEM;
         $log = null;
 
+        // Extract entity tracking from context if set there (alternative method)
+        $entityType = $this->entityType ?? ($context['_entity_type'] ?? null);
+        $entityId = $this->entityId ?? ($context['_entity_id'] ?? null);
+        $contractId = $this->contractId ?? ($context['_contract_id'] ?? null);
+
+        // Also check for contract_id in context (common pattern)
+        if (!$contractId && isset($context['contract_id'])) {
+            $contractId = $context['contract_id'];
+        }
+
+        // Remove internal keys from context before saving
+        unset($context['_entity_type'], $context['_entity_id'], $context['_contract_id']);
+
         // Write to database if enabled
         if ($this->isLogToDatabaseEnabled()) {
             try {
+                // Get device info from middleware
+                $deviceInfo = null;
+                try {
+                    $deviceInfo = app('device_info');
+                } catch (\Exception $e) {
+                    // Device info not available
+                }
+
                 $log = Log::create([
                     'level' => $level,
                     'source' => $source,
+                    'entity_type' => $entityType,
+                    'entity_id' => $entityId,
+                    'contract_id' => $contractId,
                     'message' => $message,
                     'datetime' => now(),
                     'user_id' => $userId,
                     'context' => !empty($context) ? $context : null,
-                    'ip_address' => $ipAddress,
-                    'user_agent' => $userAgent,
+                    'ip_address' => $deviceInfo['ip_address'] ?? $ipAddress,
+                    'user_agent' => $deviceInfo['user_agent'] ?? $userAgent,
                     'request_url' => $requestUrl,
                     'request_method' => $requestMethod,
                     'stack_trace' => $stackTrace,
+                    // Device tracking fields
+                    'device_fingerprint' => $deviceInfo['device_fingerprint'] ?? null,
+                    'device_type' => $deviceInfo['device_type'] ?? null,
+                    'device_os' => $deviceInfo['device_os'] ?? null,
+                    'device_browser' => $deviceInfo['device_browser'] ?? null,
+                    'screen_resolution' => $deviceInfo['screen_resolution'] ?? null,
+                    'cpu_cores' => $deviceInfo['cpu_cores'] ?? null,
+                    'ram_gb' => $deviceInfo['ram_gb'] ?? null,
+                    'timezone_client' => $deviceInfo['timezone_client'] ?? null,
+                    'language' => $deviceInfo['language'] ?? null,
+                    'touch_support' => $deviceInfo['touch_support'] ?? null,
+                    // Geolocation fields
+                    'geo_country' => $deviceInfo['geo_country'] ?? null,
+                    'geo_country_code' => $deviceInfo['geo_country_code'] ?? null,
+                    'geo_region' => $deviceInfo['geo_region'] ?? null,
+                    'geo_city' => $deviceInfo['geo_city'] ?? null,
+                    'geo_isp' => $deviceInfo['geo_isp'] ?? null,
+                    'geo_timezone' => $deviceInfo['geo_timezone'] ?? null,
                 ]);
             } catch (\Exception $e) {
                 // If database logging fails, at least try to log to file
@@ -250,6 +357,9 @@ class SystemLogService
         if ($this->isLogToFileEnabled()) {
             $this->writeToLogFile($level, $source, $message, $context, $stackTrace);
         }
+
+        // Reset entity tracking for next use
+        $this->resetEntityTracking();
 
         return $log;
     }
@@ -404,7 +514,7 @@ class SystemLogService
      */
     public static function logLogin(int $userId, string $email, bool $success = true): ?Log
     {
-        $service = self::auth();
+        $service = self::auth()->forEntity('user', $userId);
         
         if ($success) {
             return $service->info("User logged in successfully", [
@@ -423,7 +533,7 @@ class SystemLogService
      */
     public static function logLogout(int $userId, string $email): ?Log
     {
-        return self::auth()->info("User logged out", [
+        return self::auth()->forEntity('user', $userId)->info("User logged out", [
             'user_id' => $userId,
             'email' => $email,
         ]);
@@ -434,7 +544,7 @@ class SystemLogService
      */
     public static function logPasswordChange(int $userId, string $email): ?Log
     {
-        return self::auth()->info("Password changed", [
+        return self::auth()->forEntity('user', $userId)->info("Password changed", [
             'user_id' => $userId,
             'email' => $email,
         ]);
@@ -521,7 +631,7 @@ class SystemLogService
     }
 
     /**
-     * Quick log for contract status change (backward compatibility).
+     * Quick log for contract status change.
      */
     public static function logContractStatusChange(
         int $contractId,
@@ -540,11 +650,108 @@ class SystemLogService
 
         $message = "L'utente {$userName} ha modificato lo stato di avanzamento del contratto con id {$contractId} da {$oldStatus} a {$newStatus}";
 
-        return self::userActivity()->info($message, [
+        return self::userActivity()
+            ->forEntity('contract', $contractId)
+            ->forContract($contractId)
+            ->info($message, [
+                'contract_id' => $contractId,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'user_name' => $userName,
+                'changes' => [
+                    'status' => ['old' => $oldStatus, 'new' => $newStatus]
+                ],
+            ]);
+    }
+
+    /**
+     * Quick log for contract modification with changes tracking.
+     * 
+     * @param int $contractId Contract ID
+     * @param string|null $contractCode Contract code (codice_contratto)
+     * @param array $changes Array of changes ['field' => ['old' => x, 'new' => y]]
+     * @param string|null $action Action description (created, updated, deleted)
+     */
+    public static function logContractChange(
+        int $contractId,
+        ?string $contractCode,
+        array $changes,
+        string $action = 'updated'
+    ): ?Log {
+        $changedFields = array_keys($changes);
+        $message = "Contract {$contractCode} {$action}";
+        
+        if ($action === 'updated' && count($changedFields) > 0) {
+            $message .= " (" . count($changedFields) . " fields changed)";
+        }
+
+        return self::userActivity()
+            ->forEntity('contract', $contractId)
+            ->forContract($contractId)
+            ->info($message, [
+                'contract_id' => $contractId,
+                'contract_code' => $contractCode,
+                'action' => $action,
+                'changes' => $changes,
+                'changed_fields' => $changedFields,
+            ]);
+    }
+
+    /**
+     * Quick log for customer data modification.
+     * 
+     * @param int $customerDataId Customer data ID
+     * @param int|null $contractId Related contract ID
+     * @param array $changes Array of changes
+     * @param string $action Action description
+     */
+    public static function logCustomerDataChange(
+        int $customerDataId,
+        ?int $contractId,
+        array $changes,
+        string $action = 'updated'
+    ): ?Log {
+        $service = self::userActivity()->forEntity('customer_data', $customerDataId);
+        
+        if ($contractId) {
+            $service->forContract($contractId);
+        }
+
+        return $service->info("Customer data {$action}", [
+            'customer_data_id' => $customerDataId,
             'contract_id' => $contractId,
-            'old_status' => $oldStatus,
-            'new_status' => $newStatus,
-            'user_name' => $userName,
+            'action' => $action,
+            'changes' => $changes,
+            'changed_fields' => array_keys($changes),
+        ]);
+    }
+
+    /**
+     * Quick log for specific data modification.
+     * 
+     * @param int $specificDataId Specific data ID
+     * @param int|null $contractId Related contract ID
+     * @param array $changes Array of changes
+     * @param string $action Action description
+     */
+    public static function logSpecificDataChange(
+        int $specificDataId,
+        ?int $contractId,
+        array $changes,
+        string $action = 'updated'
+    ): ?Log {
+        $service = self::userActivity()->forEntity('specific_data', $specificDataId);
+        
+        if ($contractId) {
+            $service->forContract($contractId);
+        }
+
+        return $service->info("Specific data {$action}", [
+            'specific_data_id' => $specificDataId,
+            'contract_id' => $contractId,
+            'action' => $action,
+            'changes' => $changes,
+            'changed_fields' => array_keys($changes),
         ]);
     }
 

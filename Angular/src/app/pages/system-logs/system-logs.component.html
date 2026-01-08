@@ -1,0 +1,1247 @@
+<div class="system-logs-container animate-in">
+  <!-- Top Header -->
+  <div class="top-header">
+    <div class="header-title animate-fade-up stagger-1">
+      <h1><i class="fas fa-clipboard-list"></i> Gestione Log</h1>
+      <p>Monitora e analizza i log di sistema in tempo reale</p>
+    </div>
+    <div class="header-actions animate-fade-up stagger-2">
+      <!-- Auto-refresh toggle -->
+      <div class="auto-refresh-toggle">
+        <label>
+          <span>Auto-refresh</span>
+          <div class="toggle-switch">
+            <input type="checkbox" 
+                   [checked]="autoRefreshEnabled" 
+                   (change)="toggleAutoRefresh()">
+            <span class="toggle-slider"></span>
+          </div>
+        </label>
+        <div class="refresh-indicator" [class.active]="autoRefreshEnabled">
+          <i class="fas fa-sync-alt fa-spin"></i>
+          <span>{{ refreshCountdown }}s</span>
+        </div>
+      </div>
+
+      <button class="btn btn-outline btn-sm" (click)="refreshLogs()">
+        <i class="fas fa-sync-alt"></i> AGGIORNA
+      </button>
+
+      <!-- Export dropdown -->
+      <div class="export-dropdown" #exportDropdown>
+        <button class="btn btn-success btn-sm" (click)="exportDropdown.classList.toggle('open')">
+          <i class="fas fa-download"></i>
+          <span>ESPORTA</span>
+          <i class="fas fa-chevron-down chevron-icon"></i>
+        </button>
+        <div class="export-menu">
+          <div class="export-menu-header">Seleziona formato</div>
+          <div class="export-menu-item txt" (click)="exportLogs('txt'); exportDropdown.classList.remove('open')">
+            <i class="fas fa-file-alt"></i>
+            <span>File di testo</span>
+            <span class="format-badge">.TXT</span>
+          </div>
+          <div class="export-menu-item csv" (click)="exportLogs('csv'); exportDropdown.classList.remove('open')">
+            <i class="fas fa-file-csv"></i>
+            <span>Foglio CSV</span>
+            <span class="format-badge">.CSV</span>
+          </div>
+          <div class="export-menu-item json" (click)="exportLogs('json'); exportDropdown.classList.remove('open')">
+            <i class="fas fa-file-code"></i>
+            <span>File JSON</span>
+            <span class="format-badge">.JSON</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clear button -->
+      <button class="btn btn-danger btn-sm" (click)="showClearConfirm()">
+        <i class="fas fa-trash-alt"></i>
+        <span>SVUOTA</span>
+      </button>
+
+      <!-- Settings button -->
+      <button class="btn btn-settings btn-sm" (click)="openSettings()">
+        <i class="fas fa-cog"></i>
+        <span>OPZIONI</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Bar (Level Filters) - Only visible in File Log view -->
+  <div class="stats-bar" *ngIf="currentView === 'file' && stats">
+    <span class="stats-bar-label"><i class="fas fa-filter"></i> Filtra per livello:</span>
+    
+    <div class="stat-item debug" 
+         [class.selected]="isLevelSelected('debug')"
+         (click)="toggleLevelFilter('debug')">
+      <div class="stat-icon debug"><i class="fas fa-bug"></i></div>
+      <div class="stat-info">
+        <h4>{{ stats?.by_level?.debug || 0 }}</h4>
+        <span>Debug</span>
+      </div>
+    </div>
+
+    <div class="stat-item info" 
+         [class.selected]="isLevelSelected('info')"
+         (click)="toggleLevelFilter('info')">
+      <div class="stat-icon info"><i class="fas fa-info-circle"></i></div>
+      <div class="stat-info">
+        <h4>{{ stats?.by_level?.info || 0 }}</h4>
+        <span>Info</span>
+      </div>
+    </div>
+
+    <div class="stat-item warning" 
+         [class.selected]="isLevelSelected('warning')"
+         (click)="toggleLevelFilter('warning')">
+      <div class="stat-icon warning"><i class="fas fa-exclamation-triangle"></i></div>
+      <div class="stat-info">
+        <h4>{{ stats?.by_level?.warning || 0 }}</h4>
+        <span>Warning</span>
+      </div>
+    </div>
+
+    <div class="stat-item error" 
+         [class.selected]="isLevelSelected('error')"
+         (click)="toggleLevelFilter('error')">
+      <div class="stat-icon error"><i class="fas fa-times-circle"></i></div>
+      <div class="stat-info">
+        <h4>{{ (stats?.by_level?.error || 0) + (stats?.by_level?.critical || 0) }}</h4>
+        <span>Errori</span>
+      </div>
+    </div>
+
+    <span class="selected-filters-info" *ngIf="selectedLevels.length > 0">
+      Filtri attivi: {{ selectedLevels.join(', ') | titlecase }}
+    </span>
+
+    <button class="clear-filter-btn" 
+            [class.visible]="selectedLevels.length > 0"
+            (click)="clearLevelFilters()">
+      <i class="fas fa-times"></i> Rimuovi filtri
+    </button>
+  </div>
+
+  <!-- Source Tabs -->
+  <div class="source-tabs-container">
+    <div class="source-tabs">
+      <button class="source-tab"
+              *ngFor="let source of sources; trackBy: trackBySourceKey"
+              [class.active]="currentSource === source.key"
+              (click)="filterBySource(source.key)">
+        <div class="tab-icon"><i class="fas" [ngClass]="source.icon"></i></div>
+        <div class="tab-info">
+          <span class="tab-name">{{ source.label }}</span>
+          <span class="tab-count">{{ source.count }} log</span>
+        </div>
+      </button>
+
+      <div class="view-controls">
+        <div class="view-toggle">
+          <button class="view-btn" 
+                  [class.active]="currentView === 'table'" 
+                  (click)="setView('table')">
+            <i class="fas fa-table"></i> Tabella
+          </button>
+          <button class="view-btn" 
+                  [class.active]="currentView === 'file'" 
+                  (click)="setView('file')">
+            <i class="fas fa-file-code"></i> File Log
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content Area -->
+  <div class="content-area animate-fade-up stagger-3" [class.transitioning]="isViewTransitioning">
+    <!-- Table View -->
+    <div class="table-view view-panel" *ngIf="currentView === 'table'">
+      <div class="table-container">
+        <!-- Toolbar -->
+        <div class="table-toolbar">
+          <div class="search-box">
+            <input type="text" 
+                   [(ngModel)]="searchQuery" 
+                   placeholder="Cerca nei log..."
+                   (keyup.enter)="onSearch()">
+            <i class="fas fa-search" (click)="onSearch()"></i>
+          </div>
+          
+          <input type="date" 
+                 class="date-input" 
+                 [(ngModel)]="dateFrom"
+                 placeholder="Da"
+                 (change)="onDateFilterChange()">
+          
+          <input type="date" 
+                 class="date-input" 
+                 [(ngModel)]="dateTo"
+                 placeholder="A"
+                 (change)="onDateFilterChange()">
+          
+          <select class="filter-select" [(ngModel)]="pagination.per_page" (change)="onPerPageChange()">
+            <option [value]="10">10 per pagina</option>
+            <option [value]="15">15 per pagina</option>
+            <option [value]="25">25 per pagina</option>
+            <option [value]="50">50 per pagina</option>
+            <option [value]="100">100 per pagina</option>
+          </select>
+
+          <!-- Advanced Filters Toggle -->
+          <button class="btn btn-outline btn-sm advanced-filters-toggle" 
+                  (click)="toggleAdvancedFilters()"
+                  [class.active]="showAdvancedFilters || hasActiveFilters()">
+            <i class="fas fa-sliders-h"></i>
+            <span>FILTRI AVANZATI</span>
+            <span class="filter-count" *ngIf="getActiveFiltersCount() > 0">{{ getActiveFiltersCount() }}</span>
+          </button>
+
+          <!-- Clear Filters -->
+          <button class="btn btn-outline btn-sm clear-filters-btn" 
+                  *ngIf="hasActiveFilters()"
+                  (click)="clearAllFilters()">
+            <i class="fas fa-times"></i> RESET
+          </button>
+        </div>
+
+        <!-- Advanced Filters Panel -->
+        <div class="advanced-filters-panel" [class.open]="showAdvancedFilters">
+          <div class="advanced-filters-grid">
+            <!-- ==================== ROW 1: Audit Trail Filters ==================== -->
+            <!-- User Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-user"></i> Utente</label>
+              <select [(ngModel)]="filterUserId" (change)="onUserFilterChange()">
+                <option [ngValue]="null">Tutti gli utenti</option>
+                <option *ngFor="let user of availableUsers" [ngValue]="user.id">
+                  {{ user.name }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Entity Type Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-cube"></i> Tipo Entità</label>
+              <select [(ngModel)]="filterEntityType" (change)="onEntityTypeFilterChange()">
+                <option value="">Nessun filtro</option>
+                <option *ngFor="let et of availableEntityTypes" [value]="et.key">
+                  {{ et.label }} ({{ et.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- Contract ID Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-hashtag"></i> ID Contratto</label>
+              <input type="text" 
+                     [(ngModel)]="filterContractId" 
+                     placeholder="es. 2418"
+                     (keyup.enter)="onContractFilterChange()"
+                     (blur)="onContractFilterChange()">
+            </div>
+
+            <!-- Contract Code Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-file-contract"></i> Codice Contratto</label>
+              <input type="text" 
+                     [(ngModel)]="filterContractCode" 
+                     placeholder="es. CONT-2024-001"
+                     (keyup.enter)="onContractFilterChange()"
+                     (blur)="onContractFilterChange()">
+            </div>
+
+            <!-- Device Fingerprint Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-fingerprint"></i> Device Fingerprint</label>
+              <input type="text" 
+                     [(ngModel)]="filterFingerprint" 
+                     placeholder="Cerca per fingerprint..."
+                     (keyup.enter)="onDeviceFilterChange()"
+                     (blur)="onDeviceFilterChange()">
+            </div>
+
+            <!-- ==================== ROW 2: Device Tracking Filters ==================== -->
+            <!-- Country Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-globe"></i> Paese</label>
+              <select [(ngModel)]="filterCountry" (change)="onDeviceFilterChange()">
+                <option value="">Tutti i paesi</option>
+                <option *ngFor="let c of availableCountries; trackBy: trackByFilterOption" [value]="c.value">
+                  {{ c.label }} ({{ c.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- City Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-city"></i> Città</label>
+              <select [(ngModel)]="filterCity" (change)="onDeviceFilterChange()">
+                <option value="">Tutte le città</option>
+                <option *ngFor="let c of availableCities; trackBy: trackByFilterOption" [value]="c.value">
+                  {{ c.label }} ({{ c.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- ISP Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-network-wired"></i> ISP</label>
+              <select [(ngModel)]="filterIsp" (change)="onDeviceFilterChange()">
+                <option value="">Tutti gli ISP</option>
+                <option *ngFor="let i of availableIsps; trackBy: trackByFilterOption" [value]="i.value">
+                  {{ i.label }} ({{ i.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- Device Type Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-laptop"></i> Tipo Dispositivo</label>
+              <select [(ngModel)]="filterDeviceType" (change)="onDeviceFilterChange()">
+                <option value="">Tutti i dispositivi</option>
+                <option *ngFor="let d of availableDeviceTypes; trackBy: trackByFilterOption" [value]="d.value">
+                  {{ d.label }} ({{ d.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- ==================== ROW 3: More Device Filters ==================== -->
+            <!-- Browser Filter -->
+            <div class="filter-group">
+              <label><i class="fab fa-chrome"></i> Browser</label>
+              <select [(ngModel)]="filterBrowser" (change)="onDeviceFilterChange()">
+                <option value="">Tutti i browser</option>
+                <option *ngFor="let b of availableBrowsers; trackBy: trackByFilterOption" [value]="b.value">
+                  {{ b.label }} ({{ b.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- OS Filter -->
+            <div class="filter-group">
+              <label><i class="fab fa-windows"></i> Sistema Operativo</label>
+              <select [(ngModel)]="filterOS" (change)="onDeviceFilterChange()">
+                <option value="">Tutti i SO</option>
+                <option *ngFor="let o of availableOperatingSystems; trackBy: trackByFilterOption" [value]="o.value">
+                  {{ o.label }} ({{ o.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- Screen Resolution Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-tv"></i> Risoluzione</label>
+              <select [(ngModel)]="filterScreenResolution" (change)="onDeviceFilterChange()">
+                <option value="">Tutte le risoluzioni</option>
+                <option *ngFor="let s of availableScreenResolutions; trackBy: trackByFilterOption" [value]="s.value">
+                  {{ s.label }} ({{ s.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- Timezone Filter -->
+            <div class="filter-group">
+              <label><i class="fas fa-clock"></i> Timezone</label>
+              <select [(ngModel)]="filterTimezone" (change)="onDeviceFilterChange()">
+                <option value="">Tutti i timezone</option>
+                <option *ngFor="let t of availableTimezones; trackBy: trackByFilterOption" [value]="t.value">
+                  {{ t.label }} ({{ t.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- ==================== ROW 4: Checkbox Filters ==================== -->
+            <div class="filter-group checkbox-filters">
+              <label class="checkbox-label">
+                <input type="checkbox" 
+                       [(ngModel)]="filterWithChanges" 
+                       (change)="onAdvancedFilterChange()">
+                <span><i class="fas fa-exchange-alt"></i> Solo con modifiche tracciate</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" 
+                       [(ngModel)]="filterWithEntityTracking" 
+                       (change)="onAdvancedFilterChange()">
+                <span><i class="fas fa-link"></i> Solo con entity tracking</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div class="loading-overlay" *ngIf="isLoading">
+          <div class="spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Caricamento...</span>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-scroll">
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th class="sortable" (click)="sortTable('datetime')">
+                  Data/Ora <i class="fas" [ngClass]="getSortIcon('datetime')"></i>
+                </th>
+                <th>Livello</th>
+                <th>Sorgente</th>
+                <th>Messaggio</th>
+                <th>Entità</th>
+                <th>Utente</th>
+                <th>Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let log of logs; trackBy: trackByLogId" 
+                  [class.has-stack-trace]="log.has_stack_trace"
+                  [class.has-changes]="log.has_tracked_changes"
+                  (click)="viewLogDetail(log)">
+                <td class="timestamp-cell">{{ log.formatted_datetime }}</td>
+                <td>
+                  <span class="level-badge" [ngClass]="log.level">
+                    <i class="fas" [ngClass]="getLevelIcon(log.level)"></i>
+                    {{ log.level_label }}
+                  </span>
+                </td>
+                <td>
+                  <span class="source-badge" [ngClass]="log.source">
+                    {{ log.source_label }}
+                  </span>
+                </td>
+                <td class="message-cell">
+                  <span class="message-text">{{ log.message }}</span>
+                  <i class="fas fa-layer-group stack-trace-indicator" 
+                     *ngIf="log.has_stack_trace"
+                     matTooltip="Contiene stack trace"></i>
+                  <i class="fas fa-exchange-alt changes-indicator" 
+                     *ngIf="log.has_tracked_changes"
+                     matTooltip="Contiene modifiche tracciate"></i>
+                </td>
+                
+                <!-- Entity Column -->
+                <td class="entity-cell">
+                  <div class="entity-info" *ngIf="log.entity_type">
+                    <!-- Badge: clicking on text filters for this SPECIFIC entity -->
+                    <span class="entity-badge clickable-entity" 
+                          [class]="log.entity_type"
+                          matTooltip="Mostra tutti i log di questa entità"
+                          matTooltipPosition="above"
+                          (click)="$event.stopPropagation(); filterBySpecificEntity(log.entity_type, log.entity_id!, log.contract_id)">
+                      <i class="fas" [ngClass]="getEntityTypeIcon(log.entity_type)"></i>
+                      <span class="badge-label">{{ log.entity_type_label || getEntityTypeLabel(log.entity_type) }}</span>
+                      <span class="entity-id" *ngIf="log.entity_id">#{{ log.entity_id }}</span>
+                    </span>
+                    
+                    <!-- Filter icon: filters by ENTITY TYPE (all contracts, all notes, etc.) -->
+                    <span class="entity-type-filter" 
+                          *ngIf="log.entity_type"
+                          (click)="$event.stopPropagation(); filterByEntityType(log.entity_type)"
+                          matTooltip="Filtra per tipo: {{ getEntityTypeLabel(log.entity_type) }}"
+                          matTooltipPosition="above">
+                      <i class="fas fa-filter"></i>
+                    </span>
+                  </div>
+                  <span *ngIf="!log.entity_type" class="no-entity">-</span>
+                </td>
+                
+                <td class="user-cell">
+                  <span *ngIf="log.user" 
+                        class="user-link"
+                        matTooltip="Filtra utente"
+                        matTooltipPosition="above"
+                        (click)="$event.stopPropagation(); filterByUser(log.user.id)">
+                    {{ log.user.name }}
+                  </span>
+                  <span *ngIf="!log.user" class="system-user">Sistema</span>
+                </td>
+                
+                <!-- Actions Column -->
+                <td class="actions-cell" (click)="$event.stopPropagation()">
+                  <button class="action-btn view" 
+                          matTooltip="Dettagli"
+                          matTooltipPosition="above"
+                          (click)="viewLogDetail(log)">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="action-btn copy" 
+                          matTooltip="Copia"
+                          matTooltipPosition="above"
+                          (click)="copyLog(log)">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                  <button class="action-btn history" 
+                          *ngIf="log.contract_id || (log.entity_type === 'contract' && log.entity_id)"
+                          matTooltip="Cronologia"
+                          matTooltipPosition="above"
+                          (click)="viewContractHistory((log.contract_id || log.entity_id)!)">
+                    <i class="fas fa-history"></i>
+                  </button>
+                  <button class="action-btn delete" 
+                          *ngIf="isAdmin"
+                          matTooltip="Elimina"
+                          matTooltipPosition="above"
+                          (click)="deleteLog(log)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="!isLoading && logs.length === 0">
+            <i class="fas fa-inbox"></i>
+            <h4>Nessun log trovato</h4>
+            <p>Non ci sono log che corrispondono ai filtri selezionati</p>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="table-footer" *ngIf="logs.length > 0">
+          <span class="pagination-info">
+            Visualizzati {{ pagination.from }}-{{ pagination.to }} di {{ pagination.total }}
+          </span>
+          <div class="pagination">
+            <button class="page-btn" 
+                    [disabled]="pagination.current_page === 1"
+                    (click)="goToPage(1)">
+              <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button class="page-btn" 
+                    [disabled]="pagination.current_page === 1"
+                    (click)="goToPage(pagination.current_page - 1)">
+              <i class="fas fa-angle-left"></i>
+            </button>
+            
+            <button class="page-btn"
+                    *ngFor="let page of getPageNumbers()"
+                    [class.active]="page === pagination.current_page"
+                    (click)="goToPage(page)">
+              {{ page }}
+            </button>
+            
+            <button class="page-btn" 
+                    [disabled]="pagination.current_page === pagination.last_page"
+                    (click)="goToPage(pagination.current_page + 1)">
+              <i class="fas fa-angle-right"></i>
+            </button>
+            <button class="page-btn" 
+                    [disabled]="pagination.current_page === pagination.last_page"
+                    (click)="goToPage(pagination.last_page)">
+              <i class="fas fa-angle-double-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- File Log View -->
+    <div class="file-view view-panel" *ngIf="currentView === 'file'">
+      <div class="log-file-container">
+        <div class="log-file-header">
+          <div class="log-file-title">
+            <i class="fas fa-file-code"></i>
+            <span>{{ getFileName() }}</span>
+          </div>
+          <div class="log-search-bar">
+            <input type="text" 
+                   class="log-search-input" 
+                   [(ngModel)]="fileSearchQuery"
+                   placeholder="Cerca nel file...">
+            <span class="search-results" *ngIf="fileSearchQuery"></span>
+          </div>
+          <div class="log-file-actions">
+            <button class="log-file-btn" (click)="scrollToBottom()">
+              <i class="fas fa-arrow-down"></i> Fine
+            </button>
+            <button class="log-file-btn" (click)="downloadLogFile()">
+              <i class="fas fa-download"></i> Scarica
+            </button>
+            <button class="log-file-btn" (click)="copyLogFile()">
+              <i class="fas fa-copy"></i> Copia
+            </button>
+          </div>
+        </div>
+        
+        <!-- Loading -->
+        <div class="loading-overlay" *ngIf="isLoading">
+          <div class="spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Caricamento...</span>
+          </div>
+        </div>
+
+        <div class="log-file-content">
+          <div class="log-line" 
+               *ngFor="let line of fileContent; let i = index; trackBy: trackByFileLine"
+               [ngClass]="line.level"
+               [class.highlight]="fileSearchQuery && line.content.toLowerCase().includes(fileSearchQuery.toLowerCase())"
+               [class.filtered]="selectedLevels.length > 0 && selectedLevels.includes(line.level)"
+               [class.blurred]="selectedLevels.length > 0 && !selectedLevels.includes(line.level)">
+            <span class="line-number">{{ line.line_number }}</span>
+            <span class="log-line-content">{{ line.content }}</span>
+          </div>
+          
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="!isLoading && fileContent.length === 0">
+            <i class="fas fa-file"></i>
+            <h4>File vuoto</h4>
+            <p>Non ci sono log in questo file</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LOG DETAIL MODAL ==================== -->
+<ng-template #logDetailModal>
+  <div class="modal-header">
+    <h3><i class="fas fa-file-alt"></i> Dettaglio Log #{{ selectedLog?.id }}</h3>
+  </div>
+  <div class="modal-body" *ngIf="selectedLog">
+    <!-- Basic Info Grid -->
+    <div class="log-detail-grid">
+      <span class="log-detail-label">ID:</span>
+      <span class="log-detail-value">#{{ selectedLog.id }}</span>
+      
+      <span class="log-detail-label">Data/Ora:</span>
+      <span class="log-detail-value">{{ selectedLog.datetime }}</span>
+      
+      <span class="log-detail-label">Livello:</span>
+      <span class="log-detail-value">
+        <span class="level-badge" [ngClass]="selectedLog.level">
+          <i class="fas" [ngClass]="getLevelIcon(selectedLog.level)"></i>
+          {{ selectedLog.level_label }}
+        </span>
+      </span>
+      
+      <span class="log-detail-label">Sorgente:</span>
+      <span class="log-detail-value">
+        <span class="source-badge" [ngClass]="selectedLog.source">
+          {{ selectedLog.source_label }}
+        </span>
+      </span>
+      
+      <span class="log-detail-label">Utente:</span>
+      <span class="log-detail-value">
+        <ng-container *ngIf="selectedLog.user">
+          <span class="clickable-link" 
+                matTooltip="Filtra per questo utente"
+                (click)="filterByUser(selectedLog.user.id)">
+            {{ selectedLog.user.name }}
+          </span>
+          ({{ selectedLog.user.email }})
+        </ng-container>
+        <span *ngIf="!selectedLog.user">Sistema</span>
+      </span>
+      
+      <span class="log-detail-label">IP:</span>
+      <span class="log-detail-value">{{ selectedLog.ip_address || '-' }}</span>
+      
+      <span class="log-detail-label" *ngIf="selectedLog.request_url">URL:</span>
+      <span class="log-detail-value" *ngIf="selectedLog.request_url">
+        <code>{{ selectedLog.request_method }} {{ selectedLog.request_url }}</code>
+      </span>
+    </div>
+
+    <!-- Entity & Contract Info -->
+    <div class="audit-info-section" *ngIf="selectedLog.entity_type || selectedLog.contract_id">
+      <h4 class="section-title"><i class="fas fa-link"></i> Audit Trail</h4>
+      <div class="audit-info-grid">
+        <div class="audit-item" *ngIf="selectedLog.entity_type">
+          <span class="audit-label">Entità:</span>
+          <span class="audit-value">
+            <span class="entity-badge clickable" 
+                  matTooltip="Filtra per questo tipo di entità"
+                  (click)="filterByEntityType(selectedLog.entity_type)">
+              <i class="fas" [ngClass]="getEntityTypeIcon(selectedLog.entity_type)"></i>
+              {{ selectedLog.entity_type_label || getEntityTypeLabel(selectedLog.entity_type) }}
+            </span>
+            <span class="entity-id" *ngIf="selectedLog.entity_id">#{{ selectedLog.entity_id }}</span>
+          </span>
+        </div>
+        <div class="audit-item" *ngIf="selectedLog.contract_id">
+          <span class="audit-label">Contratto:</span>
+          <span class="audit-value">
+            <span class="contract-badge clickable" 
+                  matTooltip="Filtra per questo contratto"
+                  (click)="filterByContract(selectedLog.contract_id)">
+              <i class="fas fa-file-contract"></i>
+              #{{ selectedLog.contract_id }}
+            </span>
+            <span class="contract-code" *ngIf="selectedLog.contract_code">({{ selectedLog.contract_code }})</span>
+            <button class="btn-history-inline" 
+                    (click)="viewContractHistory(selectedLog.contract_id)"
+                    matTooltip="Vedi cronologia completa">
+              <i class="fas fa-history"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Message -->
+    <h4 class="section-title">Messaggio:</h4>
+    <div class="log-message-full" [class.error]="selectedLog.level === 'error' || selectedLog.level === 'critical'">
+      {{ selectedLog.message }}
+    </div>
+
+    <!-- Changes Section -->
+    <div class="changes-section" *ngIf="selectedLog.has_tracked_changes && selectedLog.changes && selectedLog.changes.length > 0">
+      <h4 class="section-title">
+        <i class="fas fa-exchange-alt"></i> Modifiche Tracciate
+        <span class="changes-count">{{ selectedLog.changes.length }}</span>
+      </h4>
+      <div class="changes-table-container">
+        <table class="changes-table">
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>Valore Precedente</th>
+              <th></th>
+              <th>Nuovo Valore</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let change of selectedLog.changes; trackBy: trackByChangeField">
+              <td class="field-name">
+                <i class="fas fa-tag"></i>
+                {{ change.field_label || change.field }}
+              </td>
+              <td class="old-value">
+                <span class="value-box old" *ngIf="change.old_value !== null && change.old_value !== ''">
+                  {{ change.old_value }}
+                </span>
+                <span class="value-empty" *ngIf="change.old_value === null || change.old_value === ''">
+                  <i class="fas fa-minus"></i> vuoto
+                </span>
+              </td>
+              <td class="arrow-cell">
+                <i class="fas fa-arrow-right"></i>
+              </td>
+              <td class="new-value">
+                <span class="value-box new" *ngIf="change.new_value !== null && change.new_value !== ''">
+                  {{ change.new_value }}
+                </span>
+                <span class="value-empty" *ngIf="change.new_value === null || change.new_value === ''">
+                  <i class="fas fa-minus"></i> vuoto
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Context -->
+    <div *ngIf="selectedLog.context && (selectedLog.context | json) !== '{}'">
+      <h4 class="section-title">Contesto:</h4>
+      <pre class="context-content">{{ selectedLog.context | json }}</pre>
+    </div>
+    
+    <!-- Stack Trace -->
+    <div class="stack-trace-container" *ngIf="selectedLog.stack_trace">
+      <div class="stack-trace-title">
+        <i class="fas fa-layer-group"></i> Stack Trace
+      </div>
+      <pre class="stack-trace-content">{{ selectedLog.stack_trace }}</pre>
+    </div>
+
+    <!-- ==================== DEVICE TRACKING INFO SECTION (moved to bottom) ==================== -->
+    <div class="device-tracking-section" *ngIf="hasDeviceInfo(selectedLog) || hasGeoInfo(selectedLog)">
+      <h4 class="section-title"><i class="fas fa-satellite-dish"></i> Device Tracking</h4>
+      
+      <div class="device-cards-grid">
+        <!-- Card 1: Location -->
+        <div class="device-card location" 
+             *ngIf="selectedLog.geo_info && (selectedLog.geo_info.city || selectedLog.geo_info.country)"
+             (click)="filterByLocation(selectedLog.geo_info?.city || null, selectedLog.geo_info?.country || null)"
+             matTooltip="Clicca per filtrare">
+          <div class="card-icon">
+            <span class="flag-emoji">{{ getCountryFlag(selectedLog.geo_info?.country_code || null) }}</span>
+          </div>
+          <div class="card-content">
+            <span class="card-label">Posizione</span>
+            <span class="card-value">
+              {{ selectedLog.geo_info?.city || 'N/A' }}
+              <span class="card-subvalue" *ngIf="selectedLog.geo_info?.region">, {{ selectedLog.geo_info?.region }}</span>
+            </span>
+            <span class="card-extra">{{ selectedLog.geo_info?.country || 'N/A' }}</span>
+          </div>
+        </div>
+
+        <!-- Card 2: ISP -->
+        <div class="device-card isp" 
+             *ngIf="selectedLog.geo_info?.isp"
+             (click)="filterByIspClick(selectedLog.geo_info?.isp || '')"
+             matTooltip="Clicca per filtrare">
+          <div class="card-icon"><i class="fas fa-network-wired"></i></div>
+          <div class="card-content">
+            <span class="card-label">ISP</span>
+            <span class="card-value">{{ selectedLog.geo_info?.isp }}</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Device -->
+        <div class="device-card device" 
+             *ngIf="selectedLog.device_info && (selectedLog.device_info.type || selectedLog.device_info.os || selectedLog.device_info.browser)"
+             (click)="filterByDeviceTypeClick(selectedLog.device_info?.type || '')"
+             matTooltip="Clicca per filtrare per tipo">
+          <div class="card-icon">
+            <i class="fas" [ngClass]="getDeviceIcon(selectedLog.device_info?.type || 'Desktop')"></i>
+          </div>
+          <div class="card-content">
+            <span class="card-label">Dispositivo</span>
+            <span class="card-value">{{ selectedLog.device_info?.type || 'Desktop' }}</span>
+            <span class="card-extra">
+              <span class="clickable-chip" (click)="$event.stopPropagation(); filterByOSClick(selectedLog.device_info?.os || '')">
+                {{ selectedLog.device_info?.os || 'N/A' }}
+              </span>
+              <span class="separator">•</span>
+              <span class="clickable-chip" (click)="$event.stopPropagation(); filterByBrowserClick(selectedLog.device_info?.browser || '')">
+                {{ selectedLog.device_info?.browser || 'N/A' }}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Card 4: Screen -->
+        <div class="device-card screen" *ngIf="selectedLog.device_info?.screen_resolution">
+          <div class="card-icon"><i class="fas fa-tv"></i></div>
+          <div class="card-content">
+            <span class="card-label">Schermo</span>
+            <span class="card-value">{{ selectedLog.device_info?.screen_resolution }}</span>
+            <span class="card-extra" *ngIf="selectedLog.device_info?.touch_support">
+              <i class="fas fa-hand-pointer"></i> Touch
+            </span>
+          </div>
+        </div>
+
+        <!-- Card 5: Timezone -->
+        <div class="device-card timezone" *ngIf="selectedLog.device_info?.timezone || selectedLog.device_info?.language">
+          <div class="card-icon"><i class="fas fa-clock"></i></div>
+          <div class="card-content">
+            <span class="card-label">Timezone</span>
+            <span class="card-value">{{ selectedLog.device_info?.timezone || selectedLog.geo_info?.timezone || 'N/A' }}</span>
+            <span class="card-extra" *ngIf="selectedLog.device_info?.language">
+              <i class="fas fa-language"></i> {{ selectedLog.device_info?.language }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Card 6: Fingerprint -->
+        <div class="device-card fingerprint" 
+             *ngIf="selectedLog.device_info?.fingerprint"
+             (click)="filterByFingerprint(selectedLog.device_info?.fingerprint || '')"
+             matTooltip="Clicca per filtrare">
+          <div class="card-icon"><i class="fas fa-fingerprint"></i></div>
+          <div class="card-content">
+            <span class="card-label">Fingerprint</span>
+            <span class="card-value fingerprint-value">{{ selectedLog.device_info?.fingerprint }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Agent Info (fallback when no device_info) -->
+    <div class="user-agent-section" *ngIf="selectedLog.user_agent && !hasDeviceInfo(selectedLog)">
+      <h4 class="section-title"><i class="fas fa-globe"></i> Informazioni Browser</h4>
+      <div class="user-agent-grid">
+        <div class="ua-item">
+          <i class="fab" [ngClass]="getBrowserIcon(parseUserAgent(selectedLog.user_agent).browser)"></i>
+          <div class="ua-info">
+            <span class="ua-label">Browser</span>
+            <span class="ua-value">{{ parseUserAgent(selectedLog.user_agent).browser }} {{ parseUserAgent(selectedLog.user_agent).browser_version }}</span>
+          </div>
+        </div>
+        <div class="ua-item">
+          <i class="fab" [ngClass]="getOsIcon(parseUserAgent(selectedLog.user_agent).os)"></i>
+          <div class="ua-info">
+            <span class="ua-label">Sistema Operativo</span>
+            <span class="ua-value">{{ parseUserAgent(selectedLog.user_agent).os }} {{ parseUserAgent(selectedLog.user_agent).os_version }}</span>
+          </div>
+        </div>
+        <div class="ua-item">
+          <i class="fas" [ngClass]="getDeviceIcon(parseUserAgent(selectedLog.user_agent).device)"></i>
+          <div class="ua-info">
+            <span class="ua-label">Dispositivo</span>
+            <span class="ua-value">{{ parseUserAgent(selectedLog.user_agent).device }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="user-agent-raw">
+        <span class="ua-raw-label">User Agent completo:</span>
+        <code class="ua-raw-value">{{ selectedLog.user_agent }}</code>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="copyLogDetail()">
+      <i class="fas fa-copy"></i> Copia
+    </button>
+    <button class="btn btn-primary" mat-dialog-close>
+      Chiudi
+    </button>
+  </div>
+</ng-template>
+
+<!-- ==================== CONTRACT HISTORY MODAL ==================== -->
+<ng-template #contractHistoryModal>
+  <div class="modal-header">
+    <h3>
+      <i class="fas fa-history"></i> Cronologia Contratto
+      <span *ngIf="contractHistory?.contract" style="font-weight: 400; font-size: 14px; margin-left: 10px;">
+        #{{ contractHistory.contract.id }}
+        <span *ngIf="contractHistory.contract.codice_contratto" style="color: #666;">
+          ({{ contractHistory.contract.codice_contratto }})
+        </span>
+      </span>
+    </h3>
+  </div>
+  <div class="modal-body contract-history-body">
+    <!-- Loading -->
+    <div class="history-loading" *ngIf="isLoadingContractHistory">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Caricamento cronologia...</span>
+    </div>
+
+    <div class="contract-history-content" *ngIf="!isLoadingContractHistory && contractHistory">
+      
+      <!-- Summary Stats -->
+      <div class="history-summary" *ngIf="contractHistory.stats">
+        <div class="summary-item">
+          <span class="summary-value">{{ contractHistory.stats.total_logs }}</span>
+          <span class="summary-label">Log totali</span>
+        </div>
+        <div class="summary-item" *ngIf="contractHistory.stats.logs_with_changes">
+          <span class="summary-value">{{ contractHistory.stats.logs_with_changes }}</span>
+          <span class="summary-label">Con modifiche</span>
+        </div>
+        <ng-container *ngIf="contractHistory.stats.by_entity_type">
+          <div class="summary-item" *ngFor="let entity of contractHistory.stats.by_entity_type | keyvalue">
+            <span class="summary-value">{{ entity.value }}</span>
+            <span class="summary-label">{{ getEntityTypeLabel($any(entity.key)) }}</span>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Date Range Info -->
+      <div class="date-range-info" *ngIf="contractHistory.stats?.date_range?.first_log">
+        <i class="fas fa-calendar-alt"></i>
+        <span>
+          Dal {{ contractHistory.stats.date_range.first_log | slice:0:10 }}
+          al {{ contractHistory.stats.date_range.last_log | slice:0:10 }}
+        </span>
+      </div>
+
+      <!-- Timeline -->
+      <div class="history-timeline" *ngIf="contractHistory.grouped_by_date">
+        <div class="timeline-group" *ngFor="let group of contractHistory.grouped_by_date | keyvalue">
+          <div class="timeline-date">
+            <i class="fas fa-calendar-day"></i> 
+            {{ formatTimelineDate($any(group.key)) }}
+          </div>
+          <div class="timeline-items">
+            <div class="timeline-item" 
+                 *ngFor="let log of $any(group.value)"
+                 [class.has-changes]="log.has_tracked_changes"
+                 (click)="viewLogDetail(log)">
+              <div class="timeline-time">{{ log.datetime | slice:11:19 }}</div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <span class="level-badge small" [ngClass]="log.level">
+                    <i class="fas" [ngClass]="getLevelIcon(log.level)"></i>
+                    {{ log.level_label }}
+                  </span>
+                  <span class="entity-badge small" *ngIf="log.entity_type">
+                    <i class="fas" [ngClass]="getEntityTypeIcon(log.entity_type)"></i>
+                    {{ log.entity_type_label || getEntityTypeLabel(log.entity_type) }}
+                    <span *ngIf="log.entity_id">#{{ log.entity_id }}</span>
+                  </span>
+                </div>
+                <div class="timeline-message">{{ log.message }}</div>
+                <div class="timeline-meta">
+                  <span class="timeline-user" *ngIf="log.user">
+                    <i class="fas fa-user"></i> {{ log.user.name }}
+                  </span>
+                  <span class="timeline-user" *ngIf="!log.user">
+                    <i class="fas fa-robot"></i> Sistema
+                  </span>
+                  <span class="timeline-changes" *ngIf="log.has_tracked_changes">
+                    <i class="fas fa-exchange-alt"></i> Modifiche tracciate
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fallback flat list -->
+      <div class="history-flat-list" *ngIf="(!contractHistory.grouped_by_date || (contractHistory.grouped_by_date | keyvalue).length === 0) && contractHistory.logs && contractHistory.logs.length > 0">
+        <div class="timeline-item" 
+             *ngFor="let log of contractHistory.logs"
+             [class.has-changes]="log.has_tracked_changes"
+             (click)="viewLogDetail(log)">
+          <div class="timeline-time">{{ log.formatted_datetime }}</div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="level-badge small" [ngClass]="log.level">
+                <i class="fas" [ngClass]="getLevelIcon(log.level)"></i>
+                {{ log.level_label }}
+              </span>
+              <span class="entity-badge small" *ngIf="log.entity_type">
+                <i class="fas" [ngClass]="getEntityTypeIcon(log.entity_type)"></i>
+                {{ log.entity_type_label || getEntityTypeLabel(log.entity_type) }}
+              </span>
+            </div>
+            <div class="timeline-message">{{ log.message }}</div>
+            <div class="timeline-user" *ngIf="log.user">
+              <i class="fas fa-user"></i> {{ log.user.name }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="(!contractHistory.grouped_by_date || (contractHistory.grouped_by_date | keyvalue).length === 0) && (!contractHistory.logs || contractHistory.logs.length === 0)">
+        <i class="fas fa-inbox"></i>
+        <h4>Nessun log trovato</h4>
+        <p>Non ci sono log associati a questo contratto</p>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" *ngIf="contractHistory?.contract?.id" (click)="filterByContract(contractHistory.contract.id)">
+      <i class="fas fa-filter"></i> Filtra nella tabella
+    </button>
+    <button class="btn btn-primary" mat-dialog-close>
+      Chiudi
+    </button>
+  </div>
+</ng-template>
+
+<!-- ==================== CLEAR CONFIRM MODAL ==================== -->
+<ng-template #clearConfirmModal>
+  <div class="modal-header">
+    <h3><i class="fas fa-exclamation-triangle warning-icon"></i> Conferma</h3>
+  </div>
+  <div class="modal-body">
+    <div class="confirm-content">
+      <div class="confirm-icon">
+        <i class="fas fa-trash-alt"></i>
+      </div>
+      <h4>Svuotare {{ getFileName() }}?</h4>
+      <p>Questa azione è irreversibile. Tutti i log verranno eliminati.</p>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" mat-dialog-close>
+      Annulla
+    </button>
+    <button class="btn btn-danger" (click)="clearLogs()">
+      <i class="fas fa-trash-alt"></i> Conferma
+    </button>
+  </div>
+</ng-template>
+
+<!-- ==================== SETTINGS MODAL ==================== -->
+<ng-template #settingsModal>
+  <div class="modal-header">
+    <h3><i class="fas fa-cog"></i> Opzioni Log</h3>
+  </div>
+  <div class="modal-body settings-modal-body">
+    <!-- Loading -->
+    <div class="settings-loading" *ngIf="isLoadingSettings">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Caricamento impostazioni...</span>
+    </div>
+
+    <div class="settings-content" *ngIf="!isLoadingSettings && logSettings">
+      
+      <!-- General Options -->
+      <div class="settings-section">
+        <h4 class="settings-section-title">
+          <i class="fas fa-sliders-h"></i> Opzioni Generali
+        </h4>
+        <div class="settings-grid">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Log su Database</span>
+              <span class="setting-description">Salva i log nel database</span>
+            </div>
+            <mat-slide-toggle 
+              [checked]="logSettings.options?.log_to_database"
+              (change)="updateSetting('log_to_database', $event.checked)">
+            </mat-slide-toggle>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Log su File</span>
+              <span class="setting-description">Salva i log su file separati</span>
+            </div>
+            <mat-slide-toggle 
+              [checked]="logSettings.options?.log_to_file"
+              (change)="updateSetting('log_to_file', $event.checked)">
+            </mat-slide-toggle>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Log Email Automatico</span>
+              <span class="setting-description">Registra automaticamente le email inviate</span>
+            </div>
+            <mat-slide-toggle 
+              [checked]="logSettings.options?.log_emails_auto"
+              (change)="updateSetting('log_emails_auto', $event.checked)">
+            </mat-slide-toggle>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Log Query Lente</span>
+              <span class="setting-description">Registra query che superano la soglia</span>
+            </div>
+            <mat-slide-toggle 
+              [checked]="logSettings.options?.log_slow_queries"
+              (change)="updateSetting('log_slow_queries', $event.checked)">
+            </mat-slide-toggle>
+          </div>
+          <div class="setting-item full-width">
+            <div class="setting-info">
+              <span class="setting-label">Soglia Query Lente (ms)</span>
+              <span class="setting-description">Query più lente di questo valore verranno loggate</span>
+            </div>
+            <input type="number" 
+                   class="setting-input"
+                   [value]="logSettings.options?.slow_query_threshold || 1000"
+                   (change)="updateSetting('slow_query_threshold', $any($event.target).value)"
+                   min="100"
+                   max="10000">
+          </div>
+        </div>
+      </div>
+
+      <!-- Retention Settings -->
+      <div class="settings-section">
+        <h4 class="settings-section-title">
+          <i class="fas fa-calendar-alt"></i> Retention (giorni)
+        </h4>
+        <p class="settings-section-description">
+          Dopo quanti giorni i log vengono eliminati automaticamente
+        </p>
+        <div class="retention-grid">
+          <div class="retention-item" *ngFor="let source of retentionSources">
+            <span class="retention-label">
+              <i class="fas" [ngClass]="getSourceIcon(source.key)"></i>
+              {{ source.label }}
+            </span>
+            <input type="number" 
+                   class="retention-input"
+                   [value]="logSettings.retention?.[source.settingKey] || 30"
+                   (change)="updateSetting(source.settingKey, $any($event.target).value)"
+                   min="1"
+                   max="365">
+          </div>
+        </div>
+      </div>
+
+      <!-- Cleanup Settings -->
+      <div class="settings-section">
+        <h4 class="settings-section-title">
+          <i class="fas fa-broom"></i> Pulizia Automatica
+        </h4>
+        <div class="settings-grid">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Pulizia Abilitata</span>
+              <span class="setting-description">Esegui pulizia automatica dei log</span>
+            </div>
+            <mat-slide-toggle 
+              [checked]="logSettings.cleanup?.cleanup_enabled"
+              (change)="updateSetting('cleanup_enabled', $event.checked)">
+            </mat-slide-toggle>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Frequenza</span>
+              <span class="setting-description">Ogni quanto eseguire la pulizia</span>
+            </div>
+            <select class="setting-select"
+                    [value]="logSettings.cleanup?.cleanup_frequency || 'daily'"
+                    (change)="updateSetting('cleanup_frequency', $any($event.target).value)">
+              <option value="hourly">Ogni ora</option>
+              <option value="daily">Giornaliera</option>
+              <option value="weekly">Settimanale</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Orario</span>
+              <span class="setting-description">A che ora eseguire la pulizia</span>
+            </div>
+            <input type="time" 
+                   class="setting-input"
+                   [value]="logSettings.cleanup?.cleanup_time || '03:00'"
+                   (change)="updateSetting('cleanup_time', $any($event.target).value)">
+          </div>
+        </div>
+        
+        <!-- Manual Cleanup -->
+        <div class="manual-cleanup">
+          <p class="cleanup-info" *ngIf="logSettings.cleanup?.cleanup_last_run">
+            <i class="fas fa-info-circle"></i>
+            Ultima pulizia: {{ logSettings.cleanup.cleanup_last_run }}
+          </p>
+          <button class="btn btn-warning btn-sm" 
+                  (click)="runManualCleanup()"
+                  [disabled]="isRunningCleanup">
+            <i class="fas" [ngClass]="isRunningCleanup ? 'fa-spinner fa-spin' : 'fa-play'"></i>
+            {{ isRunningCleanup ? 'Pulizia in corso...' : 'Esegui Pulizia Ora' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="settings-section">
+        <h4 class="settings-section-title">
+          <i class="fas fa-bell"></i> Notifiche
+        </h4>
+        <div class="settings-grid">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Notifica Errori Critici</span>
+              <span class="setting-description">Invia email per errori critici</span>
+            </div>
+            <mat-slide-toggle 
+              [checked]="logSettings.notifications?.notify_critical_errors"
+              (change)="updateSetting('notify_critical_errors', $event.checked)">
+            </mat-slide-toggle>
+          </div>
+          <div class="setting-item full-width">
+            <div class="setting-info">
+              <span class="setting-label">Email Notifiche</span>
+              <span class="setting-description">Indirizzo email per le notifiche</span>
+            </div>
+            <input type="email" 
+                   class="setting-input wide"
+                   [value]="logSettings.notifications?.notify_email || ''"
+                   (change)="updateSetting('notify_email', $any($event.target).value)"
+                   placeholder="admin@example.com">
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="resetSettings()">
+      <i class="fas fa-undo"></i> Reset Default
+    </button>
+    <button class="btn btn-primary" mat-dialog-close>
+      Chiudi
+    </button>
+  </div>
+</ng-template>

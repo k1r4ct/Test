@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Services\SystemLogService;
 use Illuminate\Support\Facades\Auth;
+use App\Services\SystemLogService;
 
 class lead extends Model
 {
@@ -26,6 +26,9 @@ class lead extends Model
 
     // Sensitive fields to mask in logs
     protected static $sensitiveFields = ['telefono'];
+
+    // Critical fields that warrant warning level logging
+    protected static $criticalFields = ['lead_status_id', 'assegnato_a'];
 
     // ==================== RELATIONSHIPS ====================
 
@@ -58,16 +61,16 @@ class lead extends Model
 
     public function getFullNameAttribute(): string
     {
-        return trim($this->nome . ' ' . $this->cognome);
+        return trim(($this->nome ?? '') . ' ' . ($this->cognome ?? ''));
     }
 
     // ==================== EVENTS ====================
 
     protected static function booted()
     {
-        // Log lead creation
+        // Log lead creation with entity tracking
         static::created(function ($lead) {
-            $lead->load(['invitedBy', 'User']);
+            $lead->load(['invitedBy', 'User', 'leadstatus']);
 
             $inviterName = $lead->invitedBy 
                 ? $lead->invitedBy->name . ' ' . $lead->invitedBy->cognome 
@@ -77,34 +80,39 @@ class lead extends Model
                 ? $lead->User->name . ' ' . $lead->User->cognome 
                 : null;
 
-            $userName = Auth::check() 
+            $statusName = $lead->leadstatus?->micro_stato;
+
+            $operatorName = Auth::check() 
                 ? Auth::user()->name . ' ' . Auth::user()->cognome 
                 : 'Sistema';
 
-            SystemLogService::database()->info("Lead created", [
-                'lead_id' => $lead->id,
-                'nome' => $lead->nome,
-                'cognome' => $lead->cognome,
-                'email' => $lead->email,
-                'telefono' => static::maskSensitiveField($lead->telefono),
-                'invitato_da_user_id' => $lead->invitato_da_user_id,
-                'inviter_name' => $inviterName,
-                'assegnato_a' => $lead->assegnato_a,
-                'assigned_to_name' => $assignedToName,
-                'lead_status_id' => $lead->lead_status_id,
-                'consenso' => $lead->consenso,
-                'created_by' => $userName,
-            ]);
+            // Use forEntity for audit trail
+            SystemLogService::userActivity()
+                ->forEntity('lead', $lead->id)
+                ->info("Lead created", [
+                    'lead_id' => $lead->id,
+                    'nome' => $lead->nome,
+                    'cognome' => $lead->cognome,
+                    'email' => $lead->email,
+                    'telefono' => static::maskSensitiveField($lead->telefono),
+                    'invitato_da_user_id' => $lead->invitato_da_user_id,
+                    'inviter_name' => $inviterName,
+                    'assegnato_a' => $lead->assegnato_a,
+                    'assigned_to_name' => $assignedToName,
+                    'lead_status_id' => $lead->lead_status_id,
+                    'status_name' => $statusName,
+                    'consenso' => $lead->consenso,
+                    'created_by' => $operatorName,
+                ]);
         });
 
-        // Log lead updates (especially status changes and assignments)
+        // Log lead updates with change tracking
         static::updated(function ($lead) {
             $changes = $lead->getChanges();
             $original = $lead->getOriginal();
 
             $changesForLog = [];
-            $hasStatusChange = false;
-            $hasAssignmentChange = false;
+            $hasCriticalChanges = false;
 
             foreach ($changes as $field => $newValue) {
                 if ($field !== 'updated_at') {
@@ -121,48 +129,73 @@ class lead extends Model
                         'new' => $newValue,
                     ];
 
-                    if ($field === 'lead_status_id') {
-                        $hasStatusChange = true;
-                    }
-                    if ($field === 'assegnato_a') {
-                        $hasAssignmentChange = true;
+                    if (in_array($field, static::$criticalFields)) {
+                        $hasCriticalChanges = true;
                     }
                 }
             }
 
             if (!empty($changesForLog)) {
-                $userName = Auth::check() 
+                $operatorName = Auth::check() 
                     ? Auth::user()->name . ' ' . Auth::user()->cognome 
                     : 'Sistema';
 
-                // Use warning for important changes
-                $level = ($hasStatusChange || $hasAssignmentChange) ? 'warning' : 'info';
+                // Use warning for important changes (status, assignment)
+                $level = $hasCriticalChanges ? 'warning' : 'info';
 
-                SystemLogService::database()->{$level}("Lead updated", [
+                // Enrich log with readable names
+                $logData = [
                     'lead_id' => $lead->id,
                     'lead_name' => $lead->full_name,
                     'changes' => $changesForLog,
-                    'status_changed' => $hasStatusChange,
-                    'assignment_changed' => $hasAssignmentChange,
-                    'updated_by' => $userName,
-                ]);
+                    'critical_change' => $hasCriticalChanges,
+                    'updated_by' => $operatorName,
+                ];
+
+                // Add status names if status changed
+                if (isset($changesForLog['lead_status_id'])) {
+                    $oldStatus = lead_status::find($changesForLog['lead_status_id']['old']);
+                    $newStatus = lead_status::find($changesForLog['lead_status_id']['new']);
+                    $logData['old_status_name'] = $oldStatus?->micro_stato;
+                    $logData['new_status_name'] = $newStatus?->micro_stato;
+                }
+
+                // Add user names if assignment changed
+                if (isset($changesForLog['assegnato_a'])) {
+                    $oldUser = User::find($changesForLog['assegnato_a']['old']);
+                    $newUser = User::find($changesForLog['assegnato_a']['new']);
+                    $logData['old_assigned_to_name'] = $oldUser 
+                        ? $oldUser->name . ' ' . $oldUser->cognome 
+                        : null;
+                    $logData['new_assigned_to_name'] = $newUser 
+                        ? $newUser->name . ' ' . $newUser->cognome 
+                        : null;
+                }
+
+                // Use forEntity for audit trail
+                SystemLogService::userActivity()
+                    ->forEntity('lead', $lead->id)
+                    ->{$level}("Lead updated", $logData);
             }
         });
 
-        // Log lead deletion
+        // Log lead deletion with entity tracking
         static::deleted(function ($lead) {
-            $userName = Auth::check() 
+            $operatorName = Auth::check() 
                 ? Auth::user()->name . ' ' . Auth::user()->cognome 
                 : 'Sistema';
 
-            SystemLogService::database()->warning("Lead deleted", [
-                'lead_id' => $lead->id,
-                'nome' => $lead->nome,
-                'cognome' => $lead->cognome,
-                'email' => $lead->email,
-                'was_converted' => $lead->is_converted,
-                'deleted_by' => $userName,
-            ]);
+            // Use forEntity for audit trail
+            SystemLogService::userActivity()
+                ->forEntity('lead', $lead->id)
+                ->warning("Lead deleted", [
+                    'lead_id' => $lead->id,
+                    'nome' => $lead->nome,
+                    'cognome' => $lead->cognome,
+                    'email' => $lead->email,
+                    'was_converted' => $lead->is_converted,
+                    'deleted_by' => $operatorName,
+                ]);
         });
     }
 

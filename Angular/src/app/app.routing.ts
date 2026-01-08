@@ -26,6 +26,7 @@ import { ResetPasswordComponent } from './pages/reset-password/reset-password.co
 import { PasswordResetSuccessComponent } from './components/password-reset-success/password-reset-success.component';
 import { FormGeneraleComponent } from './pages/form-generale/form-generale.component';
 import { TicketManagementComponent } from './pages/ticket-management/ticket-management.component';
+import { SystemLogsComponent } from './pages/system-logs/system-logs.component';
 
 export const AppRoutes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -58,8 +59,8 @@ export const AppRoutes: Routes = [
       { path: 'utenti', component: GestioneUtentiComponent },
       { path: 'schedapr', component: SchedaUtenteComponent },
       { path: 'ticket', component: TicketManagementComponent },
-      // Aggiungi qui le altre rotte del tuo AdminLayoutModule
+      { path: 'logs', component: SystemLogsComponent },
     ],
   },
-    { path: '**', redirectTo: 'dashboard' }
+  { path: '**', redirectTo: 'dashboard' }
 ];
