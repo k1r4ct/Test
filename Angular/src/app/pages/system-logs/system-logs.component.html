@@ -1204,6 +1204,99 @@
         </div>
       </div>
 
+      <!-- Session Timeout Settings -->
+      <div class="settings-section">
+        <h4 class="settings-section-title">
+          <i class="fas fa-user-clock"></i> Timeout Sessione
+        </h4>
+        <p class="settings-section-description">
+          Minuti di inattività prima del logout automatico. 
+          Il timer conta solo quando il CRM è in background.
+        </p>
+        <div class="session-timeout-grid">
+          <div class="timeout-item">
+            <div class="timeout-role">
+              <i class="fas fa-user-shield"></i>
+              <span>Administrator</span>
+            </div>
+            <div class="timeout-input-wrapper">
+              <input type="number" 
+                     class="timeout-input"
+                     [value]="getTimeoutMinutes('session_timeout_admin')"
+                     (change)="updateSessionTimeout('session_timeout_admin', $any($event.target).value)"
+                     min="5"
+                     max="480">
+              <span class="timeout-unit">min</span>
+            </div>
+          </div>
+          <div class="timeout-item">
+            <div class="timeout-role">
+              <i class="fas fa-headset"></i>
+              <span>BackOffice</span>
+            </div>
+            <div class="timeout-input-wrapper">
+              <input type="number" 
+                     class="timeout-input"
+                     [value]="getTimeoutMinutes('session_timeout_backoffice')"
+                     (change)="updateSessionTimeout('session_timeout_backoffice', $any($event.target).value)"
+                     min="5"
+                     max="480">
+              <span class="timeout-unit">min</span>
+            </div>
+          </div>
+          <div class="timeout-item">
+            <div class="timeout-role">
+              <i class="fas fa-user-tie"></i>
+              <span>Advisor (SEU)</span>
+            </div>
+            <div class="timeout-input-wrapper">
+              <input type="number" 
+                     class="timeout-input"
+                     [value]="getTimeoutMinutes('session_timeout_advisor')"
+                     (change)="updateSessionTimeout('session_timeout_advisor', $any($event.target).value)"
+                     min="5"
+                     max="480">
+              <span class="timeout-unit">min</span>
+            </div>
+          </div>
+          <div class="timeout-item">
+            <div class="timeout-role">
+              <i class="fas fa-user"></i>
+              <span>Cliente</span>
+            </div>
+            <div class="timeout-input-wrapper">
+              <input type="number" 
+                     class="timeout-input"
+                     [value]="getTimeoutMinutes('session_timeout_cliente')"
+                     (change)="updateSessionTimeout('session_timeout_cliente', $any($event.target).value)"
+                     min="5"
+                     max="480">
+              <span class="timeout-unit">min</span>
+            </div>
+          </div>
+          <div class="timeout-item">
+            <div class="timeout-role">
+              <i class="fas fa-globe"></i>
+              <span>Operatore Web</span>
+            </div>
+            <div class="timeout-input-wrapper">
+              <input type="number" 
+                     class="timeout-input"
+                     [value]="getTimeoutMinutes('session_timeout_operatore')"
+                     (change)="updateSessionTimeout('session_timeout_operatore', $any($event.target).value)"
+                     min="5"
+                     max="480">
+              <span class="timeout-unit">min</span>
+            </div>
+          </div>
+        </div>
+        <div class="timeout-info-box">
+          <i class="fas fa-info-circle"></i>
+          <span>Il timer si attiva solo quando l'utente passa ad un'altra scheda o applicazione. 
+                Click, scroll e attività resettano il timer.</span>
+        </div>
+      </div>
+
       <!-- Notifications -->
       <div class="settings-section">
         <h4 class="settings-section-title">

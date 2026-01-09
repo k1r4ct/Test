@@ -1483,10 +1483,8 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          console.log('Settings response:', response);
           if (response.success && response.data) {
             this.logSettings = this.transformSettingsFromApi(response.data);
-            console.log('Transformed settings:', this.logSettings);
           } else {
             this.logSettings = this.getDefaultSettings();
           }
@@ -1506,6 +1504,7 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
       options: {},
       retention: {},
       cleanup: {},
+      session: {},
       notifications: {}
     };
 
@@ -1553,6 +1552,13 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
         cleanup_time: '03:00',
         cleanup_last_run: null
       },
+      session: {
+        session_timeout_admin: 3600,
+        session_timeout_backoffice: 3600,
+        session_timeout_advisor: 1200,
+        session_timeout_cliente: 1200,
+        session_timeout_operatore: 1200
+      },
       notifications: {
         notify_critical_errors: false,
         notify_email: ''
@@ -1561,9 +1567,12 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
   }
 
   updateSetting(key: string, value: any): void {
+    // Parse numeric values
     if (['slow_query_threshold', 'retention_auth', 'retention_api', 'retention_database', 
          'retention_scheduler', 'retention_email', 'retention_system', 'retention_user_activity',
-         'retention_external_api', 'retention_ecommerce', 'retention_errors'].includes(key)) {
+         'retention_external_api', 'retention_ecommerce', 'retention_errors',
+         'session_timeout_admin', 'session_timeout_backoffice', 'session_timeout_advisor',
+         'session_timeout_cliente', 'session_timeout_operatore'].includes(key)) {
       value = parseInt(value, 10);
     }
 
@@ -1592,6 +1601,9 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
     } else if (key.startsWith('cleanup_')) {
       if (!this.logSettings.cleanup) this.logSettings.cleanup = {};
       this.logSettings.cleanup[key] = value;
+    } else if (key.startsWith('session_timeout_')) {
+      if (!this.logSettings.session) this.logSettings.session = {};
+      this.logSettings.session[key] = value;
     } else if (key.startsWith('notify_')) {
       if (!this.logSettings.notifications) this.logSettings.notifications = {};
       this.logSettings.notifications[key] = value;
@@ -1642,6 +1654,60 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
           this.isRunningCleanup = false;
         }
       });
+  }
+
+  // ==================== SESSION TIMEOUT SETTINGS ====================
+
+  /**
+   * Get timeout value in minutes for display in the UI
+   * Values are stored in seconds in the database
+   */
+  getTimeoutMinutes(key: string): number {
+    // Check if setting exists in logSettings.session
+    if (this.logSettings?.session && this.logSettings.session[key] !== undefined) {
+      return Math.round(this.logSettings.session[key] / 60);
+    }
+    
+    // Default values in minutes based on key
+    const defaults: { [k: string]: number } = {
+      'session_timeout_admin': 60,
+      'session_timeout_backoffice': 60,
+      'session_timeout_advisor': 20,
+      'session_timeout_cliente': 20,
+      'session_timeout_operatore': 20,
+    };
+    
+    return defaults[key] || 20;
+  }
+
+  /**
+   * Update session timeout setting
+   * Converts minutes from UI to seconds for storage
+   */
+  updateSessionTimeout(key: string, minutes: number): void {
+    // Validate range (5 min to 8 hours)
+    const minMinutes = 5;
+    const maxMinutes = 480;
+    
+    if (minutes < minMinutes) {
+      minutes = minMinutes;
+      this.toastr.warning(`Valore minimo: ${minMinutes} minuti`);
+    } else if (minutes > maxMinutes) {
+      minutes = maxMinutes;
+      this.toastr.warning(`Valore massimo: ${maxMinutes} minuti (8 ore)`);
+    }
+    
+    // Convert to seconds for storage
+    const seconds = minutes * 60;
+    
+    // Call updateSetting with the seconds value
+    this.updateSetting(key, seconds);
+    
+    // Also update local state for immediate UI feedback
+    if (!this.logSettings.session) {
+      this.logSettings.session = {};
+    }
+    this.logSettings.session[key] = seconds;
   }
 
   // ==================== TRACK BY FUNCTIONS ====================

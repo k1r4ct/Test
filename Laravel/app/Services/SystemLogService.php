@@ -7,6 +7,8 @@ use App\Models\LogSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Log as LaravelLog;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\CriticalErrorNotification;
 
 class SystemLogService
 {
@@ -202,7 +204,12 @@ class SystemLogService
 
         $stackTrace = $exception ? $this->formatStackTrace($exception) : null;
 
-        return $this->createLog(Log::LEVEL_ERROR, $message, $context, $stackTrace);
+        $log = $this->createLog(Log::LEVEL_ERROR, $message, $context, $stackTrace);
+
+        // Send notification for errors too (if enabled)
+        $this->notifyIfCritical('error', $message, $context);
+
+        return $log;
     }
 
     /**
@@ -219,8 +226,8 @@ class SystemLogService
 
         $log = $this->createLog(Log::LEVEL_CRITICAL, $message, $context, $stackTrace);
 
-        // Send notification for critical errors if enabled
-        $this->notifyIfCritical($message, $context);
+        // Send notification for critical errors
+        $this->notifyIfCritical('critical', $message, $context);
 
         return $log;
     }
@@ -454,31 +461,104 @@ class SystemLogService
         }
     }
 
+    // ==================== EMAIL NOTIFICATION ====================
+
     /**
-     * Send notification for critical errors if enabled in settings.
+     * Send notification for critical/error level logs if enabled in settings.
+     * 
+     * @param string $level The log level (error, critical)
+     * @param string $message The error message
+     * @param array $context Additional context data
      */
-    protected function notifyIfCritical(string $message, array $context): void
+    protected function notifyIfCritical(string $level, string $message, array $context): void
     {
         try {
+            // Check if notifications are enabled
             $notifyEnabled = LogSetting::get('notify_critical_errors', false);
             
             if (!$notifyEnabled) {
                 return;
             }
 
+            // Get notification email
             $email = LogSetting::get('notify_email');
             
-            if (!$email) {
+            if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 return;
             }
 
-            // Queue email notification
-            // You can implement this with your preferred mail system
-            // Mail::to($email)->queue(new CriticalErrorNotification($message, $context));
+            // Remove internal/sensitive data from context before sending
+            $safeContext = $this->sanitizeContextForEmail($context);
+
+            // Add source info to context
+            $safeContext['source'] = $this->source ?? 'system';
+
+            // Send email notification (queued for better performance)
+            // Use send() instead of queue() if you don't have queue workers running
+            Mail::to($email)->send(new CriticalErrorNotification($message, $safeContext, $level));
             
         } catch (\Exception $e) {
             // Silently fail - don't break logging because notification failed
+            // Optionally log to file only to avoid recursion
+            LaravelLog::channel('single')->warning('Failed to send error notification email: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Remove sensitive data from context before sending via email.
+     * 
+     * @param array $context Original context
+     * @return array Sanitized context
+     */
+    protected function sanitizeContextForEmail(array $context): array
+    {
+        // Keys to exclude from email notifications
+        $sensitiveKeys = [
+            'password', 'password_confirmation', 'token', 'api_key', 'secret',
+            'authorization', 'cookie', 'session', '_token', 'csrf',
+            '_entity_type', '_entity_id', '_contract_id', // Internal tracking keys
+        ];
+
+        $safeContext = [];
+        
+        foreach ($context as $key => $value) {
+            // Skip internal keys (starting with _)
+            if (str_starts_with($key, '_')) {
+                continue;
+            }
+            
+            // Skip sensitive keys (case insensitive)
+            $keyLower = strtolower($key);
+            $isSensitive = false;
+            foreach ($sensitiveKeys as $sensitiveKey) {
+                if (str_contains($keyLower, $sensitiveKey)) {
+                    $isSensitive = true;
+                    break;
+                }
+            }
+            if ($isSensitive) {
+                continue;
+            }
+            
+            // Truncate very long values
+            if (is_string($value) && strlen($value) > 500) {
+                $value = substr($value, 0, 500) . '... [truncated]';
+            }
+            
+            // Convert arrays/objects to limited string representation
+            if (is_array($value) || is_object($value)) {
+                $encoded = json_encode($value, JSON_UNESCAPED_UNICODE);
+                if (strlen($encoded) > 500) {
+                    $value = substr($encoded, 0, 500) . '... [truncated]';
+                } else {
+                    $value = $encoded;
+                }
+            }
+            
+            $safeContext[$key] = $value;
+        }
+        
+        return $safeContext;
     }
 
     // ==================== HELPER METHODS ====================

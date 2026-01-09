@@ -523,6 +523,7 @@ class ContractController extends Controller
                $request->stato_avanzamento == 9 ||
                $request->stato_avanzamento == 11 ||
                $request->stato_avanzamento == 12 ||
+               $request->stato_avanzamento == 14 ||
                $request->stato_avanzamento == 16 ){
                 Mail::to($mailSeu)->send(new \App\Mail\CambioStatoContratto($contrattoNew));
             }
@@ -635,23 +636,70 @@ class ContractController extends Controller
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $trovato]]);
     }
 
+    /**
+     * Bulk update contract status with email notifications
+     * 
+     * Sends email notifications to SEU users when contracts are moved to specific statuses
+     */
     public function updateStatoMassivoContratti(Request $request)
     {
         $contratti = json_decode($request->contratti);
+        $nuovoStato = $request->nuovostato;
+        
+        // Status IDs that require email notification (same as updateContratto)
+        $statusRequiringEmail = [2, 3, 5, 7, 9, 11, 12, 14, 16];
+        
+        $emailsSent = 0;
+        $emailErrors = [];
+        
         foreach ($contratti as $contratto) {
-            $updateContratto = contract::find($contratto->id)->update(['status_contract_id' => $request->nuovostato]);
+            // Update the contract status
+            contract::find($contratto->id)->update(['status_contract_id' => $nuovoStato]);
+            
+            // If the new status requires email notification, send it
+            if (in_array((int)$nuovoStato, $statusRequiringEmail)) {
+                try {
+                    // Load the contract with required relationships for the email
+                    $contrattoCompleto = Contract::with(['status_contract', 'User', 'UserSeu'])
+                        ->where('id', $contratto->id)
+                        ->first();
+                    
+                    if ($contrattoCompleto && $contrattoCompleto->UserSeu && $contrattoCompleto->UserSeu->email) {
+                        $mailSeu = $contrattoCompleto->UserSeu->email;
+                        Mail::to($mailSeu)->send(new \App\Mail\CambioStatoContratto($contrattoCompleto));
+                        $emailsSent++;
+                    }
+                } catch (\Exception $e) {
+                    // Log email error but continue processing other contracts
+                    $emailErrors[] = [
+                        'contract_id' => $contratto->id,
+                        'error' => $e->getMessage()
+                    ];
+                }
+            }
         }
 
         // Log bulk status update
         $contractIds = array_map(function($c) { return $c->id; }, $contratti);
         SystemLogService::userActivity()->info('Bulk contract status update', [
             'contract_ids' => $contractIds,
-            'new_status_id' => $request->nuovostato,
+            'new_status_id' => $nuovoStato,
             'contracts_count' => count($contratti),
+            'emails_sent' => $emailsSent,
+            'email_errors' => count($emailErrors),
             'updated_by_user_id' => Auth::user()->id,
         ]);
 
-        return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $updateContratto]]);
+        return response()->json([
+            "response" => "ok", 
+            "status" => "200", 
+            "body" => [
+                "risposta" => true,
+                "contracts_updated" => count($contratti),
+                "emails_sent" => $emailsSent,
+                "email_errors" => $emailErrors
+            ]
+        ]);
     }
 
     public function contrattiPersonali($id)
