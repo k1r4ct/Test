@@ -38,6 +38,8 @@ use App\Services\SystemLogService;
 
 class ContractController extends Controller
 {
+    private const STATUS_REQUIRING_NOTIFICATION = [2, 3, 5, 7, 9, 11, 12, 14, 16];
+
     /**
      * Display a listing of the resource.
      */
@@ -512,20 +514,18 @@ class ContractController extends Controller
 
         if (is_numeric($request->stato_avanzamento)) {
             $updateContratto = Contract::where('id', $request->idContratto)->update(['status_contract_id' => $request->stato_avanzamento]);
-            $contrattoNew = Contract::with(['status_contract','User','UserSeu'])->where('id', $request->idContratto)->first();
+            $contrattoNew = Contract::with(['status_contract', 'User', 'UserSeu', 'customer_data'])->where('id', $request->idContratto)->first();
             
             $statoContrattoNew = $contrattoNew->status_contract->micro_stato;
-            $mailSeu=$contrattoNew->UserSeu->email;
-            if($request->stato_avanzamento == 2 || 
-               $request->stato_avanzamento == 3 || 
-               $request->stato_avanzamento == 5 ||
-               $request->stato_avanzamento == 7 ||
-               $request->stato_avanzamento == 9 ||
-               $request->stato_avanzamento == 11 ||
-               $request->stato_avanzamento == 12 ||
-               $request->stato_avanzamento == 14 ||
-               $request->stato_avanzamento == 16 ){
+            $mailSeu = $contrattoNew->UserSeu->email;
+            
+            // Check if status requires email and notification
+            if (in_array((int)$request->stato_avanzamento, self::STATUS_REQUIRING_NOTIFICATION)) {
+                // Send email
                 Mail::to($mailSeu)->send(new \App\Mail\CambioStatoContratto($contrattoNew));
+                
+                // Send in-app notification to SEU
+                $this->notifyContractStatusChange($contrattoNew, $statoContrattoOld, $statoContrattoNew);
             }
         }
         if ($request->note_backoffice) {
@@ -646,28 +646,37 @@ class ContractController extends Controller
         $contratti = json_decode($request->contratti);
         $nuovoStato = $request->nuovostato;
         
-        // Status IDs that require email notification (same as updateContratto)
-        $statusRequiringEmail = [2, 3, 5, 7, 9, 11, 12, 14, 16];
-        
         $emailsSent = 0;
         $emailErrors = [];
+        $notificationsSent = 0;
         
         foreach ($contratti as $contratto) {
+            // Get old status before update
+            $oldContract = Contract::with('status_contract')->find($contratto->id);
+            $oldStatusLabel = $oldContract ? $oldContract->status_contract->micro_stato : 'N/A';
+            
             // Update the contract status
             contract::find($contratto->id)->update(['status_contract_id' => $nuovoStato]);
             
             // If the new status requires email notification, send it
-            if (in_array((int)$nuovoStato, $statusRequiringEmail)) {
+            if (in_array((int)$nuovoStato, self::STATUS_REQUIRING_NOTIFICATION)) {
                 try {
                     // Load the contract with required relationships for the email
-                    $contrattoCompleto = Contract::with(['status_contract', 'User', 'UserSeu'])
+                    $contrattoCompleto = Contract::with(['status_contract', 'User', 'UserSeu', 'customer_data'])
                         ->where('id', $contratto->id)
                         ->first();
                     
                     if ($contrattoCompleto && $contrattoCompleto->UserSeu && $contrattoCompleto->UserSeu->email) {
                         $mailSeu = $contrattoCompleto->UserSeu->email;
+                        
+                        // Send email
                         Mail::to($mailSeu)->send(new \App\Mail\CambioStatoContratto($contrattoCompleto));
                         $emailsSent++;
+                        
+                        // Send in-app notification
+                        $newStatusLabel = $contrattoCompleto->status_contract->micro_stato;
+                        $this->notifyContractStatusChange($contrattoCompleto, $oldStatusLabel, $newStatusLabel);
+                        $notificationsSent++;
                     }
                 } catch (\Exception $e) {
                     // Log email error but continue processing other contracts
@@ -686,6 +695,7 @@ class ContractController extends Controller
             'new_status_id' => $nuovoStato,
             'contracts_count' => count($contratti),
             'emails_sent' => $emailsSent,
+            'notifications_sent' => $notificationsSent,
             'email_errors' => count($emailErrors),
             'updated_by_user_id' => Auth::user()->id,
         ]);
@@ -697,9 +707,61 @@ class ContractController extends Controller
                 "risposta" => true,
                 "contracts_updated" => count($contratti),
                 "emails_sent" => $emailsSent,
+                "notifications_sent" => $notificationsSent,
                 "email_errors" => $emailErrors
             ]
         ]);
+    }
+
+    /**
+     * Send in-app notification to SEU when contract status changes
+     */
+    private function notifyContractStatusChange(Contract $contract, string $oldStatus, string $newStatus): void
+    {
+        try {
+            $currentUserId = Auth::id();
+            $seuUserId = $contract->inserito_da_user_id;
+
+            // Don't notify if same user made the change
+            if ($currentUserId === $seuUserId) {
+                return;
+            }
+
+            // Get customer name for notification
+            $customerName = 'N/A';
+            if ($contract->customer_data) {
+                if ($contract->customer_data->nome && $contract->customer_data->cognome) {
+                    $customerName = $contract->customer_data->nome . ' ' . $contract->customer_data->cognome;
+                } elseif (!empty($contract->customer_data->ragione_sociale)) {
+                    $customerName = $contract->customer_data->ragione_sociale;
+                }
+            }
+
+            notification::create([
+                'from_user_id' => $currentUserId,
+                'to_user_id' => $seuUserId,
+                'reparto' => 'contratto',
+                'notifica' => "Contratto {$contract->codice_contratto} - Stato aggiornato a '{$newStatus}'",
+                'visualizzato' => false,
+                'notifica_html' => "<strong>Cambio stato contratto</strong><br>{$customerName}<br>Nuovo stato: {$newStatus}",
+                'type' => notification::TYPE_CONTRACT_STATUS,
+                'entity_type' => notification::ENTITY_CONTRACT,
+                'entity_id' => $contract->id,
+            ]);
+
+            SystemLogService::userActivity()->info('Contract status notification sent', [
+                'contract_id' => $contract->id,
+                'contract_code' => $contract->codice_contratto,
+                'seu_user_id' => $seuUserId,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+            ]);
+        } catch (\Exception $e) {
+            SystemLogService::application()->error('Error sending contract status notification', [
+                'contract_id' => $contract->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function contrattiPersonali($id)

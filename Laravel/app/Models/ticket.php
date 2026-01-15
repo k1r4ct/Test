@@ -24,6 +24,8 @@ class Ticket extends Model
         'closed_at',
         'restored_at',
         'deleted_at',
+        'creator_last_read_at',
+        'assignee_last_read_at',
     ];
 
     protected $casts = [
@@ -33,6 +35,8 @@ class Ticket extends Model
         'closed_at' => 'datetime',
         'restored_at' => 'datetime',
         'deleted_at' => 'datetime',
+        'creator_last_read_at' => 'datetime',
+        'assignee_last_read_at' => 'datetime',
     ];
 
     /**
@@ -133,7 +137,67 @@ class Ticket extends Model
         return $this->attachments()->exists();
     }
 
-    // Scopes
+    // ==================== READ TRACKING METHODS ====================
+
+    /**
+     * Mark ticket as read by current user
+     * 
+     * @param int $userId
+     * @return bool
+     */
+    public function markAsReadBy(int $userId): bool
+    {
+        if ($userId === $this->created_by_user_id) {
+            return $this->update(['creator_last_read_at' => now()]);
+        }
+        
+        if ($userId === $this->assigned_to_user_id) {
+            return $this->update(['assignee_last_read_at' => now()]);
+        }
+        
+        return false;
+    }
+
+    /**
+     * Get unread messages count for a specific user
+     * 
+     * @param int $userId
+     * @return int
+     */
+    public function getUnreadCountFor(int $userId): int
+    {
+        $lastReadAt = null;
+        
+        if ($userId === $this->created_by_user_id) {
+            $lastReadAt = $this->creator_last_read_at;
+        } elseif ($userId === $this->assigned_to_user_id) {
+            $lastReadAt = $this->assignee_last_read_at;
+        }
+        
+        $query = $this->messages()
+            ->where('user_id', '!=', $userId)
+            ->where('message_type', '!=', 'status_change');
+        
+        if ($lastReadAt) {
+            $query->where('created_at', '>', $lastReadAt);
+        }
+        
+        return $query->count();
+    }
+
+    /**
+     * Check if user has unread messages
+     * 
+     * @param int $userId
+     * @return bool
+     */
+    public function hasUnreadMessagesFor(int $userId): bool
+    {
+        return $this->getUnreadCountFor($userId) > 0;
+    }
+
+    // ==================== SCOPES ====================
+
     public function scopeByStatus($query, $status)
     {
         return $query->where('status', $status);
@@ -264,7 +328,8 @@ class Ticket extends Model
         return $query->where('category', self::CATEGORY_EXTRAORDINARY);
     }
 
-    // Attributes
+    // ==================== ATTRIBUTES ====================
+
     public function getCustomerNameAttribute()
     {
         if ($this->contract && $this->contract->customer_data) {

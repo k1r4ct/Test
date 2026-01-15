@@ -1,0 +1,134 @@
+<!-- Modal Backdrop -->
+<div class="modal-backdrop" 
+     *ngIf="isOpen" 
+     (click)="onBackdropClick($event)"
+     [@fadeInOut]>
+  
+  <!-- Modal Container -->
+  <div class="modal-container" [@slideIn]>
+    
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h2>Tutte le Notifiche</h2>
+      <button class="close-btn" (click)="closeModal()" title="Chiudi">
+        <span class="material-icons-round">close</span>
+      </button>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <button class="tab-btn" 
+              [class.active]="activeFilter === 'unread'"
+              (click)="setFilter('unread')">
+        <span class="material-icons-round">markunread</span>
+        Non lette
+        <span class="count-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+      </button>
+      <button class="tab-btn" 
+              [class.active]="activeFilter === 'all'"
+              (click)="setFilter('all')">
+        <span class="material-icons-round">notifications</span>
+        Tutte
+        <span class="count-badge">{{ totalCount }}</span>
+      </button>
+      <button class="tab-btn" 
+              [class.active]="activeFilter === 'read'"
+              (click)="setFilter('read')">
+        <span class="material-icons-round">done_all</span>
+        Lette
+        <span class="count-badge">{{ readCount }}</span>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="isLoading && groupedNotifications.length === 0">
+        <div class="spinner"></div>
+        <span>Caricamento notifiche...</span>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!isLoading && filteredNotifications.length === 0">
+        <span class="material-icons-round">notifications_off</span>
+        <p *ngIf="activeFilter === 'unread'">Nessuna notifica da leggere</p>
+        <p *ngIf="activeFilter === 'read'">Nessuna notifica letta</p>
+        <p *ngIf="activeFilter === 'all'">Nessuna notifica</p>
+      </div>
+
+      <!-- Notifications List -->
+      <div class="notifications-list" *ngIf="groupedNotifications.length > 0">
+        
+        <!-- Grouped by Date -->
+        <div class="notification-group" *ngFor="let group of groupedNotifications">
+          <div class="group-header">
+            <span class="material-icons-round">calendar_today</span>
+            {{ group.label }}
+          </div>
+          
+          <!-- Notification Items -->
+          <div class="notification-item" 
+               *ngFor="let notification of group.notifications"
+               [class.unread]="!notification.visualizzato"
+               (click)="onNotificationClick(notification)">
+            
+            <!-- Icon -->
+            <div class="notification-icon" [ngClass]="getNotificationIconClass(notification)">
+              <span class="material-icons-round">{{ getNotificationIcon(notification) }}</span>
+            </div>
+            
+            <!-- Content -->
+            <div class="notification-content">
+              <p class="notification-text" [innerHTML]="notification.notifica_html || notification.notifica"></p>
+              <span class="notification-time">{{ formatDate(notification.created_at) }}</span>
+            </div>
+            
+            <!-- Actions -->
+            <div class="notification-actions">
+              <button class="action-btn" 
+                      *ngIf="!notification.visualizzato"
+                      (click)="markAsRead(notification, $event)"
+                      title="Segna come letta">
+                <span class="material-icons-round">check</span>
+              </button>
+              <button class="action-btn delete-btn" 
+                      (click)="deleteNotification(notification, $event)"
+                      title="Elimina">
+                <span class="material-icons-round">delete_outline</span>
+              </button>
+            </div>
+
+            <!-- Unread indicator -->
+            <div class="unread-dot" *ngIf="!notification.visualizzato"></div>
+          </div>
+        </div>
+
+        <!-- Load More Button -->
+        <div class="load-more" *ngIf="currentPage < totalPages">
+          <button class="load-more-btn" (click)="loadMore()" [disabled]="isLoading">
+            <span class="material-icons-round" *ngIf="!isLoading">expand_more</span>
+            <div class="spinner-small" *ngIf="isLoading"></div>
+            {{ isLoading ? 'Caricamento...' : 'Carica altre' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer" *ngIf="filteredNotifications.length > 0">
+      <button class="footer-btn" 
+              (click)="markAllAsRead()" 
+              [disabled]="unreadCount === 0">
+        <span class="material-icons-round">done_all</span>
+        Segna tutte come lette
+      </button>
+      <button class="footer-btn danger" 
+              (click)="deleteAllRead()"
+              [disabled]="readCount === 0">
+        <span class="material-icons-round">delete_sweep</span>
+        Elimina tutte le lette
+      </button>
+    </div>
+  </div>
+</div>

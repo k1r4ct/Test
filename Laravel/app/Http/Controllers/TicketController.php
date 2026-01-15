@@ -8,6 +8,7 @@ use App\Models\TicketMessage;
 use App\Models\TicketChangeLog;
 use App\Models\contract;
 use App\Models\notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +21,9 @@ use Illuminate\Support\Facades\Mail;
 
 class TicketController extends Controller
 {
+    // BackOffice role IDs that should receive new ticket notifications
+    private const BACKOFFICE_ROLE_IDS = [1, 4, 5, 6, 9, 10];
+
     public function getTickets()
     {
         try {
@@ -154,7 +158,8 @@ class TicketController extends Controller
                 'change_type' => TicketChangeLog::CHANGE_TYPE_BOTH
             ]);
 
-            $this->notifyTicketParticipants($ticket, 'new_ticket');
+            // Notify all BackOffice users about new ticket
+            $this->notifyNewTicketToBackoffice($ticket);
 
             try {
                 Mail::to($user->email)->send(new \App\Mail\NuovoTicketCreato($user, $ticket));
@@ -204,6 +209,7 @@ class TicketController extends Controller
 
             $oldStatus = $ticket->status;
             $newStatus = $request->status;
+            $previousAssignee = $ticket->assigned_to_user_id;
 
             if ($oldStatus !== Ticket::STATUS_NEW && $newStatus === Ticket::STATUS_NEW && !in_array($userRole, [1, 6])) {
                 return response()->json([
@@ -266,7 +272,20 @@ class TicketController extends Controller
                 'message_type' => 'status_change'
             ]);
 
-            $this->notifyTicketParticipants($ticket, 'status_changed');
+            // Reload ticket to get updated data
+            $ticket->refresh();
+            $ticket->load(['createdBy', 'assignedTo']);
+
+            // Check if this is an assignment (user just assigned themselves)
+            $justAssigned = ($previousAssignee === null && $ticket->assigned_to_user_id !== null);
+            
+            if ($justAssigned) {
+                // Notify SEU about assignment
+                $this->notifyTicketAssigned($ticket);
+            }
+
+            // Notify about status change (waiting, resolved, closed)
+            $this->notifyTicketStatusChange($ticket, $oldStatus, $newStatus);
 
             return response()->json([
                 "response" => "ok",
@@ -542,6 +561,9 @@ class TicketController extends Controller
                 'message_type' => 'status_change'
             ]);
 
+            // Notify SEU about ticket closure
+            $this->notifyTicketStatusChange($ticket, $oldStatus, Ticket::STATUS_CLOSED);
+
             return response()->json([
                 "response" => "ok",
                 "status" => "200", 
@@ -649,6 +671,9 @@ class TicketController extends Controller
                 ]);
             }
 
+            // Mark ticket as read by current user
+            $ticket->markAsReadBy($user->id);
+
             $messages = TicketMessage::with(['user.role'])
                 ->where('ticket_id', $ticketId)
                 ->orderBy('created_at', 'asc')
@@ -704,7 +729,11 @@ class TicketController extends Controller
                 'message_type' => 'text'
             ]);
 
-            $this->notifyTicketParticipants($ticket, 'new_message');
+            // Mark as read for sender (they just saw it)
+            $ticket->markAsReadBy($user->id);
+
+            // Send in-app notification to the other participant
+            $this->notifyNewMessage($ticket, $user);
 
             $message->load(['user.role', 'ticket']);
             
@@ -837,45 +866,200 @@ class TicketController extends Controller
         return false;
     }
 
-    private function notifyTicketParticipants($ticket, $event)
+    // ==================== NOTIFICATION METHODS ====================
+
+    /**
+     * Notify all BackOffice users about a new ticket
+     */
+    private function notifyNewTicketToBackoffice(Ticket $ticket): void
     {
         try {
-            $userIds = collect([
-                $ticket->created_by_user_id,
-                $ticket->assigned_to_user_id,
-                $ticket->contract->created_by_user_id
-            ])->filter()->unique()->toArray();
-
             $currentUserId = Auth::id();
+            
+            // Get all BackOffice users
+            $backofficeUsers = User::whereIn('role_id', self::BACKOFFICE_ROLE_IDS)
+                ->where('id', '!=', $currentUserId)
+                ->get();
 
-            // Map event to Italian notification messages
-            $eventMessages = [
-                'new_ticket' => 'Nuovo ticket creato',
-                'new_message' => 'Nuovo messaggio nel ticket',
-                'status_changed' => 'Stato del ticket modificato',
-            ];
+            $creatorName = $this->getUserDisplayName($ticket->createdBy);
 
-            $notificationMessage = $eventMessages[$event] ?? 'Aggiornamento ticket';
-
-            foreach ($userIds as $userId) {
-                // Don't notify the user who triggered the event
-                if ($userId == $currentUserId) {
-                    continue;
-                }
-
+            foreach ($backofficeUsers as $boUser) {
                 notification::create([
                     'from_user_id' => $currentUserId,
-                    'to_user_id' => $userId,
+                    'to_user_id' => $boUser->id,
                     'reparto' => 'ticket',
-                    'notifica' => $notificationMessage . ' #' . $ticket->ticket_number,
+                    'notifica' => "Nuovo ticket #{$ticket->ticket_number} creato da {$creatorName}",
                     'visualizzato' => false,
-                    'notifica_html' => '<strong>' . $notificationMessage . '</strong><br>Ticket #' . $ticket->ticket_number,
+                    'notifica_html' => "<strong>Nuovo ticket</strong><br>#{$ticket->ticket_number} - {$ticket->title}",
+                    'type' => notification::TYPE_TICKET_NEW,
+                    'entity_type' => notification::ENTITY_TICKET,
+                    'entity_id' => $ticket->id,
                 ]);
             }
+
+            Log::info("New ticket notifications sent to " . $backofficeUsers->count() . " BackOffice users for ticket #{$ticket->ticket_number}");
         } catch (\Exception $e) {
-            Log::error('Error sending ticket notifications: ' . $e->getMessage());
+            Log::error('Error sending new ticket notifications: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Notify SEU when a BackOffice user assigns themselves to the ticket
+     */
+    private function notifyTicketAssigned(Ticket $ticket): void
+    {
+        try {
+            $currentUserId = Auth::id();
+            $seuUserId = $ticket->created_by_user_id;
+
+            // Don't notify if SEU assigned to themselves (shouldn't happen but just in case)
+            if ($currentUserId === $seuUserId) {
+                return;
+            }
+
+            $assigneeName = $this->getUserDisplayName($ticket->assignedTo);
+
+            notification::create([
+                'from_user_id' => $currentUserId,
+                'to_user_id' => $seuUserId,
+                'reparto' => 'ticket',
+                'notifica' => "Il ticket #{$ticket->ticket_number} è stato preso in carico da {$assigneeName}",
+                'visualizzato' => false,
+                'notifica_html' => "<strong>Ticket assegnato</strong><br>#{$ticket->ticket_number} preso in carico da {$assigneeName}",
+                'type' => notification::TYPE_TICKET_ASSIGNED,
+                'entity_type' => notification::ENTITY_TICKET,
+                'entity_id' => $ticket->id,
+            ]);
+
+            Log::info("Ticket assignment notification sent to SEU user #{$seuUserId} for ticket #{$ticket->ticket_number}");
+        } catch (\Exception $e) {
+            Log::error('Error sending ticket assignment notification: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify SEU about ticket status changes (waiting, resolved, closed)
+     */
+    private function notifyTicketStatusChange(Ticket $ticket, string $oldStatus, string $newStatus): void
+    {
+        try {
+            // Only notify for these status changes
+            $notifiableStatuses = [
+                Ticket::STATUS_WAITING,
+                Ticket::STATUS_RESOLVED,
+                Ticket::STATUS_CLOSED,
+            ];
+
+            if (!in_array($newStatus, $notifiableStatuses)) {
+                return;
+            }
+
+            $currentUserId = Auth::id();
+            $seuUserId = $ticket->created_by_user_id;
+
+            // Don't notify the user who made the change
+            if ($currentUserId === $seuUserId) {
+                return;
+            }
+
+            $statusLabels = Ticket::getStatusOptions();
+            $statusLabel = $statusLabels[$newStatus] ?? $newStatus;
+
+            // Map status to notification type
+            $typeMap = [
+                Ticket::STATUS_WAITING => notification::TYPE_TICKET_WAITING,
+                Ticket::STATUS_RESOLVED => notification::TYPE_TICKET_RESOLVED,
+                Ticket::STATUS_CLOSED => notification::TYPE_TICKET_CLOSED,
+            ];
+
+            // Build message based on status
+            $messages = [
+                Ticket::STATUS_WAITING => "Il ticket #{$ticket->ticket_number} è in lavorazione",
+                Ticket::STATUS_RESOLVED => "Il ticket #{$ticket->ticket_number} è stato risolto",
+                Ticket::STATUS_CLOSED => "Il ticket #{$ticket->ticket_number} è stato chiuso",
+            ];
+
+            notification::create([
+                'from_user_id' => $currentUserId,
+                'to_user_id' => $seuUserId,
+                'reparto' => 'ticket',
+                'notifica' => $messages[$newStatus],
+                'visualizzato' => false,
+                'notifica_html' => "<strong>Ticket {$statusLabel}</strong><br>#{$ticket->ticket_number}",
+                'type' => $typeMap[$newStatus],
+                'entity_type' => notification::ENTITY_TICKET,
+                'entity_id' => $ticket->id,
+            ]);
+
+            Log::info("Ticket status change notification sent to SEU user #{$seuUserId} for ticket #{$ticket->ticket_number} (status: {$newStatus})");
+        } catch (\Exception $e) {
+            Log::error('Error sending ticket status notification: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Notify about new message in ticket
+     */
+    private function notifyNewMessage(Ticket $ticket, User $sender): void
+    {
+        try {
+            $senderId = $sender->id;
+            $ticketCreatorId = $ticket->created_by_user_id;
+            $assigneeId = $ticket->assigned_to_user_id;
+
+            // Determine recipient: if sender is creator -> notify assignee, else notify creator
+            if ($senderId === $ticketCreatorId) {
+                // SEU sent message -> notify BackOffice (if assigned)
+                if (!$assigneeId) {
+                    return; // No one to notify
+                }
+                $recipientId = $assigneeId;
+            } else {
+                // BackOffice sent message -> notify SEU
+                $recipientId = $ticketCreatorId;
+            }
+
+            $senderName = $this->getUserDisplayName($sender);
+
+            notification::create([
+                'from_user_id' => $senderId,
+                'to_user_id' => $recipientId,
+                'reparto' => 'ticket',
+                'notifica' => "Nuova risposta al ticket #{$ticket->ticket_number}",
+                'visualizzato' => false,
+                'notifica_html' => "<strong>Nuovo messaggio</strong><br>Ticket #{$ticket->ticket_number}",
+                'type' => notification::TYPE_TICKET_MESSAGE,
+                'entity_type' => notification::ENTITY_TICKET,
+                'entity_id' => $ticket->id,
+            ]);
+
+            Log::info("New message notification sent to user #{$recipientId} for ticket #{$ticket->ticket_number}");
+        } catch (\Exception $e) {
+            Log::error('Error sending new message notification: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get display name for a user
+     */
+    private function getUserDisplayName(?User $user): string
+    {
+        if (!$user) {
+            return 'Utente sconosciuto';
+        }
+
+        if ($user->name && $user->cognome) {
+            return $user->name . ' ' . $user->cognome;
+        }
+
+        if (!empty($user->ragione_sociale)) {
+            return $user->ragione_sociale;
+        }
+
+        return $user->email ?? 'Utente';
+    }
+
+    // ==================== TICKET QUERY METHODS ====================
 
     public function getTicketByContractId($contractId)
     {
@@ -887,6 +1071,9 @@ class TicketController extends Controller
                         ->first();
             
             if ($ticket && $this->canAccessTicket($user, $ticket)) {
+                // Mark as read when accessed
+                $ticket->markAsReadBy($user->id);
+                
                 return response()->json([
                     "response" => "ok",
                     "status" => "200",
@@ -908,6 +1095,43 @@ class TicketController extends Controller
             ]);
         }
     }
+
+    public function getAllTicketsByContractId($contractId)
+    {
+        try {
+            $user = Auth::user();
+            $userRole = $user->role->id;
+
+            if (!in_array($userRole, [1, 6])) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Only administrators can view all tickets"
+                ]);
+            }
+
+            $tickets = Ticket::where('contract_id', $contractId)
+                            ->with(['messages.user', 'createdBy', 'assignedTo'])
+                            ->orderBy('created_at', 'desc')
+                            ->get();
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200",
+                "body" => ["tickets" => $tickets]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting all tickets by contract: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500",
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    // ==================== TICKET RESTORE/DELETE METHODS ====================
 
     public function restoreTicket(Request $request)
     {
@@ -1007,7 +1231,8 @@ class TicketController extends Controller
                 'message_type' => 'status_change'
             ]);
 
-            $this->notifyTicketParticipants($ticket, 'status_changed');
+            // Notify all BackOffice about restored ticket
+            $this->notifyNewTicketToBackoffice($ticket);
 
             return response()->json([
                 "response" => "ok",
@@ -1021,118 +1246,6 @@ class TicketController extends Controller
             return response()->json([
                 "response" => "error",
                 "status" => "500", 
-                "message" => "Server error"
-            ]);
-        }
-    }
-
-    public function getAllTicketsByContractId($contractId)
-    {
-        try {
-            $user = Auth::user();
-            $userRole = $user->role->id;
-
-            if (!in_array($userRole, [1, 6])) {
-                return response()->json([
-                    "response" => "error",
-                    "status" => "403", 
-                    "message" => "Only administrators can view all tickets"
-                ]);
-            }
-
-            $tickets = Ticket::where('contract_id', $contractId)
-                            ->with(['messages.user', 'createdBy', 'assignedTo'])
-                            ->orderBy('created_at', 'desc')
-                            ->get();
-
-            return response()->json([
-                "response" => "ok",
-                "status" => "200",
-                "body" => ["tickets" => $tickets]
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error getting all tickets by contract: ' . $e->getMessage());
-            return response()->json([
-                "response" => "error",
-                "status" => "500",
-                "message" => "Server error"
-            ]);
-        }
-    }
-
-    public function deleteTicketByContractId(Request $request)
-    {
-        try {
-            $validator = Validator::make($request->all(), [
-                'contract_id' => 'required|exists:contracts,id'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    "response" => "error",
-                    "status" => "400", 
-                    "errors" => $validator->errors()
-                ]);
-            }
-
-            $user = Auth::user();
-            $userRole = $user->role->id;
-
-            if (!in_array($userRole, [1, 6])) {
-                return response()->json([
-                    "response" => "error",
-                    "status" => "403", 
-                    "message" => "Only administrators can delete tickets"
-                ]);
-            }
-
-            $ticket = Ticket::where('contract_id', $request->contract_id)
-                           ->whereNotIn('status', [Ticket::STATUS_DELETED, Ticket::STATUS_CLOSED])
-                           ->first();
-
-            if (!$ticket) {
-                return response()->json([
-                    "response" => "error",
-                    "status" => "404", 
-                    "message" => "No active ticket found for this contract"
-                ]);
-            }
-
-            $oldStatus = $ticket->status;
-
-            $ticket->update([
-                'status' => Ticket::STATUS_DELETED,
-                'previous_status' => $oldStatus,
-                'deleted_at' => now()
-            ]);
-
-            TicketChangeLog::create([
-                'ticket_id' => $ticket->id,
-                'user_id' => $user->id,
-                'previous_status' => $oldStatus,
-                'new_status' => Ticket::STATUS_DELETED,
-                'change_type' => TicketChangeLog::CHANGE_TYPE_STATUS
-            ]);
-
-            TicketMessage::create([
-                'ticket_id' => $ticket->id,
-                'user_id' => $user->id,
-                'message' => "Ticket cancellato dall'amministratore",
-                'message_type' => 'status_change'
-            ]);
-
-            return response()->json([
-                "response" => "ok",
-                "status" => "200", 
-                "message" => "Ticket deleted successfully"
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error deleting ticket by contract: ' . $e->getMessage());
-            return response()->json([
-                "response" => "error",
-                "status" => "500",
                 "message" => "Server error"
             ]);
         }
@@ -1233,6 +1346,9 @@ class TicketController extends Controller
                 'message_type' => 'status_change'
             ]);
 
+            // Notify all BackOffice about restored ticket
+            $this->notifyNewTicketToBackoffice($lastTicket);
+
             return response()->json([
                 "response" => "ok",
                 "status" => "200", 
@@ -1249,6 +1365,85 @@ class TicketController extends Controller
             ]);
         }
     }
+
+    public function deleteTicketByContractId(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'contract_id' => 'required|exists:contracts,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "400", 
+                    "errors" => $validator->errors()
+                ]);
+            }
+
+            $user = Auth::user();
+            $userRole = $user->role->id;
+
+            if (!in_array($userRole, [1, 6])) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403", 
+                    "message" => "Only administrators can delete tickets"
+                ]);
+            }
+
+            $ticket = Ticket::where('contract_id', $request->contract_id)
+                           ->whereNotIn('status', [Ticket::STATUS_DELETED, Ticket::STATUS_CLOSED])
+                           ->first();
+
+            if (!$ticket) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "404", 
+                    "message" => "No active ticket found for this contract"
+                ]);
+            }
+
+            $oldStatus = $ticket->status;
+
+            $ticket->update([
+                'status' => Ticket::STATUS_DELETED,
+                'previous_status' => $oldStatus,
+                'deleted_at' => now()
+            ]);
+
+            TicketChangeLog::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'previous_status' => $oldStatus,
+                'new_status' => Ticket::STATUS_DELETED,
+                'change_type' => TicketChangeLog::CHANGE_TYPE_STATUS
+            ]);
+
+            TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'message' => "Ticket cancellato dall'amministratore",
+                'message_type' => 'status_change'
+            ]);
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200", 
+                "message" => "Ticket deleted successfully"
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting ticket by contract: ' . $e->getMessage());
+            return response()->json([
+                "response" => "error",
+                "status" => "500",
+                "message" => "Server error"
+            ]);
+        }
+    }
+
+    // ==================== ATTACHMENT METHODS ====================
 
     public function uploadAttachments(Request $request)
     {

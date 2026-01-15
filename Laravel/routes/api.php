@@ -22,6 +22,7 @@ use App\Http\Controllers\WalletController;
 use App\Http\Controllers\ContractDataOverviewController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\LogSettingsController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -142,6 +143,16 @@ Route::group(['middleware'=>'api'],function(){
     Route::get('attachments/{attachment}/download', [TicketController::class, 'downloadAttachment']);
     Route::delete('attachments/{attachment}', [TicketController::class, 'deleteAttachment']);
 
+    // GESTIONE NOTIFICHE 
+    Route::get('notifications/recent', [NotificationController::class, 'recent'])->name('notifications.recent');
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unreadCount');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::delete('notifications/read/all', [NotificationController::class, 'deleteAllRead'])->name('notifications.deleteAllRead');
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/{id}', [NotificationController::class, 'show'])->name('notifications.show');
+    Route::post('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::delete('notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+
     // GESTIONE LOG
     Route::get('logs', [LogController::class, 'index'])->name('logs.index');
     Route::get('logs/stats', [LogController::class, 'getStats'])->name('logs.stats');
@@ -150,8 +161,8 @@ Route::group(['middleware'=>'api'],function(){
     Route::get('logs/files', [LogController::class, 'getLogFiles'])->name('logs.files');
     Route::get('logs/export', [LogController::class, 'export'])->name('logs.export');
     Route::get('logs/file', [LogController::class, 'getFileContent'])->name('logs.file');
-    Route::get('logs/filters', [LogController::class, 'getFilters'])->name('logs.filters'); // NEW: Get available filters for dropdowns
-    Route::get('logs/contract/{id}', [LogController::class, 'getContractHistory'])->name('logs.contract-history'); // NEW: Get contract audit trail
+    Route::get('logs/filters', [LogController::class, 'getFilters'])->name('logs.filters');
+    Route::get('logs/contract/{id}', [LogController::class, 'getContractHistory'])->name('logs.contract-history');
     Route::delete('logs/clear', [LogController::class, 'clearLogs'])->name('logs.clear');
     Route::get('logs/{id}', [LogController::class, 'show'])->name('logs.show');
     Route::delete('logs/{id}', [LogController::class, 'destroy'])->name('logs.destroy');
