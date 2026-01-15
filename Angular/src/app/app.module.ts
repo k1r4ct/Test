@@ -29,7 +29,6 @@ import { RicercaclientiComponent } from "./pages/ricercaclienti/ricercaclienti.c
 import { NuovocontraenteComponent } from "./pages/nuovocontraente/nuovocontraente.component";
 import { ProdottiComponent } from "./pages/prodotto/prodotti.component";
 import { NuovoclienteComponent } from "./pages/nuovocliente/nuovocliente.component";
-import { TimerComponent } from "./timer/timer.component";
 import { FilepondUploaderComponent } from './filepond-uploader/filepond-uploader.component';
 import { DettagliContrattoProdottoComponent } from "./pages/dettagli-contratto-prodotto/dettagli-contratto-prodotto.component";
 import { MatFormFieldModule } from "@angular/material/form-field";
@@ -130,6 +129,7 @@ import { WalletClienteComponent } from "./pages/user/clienti/wallet-cliente/wall
 import { AttachmentPreviewModalComponent } from './attachment-preview-modal/attachment-preview-modal.component';
 import { ProfileSettingsModalComponent } from "./shared/components/profile-settings-modal/profile-settings-modal.component";
 import { SystemLogsComponent } from "./pages/system-logs/system-logs.component";
+import { NotificationsModalComponent } from "./shared/notifications-modal/notifications-modal.component";
 
 @NgModule({
   declarations: [
@@ -177,8 +177,8 @@ import { SystemLogsComponent } from "./pages/system-logs/system-logs.component";
     WalletClienteComponent,
     AttachmentPreviewModalComponent,
     ProfileSettingsModalComponent,
-    // System Logs Component
     SystemLogsComponent,
+    NotificationsModalComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent],

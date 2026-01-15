@@ -14,11 +14,89 @@
       <span class="material-icons-round">{{ isDarkMode ? 'light_mode' : 'dark_mode' }}</span>
     </button>
     
-    <!-- Notifications -->
-    <button class="nav-icon-btn" title="Notifiche" (click)="openNotifications()">
-      <span class="material-icons-round">notifications</span>
-      <span class="badge" *ngIf="notificationCount > 0">{{ notificationCount }}</span>
-    </button>
+    <!-- Notifications with dropdown -->
+    <div class="notification-container">
+      <button class="nav-icon-btn" 
+              title="Notifiche" 
+              (click)="toggleNotifications($event)"
+              [class.active]="notificationMenuOpen">
+        <span class="material-icons-round">notifications</span>
+        <span class="badge" *ngIf="notificationCount > 0">
+          {{ notificationCount > 99 ? '99+' : notificationCount }}
+        </span>
+      </button>
+
+      <!-- Notification dropdown -->
+      <div class="notification-dropdown" [class.open]="notificationMenuOpen">
+        <!-- Header -->
+        <div class="notification-header">
+          <h4>Notifiche</h4>
+          <button class="mark-all-btn" 
+                  *ngIf="notificationCount > 0"
+                  (click)="markAllAsRead($event)"
+                  title="Segna tutte come lette">
+            <span class="material-icons-round">done_all</span>
+          </button>
+        </div>
+
+        <!-- Loading state -->
+        <div class="notification-loading" *ngIf="notificationsLoading">
+          <div class="spinner"></div>
+          <span>Caricamento...</span>
+        </div>
+
+        <!-- Empty state -->
+        <div class="notification-empty" *ngIf="!notificationsLoading && notifications.length === 0">
+          <span class="material-icons-round">notifications_off</span>
+          <p>Nessuna notifica</p>
+        </div>
+
+        <!-- Notification list -->
+        <div class="notification-list" *ngIf="!notificationsLoading && notifications.length > 0">
+          <div class="notification-item" 
+               *ngFor="let notification of notifications"
+               [class.unread]="!notification.visualizzato"
+               (click)="onNotificationClick(notification, $event)">
+            
+            <!-- Icon -->
+            <div class="notification-icon" [ngClass]="getNotificationIconClass(notification)">
+              <span class="material-icons-round">{{ getNotificationIcon(notification) }}</span>
+            </div>
+            
+            <!-- Content -->
+            <div class="notification-content">
+              <p class="notification-text" [innerHTML]="notification.notifica_html || notification.notifica"></p>
+              <span class="notification-time">{{ notification.created_at_human }}</span>
+            </div>
+            
+            <!-- Actions -->
+            <div class="notification-actions">
+              <button class="action-btn" 
+                      *ngIf="!notification.visualizzato"
+                      (click)="markNotificationAsRead(notification, $event)"
+                      title="Segna come letta">
+                <span class="material-icons-round">check</span>
+              </button>
+              <button class="action-btn delete-btn" 
+                      (click)="deleteNotification(notification, $event)"
+                      title="Elimina">
+                <span class="material-icons-round">close</span>
+              </button>
+            </div>
+
+            <!-- Unread indicator -->
+            <div class="unread-dot" *ngIf="!notification.visualizzato"></div>
+          </div>
+        </div>
+
+        <!-- Footer - Opens Modal -->
+        <div class="notification-footer" *ngIf="notifications.length > 0">
+          <a href="javascript:void(0)" (click)="openAllNotifications()">
+            Vedi tutte le notifiche
+          </a>
+        </div>
+      </div>
+    </div>
     
     <!-- User menu with dropdown -->
     <div class="user-menu-container">
@@ -70,3 +148,10 @@
     </div>
   </div>
 </header>
+
+<!-- Notifications Modal -->
+<app-notifications-modal 
+  #notificationsModal
+  *ngIf="showNotificationsModal"
+  (close)="onNotificationsModalClose()">
+</app-notifications-modal>
