@@ -136,7 +136,6 @@ export class UserComponent implements OnInit, OnDestroy {
 
   platformId = inject(PLATFORM_ID);
 
-  // ⭐ WALLET INTEGRATION - NEW PROPERTY ⭐
   isCliente: boolean = false;
 
 
@@ -199,15 +198,22 @@ export class UserComponent implements OnInit, OnDestroy {
             this.textLead="Leads";
           }
 
-          // ⭐ WALLET INTEGRATION - CHECK USER ROLE ⭐
-          if (users.user.role.id === 3) {
+          const roleId = users.user.role.id;
+          
+          if (roleId === 3) {
+            // Cliente - show wallet, hide team
             this.isCliente = true;
             this.hideTeamMembers = true;
-          } else {
+          } else if (roleId === 2) {
+            // SEU/Advisor - show team orgchart
             this.isCliente = false;
             this.hideTeamMembers = false;
+          } else {
+            // Admin (1), BackOffice (4,5,6,9,10) - hide team orgchart
+            this.isCliente = false;
+            this.hideTeamMembers = true;
           }
-
+          
           // Configura il team dell'utente
           this.Team = users.team.map((us: any) => ({
             id: us.id,
@@ -416,7 +422,6 @@ export class UserComponent implements OnInit, OnDestroy {
     }
 
     this.data = [currentUserNode];
-    this.hideTeamMembers = false;
     
     setTimeout(() => {
       this.renderJSChart();

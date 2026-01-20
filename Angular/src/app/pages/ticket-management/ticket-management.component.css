@@ -2051,7 +2051,8 @@
   background: #f8f9fa;
   width: 100%;
   box-sizing: border-box;
-  margin-left: 0;  
+  margin-left: 0;
+  margin-top: 10px;  
 }
 
 .attachment-drop-zone:hover {

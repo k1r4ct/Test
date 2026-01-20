@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Mail;
 class TicketController extends Controller
 {
     // BackOffice role IDs that should receive new ticket notifications
-    private const BACKOFFICE_ROLE_IDS = [1, 4, 5, 6, 9, 10];
+    private const BACKOFFICE_ROLE_IDS = [1, 4, 5];
 
     public function getTickets()
     {
@@ -30,7 +30,7 @@ class TicketController extends Controller
             $user = Auth::user();
             $userRole = $user->role->id;
 
-            if (!in_array($userRole, [1, 4, 5, 6, 9, 10])) {
+            if (!in_array($userRole, [1, 4, 5])) {
                 return response()->json([
                     "response" => "error", 
                     "status" => "403", 
@@ -47,11 +47,10 @@ class TicketController extends Controller
             ])
             ->withCount('attachments');
 
-            if (!in_array($userRole, [1, 6])) {
+            if ($userRole !==1) {
                 $query->where('status', '!=', Ticket::STATUS_DELETED);
             }
 
-            // Filter by category (supports multiselect - comma separated or array)
             if (request()->has('category') && request()->category !== '' && request()->category !== 'all') {
                 $categories = request()->category;
                 if (is_string($categories)) {
@@ -99,7 +98,7 @@ class TicketController extends Controller
             $user = Auth::user();
             $contract = contract::findOrFail($request->contract_id);
             
-            if (!in_array($user->role->id, [1, 2, 4, 5])) {
+            if (!in_array($user->role->id, [1,2,4,5])) {
                 if ($contract->created_by_user_id != $user->id) {
                     return response()->json([
                         "response" => "error",
@@ -402,7 +401,7 @@ class TicketController extends Controller
 
     /**
      * Update ticket category
-     * Only admin (role 1, 6) or assigned backoffice (role 2) can change category
+     * Only admin (role 1) or assigned backoffice (role 5) can change category
      */
     public function updateTicketCategory(Request $request)
     {
@@ -424,9 +423,8 @@ class TicketController extends Controller
             $userRole = $user->role->id;
             $ticket = Ticket::findOrFail($request->ticket_id);
 
-            // Permission check: admin (1, 6) OR assigned backoffice (role 2)
-            $isAdmin = in_array($userRole, [1, 6]);
-            $isAssignedBackoffice = $userRole == 2 && $ticket->assigned_to_user_id == $user->id;
+            $isAdmin = $userRole === 1;
+            $isAssignedBackoffice = $userRole == 5 && $ticket->assigned_to_user_id == $user->id;
 
             if (!$isAdmin && !$isAssignedBackoffice) {
                 return response()->json([
@@ -439,7 +437,6 @@ class TicketController extends Controller
             $oldCategory = $ticket->category;
             $newCategory = $request->category;
 
-            // Check if category actually changed
             if ($oldCategory === $newCategory) {
                 return response()->json([
                     "response" => "ok",
@@ -847,7 +844,7 @@ class TicketController extends Controller
     {
         $userRole = $user->role->id;
 
-        if (in_array($userRole, [1, 4, 5, 6, 9, 10])) {
+        if (in_array($userRole, [1, 4, 5])) {
             return true;
         }
 
@@ -859,7 +856,7 @@ class TicketController extends Controller
     {
         $userRole = $user->role->id;
 
-        if (in_array($userRole, [1, 4, 5, 6, 9, 10])) {
+        if (in_array($userRole, [1, 4, 5])) {
             return true;
         }
 
@@ -1102,7 +1099,7 @@ class TicketController extends Controller
             $user = Auth::user();
             $userRole = $user->role->id;
 
-            if (!in_array($userRole, [1, 6])) {
+            if ($userRole !== 1) {
                 return response()->json([
                     "response" => "error",
                     "status" => "403", 

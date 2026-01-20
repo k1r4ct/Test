@@ -1702,16 +1702,17 @@ export class TicketManagementComponent implements OnInit, OnDestroy, AfterViewCh
 
   /**
    * Check if user can change ticket category
-   * Only admin (role 1, 6) or assigned backoffice (role 2) can change
+   * Admin (role 1) can always change, BackOffice (role 4, 5) only if assigned
    */
   canChangeCategory(ticket: Ticket): boolean {
     if (!this.currentUser || !ticket) return false;
     
-    // Admin can always change
-    if (this.isAdmin) return true;
+    // Admin (role 1) can always change
+    if (this.userRole === 1) return true;
     
-    // Backoffice (role 2) can change only if assigned
-    if (this.userRole === 2 && ticket.assigned_to_user_id === this.currentUser.id) {
+    // BackOffice (role 4, 5) can change only if assigned to this ticket
+    if ((this.userRole === 4 || this.userRole === 5) && 
+        ticket.assigned_to_user_id === this.currentUser.id) {
       return true;
     }
     

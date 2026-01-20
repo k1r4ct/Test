@@ -198,7 +198,7 @@ class ContractController extends Controller
         // Parametri di paginazione comuni per tutti i ruoli
         $perPage = $request->get('per_page', 250);
         $authId = Auth::user()->id;
-        if (Auth::user()->role_id == 1) {
+        if (in_array(Auth::user()->role_id, [1, 4, 5])) {
             $contrattiUtente = Contract::with([
                 'User',
                 'UserSeu',
@@ -957,7 +957,7 @@ class ContractController extends Controller
         }
 
         // Query base in base al ruolo utente
-        if (Auth::user()->role_id == 1) {
+        if (in_array(Auth::user()->role_id, [1, 4, 5])) {
             $query = contract::with([
                 'User',
                 'UserSeu',
