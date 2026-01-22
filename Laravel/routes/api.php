@@ -24,6 +24,11 @@ use App\Http\Controllers\LogController;
 use App\Http\Controllers\LogSettingsController;
 use App\Http\Controllers\NotificationController;
 
+// E-commerce Controllers
+use App\Http\Controllers\StoreController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -209,5 +214,70 @@ Route::group(['middleware'=>'api'],function(){
     //GESTIONE FORNITORI E CATEGORIE FORNITORI
     Route::get('recuperaCategorieFornitori',[SupplierCategoryController::class,'recuperaCategorieFornitori'])->name('recuperaCategorieFornitori');
     Route::post('nuovoFornitore',[SupplierController::class,'nuovoFornitore'])->name('nuovoFornitore');
+
+    // ============================================
+    // E-COMMERCE ROUTES
+    // ============================================
+    Route::prefix('ecommerce')->group(function () {
+        
+        // ------------------------------------------
+        // CATALOG (StoreController)
+        // ------------------------------------------
+        // Get all visible stores
+        Route::get('/stores', [StoreController::class, 'getStores']);
+        // Get single store by slug
+        Route::get('/stores/{slug}', [StoreController::class, 'getStore']);
+        // Get categories (optionally filtered by store_id)
+        Route::get('/categories', [StoreController::class, 'getCategories']);
+        // Get articles with filters (store_id, category_id, featured, min_pv, max_pv, search, sort, per_page)
+        Route::get('/articles', [StoreController::class, 'getArticles']);
+        // Get single article detail
+        Route::get('/articles/{id}', [StoreController::class, 'getArticle']);
+        
+        // ------------------------------------------
+        // CART (CartController)
+        // ------------------------------------------
+        // Get current user's cart
+        Route::get('/cart', [CartController::class, 'getCart']);
+        // Get cart summary (for header badge)
+        Route::get('/cart/summary', [CartController::class, 'getSummary']);
+        // Add item to cart
+        Route::post('/cart/add', [CartController::class, 'addToCart']);
+        // Update cart item quantity
+        Route::put('/cart/update/{cartItemId}', [CartController::class, 'updateQuantity']);
+        // Remove item from cart
+        Route::delete('/cart/remove/{cartItemId}', [CartController::class, 'removeItem']);
+        // Clear entire cart
+        Route::delete('/cart/clear', [CartController::class, 'clearCart']);
+        
+        // ------------------------------------------
+        // ORDERS - Customer (OrderController)
+        // ------------------------------------------
+        // Checkout (create order from cart)
+        Route::post('/checkout', [OrderController::class, 'checkout']);
+        // Get user's order history
+        Route::get('/orders', [OrderController::class, 'getOrders']);
+        // Get order detail (customer view)
+        Route::get('/orders/{orderId}', [OrderController::class, 'getOrderDetail']);
+        
+        // ------------------------------------------
+        // ORDERS - Backoffice (OrderController)
+        // Requires role_id 1 (Admin) or 5 (BackOffice)
+        // ------------------------------------------
+        Route::prefix('admin')->group(function () {
+            // Get all orders for processing
+            Route::get('/orders', [OrderController::class, 'getAllOrders']);
+            // Get order detail (admin view with internal notes)
+            Route::get('/orders/{orderId}', [OrderController::class, 'getAdminOrderDetail']);
+            // Take order in charge (start processing)
+            Route::post('/orders/{orderId}/process', [OrderController::class, 'startProcessing']);
+            // Fulfill order item (add redemption code)
+            Route::post('/orders/{orderId}/items/{itemId}/fulfill', [OrderController::class, 'fulfillItem']);
+            // Cancel order
+            Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
+            // Add admin note to order
+            Route::post('/orders/{orderId}/note', [OrderController::class, 'addAdminNote']);
+        });
+    });
 
 });

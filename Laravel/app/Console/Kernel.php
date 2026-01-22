@@ -25,6 +25,10 @@ class Kernel extends ConsoleKernel
      * 3. Log Cleanup (configurable, default daily at 03:00):
      *    - Removes old logs based on retention settings per source
      *    - Cleans both database records and log files
+     * 
+     * 4. Cart Cleanup (every 10 minutes):
+     *    - Removes cart items older than 30 minutes
+     *    - Releases blocked PV back to users
      */
     protected function schedule(Schedule $schedule): void
     {
@@ -47,6 +51,16 @@ class Kernel extends ConsoleKernel
         // Log cleanup - runs based on settings (default: daily at 03:00)
         // Removes old log entries based on retention settings per source
         $this->scheduleLogCleanup($schedule);
+
+        // =====================================================
+        // E-COMMERCE: Cart Cleanup - runs every 10 minutes
+        // Removes expired cart items and releases blocked PV
+        // =====================================================
+        $schedule->command('cart:cleanup --sync --minutes=30')
+            ->everyTenMinutes()
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/cart-cleanup.log'));
     }
 
     /**

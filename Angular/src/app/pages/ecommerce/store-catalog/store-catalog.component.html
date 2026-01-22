@@ -1,0 +1,157 @@
+<div class="ecommerce-catalog">
+  <!-- Header -->
+  <div class="catalog-header">
+    <div class="header-content">
+      <h2><i class="material-icons">storefront</i> Catalogo Premi</h2>
+      <p class="subtitle">Converti i tuoi Punti Valore in fantastici premi!</p>
+    </div>
+    <div class="user-balance" *ngIf="userBalance">
+      <div class="balance-card">
+        <span class="balance-label">PV Disponibili</span>
+        <span class="balance-value">{{ userBalance.pv_disponibili | number:'1.0-0':'it-IT' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="catalog-filters">
+    <div class="filter-row">
+      <!-- Store filter -->
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Store</mat-label>
+        <mat-select [(ngModel)]="selectedStoreId" (selectionChange)="onStoreChange()">
+          <mat-option [value]="null">Tutti gli store</mat-option>
+          <mat-option *ngFor="let store of stores" [value]="store.id">
+            {{ store.store_name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Category filter -->
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Categoria</mat-label>
+        <mat-select [(ngModel)]="selectedCategoryId" (selectionChange)="onFilterChange()">
+          <mat-option [value]="null">Tutte le categorie</mat-option>
+          <mat-option *ngFor="let cat of categories" [value]="cat.id">
+            {{ cat.category_name }} ({{ cat.articles_count }})
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Search -->
+      <mat-form-field appearance="outline" class="filter-field search-field">
+        <mat-label>Cerca prodotti</mat-label>
+        <input matInput [(ngModel)]="searchQuery" (keyup.enter)="onFilterChange()" placeholder="Nome, SKU...">
+        <button mat-icon-button matSuffix (click)="onFilterChange()" *ngIf="searchQuery">
+          <mat-icon>search</mat-icon>
+        </button>
+        <button mat-icon-button matSuffix (click)="searchQuery = ''; onFilterChange()" *ngIf="searchQuery">
+          <mat-icon>clear</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <!-- Sort -->
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Ordina per</mat-label>
+        <mat-select [(ngModel)]="sortBy" (selectionChange)="onFilterChange()">
+          <mat-option value="default">Predefinito</mat-option>
+          <mat-option value="price_asc">Prezzo PV ↑</mat-option>
+          <mat-option value="price_desc">Prezzo PV ↓</mat-option>
+          <mat-option value="name_asc">Nome A-Z</mat-option>
+          <mat-option value="name_desc">Nome Z-A</mat-option>
+          <mat-option value="newest">Più recenti</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Featured toggle -->
+    <div class="filter-toggles">
+      <mat-checkbox [(ngModel)]="showFeaturedOnly" (change)="onFilterChange()">
+        Solo prodotti in evidenza
+      </mat-checkbox>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Caricamento prodotti...</p>
+  </div>
+
+  <!-- Products Grid -->
+  <div class="products-grid" *ngIf="!loading && articles.length > 0">
+    <div class="product-card" *ngFor="let article of articles" 
+         [class.featured]="article.is_featured"
+         (click)="viewProductDetail(article)">
+      
+      <!-- Featured badge -->
+      <div class="featured-badge" *ngIf="article.is_featured">
+        <mat-icon>star</mat-icon> In evidenza
+      </div>
+
+      <!-- Image -->
+      <div class="product-image">
+        <img [src]="article.thumbnail_url || 'assets/img/placeholder-product.png'" 
+             [alt]="article.article_name"
+             (error)="onImageError($event)">
+        <div class="digital-badge" *ngIf="article.is_digital">
+          <mat-icon>cloud_download</mat-icon> Digitale
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="product-info">
+        <span class="product-category">{{ article.category_name }}</span>
+        <h3 class="product-name">{{ article.article_name }}</h3>
+        <p class="product-description">{{ article.description }}</p>
+        
+        <div class="product-prices">
+          <span class="pv-price">{{ article.pv_price | number:'1.0-0':'it-IT' }} PV</span>
+          <span class="euro-price" *ngIf="article.euro_price">
+            ({{ article.euro_price | currency:'EUR':'symbol':'1.2-2':'it-IT' }})
+          </span>
+        </div>
+
+        <div class="product-actions">
+          <button mat-raised-button color="primary" 
+                  (click)="addToCart(article, $event)"
+                  [disabled]="!canAfford(article) || addingToCart === article.id">
+            <mat-icon *ngIf="addingToCart !== article.id">add_shopping_cart</mat-icon>
+            <mat-spinner diameter="20" *ngIf="addingToCart === article.id"></mat-spinner>
+            <span *ngIf="addingToCart !== article.id">
+              {{ canAfford(article) ? 'Aggiungi' : 'PV insufficienti' }}
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="!loading && articles.length === 0">
+    <mat-icon>inventory_2</mat-icon>
+    <h3>Nessun prodotto trovato</h3>
+    <p>Prova a modificare i filtri di ricerca</p>
+    <button mat-stroked-button (click)="resetFilters()">Resetta filtri</button>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container" *ngIf="pagination && pagination.last_page > 1">
+    <button mat-icon-button 
+            [disabled]="pagination.current_page === 1"
+            (click)="goToPage(pagination.current_page - 1)">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    
+    <span class="page-info">
+      Pagina {{ pagination.current_page }} di {{ pagination.last_page }}
+      ({{ pagination.total }} prodotti)
+    </span>
+    
+    <button mat-icon-button 
+            [disabled]="pagination.current_page === pagination.last_page"
+            (click)="goToPage(pagination.current_page + 1)">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+</div>

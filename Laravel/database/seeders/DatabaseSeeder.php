@@ -4,6 +4,25 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
+/**
+ * Main Database Seeder
+ * 
+ * This seeder orchestrates all seeders for the Semprechiaro CRM.
+ * 
+ * IMPORTANT: E-commerce seeders have been consolidated into EcommerceSeeder.
+ * The following individual seeders are DEPRECATED and should be deleted:
+ * - StoreSeeder.php
+ * - CartStatusSeeder.php
+ * - OrderStatusSeeder.php
+ * - FilterSeeder.php
+ * - CategorySeeder.php
+ * - ArticleSeeder.php
+ * - StockSeeder.php
+ * - PaymentModeSeeder.php (if exists)
+ * 
+ * Run with: php artisan db:seed
+ * Run specific: php artisan db:seed --class=EcommerceSeeder
+ */
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -11,23 +30,27 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // E-commerce essential seeders
+        // =====================================================
+        // CORE BUSINESS SEEDERS (keep these)
+        // =====================================================
+        
+        // Uncomment if you need to seed these tables:
+        // $this->call([
+        //     MacroProductSeeder::class,
+        //     ProductSeeder::class,
+        //     SupplierSeeder::class,
+        //     SupplierCategorySeeder::class,
+        // ]);
+
+        // =====================================================
+        // E-COMMERCE SEEDER (consolidated - all in one)
+        // =====================================================
         $this->call([
-            // 1. Base tables
-            StoreSeeder::class,
-            CartStatusSeeder::class,
-            OrderStatusSeeder::class,
-            PaymentModeSeeder::class,
-            
-            // 2. Filters and Categories
-            FilterSeeder::class, 
-            CategorySeeder::class,
-            
-            // 3. Products
-            ArticleSeeder::class,
-            StockSeeder::class,
+            EcommerceSeeder::class,
         ]);
 
-        $this->command->info('E-commerce seeders completed!');
+        $this->command->info('');
+        $this->command->info('✅ Database seeding completed!');
+        $this->command->info('');
     }
 }

@@ -1,0 +1,116 @@
+<div class="checkout-page">
+  <!-- Header -->
+  <div class="checkout-header">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h2><i class="material-icons">payment</i> Checkout</h2>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Caricamento...</p>
+  </div>
+
+  <!-- Checkout Content -->
+  <div class="checkout-content" *ngIf="!loading && cart && cart.items.length > 0">
+    
+    <!-- Order Summary -->
+    <div class="order-summary">
+      <h3>Riepilogo Ordine</h3>
+      
+      <div class="order-items">
+        <div class="order-item" *ngFor="let item of cart.items">
+          <div class="item-info">
+            <img [src]="item.thumbnail_url || 'assets/img/placeholder-product.png'" 
+                 [alt]="item.article_name">
+            <div class="item-details">
+              <span class="item-name">{{ item.article_name }}</span>
+              <span class="item-qty">Qtà: {{ item.quantity }}</span>
+            </div>
+          </div>
+          <span class="item-total">{{ item.pv_total | number:'1.0-0':'it-IT' }} PV</span>
+        </div>
+      </div>
+
+      <div class="order-totals">
+        <div class="total-row">
+          <span>Articoli</span>
+          <span>{{ cart.items_count }}</span>
+        </div>
+        <div class="total-row grand-total">
+          <span>Totale</span>
+          <span>{{ cart.total_pv | number:'1.0-0':'it-IT' }} PV</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Info -->
+    <div class="payment-section">
+      <h3>Metodo di Pagamento</h3>
+      
+      <div class="payment-method">
+        <mat-icon>account_balance_wallet</mat-icon>
+        <div class="method-info">
+          <span class="method-name">Punti Valore (PV)</span>
+          <span class="method-balance" *ngIf="userBalance">
+            Disponibili: {{ userBalance.pv_disponibili | number:'1.0-0':'it-IT' }} PV
+          </span>
+        </div>
+        <mat-icon class="check-icon">check_circle</mat-icon>
+      </div>
+
+      <!-- Balance Warning -->
+      <div class="balance-warning" *ngIf="userBalance && userBalance.pv_disponibili < cart.total_pv">
+        <mat-icon>error</mat-icon>
+        <span>PV insufficienti! Ti mancano {{ cart.total_pv - userBalance.pv_disponibili | number:'1.0-0':'it-IT' }} PV</span>
+      </div>
+
+      <!-- Balance After -->
+      <div class="balance-after" *ngIf="userBalance && userBalance.pv_disponibili >= cart.total_pv">
+        <span>Dopo l'acquisto ti rimarranno:</span>
+        <strong>{{ userBalance.pv_disponibili - cart.total_pv | number:'1.0-0':'it-IT' }} PV</strong>
+      </div>
+    </div>
+
+    <!-- Customer Message -->
+    <div class="message-section">
+      <h3>Messaggio (opzionale)</h3>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Note per l'ordine</mat-label>
+        <textarea matInput 
+                  [(ngModel)]="customerMessage" 
+                  rows="3"
+                  placeholder="Inserisci eventuali note o richieste..."></textarea>
+        <mat-hint>Max 500 caratteri</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <!-- Info Box -->
+    <div class="info-box">
+      <mat-icon>info</mat-icon>
+      <div class="info-content">
+        <strong>Come funziona?</strong>
+        <p>Dopo aver confermato l'ordine, il nostro team provvederà a evadere la tua richiesta. 
+           Per i prodotti digitali (come i buoni Amazon) riceverai il codice direttamente nella sezione "I miei ordini".</p>
+      </div>
+    </div>
+
+    <!-- Confirm Button -->
+    <div class="checkout-actions">
+      <button mat-stroked-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon> Torna al carrello
+      </button>
+      
+      <button mat-raised-button color="primary" 
+              (click)="confirmOrder()"
+              [disabled]="!canCheckout() || processing">
+        <mat-spinner diameter="20" *ngIf="processing"></mat-spinner>
+        <mat-icon *ngIf="!processing">check_circle</mat-icon>
+        <span *ngIf="!processing">Conferma Ordine</span>
+        <span *ngIf="processing">Elaborazione...</span>
+      </button>
+    </div>
+  </div>
+</div>

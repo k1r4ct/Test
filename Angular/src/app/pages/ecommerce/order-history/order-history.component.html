@@ -1,0 +1,95 @@
+<div class="order-history-page">
+  <div class="page-header">
+    <h2><i class="material-icons">receipt_long</i> I miei Ordini</h2>
+    <button mat-raised-button color="primary" routerLink="/ecommerce/catalog">
+      <mat-icon>storefront</mat-icon> Vai al catalogo
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <mat-form-field appearance="outline">
+      <mat-label>Filtra per stato</mat-label>
+      <mat-select [(ngModel)]="statusFilter" (selectionChange)="onFilterChange()">
+        <mat-option *ngFor="let opt of statusOptions" [value]="opt.value">
+          {{ opt.label }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+  </div>
+
+  <!-- Orders List -->
+  <div class="orders-list" *ngIf="!loading">
+    <!-- Empty state -->
+    <div class="empty-state" *ngIf="orders.length === 0">
+      <mat-icon>inbox</mat-icon>
+      <h3>Nessun ordine trovato</h3>
+      <p>Non hai ancora effettuato ordini{{ statusFilter ? ' con questo stato' : '' }}.</p>
+      <button mat-stroked-button routerLink="/ecommerce/catalog">
+        Inizia a fare acquisti
+      </button>
+    </div>
+
+    <!-- Orders -->
+    <div class="order-card" *ngFor="let order of orders" (click)="viewOrder(order)">
+      <div class="order-header">
+        <div class="order-info">
+          <span class="order-number">{{ order.order_number }}</span>
+          <span class="order-date">{{ order.created_at }}</span>
+        </div>
+        <span class="order-status" [ngClass]="getStatusClass(order.status)">
+          {{ order.status_label }}
+        </span>
+      </div>
+
+      <div class="order-body">
+        <div class="order-summary">
+          <div class="summary-item">
+            <span class="label">Articoli</span>
+            <span class="value">{{ order.items_count }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Totale</span>
+            <span class="value pv">{{ order.formatted_total_pv }}</span>
+          </div>
+          <div class="summary-item" *ngIf="order.fulfillment_progress !== undefined">
+            <span class="label">Completamento</span>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="order.fulfillment_progress"></div>
+            </div>
+            <span class="progress-text">{{ order.fulfillment_progress }}%</span>
+          </div>
+        </div>
+
+        <div class="order-action">
+          <mat-icon>chevron_right</mat-icon>
+        </div>
+      </div>
+
+      <div class="order-footer" *ngIf="order.processed_at">
+        <mat-icon>check_circle</mat-icon>
+        <span>Completato il {{ order.processed_at }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="pagination && pagination.last_page > 1">
+    <button mat-icon-button 
+            [disabled]="pagination.current_page === 1"
+            (click)="goToPage(pagination.current_page - 1)">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span>Pagina {{ pagination.current_page }} di {{ pagination.last_page }}</span>
+    <button mat-icon-button 
+            [disabled]="pagination.current_page === pagination.last_page"
+            (click)="goToPage(pagination.current_page + 1)">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+</div>

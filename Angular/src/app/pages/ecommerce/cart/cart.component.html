@@ -1,0 +1,154 @@
+<div class="cart-page">
+  <!-- Header -->
+  <div class="cart-header">
+    <h2><i class="material-icons">shopping_cart</i> Il tuo Carrello</h2>
+    <div class="cart-actions" *ngIf="cart && cart.items.length > 0">
+      <button mat-stroked-button color="warn" (click)="clearCart()">
+        <mat-icon>delete_sweep</mat-icon> Svuota carrello
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Caricamento carrello...</p>
+  </div>
+
+  <!-- Cart Content -->
+  <div class="cart-content" *ngIf="!loading">
+    
+    <!-- Empty Cart -->
+    <div class="empty-cart" *ngIf="!cart || cart.items.length === 0">
+      <mat-icon>remove_shopping_cart</mat-icon>
+      <h3>Il tuo carrello è vuoto</h3>
+      <p>Aggiungi prodotti dal catalogo per iniziare!</p>
+      <button mat-raised-button color="primary" routerLink="/ecommerce/catalog">
+        <mat-icon>storefront</mat-icon> Vai al catalogo
+      </button>
+    </div>
+
+    <!-- Cart with items -->
+    <div class="cart-with-items" *ngIf="cart && cart.items.length > 0">
+      
+      <!-- Items List -->
+      <div class="cart-items">
+        <div class="cart-item" *ngFor="let item of cart.items">
+          
+          <!-- Image -->
+          <div class="item-image">
+            <img [src]="item.thumbnail_url || 'assets/img/placeholder-product.png'" 
+                 [alt]="item.article_name"
+                 (error)="onImageError($event)">
+          </div>
+
+          <!-- Details -->
+          <div class="item-details">
+            <span class="item-category">{{ item.category_name }}</span>
+            <h4 class="item-name">{{ item.article_name }}</h4>
+            <span class="item-sku">SKU: {{ item.article_sku }}</span>
+            <div class="item-badges">
+              <span class="badge badge-digital" *ngIf="item.is_digital">
+                <mat-icon>cloud_download</mat-icon> Digitale
+              </span>
+            </div>
+          </div>
+
+          <!-- Quantity -->
+          <div class="item-quantity">
+            <button mat-icon-button 
+                    (click)="updateQuantity(item, item.quantity - 1)"
+                    [disabled]="item.quantity <= 1 || updatingItem === item.id">
+              <mat-icon>remove</mat-icon>
+            </button>
+            <span class="quantity-value">{{ item.quantity }}</span>
+            <button mat-icon-button 
+                    (click)="updateQuantity(item, item.quantity + 1)"
+                    [disabled]="updatingItem === item.id">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+
+          <!-- Price -->
+          <div class="item-price">
+            <span class="unit-price">{{ item.pv_unit_price | number:'1.0-0':'it-IT' }} PV cad.</span>
+            <span class="total-price">{{ item.pv_total | number:'1.0-0':'it-IT' }} PV</span>
+          </div>
+
+          <!-- Remove -->
+          <div class="item-remove">
+            <button mat-icon-button color="warn" 
+                    (click)="removeItem(item)"
+                    [disabled]="updatingItem === item.id"
+                    matTooltip="Rimuovi dal carrello">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+
+          <!-- Expiration Warning -->
+          <div class="item-expiration" *ngIf="item.expires_at">
+            <mat-icon>schedule</mat-icon>
+            <span>Scade: {{ item.expires_at }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="cart-summary">
+        <div class="summary-card">
+          <h3>Riepilogo Ordine</h3>
+
+          <div class="summary-row">
+            <span>Articoli nel carrello</span>
+            <span>{{ cart.items_count }}</span>
+          </div>
+          
+          <div class="summary-row">
+            <span>Quantità totale</span>
+            <span>{{ cart.total_items }}</span>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-row total">
+            <span>Totale PV</span>
+            <span class="total-value">{{ cart.total_pv | number:'1.0-0':'it-IT' }} PV</span>
+          </div>
+
+          <!-- User Balance -->
+          <div class="user-balance-section" *ngIf="userBalance">
+            <div class="balance-row">
+              <span>I tuoi PV disponibili</span>
+              <span [class.text-danger]="userBalance.pv_disponibili < cart.total_pv"
+                    [class.text-success]="userBalance.pv_disponibili >= cart.total_pv">
+                {{ userBalance.pv_disponibili | number:'1.0-0':'it-IT' }} PV
+              </span>
+            </div>
+            <div class="balance-row remaining" *ngIf="userBalance.pv_disponibili >= cart.total_pv">
+              <span>Rimanenti dopo l'acquisto</span>
+              <span>{{ userBalance.pv_disponibili - cart.total_pv | number:'1.0-0':'it-IT' }} PV</span>
+            </div>
+            <div class="insufficient-warning" *ngIf="userBalance.pv_disponibili < cart.total_pv">
+              <mat-icon>warning</mat-icon>
+              <span>PV insufficienti! Ti mancano {{ cart.total_pv - userBalance.pv_disponibili | number:'1.0-0':'it-IT' }} PV</span>
+            </div>
+          </div>
+
+          <!-- Checkout Button -->
+          <button mat-raised-button color="primary" 
+                  class="checkout-btn"
+                  (click)="proceedToCheckout()"
+                  [disabled]="!canCheckout()">
+            <mat-icon>payment</mat-icon>
+            Procedi al Checkout
+          </button>
+
+          <button mat-stroked-button routerLink="/ecommerce/catalog" class="continue-shopping">
+            <mat-icon>arrow_back</mat-icon>
+            Continua lo shopping
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,145 @@
+<div class="order-detail-page">
+  <!-- Header -->
+  <div class="page-header">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h2>Dettaglio Ordine</h2>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-container" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+  </div>
+
+  <!-- Order Content -->
+  <div class="order-content" *ngIf="!loading && order">
+    
+    <!-- Order Info Card -->
+    <div class="info-card">
+      <div class="info-header">
+        <div class="order-number">
+          <span class="label">Ordine</span>
+          <span class="value">{{ order.order_number }}</span>
+        </div>
+        <span class="status-badge" [ngClass]="getStatusClass(order.status)">
+          {{ order.status_label }}
+        </span>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <mat-icon>calendar_today</mat-icon>
+          <div>
+            <span class="label">Data ordine</span>
+            <span class="value">{{ order.created_at }}</span>
+          </div>
+        </div>
+        
+        <div class="info-item">
+          <mat-icon>account_balance_wallet</mat-icon>
+          <div>
+            <span class="label">Totale</span>
+            <span class="value pv">{{ order.formatted_total_pv }}</span>
+          </div>
+        </div>
+
+        <div class="info-item" *ngIf="order.processing_started_at">
+          <mat-icon>hourglass_top</mat-icon>
+          <div>
+            <span class="label">In lavorazione dal</span>
+            <span class="value">{{ order.processing_started_at }}</span>
+          </div>
+        </div>
+
+        <div class="info-item" *ngIf="order.processed_at">
+          <mat-icon>check_circle</mat-icon>
+          <div>
+            <span class="label">Completato il</span>
+            <span class="value">{{ order.processed_at }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-section" *ngIf="order.fulfillment_progress !== undefined">
+        <span class="progress-label">Completamento: {{ order.fulfillment_progress }}%</span>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="order.fulfillment_progress"></div>
+        </div>
+      </div>
+
+      <!-- Customer Message -->
+      <div class="customer-message" *ngIf="order.customer_message">
+        <mat-icon>message</mat-icon>
+        <div>
+          <span class="label">Il tuo messaggio</span>
+          <p>{{ order.customer_message }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="items-card">
+      <h3>Articoli ordinati</h3>
+
+      <div class="item-row" *ngFor="let item of items">
+        <div class="item-info">
+          <span class="item-name">{{ item.article_name }}</span>
+          <span class="item-sku">SKU: {{ item.article_sku }}</span>
+        </div>
+
+        <div class="item-qty">
+          <span class="label">Qtà</span>
+          <span class="value">{{ item.quantity }}</span>
+        </div>
+
+        <div class="item-price">
+          <span class="label">Prezzo</span>
+          <span class="value">{{ item.formatted_total_price }}</span>
+        </div>
+
+        <div class="item-status">
+          <span class="status-badge small" [ngClass]="getStatusClass(item.status)">
+            {{ item.status_label }}
+          </span>
+        </div>
+
+        <!-- Redemption Code -->
+        <div class="redemption-code" *ngIf="item.redemption_code">
+          <div class="code-header">
+            <mat-icon>card_giftcard</mat-icon>
+            <span>Codice Riscatto</span>
+          </div>
+          <div class="code-box">
+            <span class="code">{{ item.redemption_code }}</span>
+            <button mat-icon-button 
+                    (click)="copyCode(item.redemption_code)"
+                    matTooltip="Copia codice">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+          <span class="fulfilled-info" *ngIf="item.fulfilled_at">
+            Evaso il {{ item.fulfilled_at }}
+          </span>
+        </div>
+
+        <!-- Customer Note from Backoffice -->
+        <div class="customer-note" *ngIf="item.customer_note">
+          <mat-icon>info</mat-icon>
+          <span>{{ item.customer_note }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button mat-stroked-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon> Torna agli ordini
+      </button>
+      <button mat-raised-button color="primary" routerLink="/ecommerce/catalog">
+        <mat-icon>storefront</mat-icon> Continua lo shopping
+      </button>
+    </div>
+  </div>
+</div>
