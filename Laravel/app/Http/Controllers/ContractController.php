@@ -193,12 +193,57 @@ class ContractController extends Controller
         return array_values(array_unique($ids));
     }
 
+    /**
+     * Helper method to get allowed product IDs for BackOffice/Operatore Web users
+     * based on their assigned macro products in contract_managements table
+     */
+    private function getAllowedProductIdsForUser(int $userId): array
+    {
+        $macroProductIds = contract_management::where('user_id', $userId)
+            ->pluck('macro_product_id')
+            ->toArray();
+        
+        if (empty($macroProductIds)) {
+            return [];
+        }
+        
+        return Product::whereIn('macro_product_id', $macroProductIds)
+            ->pluck('id')
+            ->toArray();
+    }
+
+    /**
+     * Check if a user has permission to access a specific contract
+     * Used for BackOffice (5) and Operatore Web (4) roles
+     */
+    private function userCanAccessContract(int $userId, int $contractId): bool
+    {
+        $contract = Contract::find($contractId);
+        
+        if (!$contract) {
+            return false;
+        }
+        
+        $product = Product::find($contract->product_id);
+        
+        if (!$product) {
+            return false;
+        }
+        
+        return contract_management::where('user_id', $userId)
+            ->where('macro_product_id', $product->macro_product_id)
+            ->exists();
+    }
+
     public function getContratti(Request $request, $id)
     {
         // Parametri di paginazione comuni per tutti i ruoli
         $perPage = $request->get('per_page', 250);
         $authId = Auth::user()->id;
-        if (in_array(Auth::user()->role_id, [1, 4, 5])) {
+        $roleId = Auth::user()->role_id;
+
+        // Admin (1): can see all contracts
+        if ($roleId == 1) {
             $contrattiUtente = Contract::with([
                 'User',
                 'UserSeu',
@@ -224,8 +269,9 @@ class ContractController extends Controller
                     ]);
                 },
             ])->orderBy('id', 'desc')->paginate($perPage);
-        } elseif (Auth::user()->role_id == 2  || Auth::user()->role_id == 4) {
-
+        } 
+        // Advisor/SEU (2): can see contracts from their team
+        elseif ($roleId == 2) {
             $teamMemberIds = array_values(array_unique($this->getTeamMemberIds((int)$id)));
             $contrattiUtente = Contract::with([
                 'User',
@@ -252,58 +298,21 @@ class ContractController extends Controller
                     ]);
                 },
             ])->whereIn('inserito_da_user_id', $teamMemberIds)->orderBy('id', 'desc')->paginate($perPage);
-        } elseif (Auth::user()->role_id == 5) {
-            $macroProduct = contract_management::where('user_id', Auth::user()->id)->get();
-            $macros = [];
-
-            $macroProductIds = $macroProduct->pluck('macro_product_id')->toArray();
-            $products = Product::whereIn('macro_product_id', $macroProductIds)->get();
-
-            foreach ($products as $product) {
-                $macros[] = $product->id;
-            }
-
-            $contrattiUtente = Contract::with([
-                'User',
-                'UserSeu',
-                'customer_data',
-                'status_contract',
-                'status_contract.option_status_contract',
-                'product',
-                'product.supplier',
-                'product.macro_product',
-                'specific_data',
-                'payment_mode',
-                'ticket' => function ($q) use ($authId) {
-                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
-                        'messages' => function ($mq) use ($authId) {
-                            $mq->where('user_id', '!=', $authId)
-                            ->orderBy('created_at', 'desc')
-                            ->limit(1);
-                        }
-                    ])->withCount([
-                        'messages as unread_messages_count' => function ($mq) use ($authId) {
-                            $mq->where('user_id', '!=', $authId);
-                        }
-                    ]);
-                },
-            ])
-                ->whereIn('product_id', $macros)
-                ->orderBy('id', 'desc')
-                ->paginate($perPage);
-        } elseif (Auth::user()->role_id == 3) {
-            function getTeamMemberIds($userId, $ids = [])
+        } 
+        // Cliente (3): can see contracts associated to them
+        elseif ($roleId == 3) {
+            function getTeamMemberIdsForCliente($userId, $ids = [])
             {
                 $users = User::where('user_id_padre', $userId)->get();
                 $ids[] = (int)$userId;
                 foreach ($users as $user) {
-                    $ids = array_merge(getTeamMemberIds($user->id, $ids));
+                    $ids = array_merge(getTeamMemberIdsForCliente($user->id, $ids));
                 }
                 return $ids;
             }
 
             $idLeadsUser = [];
-            $teamMemberIds = getTeamMemberIds($id);
+            $teamMemberIds = getTeamMemberIdsForCliente($id);
             $cercaLeadUser = lead::where('invitato_da_user_id', Auth::user()->id)->get();
             foreach ($cercaLeadUser as $lead) {
                 $idLeadsUser[] = $lead->id;
@@ -338,6 +347,74 @@ class ContractController extends Controller
                     ]);
                 },
             ])->whereIn('associato_a_user_id', $teamMemberIds)->orderBy('id', 'desc')->paginate($perPage);
+        }
+        // Operatore Web (4) and BackOffice (5): can only see contracts for assigned macro products
+        elseif (in_array($roleId, [4, 5])) {
+            $allowedProductIds = $this->getAllowedProductIdsForUser($authId);
+
+            $query = Contract::with([
+                'User',
+                'UserSeu',
+                'customer_data',
+                'status_contract',
+                'status_contract.option_status_contract',
+                'product',
+                'product.supplier',
+                'product.macro_product',
+                'specific_data',
+                'payment_mode',
+                'ticket' => function ($q) use ($authId) {
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
+            ]);
+
+            // Apply product filter only if there are allowed products
+            if (!empty($allowedProductIds)) {
+                $query->whereIn('product_id', $allowedProductIds);
+            } else {
+                // No products assigned = no contracts visible
+                $query->whereRaw('1 = 0');
+            }
+
+            $contrattiUtente = $query->orderBy('id', 'desc')->paginate($perPage);
+        }
+        // Default fallback
+        else {
+            $contrattiUtente = Contract::with([
+                'User',
+                'UserSeu',
+                'customer_data',
+                'status_contract',
+                'status_contract.option_status_contract',
+                'product',
+                'product.supplier',
+                'product.macro_product',
+                'specific_data',
+                'payment_mode',
+                'ticket' => function ($q) use ($authId) {
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
+            ])->where('inserito_da_user_id', $id)->orderBy('id', 'desc')->paginate($perPage);
         }
 
         // Controlla se la query è stata eseguita correttamente e ha metodi di paginazione
@@ -418,6 +495,22 @@ class ContractController extends Controller
 
     public function getContratto(Request $request, $id)
     {
+        $user = Auth::user();
+        
+        // For Operatore Web (4) and BackOffice (5) users, verify they have permission to view this contract
+        if (in_array($user->role_id, [4, 5])) {
+            if (!$this->userCanAccessContract($user->id, $id)) {
+                return response()->json([
+                    "response" => "error",
+                    "status" => "403",
+                    "body" => [
+                        "risposta" => null, 
+                        "messaggio" => "Non hai i permessi per visualizzare questo contratto"
+                    ]
+                ], 403);
+            }
+        }
+
         $contrattiUtente = Contract::with(['User', 'customer_data', 'status_contract', 'product', 'specific_data', 'payment_mode', 'backofficeNote', 'product.macro_product'])
             ->where('id', $id)
             ->get();
@@ -766,18 +859,18 @@ class ContractController extends Controller
 
     public function contrattiPersonali($id)
     {
-        function getTeamMemberIds($userId, $ids = [])
+        function getTeamMemberIdsPersonali($userId, $ids = [])
         {
             $users = User::where('user_id_padre', $userId)->get();
             $ids[] = (int)$userId;
             foreach ($users as $user) {
-                $ids = array_merge(getTeamMemberIds($user->id, $ids));
+                $ids = array_merge(getTeamMemberIdsPersonali($user->id, $ids));
             }
             return $ids;
         }
 
         $idLeadsUser = [];
-        $teamMemberIds = getTeamMemberIds($id);
+        $teamMemberIds = getTeamMemberIdsPersonali($id);
         $cercaLeadUser = lead::where('invitato_da_user_id', Auth::user()->id)->get();
         foreach ($cercaLeadUser as $lead) {
             $idLeadsUser[] = $lead->id;
@@ -924,6 +1017,7 @@ class ContractController extends Controller
 
         // ID utente loggato per filtrare i messaggi dei ticket
         $authId = Auth::user()->id;
+        $roleId = Auth::user()->role_id;
 
         // Ottieni i filtri dal frontend
         $filters = $request->get('filters', '');
@@ -957,7 +1051,8 @@ class ContractController extends Controller
         }
 
         // Query base in base al ruolo utente
-        if (in_array(Auth::user()->role_id, [1, 4, 5])) {
+        // Admin (1): can see all contracts
+        if ($roleId == 1) {
             $query = contract::with([
                 'User',
                 'UserSeu',
@@ -983,7 +1078,9 @@ class ContractController extends Controller
                     ]);
                 },
             ]);
-        } elseif (Auth::user()->role_id == 2 || Auth::user()->role_id == 4) {
+        } 
+        // Advisor/SEU (2): can see contracts from their team
+        elseif ($roleId == 2) {
             $teamMemberIds = array_values(array_unique($this->getTeamMemberIds((int)$id)));
 
             $query = contract::with([
@@ -1011,55 +1108,21 @@ class ContractController extends Controller
                     ]);
                 },
             ])->whereIn('inserito_da_user_id', $teamMemberIds);
-        } elseif (Auth::user()->role_id == 5) {
-            $macroProduct = contract_management::where('user_id', Auth::user()->id)->get();
-            $macros = [];
-
-            $macroProductIds = $macroProduct->pluck('macro_product_id')->toArray();
-            $products = Product::whereIn('macro_product_id', $macroProductIds)->get();
-
-            foreach ($products as $product) {
-                $macros[] = $product->id;
-            }
-
-            $query = contract::with([
-                'User',
-                'UserSeu',
-                'customer_data',
-                'status_contract',
-                'status_contract.option_status_contract',
-                'product',
-                'product.supplier',
-                'product.macro_product',
-                'specific_data',
-                'payment_mode',
-                'ticket' => function ($q) use ($authId) {
-                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
-                        'messages' => function ($mq) use ($authId) {
-                            $mq->where('user_id', '!=', $authId)
-                            ->orderBy('created_at', 'desc')
-                            ->limit(1);
-                        }
-                    ])->withCount([
-                        'messages as unread_messages_count' => function ($mq) use ($authId) {
-                            $mq->where('user_id', '!=', $authId);
-                        }
-                    ]);
-                },
-            ])->whereIn('product_id', $macros);
-        } elseif (Auth::user()->role_id == 3) {
-            function getTeamMemberIds($userId, $ids = [])
+        } 
+        // Cliente (3): can see contracts associated to them
+        elseif ($roleId == 3) {
+            function getTeamMemberIdsSearch($userId, $ids = [])
             {
                 $users = User::where('user_id_padre', $userId)->get();
                 $ids[] = (int)$userId;
                 foreach ($users as $user) {
-                    $ids = array_merge(getTeamMemberIds($user->id, $ids));
+                    $ids = array_merge(getTeamMemberIdsSearch($user->id, $ids));
                 }
                 return $ids;
             }
 
             $idLeadsUser = [];
-            $teamMemberIds = getTeamMemberIds($id);
+            $teamMemberIds = getTeamMemberIdsSearch($id);
             $cercaLeadUser = lead::where('invitato_da_user_id', Auth::user()->id)->get();
             foreach ($cercaLeadUser as $lead) {
                 $idLeadsUser[] = $lead->id;
@@ -1095,7 +1158,47 @@ class ContractController extends Controller
                     ]);
                 },
             ])->whereIn('associato_a_user_id', $teamMemberIds);
-        } else {
+        } 
+        // Operatore Web (4) and BackOffice (5): can only see contracts for assigned macro products
+        elseif (in_array($roleId, [4, 5])) {
+            $allowedProductIds = $this->getAllowedProductIdsForUser($authId);
+
+            $query = contract::with([
+                'User',
+                'UserSeu',
+                'customer_data',
+                'status_contract',
+                'status_contract.option_status_contract',
+                'product',
+                'product.supplier',
+                'product.macro_product',
+                'specific_data',
+                'payment_mode',
+                'ticket' => function ($q) use ($authId) {
+                    $q->whereNotIn('status', ['deleted', 'closed'])->with([
+                        'messages' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId)
+                            ->orderBy('created_at', 'desc')
+                            ->limit(1);
+                        }
+                    ])->withCount([
+                        'messages as unread_messages_count' => function ($mq) use ($authId) {
+                            $mq->where('user_id', '!=', $authId);
+                        }
+                    ]);
+                },
+            ]);
+
+            // Apply product filter
+            if (!empty($allowedProductIds)) {
+                $query->whereIn('product_id', $allowedProductIds);
+            } else {
+                // No products assigned = no contracts visible
+                $query->whereRaw('1 = 0');
+            }
+        } 
+        // Default fallback: user sees only their own contracts
+        else {
             $query = contract::with([
                 'User',
                 'UserSeu',
@@ -1123,27 +1226,31 @@ class ContractController extends Controller
             ])->where('inserito_da_user_id', $id);
         }
 
-        // Applica filtri specifici
         if (!empty($filterParams)) {
             if (isset($filterParams['ricerca'])) {
                 $ricerca = $filterParams['ricerca'];
                 if (is_string($ricerca) && !empty($ricerca)) {
-                    $query->where(function ($searchQuery) use ($ricerca) {
-                        $likeValue = "%{$ricerca}%";
+                    $trimmedRicerca = trim($ricerca);
+                    
+                    if (is_numeric($trimmedRicerca)) {
+                        $numericId = intval($trimmedRicerca);
+                        
+                        $query->where(function ($searchQuery) use ($numericId, $trimmedRicerca) {
+                            $searchQuery->where('id', $numericId)
+                                ->orWhere('codice_contratto', 'like', "%{$trimmedRicerca}%");
+                        });
+                    } else {
+                        $query->where(function ($searchQuery) use ($trimmedRicerca) {
+                            $likeValue = "%{$trimmedRicerca}%";
 
-                        $searchQuery->where('codice_contratto', 'like', $likeValue)
-                            ->orWhereHas('customer_data', function ($customerQuery) use ($likeValue) {
-                                $customerQuery->where('nome', 'like', $likeValue)
-                                    ->orWhere('cognome', 'like', $likeValue)
-                                    ->orWhere('ragione_sociale', 'like', $likeValue)
-                                    ->orWhere('codice_fiscale', 'like', $likeValue)
-                                    ->orWhere('partita_iva', 'like', $likeValue);
-                            });
-
-                        if (is_numeric($ricerca)) {
-                            $searchQuery->orWhere('id', intval($ricerca));
-                        }
-                    });
+                            $searchQuery->where('codice_contratto', 'like', $likeValue)
+                                ->orWhereHas('customer_data', function ($customerQuery) use ($likeValue) {
+                                    $customerQuery->where('nome', 'like', $likeValue)
+                                        ->orWhere('cognome', 'like', $likeValue)
+                                        ->orWhere('ragione_sociale', 'like', $likeValue);
+                                });
+                        });
+                    }
                 }
             }
 

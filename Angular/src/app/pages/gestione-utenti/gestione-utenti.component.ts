@@ -150,7 +150,6 @@ export class GestioneUtentiComponent implements OnInit {
   }
 
   filterRuoli(row: any, filter: string): boolean {
-    console.log(filter);
 
     if (!filter) {
       // Controlla se filter è una stringa vuota
@@ -169,14 +168,12 @@ export class GestioneUtentiComponent implements OnInit {
       utentiSelezionati.includes(row.nominativo_ragSoc);
     const matchIdUtente =
       !idUtentiSelezionati.length || idUtentiSelezionati.includes(row.id);
-    console.log(matchUtente);
 
     return matchRuolo && matchUtente && matchIdUtente;
   }
 
   ngOnInit(): void {
     this.apiService.getAllUser().subscribe((Us: any) => {
-      //console.log(Us);
       this.Utenti = Us.body.risposta.map((Utente: any) => ({
         id: Utente.id,
         nome: Utente.name ? Utente.name : "---",
@@ -198,10 +195,8 @@ export class GestioneUtentiComponent implements OnInit {
           descrizione: CM.descrizione,
         })),
       }));
-      //console.log(this.Utenti);
 
       this.apiService.richiestaRuolieQualifiche().subscribe((Risposta: any) => {
-        console.log(Risposta);
 
         this.qualifiche = Risposta.qualifiche.map((Qualifiche: any) => ({
           id: Qualifiche.id,
@@ -213,8 +208,6 @@ export class GestioneUtentiComponent implements OnInit {
         }));
         this.ruoli = this.ruolo;
       });
-      //console.log(this.selectedUtenti);
-      //console.log(this.ruolo);
       this.dataSource.data = this.Utenti;
     });
 
@@ -262,7 +255,6 @@ export class GestioneUtentiComponent implements OnInit {
     };
     this.dataSource.filterPredicate = this.filterRuoli;
     this.dataSource.filter = JSON.stringify(filterValue);
-    console.log(this.dataSource.filter);
   }
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
@@ -274,7 +266,6 @@ export class GestioneUtentiComponent implements OnInit {
 
 changetype(event: Event) {
   const tipologia = (event.target as HTMLSelectElement).value;
-  console.log(tipologia);
   
   if (tipologia == "business") {
     // Cambia a business
@@ -330,10 +321,8 @@ changetype(event: Event) {
   }
 }
   editUser(user: any) {
-    //console.log(user.id);
     this.userselezionato = false;
     this.apiService.dettagliUtente(user.id).subscribe((Utente: any) => {
-      console.log(Utente);
 
       this.dettagliUtente = Utente.body.risposta.map((Ut: any) => ({
         id: Ut.id,
@@ -359,7 +348,6 @@ changetype(event: Event) {
         codice_macro: macro_p.codice_macro,
         descrizione: macro_p.descrizione,
       }));
-      //console.log(this.macro_product);
 
       this.selectedRuoloUser = this.ruolo.find(
         (r) => r.descrizione === this.dettagliUtente[0]?.ruolo
@@ -378,13 +366,11 @@ changetype(event: Event) {
           )
         );
       }
-      //console.log(this.dettagliUtente);
     });
+
     this.apiService.recuperaSEU().subscribe((SEU: any) => {
-      //console.log(SEU);
 
       this.seu = SEU.body.risposta.map((allSeu: any) => {
-        //console.log(allSeu);
         return {
           id: allSeu.id,
           nominativo: allSeu.name + " " + allSeu.cognome,
@@ -526,8 +512,6 @@ storeCliente() {
     const formData = new FormData();
     const activeUser = this.attivoUser.checked ? "1" : "0";
     const resetpwd = this.resetPasswd.checked ? "1" : "0";
-    console.log("Reset Password:", resetpwd);
-    console.log("Active User:", activeUser);
 
     formData.append("idUtente", idUtente);
     formData.append("nomeutente", nomeutente);
@@ -553,7 +537,6 @@ storeCliente() {
     });
 
     this.apiService.updateUtente(formData).subscribe((Risp: any) => {
-      console.log(Risp);
       this.showMessage();
     });
   }

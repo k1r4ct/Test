@@ -498,22 +498,23 @@
         </div>
       </div>
 
-      <!-- Prodotti Gestiti Field -->
-      <div class="form-field-modern">
+      <!-- Prodotti Gestiti Field - WITH CHIP WRAPPING FIX -->
+      <div class="form-field-modern products-field">
         <mat-icon class="field-icon">inventory</mat-icon>
         <div class="field-content">
           <label class="field-label">Prodotti Gestiti</label>
           <div *ngFor="let user of dettagliUtente" class="multiselect-wrapper">
             <p-multiSelect
               [options]="macro_product"
-              class="modern-multiselect"
+              class="modern-multiselect products-multiselect"
               name="contract_management"
               [(ngModel)]="macro_productSelected"
               [showClear]="true"
               optionLabel="descrizione"
               display="chip"
               placeholder="Seleziona i prodotti"
-              [maxSelectedLabels]="5"/>
+              [maxSelectedLabels]="99"
+              appendTo="body"/>
           </div>
         </div>
       </div>

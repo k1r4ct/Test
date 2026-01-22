@@ -1691,6 +1691,7 @@
   background: white;
   cursor: pointer;
   transition: all 0.2s ease;
+  width: 140px;
   min-width: 140px;
 }
 

@@ -554,6 +554,19 @@
           }
         }
       }
+
+      // Special styling for products field to allow expansion
+      &.products-field {
+        overflow: visible !important;
+        
+        .field-content {
+          overflow: visible !important;
+        }
+        
+        .multiselect-wrapper {
+          overflow: visible !important;
+        }
+      }
     }
 
     .form-actions {
@@ -688,6 +701,8 @@
     transition: all 0.2s ease;
     position: relative;
     z-index: 201 !important;
+    height: auto !important;
+    min-height: 50px;
 
     &:hover {
       border-color: #667eea;
@@ -700,11 +715,22 @@
       z-index: 202 !important;
     }
 
+    .p-multiselect-label-container {
+      flex: 1;
+      overflow: visible !important;
+    }
+
     .p-multiselect-label {
       padding: 0.875rem 1rem;
       font-weight: 500;
       position: relative;
       z-index: 203 !important;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 0.25rem;
+      white-space: normal !important;
+      min-height: auto;
+      height: auto !important;
     }
 
     .p-multiselect-token {
@@ -718,6 +744,7 @@
       font-weight: 600;
       position: relative;
       z-index: 204 !important;
+      flex-shrink: 0;
 
       .p-multiselect-token-label {
         font-weight: 600;
@@ -784,6 +811,98 @@
 
   .p-dropdown-panel {
     z-index: 300 !important;
+  }
+}
+
+// ===========================================
+// FIX: Force chip wrapping for Products Multiselect
+// ===========================================
+::ng-deep .products-multiselect.p-multiselect,
+::ng-deep .products-multiselect .p-multiselect,
+::ng-deep p-multiselect.products-multiselect,
+::ng-deep .products-multiselect {
+  height: auto !important;
+  min-height: 50px !important;
+  
+  &.p-multiselect {
+    height: auto !important;
+  }
+  
+  .p-multiselect {
+    height: auto !important;
+    min-height: 50px !important;
+  }
+  
+  .p-multiselect-label-container {
+    overflow: visible !important;
+    height: auto !important;
+    flex: 1 !important;
+  }
+  
+  .p-multiselect-label {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    white-space: normal !important;
+    height: auto !important;
+    min-height: 40px !important;
+    align-items: flex-start !important;
+    align-content: flex-start !important;
+    padding: 8px !important;
+    overflow: visible !important;
+  }
+  
+  .p-multiselect-token {
+    flex-shrink: 0 !important;
+    margin: 2px !important;
+    max-width: none !important;
+  }
+  
+  .p-multiselect-trigger {
+    align-self: flex-start !important;
+    margin-top: 8px !important;
+  }
+}
+
+// Target the wrapper container as well
+::ng-deep .multiselect-wrapper .products-multiselect {
+  .p-multiselect {
+    height: auto !important;
+    min-height: 50px !important;
+  }
+  
+  .p-multiselect-label {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    white-space: normal !important;
+    height: auto !important;
+  }
+}
+
+// Products field special container
+::ng-deep .products-field {
+  overflow: visible !important;
+  
+  .field-content {
+    overflow: visible !important;
+  }
+  
+  .multiselect-wrapper {
+    overflow: visible !important;
+  }
+  
+  .p-multiselect {
+    height: auto !important;
+    min-height: 50px !important;
+    
+    .p-multiselect-label {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 4px !important;
+      white-space: normal !important;
+      height: auto !important;
+      min-height: 40px !important;
+    }
   }
 }
 

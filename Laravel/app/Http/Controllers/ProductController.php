@@ -96,10 +96,55 @@ class ProductController extends Controller
         return response()->json(["response" => "ok", "status" => "200", "body" => ["prodotto" => $product, "messaggio" => "Prodotto trovato"]]);
     }
     
+    /**
+     * Get all products with role-based filtering.
+     * 
+     * - For BackOffice users (role_id == 5): Returns only products 
+     *   belonging to macro products assigned to them via the contract_managements table
+     * - For Admin and other roles: Returns all products
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function prodotti()
     {
-        $prodotti = Product::with(['supplier:id,nome_fornitore,descrizione', 'macro_product'])->get();
-        return response()->json(["response" => "ok", "status" => "200", "body" => ["prodotti" => $prodotti, "messaggio" => "Prodotto trovato"]]);
+        $user = Auth::user();
+        
+        // Check if user is BackOffice (role_id == 5)
+        if ($user && $user->role_id == 5) {
+            // Get only the macro product IDs assigned to this BackOffice user
+            $allowedMacroProductIds = contract_management::where('user_id', $user->id)
+                ->pluck('macro_product_id')
+                ->toArray();
+            
+            // If no macro products are assigned, return empty array
+            if (empty($allowedMacroProductIds)) {
+                return response()->json([
+                    "response" => "ok", 
+                    "status" => "200", 
+                    "body" => [
+                        "prodotti" => [], 
+                        "messaggio" => "Nessun prodotto assegnato"
+                    ]
+                ]);
+            }
+            
+            // Filter products based on assigned macro product IDs
+            $prodotti = Product::with(['supplier:id,nome_fornitore,descrizione', 'macro_product'])
+                ->whereIn('macro_product_id', $allowedMacroProductIds)
+                ->get();
+        } else {
+            // For Admin and other roles, return all products
+            $prodotti = Product::with(['supplier:id,nome_fornitore,descrizione', 'macro_product'])->get();
+        }
+        
+        return response()->json([
+            "response" => "ok", 
+            "status" => "200", 
+            "body" => [
+                "prodotti" => $prodotti, 
+                "messaggio" => "Prodotto trovato"
+            ]
+        ]);
     }
 
     public function storeNewProduct(Request $request)

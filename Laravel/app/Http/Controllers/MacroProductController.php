@@ -59,11 +59,49 @@ class MacroProductController extends Controller
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $getMacroProduct]]);
     }
 
+    /**
+     * Get all macro products with role-based filtering.
+     * 
+     * - For BackOffice users (role_id == 5): Returns only macro products 
+     *   assigned to them via the contract_managements table
+     * - For Admin and other roles: Returns all macro products
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function GetallMacroProduct()
     {
-
-        $getMacroProduct = macro_product::with('product')->get();
-        return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $getMacroProduct]]);
+        $user = Auth::user();
+        
+        // Check if user is BackOffice (role_id == 5)
+        if ($user && $user->role_id == 5) {
+            // Get only the macro products assigned to this BackOffice user
+            $allowedMacroProductIds = contract_management::where('user_id', $user->id)
+                ->pluck('macro_product_id')
+                ->toArray();
+            
+            // If no macro products are assigned, return empty array
+            if (empty($allowedMacroProductIds)) {
+                return response()->json([
+                    "response" => "ok", 
+                    "status" => "200", 
+                    "body" => ["risposta" => []]
+                ]);
+            }
+            
+            // Filter macro products based on assigned IDs
+            $getMacroProduct = macro_product::with('product')
+                ->whereIn('id', $allowedMacroProductIds)
+                ->get();
+        } else {
+            // For Admin and other roles, return all macro products
+            $getMacroProduct = macro_product::with('product')->get();
+        }
+        
+        return response()->json([
+            "response" => "ok", 
+            "status" => "200", 
+            "body" => ["risposta" => $getMacroProduct]
+        ]);
     }
 
 
