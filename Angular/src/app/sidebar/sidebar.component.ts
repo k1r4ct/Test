@@ -39,6 +39,7 @@ export const ROUTES_ADMIN: RouteInfo[] = [
   { path: '/table', title: 'Gestione Prodotti', icon: 'nc-tile-56', materialIcon: 'inventory_2', class: '' },
   { path: '/macroprodotti', title: 'Gestione MacroProdotti', icon: 'nc-tile-56', materialIcon: 'category', class: '' },
   { path: '/utenti', title: 'Gestione Utenti', icon: 'nc-circle-10', materialIcon: 'manage_accounts', class: '' },
+  { path: '/ecommerce', title: 'E-commerce', icon: 'nc-shop', materialIcon: 'store', class: '' },
   { path: '/ticket', title: 'Gestione Ticket', icon: 'nc-send', materialIcon: 'support_agent', class: '' },
   { path: '/logs', title: 'Gestione Log', icon: 'nc-paper', materialIcon: 'article', class: '' },
 ];
@@ -62,6 +63,7 @@ export const ROUTES_ADVISOR: RouteInfo[] = [
 export const ROUTES_CLI: RouteInfo[] = [
   { path: '/user', title: 'Dashboard Personale', icon: 'nc-single-02', materialIcon: 'person', class: '' },
   { path: '/leads', title: 'Amici Invitati', icon: 'nc-send', materialIcon: 'group_add', class: '' },
+  { path: '/ecommerce', title: 'E-commerce', icon: 'nc-shop', materialIcon: 'store', class: '' },
   { path: '/schedapr', title: 'Scheda Personale', icon: 'nc-single-copy-04', materialIcon: 'badge', class: '' },
 ];
 
