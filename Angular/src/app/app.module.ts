@@ -130,6 +130,7 @@ import { AttachmentPreviewModalComponent } from './attachment-preview-modal/atta
 import { ProfileSettingsModalComponent } from "./shared/components/profile-settings-modal/profile-settings-modal.component";
 import { SystemLogsComponent } from "./pages/system-logs/system-logs.component";
 import { NotificationsModalComponent } from "./shared/notifications-modal/notifications-modal.component";
+import { EcommerceComponent } from "./pages/ecommerce/ecommerce.component";
 
 @NgModule({
   declarations: [
@@ -179,6 +180,7 @@ import { NotificationsModalComponent } from "./shared/notifications-modal/notifi
     ProfileSettingsModalComponent,
     SystemLogsComponent,
     NotificationsModalComponent,
+    EcommerceComponent,
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent],

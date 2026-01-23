@@ -27,6 +27,7 @@ import { PasswordResetSuccessComponent } from './components/password-reset-succe
 import { FormGeneraleComponent } from './pages/form-generale/form-generale.component';
 import { TicketManagementComponent } from './pages/ticket-management/ticket-management.component';
 import { SystemLogsComponent } from './pages/system-logs/system-logs.component';
+import { EcommerceComponent } from './pages/ecommerce/ecommerce.component';
 
 export const AppRoutes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -60,6 +61,7 @@ export const AppRoutes: Routes = [
       { path: 'schedapr', component: SchedaUtenteComponent },
       { path: 'ticket', component: TicketManagementComponent },
       { path: 'logs', component: SystemLogsComponent },
+      { path: 'ecommerce', component: EcommerceComponent },
     ],
   },
   { path: '**', redirectTo: 'dashboard' }

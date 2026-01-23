@@ -295,11 +295,11 @@ class Article extends Model
         return ArticleAttributeValue::getAllValues($this->id, true);
     }
 
-    public function getAttributeValue(string $attributeCode)
+    public function getEavAttributeValue(string $attributeCode)
     {
         return ArticleAttributeValue::getValueByCode($this->id, $attributeCode);
     }
-
+    
     public function getFormattedAttributeValue(string $attributeCode): string
     {
         $attrValue = $this->attributeValues()
