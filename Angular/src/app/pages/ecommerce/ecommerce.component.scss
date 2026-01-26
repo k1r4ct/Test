@@ -92,6 +92,7 @@ $shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
 .nav-tabs {
   display: flex;
   gap: 5px;
+  border-bottom: none !important;
 
   @media (max-width: 992px) {
     display: none;

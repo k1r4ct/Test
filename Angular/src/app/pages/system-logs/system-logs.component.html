@@ -69,6 +69,8 @@
   </div>
 
   <!-- Stats Bar (Level Filters) - Only visible in File Log view -->
+  <!-- NOTE: *ngIf="currentView === 'file' && stats" guarantees stats is not null inside this block -->
+  <!-- Therefore we use stats.by_level instead of stats?.by_level to avoid NG8107 warnings -->
   <div class="stats-bar" *ngIf="currentView === 'file' && stats">
     <span class="stats-bar-label"><i class="fas fa-filter"></i> Filtra per livello:</span>
     
@@ -77,7 +79,7 @@
          (click)="toggleLevelFilter('debug')">
       <div class="stat-icon debug"><i class="fas fa-bug"></i></div>
       <div class="stat-info">
-        <h4>{{ stats?.by_level?.debug || 0 }}</h4>
+        <h4>{{ stats.by_level?.debug || 0 }}</h4>
         <span>Debug</span>
       </div>
     </div>
@@ -87,7 +89,7 @@
          (click)="toggleLevelFilter('info')">
       <div class="stat-icon info"><i class="fas fa-info-circle"></i></div>
       <div class="stat-info">
-        <h4>{{ stats?.by_level?.info || 0 }}</h4>
+        <h4>{{ stats.by_level?.info || 0 }}</h4>
         <span>Info</span>
       </div>
     </div>
@@ -97,7 +99,7 @@
          (click)="toggleLevelFilter('warning')">
       <div class="stat-icon warning"><i class="fas fa-exclamation-triangle"></i></div>
       <div class="stat-info">
-        <h4>{{ stats?.by_level?.warning || 0 }}</h4>
+        <h4>{{ stats.by_level?.warning || 0 }}</h4>
         <span>Warning</span>
       </div>
     </div>
@@ -107,7 +109,7 @@
          (click)="toggleLevelFilter('error')">
       <div class="stat-icon error"><i class="fas fa-times-circle"></i></div>
       <div class="stat-info">
-        <h4>{{ (stats?.by_level?.error || 0) + (stats?.by_level?.critical || 0) }}</h4>
+        <h4>{{ (stats.by_level?.error || 0) + (stats.by_level?.critical || 0) }}</h4>
         <span>Errori</span>
       </div>
     </div>
@@ -751,7 +753,7 @@
       <pre class="stack-trace-content">{{ selectedLog.stack_trace }}</pre>
     </div>
 
-    <!-- ==================== DEVICE TRACKING INFO SECTION (moved to bottom) ==================== -->
+    <!-- ==================== DEVICE TRACKING INFO SECTION ==================== -->
     <div class="device-tracking-section" *ngIf="hasDeviceInfo(selectedLog) || hasGeoInfo(selectedLog)">
       <h4 class="section-title"><i class="fas fa-satellite-dish"></i> Device Tracking</h4>
       
@@ -759,51 +761,52 @@
         <!-- Card 1: Location -->
         <div class="device-card location" 
              *ngIf="selectedLog.geo_info && (selectedLog.geo_info.city || selectedLog.geo_info.country)"
-             (click)="filterByLocation(selectedLog.geo_info?.city || null, selectedLog.geo_info?.country || null)"
+             (click)="filterByLocation(selectedLog.geo_info.city || null, selectedLog.geo_info.country || null)"
              matTooltip="Clicca per filtrare">
           <div class="card-icon">
-            <span class="flag-emoji">{{ getCountryFlag(selectedLog.geo_info?.country_code || null) }}</span>
+            <span class="flag-emoji">{{ getCountryFlag(selectedLog.geo_info.country_code || null) }}</span>
           </div>
           <div class="card-content">
             <span class="card-label">Posizione</span>
             <span class="card-value">
-              {{ selectedLog.geo_info?.city || 'N/A' }}
-              <span class="card-subvalue" *ngIf="selectedLog.geo_info?.region">, {{ selectedLog.geo_info?.region }}</span>
+              {{ selectedLog.geo_info.city || 'N/A' }}
+              <span class="card-subvalue" *ngIf="selectedLog.geo_info.region">, {{ selectedLog.geo_info.region }}</span>
             </span>
-            <span class="card-extra">{{ selectedLog.geo_info?.country || 'N/A' }}</span>
+            <span class="card-extra">{{ selectedLog.geo_info.country || 'N/A' }}</span>
           </div>
         </div>
 
         <!-- Card 2: ISP -->
         <div class="device-card isp" 
              *ngIf="selectedLog.geo_info?.isp"
-             (click)="filterByIspClick(selectedLog.geo_info?.isp || '')"
+             (click)="filterByIspClick(selectedLog.geo_info!.isp || '')"
              matTooltip="Clicca per filtrare">
           <div class="card-icon"><i class="fas fa-network-wired"></i></div>
           <div class="card-content">
             <span class="card-label">ISP</span>
-            <span class="card-value">{{ selectedLog.geo_info?.isp }}</span>
+            <span class="card-value">{{ selectedLog.geo_info!.isp }}</span>
           </div>
         </div>
 
         <!-- Card 3: Device -->
+        <!-- *ngIf checks device_info exists, so we use device_info. not device_info?. inside -->
         <div class="device-card device" 
              *ngIf="selectedLog.device_info && (selectedLog.device_info.type || selectedLog.device_info.os || selectedLog.device_info.browser)"
-             (click)="filterByDeviceTypeClick(selectedLog.device_info?.type || '')"
+             (click)="filterByDeviceTypeClick(selectedLog.device_info.type || '')"
              matTooltip="Clicca per filtrare per tipo">
           <div class="card-icon">
-            <i class="fas" [ngClass]="getDeviceIcon(selectedLog.device_info?.type || 'Desktop')"></i>
+            <i class="fas" [ngClass]="getDeviceIcon(selectedLog.device_info.type || 'Desktop')"></i>
           </div>
           <div class="card-content">
             <span class="card-label">Dispositivo</span>
-            <span class="card-value">{{ selectedLog.device_info?.type || 'Desktop' }}</span>
+            <span class="card-value">{{ selectedLog.device_info.type || 'Desktop' }}</span>
             <span class="card-extra">
-              <span class="clickable-chip" (click)="$event.stopPropagation(); filterByOSClick(selectedLog.device_info?.os || '')">
-                {{ selectedLog.device_info?.os || 'N/A' }}
+              <span class="clickable-chip" (click)="$event.stopPropagation(); filterByOSClick(selectedLog.device_info.os || '')">
+                {{ selectedLog.device_info.os || 'N/A' }}
               </span>
               <span class="separator">•</span>
-              <span class="clickable-chip" (click)="$event.stopPropagation(); filterByBrowserClick(selectedLog.device_info?.browser || '')">
-                {{ selectedLog.device_info?.browser || 'N/A' }}
+              <span class="clickable-chip" (click)="$event.stopPropagation(); filterByBrowserClick(selectedLog.device_info.browser || '')">
+                {{ selectedLog.device_info.browser || 'N/A' }}
               </span>
             </span>
           </div>
@@ -814,8 +817,8 @@
           <div class="card-icon"><i class="fas fa-tv"></i></div>
           <div class="card-content">
             <span class="card-label">Schermo</span>
-            <span class="card-value">{{ selectedLog.device_info?.screen_resolution }}</span>
-            <span class="card-extra" *ngIf="selectedLog.device_info?.touch_support">
+            <span class="card-value">{{ selectedLog.device_info!.screen_resolution }}</span>
+            <span class="card-extra" *ngIf="selectedLog.device_info!.touch_support">
               <i class="fas fa-hand-pointer"></i> Touch
             </span>
           </div>
@@ -826,9 +829,9 @@
           <div class="card-icon"><i class="fas fa-clock"></i></div>
           <div class="card-content">
             <span class="card-label">Timezone</span>
-            <span class="card-value">{{ selectedLog.device_info?.timezone || selectedLog.geo_info?.timezone || 'N/A' }}</span>
-            <span class="card-extra" *ngIf="selectedLog.device_info?.language">
-              <i class="fas fa-language"></i> {{ selectedLog.device_info?.language }}
+            <span class="card-value">{{ selectedLog.device_info!.timezone || selectedLog.geo_info?.timezone || 'N/A' }}</span>
+            <span class="card-extra" *ngIf="selectedLog.device_info!.language">
+              <i class="fas fa-language"></i> {{ selectedLog.device_info!.language }}
             </span>
           </div>
         </div>
@@ -836,12 +839,12 @@
         <!-- Card 6: Fingerprint -->
         <div class="device-card fingerprint" 
              *ngIf="selectedLog.device_info?.fingerprint"
-             (click)="filterByFingerprint(selectedLog.device_info?.fingerprint || '')"
+             (click)="filterByFingerprint(selectedLog.device_info!.fingerprint || '')"
              matTooltip="Clicca per filtrare">
           <div class="card-icon"><i class="fas fa-fingerprint"></i></div>
           <div class="card-content">
             <span class="card-label">Fingerprint</span>
-            <span class="card-value fingerprint-value">{{ selectedLog.device_info?.fingerprint }}</span>
+            <span class="card-value fingerprint-value">{{ selectedLog.device_info!.fingerprint }}</span>
           </div>
         </div>
       </div>

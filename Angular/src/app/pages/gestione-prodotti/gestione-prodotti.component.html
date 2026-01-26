@@ -243,7 +243,7 @@
 
 
 <!-- Product Details Section -->
-<div class="modern-card product-details-card" *ngIf="DettagliProduct" @pageTransition [hidden]="prodottoselezionato">
+<div class="modern-card product-details-card" *ngIf="DettagliProduct && DettagliProduct.length > 0" @pageTransition [hidden]="prodottoselezionato">
   <div class="modern-card-header">
     <div class="header-content">
       <div class="header-icon">
@@ -330,10 +330,10 @@
               class="modern-toggle attivo" 
               name="attivo" 
               #attivoToggle
-              [checked]="DettagliProduct[0]?.attivo == 1 || DettagliProduct[0]?.attivo == true"
+              [checked]="DettagliProduct[0].attivo == 1 || DettagliProduct[0].attivo == true"
               color="primary">
               <span class="toggle-label">
-                {{ (DettagliProduct[0]?.attivo == 1 || DettagliProduct[0]?.attivo == true) ? 'Attivo' : 'Non Attivo' }}
+                {{ (DettagliProduct[0].attivo == 1 || DettagliProduct[0].attivo == true) ? 'Attivo' : 'Non Attivo' }}
               </span>
             </mat-slide-toggle>
           </div>

@@ -7,6 +7,7 @@ import { MatDialog } from '@angular/material/dialog';
 
 // ============================================================================
 // INTERFACES - Updated with Device Tracking fields
+// Fixed: Added optional markers (?) to prevent NG8107 warnings
 // ============================================================================
 
 interface ParsedUserAgent {
@@ -26,25 +27,25 @@ interface LogChange {
 }
 
 interface DeviceInfo {
-  fingerprint: string | null;
-  type: string | null;
-  os: string | null;
-  browser: string | null;
-  screen_resolution: string | null;
-  cpu_cores: number | null;
-  ram_gb: number | null;
-  timezone: string | null;
-  language: string | null;
-  touch_support: boolean | null;
+  fingerprint?: string | null;
+  type?: string | null;
+  os?: string | null;
+  browser?: string | null;
+  screen_resolution?: string | null;
+  cpu_cores?: number | null;
+  ram_gb?: number | null;
+  timezone?: string | null;
+  language?: string | null;
+  touch_support?: boolean | null;
 }
 
 interface GeoInfo {
-  country: string | null;
-  country_code: string | null;
-  region: string | null;
-  city: string | null;
-  isp: string | null;
-  timezone: string | null;
+  country?: string | null;
+  country_code?: string | null;
+  region?: string | null;
+  city?: string | null;
+  isp?: string | null;
+  timezone?: string | null;
 }
 
 interface LogEntry {
@@ -82,8 +83,8 @@ interface LogEntry {
   geo_city?: string;
   geo_country?: string;
   // Device tracking fields (full detail view)
-  device_info?: DeviceInfo;
-  geo_info?: GeoInfo;
+  device_info?: DeviceInfo | null;
+  geo_info?: GeoInfo | null;
 }
 
 interface LogSource {
@@ -114,17 +115,17 @@ interface FilterOption {
 
 interface LogStats {
   total: number;
-  by_level: {
-    debug: number;
-    info: number;
-    warning: number;
-    error: number;
-    critical: number;
-  };
-  by_source: { [key: string]: number };
-  errors_today: number;
-  logs_today: number;
-  logs_last_week: number;
+  by_level?: {
+    debug?: number;
+    info?: number;
+    warning?: number;
+    error?: number;
+    critical?: number;
+  } | null;
+  by_source?: { [key: string]: number };
+  errors_today?: number;
+  logs_today?: number;
+  logs_last_week?: number;
   // Audit trail stats
   by_entity_type?: { [key: string]: number };
   audit_logs_today?: number;
