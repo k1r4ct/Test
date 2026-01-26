@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, HostListener, ViewChild, ElementRef } fro
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { trigger, transition, style, animate, state } from '@angular/animations';
-import { Subscription, interval, Subject } from 'rxjs';
+import { Subscription, Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { 
   EcommerceService, 
@@ -35,7 +35,15 @@ interface CarouselSlide {
   gradient: string;
 }
 
-type ViewState = 'catalog' | 'product-detail' | 'checkout' | 'order-success' | 'orders' | 'order-detail';
+interface WalletTransaction {
+  id: number;
+  type: 'credit' | 'debit' | 'pending';
+  title: string;
+  amount: number;
+  date: string;
+}
+
+type ViewState = 'catalog' | 'product-detail' | 'checkout' | 'order-success' | 'orders' | 'order-detail' | 'wallet';
 
 // ==================== COMPONENT ====================
 
@@ -115,8 +123,6 @@ export class EcommerceComponent implements OnInit, OnDestroy {
   searchQuery: string = '';
   searchSubject = new Subject<string>();
   sortOption: string = 'default';
-  priceRange: { min: number | null; max: number | null } = { min: null, max: null };
-  showFilters: boolean = false;
 
   // ==================== CART ====================
   cart: Cart | null = null;
@@ -140,6 +146,9 @@ export class EcommerceComponent implements OnInit, OnDestroy {
   ordersPagination: Pagination | null = null;
   isLoadingOrders: boolean = false;
 
+  // ==================== WALLET ====================
+  walletTransactions: WalletTransaction[] = [];
+
   // ==================== CAROUSEL ====================
   carouselSlides: CarouselSlide[] = [];
   currentSlideIndex: number = 0;
@@ -147,8 +156,6 @@ export class EcommerceComponent implements OnInit, OnDestroy {
 
   // ==================== MOBILE ====================
   isMobile: boolean = false;
-  showMobileNav: boolean = false;
-  mobileNavTab: 'catalog' | 'cart' | 'orders' | 'wallet' = 'catalog';
 
   // ==================== QUANTITY SELECTOR ====================
   selectedQuantity: number = 1;
@@ -177,6 +184,7 @@ export class EcommerceComponent implements OnInit, OnDestroy {
     this.checkMobile();
     this.loadCurrentUser();
     this.initializeCarousel();
+    this.initializeWalletTransactions();
     this.loadInitialData();
     this.setupSearchDebounce();
     this.subscribeToCartUpdates();
@@ -202,10 +210,8 @@ export class EcommerceComponent implements OnInit, OnDestroy {
   }
 
   private loadCurrentUser(): void {
-    // Get user ID from localStorage
     const userId = localStorage.getItem('userLogin');
     if (userId) {
-      // Load full user data from API
       this.apiService.PrendiUtente().subscribe({
         next: (response: any) => {
           if (response && response.user) {
@@ -224,36 +230,26 @@ export class EcommerceComponent implements OnInit, OnDestroy {
     this.carouselSlides = [
       {
         id: 1,
-        title: 'Benvenuto su Semprechiaro Store!',
-        description: 'Converti i tuoi Punti Valore in fantastici premi. Buoni Amazon, carburante e molto altro ti aspettano!',
-        badge: '🎁 Nuovo',
-        ctaText: 'Scopri i Prodotti',
+        title: 'Buoni Amazon Disponibili!',
+        description: 'Utilizza i tuoi Punti Valore per ottenere buoni regalo Amazon da 15€, 30€ e 50€. Consegna immediata!',
+        badge: '🎉 Disponibile Ora',
+        ctaText: 'Scopri i Buoni',
         ctaAction: 'scroll-catalog',
-        imageUrl: 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png',
+        imageUrl: 'https://m.media-amazon.com/images/G/01/gc/designs/livepreview/amazon_dkblue_noto_email_v2016_us-main._CB468775337_.png',
         gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
       },
       {
         id: 2,
-        title: 'Buoni Amazon Disponibili',
-        description: 'Riscatta i tuoi PV per buoni regalo Amazon da 15€, 30€, 50€ o 100€. Consegna immediata via email!',
-        badge: '🔥 Più Richiesti',
-        ctaText: 'Vai ai Buoni',
-        ctaAction: 'filter-amazon',
-        imageUrl: 'https://m.media-amazon.com/images/G/01/gc/designs/livepreview/amazon_dkblue_noto_email_v2016_us-main._CB468775337_.png',
+        title: 'Premia la Tua Fedeltà!',
+        description: 'Ogni abbonamento ti fa guadagnare Punti Valore. Accumula e spendi nel nostro store per ottenere fantastici premi!',
+        badge: '💰 Sistema Cashback',
+        ctaText: 'Vai al Wallet',
+        ctaAction: 'open-wallet',
+        imageUrl: 'https://cdn-icons-png.flaticon.com/512/2331/2331966.png',
         gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
       },
       {
         id: 3,
-        title: 'Controlla il tuo Wallet',
-        description: 'Tieni sempre sotto controllo i tuoi Punti Valore disponibili, bloccati e maturati. Trasparenza totale!',
-        badge: '💰 Wallet',
-        ctaText: 'Vai al Wallet',
-        ctaAction: 'open-wallet',
-        imageUrl: 'https://cdn-icons-png.flaticon.com/512/2331/2331966.png',
-        gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
-      },
-      {
-        id: 4,
         title: 'Buoni Carburante in Arrivo!',
         description: 'Presto potrai utilizzare i tuoi PV anche per ottenere buoni carburante. Risparmia su ogni rifornimento!',
         badge: '🚀 Prossimamente',
@@ -261,8 +257,28 @@ export class EcommerceComponent implements OnInit, OnDestroy {
         ctaAction: 'coming-soon',
         ctaDisabled: true,
         imageUrl: 'https://cdn-icons-png.flaticon.com/512/2917/2917995.png',
+        gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+      },
+      {
+        id: 4,
+        title: 'Vendi i Tuoi Prodotti!',
+        description: 'Presto i clienti potranno caricare e vendere prodotti delle proprie attività commerciali direttamente su Semprechiaro Store. Espandi il tuo business!',
+        badge: '🏪 Novità in Arrivo',
+        ctaText: 'Coming Soon',
+        ctaAction: 'coming-soon',
+        ctaDisabled: true,
+        imageUrl: 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png',
         gradient: 'linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)'
       }
+    ];
+  }
+
+  private initializeWalletTransactions(): void {
+    // This will be populated from API in real implementation
+    this.walletTransactions = [
+      { id: 1, type: 'credit', title: 'Bonus Benvenuto', amount: 500, date: '15/01/2026' },
+      { id: 2, type: 'credit', title: 'Punti Maturati - Contratto Luce', amount: 400, date: '10/01/2026' },
+      { id: 3, type: 'credit', title: 'Punti Maturati - Contratto Gas', amount: 300, date: '05/01/2026' }
     ];
   }
 
@@ -339,7 +355,7 @@ export class EcommerceComponent implements OnInit, OnDestroy {
   private startCarouselAutoplay(): void {
     this.carouselInterval = setInterval(() => {
       this.nextSlide();
-    }, 6000);
+    }, 5000);
   }
 
   nextSlide(): void {
@@ -364,12 +380,8 @@ export class EcommerceComponent implements OnInit, OnDestroy {
       case 'scroll-catalog':
         this.scrollToCatalog();
         break;
-      case 'filter-amazon':
-        this.filterByStore('amazon');
-        break;
       case 'open-wallet':
-        // Open wallet section or navigate
-        this.showToast('info', 'Wallet', 'Funzionalità wallet in arrivo!');
+        this.navigateTo('wallet');
         break;
       case 'coming-soon':
         // Do nothing for disabled CTAs
@@ -410,12 +422,6 @@ export class EcommerceComponent implements OnInit, OnDestroy {
     if (this.sortOption !== 'default') {
       filters.sort = this.sortOption;
     }
-    if (this.priceRange.min !== null) {
-      filters.min_pv = this.priceRange.min;
-    }
-    if (this.priceRange.max !== null) {
-      filters.max_pv = this.priceRange.max;
-    }
 
     const articlesSub = this.ecommerceService.getArticles(filters).subscribe({
       next: (res) => {
@@ -427,7 +433,7 @@ export class EcommerceComponent implements OnInit, OnDestroy {
           }
           this.pagination = res.body.pagination;
 
-          // Set featured articles (first 4 if no featured filter)
+          // Set featured articles
           if (reset && this.articles.length > 0) {
             this.featuredArticles = this.articles.filter(a => a.is_featured).slice(0, 4);
             if (this.featuredArticles.length === 0) {
@@ -543,27 +549,16 @@ export class EcommerceComponent implements OnInit, OnDestroy {
     this.loadArticles(true);
   }
 
-  onSortChange(sort: string): void {
-    this.sortOption = sort;
-    this.loadArticles(true);
-  }
-
   clearFilters(): void {
     this.selectedStore = null;
     this.selectedCategory = null;
     this.searchQuery = '';
     this.sortOption = 'default';
-    this.priceRange = { min: null, max: null };
     this.loadArticles(true);
   }
 
-  toggleFilters(): void {
-    this.showFilters = !this.showFilters;
-  }
-
   hasActiveFilters(): boolean {
-    return !!(this.selectedStore || this.selectedCategory || this.searchQuery.trim() || 
-              this.sortOption !== 'default' || this.priceRange.min !== null || this.priceRange.max !== null);
+    return !!(this.selectedStore || this.selectedCategory || this.searchQuery.trim() || this.sortOption !== 'default');
   }
 
   // ==================== PRODUCT DETAIL ====================
@@ -606,6 +601,11 @@ export class EcommerceComponent implements OnInit, OnDestroy {
     }
   }
 
+  getTotalPvForQuantity(): number {
+    if (!this.selectedArticle) return 0;
+    return this.selectedArticle.pv_price * this.selectedQuantity;
+  }
+
   canAffordProduct(article: Article | null): boolean {
     if (!article || !this.userBalance) return false;
     return this.userBalance.pv_disponibili >= (article.pv_price * this.selectedQuantity);
@@ -628,7 +628,7 @@ export class EcommerceComponent implements OnInit, OnDestroy {
     const addSub = this.ecommerceService.addToCart(article.id, quantity).subscribe({
       next: (res) => {
         if (res.response === 'ok') {
-          this.showToast('success', 'Aggiunto al Carrello', `${article.article_name} aggiunto al carrello`);
+          this.showToast('success', 'Aggiunto al carrello', `${article.article_name} x${quantity}`);
           this.loadCart();
         } else {
           this.showToast('error', 'Errore', res.message || 'Impossibile aggiungere al carrello');
@@ -751,6 +751,15 @@ export class EcommerceComponent implements OnInit, OnDestroy {
           this.lastOrderTotal = res.body.order.total_pv;
           this.lastOrderDate = res.body.order.created_at;
           
+          // Add transaction to wallet
+          this.walletTransactions.unshift({
+            id: Date.now(),
+            type: 'debit',
+            title: `Ordine ${this.lastOrderNumber}`,
+            amount: this.lastOrderTotal,
+            date: new Date().toLocaleDateString('it-IT')
+          });
+          
           // Reset cart
           this.cartItems = [];
           this.cartItemsCount = 0;
@@ -806,7 +815,11 @@ export class EcommerceComponent implements OnInit, OnDestroy {
       this.selectedArticle = null;
     } else if (view === 'orders') {
       this.loadOrders();
+    } else if (view === 'wallet') {
+      // Wallet transactions are already loaded
     }
+
+    window.scrollTo(0, 0);
   }
 
   backToCatalog(): void {
@@ -816,27 +829,6 @@ export class EcommerceComponent implements OnInit, OnDestroy {
 
   continueShopping(): void {
     this.currentView = 'catalog';
-  }
-
-  // ==================== MOBILE NAVIGATION ====================
-
-  setMobileNavTab(tab: 'catalog' | 'cart' | 'orders' | 'wallet'): void {
-    this.mobileNavTab = tab;
-    
-    switch (tab) {
-      case 'catalog':
-        this.currentView = 'catalog';
-        break;
-      case 'cart':
-        this.toggleCart();
-        break;
-      case 'orders':
-        this.goToOrders();
-        break;
-      case 'wallet':
-        this.showToast('info', 'Wallet', 'Sezione wallet in arrivo!');
-        break;
-    }
   }
 
   // ==================== TOAST NOTIFICATIONS ====================
@@ -864,6 +856,10 @@ export class EcommerceComponent implements OnInit, OnDestroy {
 
   formatPv(pv: number): string {
     return new Intl.NumberFormat('it-IT').format(pv) + ' PV';
+  }
+
+  formatPvNumber(pv: number): string {
+    return new Intl.NumberFormat('it-IT').format(pv);
   }
 
   formatEuro(euro: number | null): string {
@@ -913,6 +909,10 @@ export class EcommerceComponent implements OnInit, OnDestroy {
 
   trackByOrderId(index: number, order: Order): number {
     return order.id;
+  }
+
+  trackByTransactionId(index: number, transaction: WalletTransaction): number {
+    return transaction.id;
   }
 
   // Load more articles (infinite scroll)

@@ -3,33 +3,39 @@
   <!-- ===================================
        TOP NAVIGATION BAR
        =================================== -->
-  <nav class="ecommerce-nav">
+  <nav class="top-nav">
     <div class="nav-container">
       <!-- Left: Logo & Tabs -->
       <div class="nav-left">
         <div class="nav-logo" (click)="navigateTo('catalog')">
-          <span class="material-icons">storefront</span>
+          <span class="material-icons">shopping_bag</span>
           <span class="logo-text">Semprechiaro Store</span>
         </div>
         
         <!-- Desktop Navigation Tabs -->
-        <div class="nav-tabs" *ngIf="!isMobile">
+        <div class="nav-tabs">
           <button class="nav-tab" 
                   [class.active]="currentView === 'catalog' || currentView === 'product-detail'"
                   (click)="navigateTo('catalog')">
-            <span class="material-icons">store</span>
-            <span>Catalogo</span>
+            <span class="material-icons">storefront</span>
+            <span>Store</span>
           </button>
           <button class="nav-tab" 
                   [class.active]="currentView === 'orders' || currentView === 'order-detail'"
                   (click)="goToOrders()">
             <span class="material-icons">receipt_long</span>
-            <span>I Miei Ordini</span>
+            <span>I miei Ordini</span>
+          </button>
+          <button class="nav-tab" 
+                  [class.active]="currentView === 'wallet'"
+                  (click)="navigateTo('wallet')">
+            <span class="material-icons">account_balance_wallet</span>
+            <span>Wallet</span>
           </button>
         </div>
       </div>
 
-      <!-- Center: Search Bar -->
+      <!-- Center: Search Bar (KEPT) -->
       <div class="nav-center">
         <div class="search-container">
           <span class="material-icons search-icon">search</span>
@@ -49,11 +55,11 @@
       <!-- Right: Balance & Cart -->
       <div class="nav-right">
         <!-- PV Balance Display -->
-        <div class="pv-balance" *ngIf="userBalance">
+        <div class="pv-balance" *ngIf="userBalance" (click)="navigateTo('wallet')">
           <span class="material-icons">account_balance_wallet</span>
           <div class="pv-info">
-            <span class="pv-label">Disponibili</span>
-            <span class="pv-value">{{ formatPv(userBalance.pv_disponibili) }}</span>
+            <span class="pv-label">PV DISPONIBILI</span>
+            <span class="pv-value">{{ formatPvNumber(userBalance.pv_disponibili) }} PV</span>
           </div>
         </div>
 
@@ -71,749 +77,759 @@
   <!-- ===================================
        MAIN CONTENT AREA
        =================================== -->
-  <main class="ecommerce-main">
+  <main class="main-content">
+    <div class="container">
 
-    <!-- ===================================
-         CATALOG VIEW
-         =================================== -->
-    <div *ngIf="currentView === 'catalog'" [@pageTransition] class="catalog-view">
-      
-      <!-- Hero Carousel -->
-      <section class="hero-carousel">
-        <div class="carousel-wrapper">
-          <div class="carousel-slides" 
-               [style.transform]="'translateX(-' + (currentSlideIndex * 100) + '%)'">
-            <div class="carousel-slide" 
-                 *ngFor="let slide of carouselSlides; let i = index"
-                 [style.background]="slide.gradient">
-              <div class="slide-content">
-                <div class="slide-text">
-                  <span class="slide-badge">{{ slide.badge }}</span>
-                  <h1>{{ slide.title }}</h1>
-                  <p>{{ slide.description }}</p>
-                  <button class="slide-cta" 
-                          [class.disabled]="slide.ctaDisabled"
-                          [disabled]="slide.ctaDisabled"
-                          (click)="onCarouselCtaClick(slide.ctaAction)">
-                    <span>{{ slide.ctaText }}</span>
-                    <span class="material-icons">{{ slide.ctaDisabled ? 'schedule' : 'arrow_forward' }}</span>
+      <!-- ===================================
+           CATALOG VIEW (HOME/PLP)
+           =================================== -->
+      <ng-container *ngIf="currentView === 'catalog'">
+        <div [@pageTransition] class="catalog-view">
+          
+          <!-- Hero Carousel -->
+          <section class="hero-carousel-section">
+            <div class="carousel-container">
+              <div class="carousel-slides">
+                <div class="carousel-slide" 
+                     *ngFor="let slide of carouselSlides; let i = index"
+                     [class.active]="i === currentSlideIndex">
+                  <div class="slide-content" [style.background]="slide.gradient">
+                    <div class="slide-text">
+                      <span class="slide-badge">{{ slide.badge }}</span>
+                      <h1>{{ slide.title }}</h1>
+                      <p>{{ slide.description }}</p>
+                      <button class="slide-cta" 
+                              [class.disabled]="slide.ctaDisabled"
+                              [disabled]="slide.ctaDisabled"
+                              (click)="onCarouselCtaClick(slide.ctaAction)">
+                        <span>{{ slide.ctaText }}</span>
+                        <span class="material-icons">{{ slide.ctaDisabled ? 'schedule' : 'arrow_forward' }}</span>
+                      </button>
+                    </div>
+                    <div class="slide-image">
+                      <img [src]="slide.imageUrl" [alt]="slide.title">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Carousel Controls -->
+              <button class="carousel-arrow prev" (click)="prevSlide()">
+                <span class="material-icons">chevron_left</span>
+              </button>
+              <button class="carousel-arrow next" (click)="nextSlide()">
+                <span class="material-icons">chevron_right</span>
+              </button>
+
+              <!-- Carousel Dots -->
+              <div class="carousel-nav">
+                <button *ngFor="let slide of carouselSlides; let i = index"
+                        class="carousel-dot"
+                        [class.active]="i === currentSlideIndex"
+                        (click)="goToSlide(i)">
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Products Section -->
+          <section class="products-section" #catalogSection>
+            <div class="section-header">
+              <h2>
+                <span class="material-icons">card_giftcard</span>
+                Buoni Disponibili
+              </h2>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-container" *ngIf="isLoading">
+              <div class="spinner"></div>
+              <p>Caricamento prodotti...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="!isLoading && articles.length === 0">
+              <span class="material-icons">inventory_2</span>
+              <h3>Nessun prodotto trovato</h3>
+              <p>Prova a modificare i filtri o la ricerca</p>
+              <button class="btn-primary" (click)="clearFilters()">
+                <span class="material-icons">storefront</span>
+                Vai allo Store
+              </button>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="products-grid" *ngIf="!isLoading && articles.length > 0">
+              <div class="product-card" 
+                   *ngFor="let article of articles; trackBy: trackByArticleId"
+                   (click)="openProductDetail(article)">
+                
+                <!-- Product Image with Badges -->
+                <div class="product-image">
+                  <div class="product-badges">
+                    <span class="product-badge digital" *ngIf="article.is_digital">DIGITALE</span>
+                    <span class="product-badge instant" *ngIf="article.is_digital">
+                      <span class="material-icons">flash_on</span>
+                      INSTANT
+                    </span>
+                    <span class="product-badge bestseller" *ngIf="article.is_featured">BEST SELLER</span>
+                  </div>
+                  <img [src]="article.thumbnail_url || 'https://m.media-amazon.com/images/G/01/gc/designs/livepreview/amazon_dkblue_noto_email_v2016_us-main._CB468775337_.png'" 
+                       [alt]="article.article_name"
+                       loading="lazy">
+                </div>
+
+                <!-- Product Info -->
+                <div class="product-info">
+                  <span class="product-category">{{ article.category_name || 'BUONI AMAZON' }}</span>
+                  <h3 class="product-title">{{ article.article_name }}</h3>
+                  <p class="product-description">{{ article.description }}</p>
+                  
+                  <div class="product-footer">
+                    <div class="product-price">
+                      <span class="price-label">Prezzo</span>
+                      <span class="price-value">{{ formatPvNumber(article.pv_price) }} PV</span>
+                    </div>
+                    <button class="btn-add-to-cart" 
+                            (click)="$event.stopPropagation(); addToCart(article)">
+                      <span class="material-icons">add_shopping_cart</span>
+                      Aggiungi
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Load More Button -->
+            <div class="load-more-container" *ngIf="hasMoreArticles()">
+              <button class="btn-load-more" 
+                      [disabled]="isLoadingMore"
+                      (click)="loadMoreArticles()">
+                <span class="material-icons" *ngIf="!isLoadingMore">expand_more</span>
+                <div class="spinner-small" *ngIf="isLoadingMore"></div>
+                <span>{{ isLoadingMore ? 'Caricamento...' : 'Carica Altri' }}</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </ng-container>
+
+      <!-- ===================================
+           PRODUCT DETAIL VIEW (PDP)
+           =================================== -->
+      <ng-container *ngIf="currentView === 'product-detail' && selectedArticle">
+        <div [@pageTransition] class="product-detail-view">
+          
+          <!-- Back Button -->
+          <div class="back-navigation">
+            <button class="back-btn" (click)="closeProductDetail()">
+              <span class="material-icons">arrow_back</span>
+              Torna allo Store
+            </button>
+          </div>
+
+          <div class="product-detail-grid">
+            <!-- Product Gallery -->
+            <div class="product-gallery">
+              <div class="badges-container">
+                <span class="badge digital" *ngIf="selectedArticle.is_digital">DIGITALE</span>
+                <span class="badge instant" *ngIf="selectedArticle.is_digital">
+                  <span class="material-icons">flash_on</span>
+                  INSTANT
+                </span>
+                <span class="badge bestseller" *ngIf="selectedArticle.is_featured">BEST SELLER</span>
+              </div>
+              <div class="main-image">
+                <img [src]="selectedArticle.thumbnail_url || 'https://m.media-amazon.com/images/G/01/gc/designs/livepreview/amazon_dkblue_noto_email_v2016_us-main._CB468775337_.png'" 
+                     [alt]="selectedArticle.article_name">
+              </div>
+            </div>
+
+            <!-- Product Details -->
+            <div class="product-details">
+              <span class="product-category-badge">{{ selectedArticle.category?.name || selectedArticle.category_name || 'BUONI AMAZON' }}</span>
+              <h1 class="product-name">{{ selectedArticle.article_name }}</h1>
+              
+              <!-- Rating -->
+              <div class="product-rating">
+                <div class="stars">
+                  <span class="material-icons" *ngFor="let star of [1,2,3,4,5]">star</span>
+                </div>
+                <span class="rating-text">5.0 (127 recensioni)</span>
+              </div>
+
+              <!-- Price Section -->
+              <div class="price-section">
+                <div class="price-main">
+                  <span class="price-value">{{ formatPvNumber(selectedArticle.pv_price) }} PV</span>
+                  <span class="price-label">PUNTI VALORE</span>
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="product-description-section">
+                <h3>Descrizione</h3>
+                <p>{{ selectedArticle.description }}</p>
+              </div>
+
+              <!-- Features -->
+              <div class="product-features-list" *ngIf="selectedArticle.is_digital">
+                <h3>Caratteristiche Principali</h3>
+                <ul>
+                  <li>
+                    <span class="material-icons">check_circle</span>
+                    <span>Consegna immediata via email</span>
+                  </li>
+                  <li>
+                    <span class="material-icons">check_circle</span>
+                    <span>Valido su tutti i prodotti Amazon.it</span>
+                  </li>
+                  <li>
+                    <span class="material-icons">check_circle</span>
+                    <span>Nessuna scadenza</span>
+                  </li>
+                  <li>
+                    <span class="material-icons">check_circle</span>
+                    <span>Utilizzabile in più acquisti</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Quantity Selector -->
+              <div class="quantity-selector">
+                <label>Quantità</label>
+                <div class="quantity-controls">
+                  <button class="qty-btn" (click)="decrementQuantity()" [disabled]="selectedQuantity <= 1">
+                    <span class="material-icons">remove</span>
+                  </button>
+                  <input type="number" class="qty-input" [value]="selectedQuantity" readonly>
+                  <button class="qty-btn" (click)="incrementQuantity()" [disabled]="selectedQuantity >= maxQuantity">
+                    <span class="material-icons">add</span>
                   </button>
                 </div>
-                <div class="slide-image">
-                  <img [src]="slide.imageUrl" [alt]="slide.title">
+                <div class="total-pv">Totale: <span>{{ formatPvNumber(getTotalPvForQuantity()) }}</span> PV</div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="action-buttons">
+                <button class="btn-primary" (click)="addToCartFromDetail()">
+                  <span class="material-icons">add_shopping_cart</span>
+                  Aggiungi al Carrello
+                </button>
+                <button class="btn-secondary">
+                  <span class="material-icons">favorite_border</span>
+                </button>
+              </div>
+
+              <!-- Availability Info -->
+              <div class="availability-info">
+                <div class="info-item success">
+                  <span class="material-icons">check_circle</span>
+                  <span>Disponibile</span>
+                </div>
+                <div class="info-item">
+                  <span class="material-icons">local_shipping</span>
+                  <span>Consegna istantanea via email</span>
+                </div>
+                <div class="info-item">
+                  <span class="material-icons">verified_user</span>
+                  <span>Pagamento sicuro con PV</span>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      </ng-container>
 
-          <!-- Carousel Controls -->
-          <button class="carousel-arrow prev" (click)="prevSlide()">
-            <span class="material-icons">chevron_left</span>
-          </button>
-          <button class="carousel-arrow next" (click)="nextSlide()">
-            <span class="material-icons">chevron_right</span>
-          </button>
-
-          <!-- Carousel Dots -->
-          <div class="carousel-dots">
-            <button *ngFor="let slide of carouselSlides; let i = index"
-                    class="carousel-dot"
-                    [class.active]="i === currentSlideIndex"
-                    (click)="goToSlide(i)">
+      <!-- ===================================
+           CHECKOUT VIEW
+           =================================== -->
+      <ng-container *ngIf="currentView === 'checkout'">
+        <div [@pageTransition] class="checkout-view">
+          
+          <!-- Back Button -->
+          <div class="back-navigation">
+            <button class="back-btn" (click)="cancelCheckout()">
+              <span class="material-icons">arrow_back</span>
+              Torna allo Store
             </button>
           </div>
-        </div>
-      </section>
 
-      <!-- Filters Section -->
-      <section class="filters-section" #catalogSection>
-        <div class="filters-header">
-          <h2>
-            <span class="material-icons">card_giftcard</span>
-            Prodotti Disponibili
-          </h2>
-          <div class="filters-actions">
-            <button class="filter-toggle-btn" (click)="toggleFilters()">
-              <span class="material-icons">tune</span>
-              <span>Filtri</span>
-              <span class="filter-badge" *ngIf="hasActiveFilters()"></span>
-            </button>
-            <select class="sort-select" [value]="sortOption" (change)="onSortChange($any($event.target).value)">
-              <option value="default">Ordina per</option>
-              <option value="price_asc">Prezzo: Basso → Alto</option>
-              <option value="price_desc">Prezzo: Alto → Basso</option>
-              <option value="name_asc">Nome: A → Z</option>
-              <option value="name_desc">Nome: Z → A</option>
-              <option value="newest">Più Recenti</option>
-            </select>
-          </div>
-        </div>
+          <div class="checkout-container">
+            <!-- Checkout Main -->
+            <div class="checkout-main">
+              <h2>
+                <span class="material-icons">payment</span>
+                Checkout
+              </h2>
 
-        <!-- Expanded Filters -->
-        <div class="filters-expanded" *ngIf="showFilters" [@fadeIn]>
-          <div class="filter-group">
-            <label>Store</label>
-            <select (change)="filterByStore($any($event.target).value || null)">
-              <option value="">Tutti gli Store</option>
-              <option *ngFor="let store of stores" [value]="store.slug">
-                {{ store.store_name }} ({{ store.articles_count }})
-              </option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label>Categoria</label>
-            <select (change)="filterByCategory($any($event.target).value ? +$any($event.target).value : null)">
-              <option value="">Tutte le Categorie</option>
-              <option *ngFor="let cat of categories" [value]="cat.id">
-                {{ cat.category_name }} ({{ cat.articles_count }})
-              </option>
-            </select>
-          </div>
-          <div class="filter-group">
-            <label>Prezzo Min (PV)</label>
-            <input type="number" 
-                   [value]="priceRange.min" 
-                   (change)="priceRange.min = $any($event.target).value ? +$any($event.target).value : null; loadArticles(true)"
-                   placeholder="0">
-          </div>
-          <div class="filter-group">
-            <label>Prezzo Max (PV)</label>
-            <input type="number" 
-                   [value]="priceRange.max" 
-                   (change)="priceRange.max = $any($event.target).value ? +$any($event.target).value : null; loadArticles(true)"
-                   placeholder="∞">
-          </div>
-          <button class="clear-filters-btn" *ngIf="hasActiveFilters()" (click)="clearFilters()">
-            <span class="material-icons">clear_all</span>
-            Rimuovi Filtri
-          </button>
-        </div>
+              <div class="checkout-section">
+                <h3>
+                  <span class="material-icons">credit_card</span>
+                  Metodo di Pagamento
+                </h3>
 
-        <!-- Active Filters Tags -->
-        <div class="active-filters" *ngIf="hasActiveFilters()">
-          <span class="filter-tag" *ngIf="selectedStore">
-            {{ selectedStore.store_name }}
-            <button (click)="filterByStore(null)">
-              <span class="material-icons">close</span>
-            </button>
-          </span>
-          <span class="filter-tag" *ngIf="selectedCategory">
-            {{ selectedCategory.category_name }}
-            <button (click)="filterByCategory(null)">
-              <span class="material-icons">close</span>
-            </button>
-          </span>
-          <span class="filter-tag" *ngIf="searchQuery">
-            "{{ searchQuery }}"
-            <button (click)="clearSearch()">
-              <span class="material-icons">close</span>
-            </button>
-          </span>
-        </div>
-      </section>
+                <div class="payment-methods">
+                  <!-- PV Payment (Selected) -->
+                  <div class="payment-method selected">
+                    <div class="payment-radio"></div>
+                    <div class="payment-icon">
+                      <span class="material-icons">account_balance_wallet</span>
+                    </div>
+                    <div class="payment-info">
+                      <div class="payment-name">Punti Valore (PV)</div>
+                      <div class="payment-desc">Usa i tuoi PV disponibili</div>
+                    </div>
+                  </div>
 
-      <!-- Products Grid -->
-      <section class="products-section">
-        <!-- Loading State -->
-        <div class="loading-container" *ngIf="isLoading">
-          <div class="spinner"></div>
-          <p>Caricamento prodotti...</p>
-        </div>
+                  <!-- PayPal (Coming Soon) -->
+                  <div class="payment-method disabled">
+                    <div class="payment-radio"></div>
+                    <div class="payment-icon">
+                      <img src="https://www.paypalobjects.com/webstatic/icon/pp258.png" alt="PayPal">
+                    </div>
+                    <div class="payment-info">
+                      <div class="payment-name">PayPal</div>
+                      <div class="payment-desc">Paga la differenza con PayPal</div>
+                    </div>
+                    <span class="coming-soon-badge">Prossimamente</span>
+                  </div>
 
-        <!-- Empty State -->
-        <div class="empty-state" *ngIf="!isLoading && articles.length === 0">
-          <span class="material-icons">inventory_2</span>
-          <h3>Nessun prodotto trovato</h3>
-          <p>Prova a modificare i filtri o la ricerca</p>
-          <button class="btn-primary" (click)="clearFilters()">
-            <span class="material-icons">refresh</span>
-            Mostra Tutti i Prodotti
-          </button>
-        </div>
+                  <!-- Stripe (Coming Soon) -->
+                  <div class="payment-method disabled">
+                    <div class="payment-radio"></div>
+                    <div class="payment-icon">
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" alt="Stripe">
+                    </div>
+                    <div class="payment-info">
+                      <div class="payment-name">Carta di Credito</div>
+                      <div class="payment-desc">Visa, Mastercard, Amex</div>
+                    </div>
+                    <span class="coming-soon-badge">Prossimamente</span>
+                  </div>
 
-        <!-- Products Grid -->
-        <div class="products-grid" *ngIf="!isLoading && articles.length > 0">
-          <div class="product-card" 
-               *ngFor="let article of articles; trackBy: trackByArticleId"
-               (click)="openProductDetail(article)">
-            
-            <!-- Product Badges -->
-            <div class="product-badges">
-              <span class="badge digital" *ngIf="article.is_digital">Digitale</span>
-              <span class="badge featured" *ngIf="article.is_featured">
-                <span class="material-icons">star</span>
-              </span>
-            </div>
+                  <!-- Klarna (Coming Soon) -->
+                  <div class="payment-method disabled">
+                    <div class="payment-radio"></div>
+                    <div class="payment-icon">
+                      <img src="https://www.klarna.com/assets/sites/5/2020/04/27143923/klarna-K-pink.png" alt="Klarna">
+                    </div>
+                    <div class="payment-info">
+                      <div class="payment-name">Klarna</div>
+                      <div class="payment-desc">Paga in 3 rate senza interessi</div>
+                    </div>
+                    <span class="coming-soon-badge">Prossimamente</span>
+                  </div>
 
-            <!-- Product Image -->
-            <div class="product-image">
-              <img [src]="article.thumbnail_url || 'https://via.placeholder.com/200x200?text=No+Image'" 
-                   [alt]="article.article_name"
-                   loading="lazy">
-            </div>
-
-            <!-- Product Info -->
-            <div class="product-info">
-              <span class="product-category">{{ article.category_name }}</span>
-              <h3 class="product-title">{{ article.article_name }}</h3>
-              <p class="product-description">{{ article.description }}</p>
-              
-              <div class="product-footer">
-                <div class="product-price">
-                  <span class="price-label">Prezzo</span>
-                  <span class="price-value">{{ formatPv(article.pv_price) }}</span>
+                  <!-- Google Pay (Coming Soon) -->
+                  <div class="payment-method disabled">
+                    <div class="payment-radio"></div>
+                    <div class="payment-icon">
+                      <img src="https://www.gstatic.com/wallet/button_icon.png" alt="Google Pay">
+                    </div>
+                    <div class="payment-info">
+                      <div class="payment-name">Google Pay</div>
+                      <div class="payment-desc">Pagamento rapido e sicuro</div>
+                    </div>
+                    <span class="coming-soon-badge">Prossimamente</span>
+                  </div>
                 </div>
-                <button class="btn-add-cart" 
-                        (click)="$event.stopPropagation(); addToCart(article)"
-                        [disabled]="!canAffordProduct(article)">
-                  <span class="material-icons">add_shopping_cart</span>
+
+                <!-- PV Balance Checkout -->
+                <div class="pv-balance-checkout">
+                  <div class="balance-row">
+                    <span>PV Disponibili</span>
+                    <span>{{ formatPvNumber(userBalance?.pv_disponibili || 0) }} PV</span>
+                  </div>
+                  <div class="balance-row">
+                    <span>Totale Ordine</span>
+                    <span>{{ formatPvNumber(cartTotalPv) }} PV</span>
+                  </div>
+                  <div class="balance-row total">
+                    <span>Saldo Dopo l'Acquisto</span>
+                    <span [class.sufficient]="canAffordCart()" [class.insufficient]="!canAffordCart()">
+                      {{ formatPvNumber(getRemainingPvAfterCheckout()) }} PV
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Checkout Sidebar -->
+            <div class="checkout-sidebar">
+              <div class="order-summary">
+                <h3>Riepilogo Ordine</h3>
+                
+                <div class="order-items">
+                  <div class="order-item" *ngFor="let item of cartItems; trackBy: trackByCartItemId">
+                    <div class="order-item-image">
+                      <img [src]="item.thumbnail_url || 'https://m.media-amazon.com/images/G/01/gc/designs/livepreview/amazon_dkblue_noto_email_v2016_us-main._CB468775337_.png'" 
+                           [alt]="item.article_name">
+                    </div>
+                    <div class="order-item-details">
+                      <div class="order-item-name">{{ item.article_name }}</div>
+                      <div class="order-item-qty">Qtà: {{ item.quantity }}</div>
+                    </div>
+                    <div class="order-item-price">{{ formatPvNumber(item.pv_total) }} PV</div>
+                  </div>
+                </div>
+
+                <div class="order-totals">
+                  <div class="order-total-row">
+                    <span>Articoli</span>
+                    <span>{{ cartItemsCount }}</span>
+                  </div>
+                  <div class="order-total-row grand-total">
+                    <span>Totale</span>
+                    <span class="value">{{ formatPvNumber(cartTotalPv) }} PV</span>
+                  </div>
+                </div>
+
+                <button class="btn-place-order" 
+                        [disabled]="!canAffordCart() || isProcessingCheckout || cartItems.length === 0"
+                        (click)="placeOrder()">
+                  <span class="material-icons" *ngIf="!isProcessingCheckout">lock</span>
+                  <div class="spinner-small" *ngIf="isProcessingCheckout"></div>
+                  <span>{{ isProcessingCheckout ? 'Elaborazione...' : 'Conferma Ordine' }}</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
+      </ng-container>
 
-        <!-- Load More Button -->
-        <div class="load-more-container" *ngIf="hasMoreArticles()">
-          <button class="btn-load-more" 
-                  [disabled]="isLoadingMore"
-                  (click)="loadMoreArticles()">
-            <span class="material-icons" *ngIf="!isLoadingMore">expand_more</span>
-            <div class="spinner-small" *ngIf="isLoadingMore"></div>
-            <span>{{ isLoadingMore ? 'Caricamento...' : 'Carica Altri' }}</span>
-          </button>
-        </div>
-      </section>
-    </div>
+      <!-- ===================================
+           ORDER SUCCESS VIEW
+           =================================== -->
+      <ng-container *ngIf="currentView === 'order-success'">
+        <div [@pageTransition] class="success-view">
+          <div class="success-container">
+            <div class="success-card" [@scaleIn]>
+              <div class="success-icon">
+                <span class="material-icons">check</span>
+              </div>
+              
+              <h1>Ordine Completato!</h1>
+              <p class="success-message">Grazie per il tuo acquisto. Riceverai a breve una email con i dettagli del tuo ordine.</p>
 
-    <!-- ===================================
-         PRODUCT DETAIL VIEW
-         =================================== -->
-    <div *ngIf="currentView === 'product-detail' && selectedArticle" [@pageTransition] class="product-detail-view">
-      
-      <!-- Back Button -->
-      <div class="back-nav">
-        <button class="back-btn" (click)="closeProductDetail()">
-          <span class="material-icons">arrow_back</span>
-          Torna al Catalogo
-        </button>
-      </div>
+              <div class="order-number-box">
+                <label>Numero Ordine</label>
+                <div class="order-number">{{ lastOrderNumber }}</div>
+              </div>
 
-      <div class="product-detail-grid">
-        <!-- Product Gallery -->
-        <div class="product-gallery">
-          <div class="gallery-badges">
-            <span class="badge digital" *ngIf="selectedArticle.is_digital">Digitale</span>
-            <span class="badge featured" *ngIf="selectedArticle.is_featured">Best Seller</span>
+              <div class="success-details">
+                <h3>Dettagli Ordine</h3>
+                <div class="success-detail-row">
+                  <span class="label">Data</span>
+                  <span class="value">{{ lastOrderDate }}</span>
+                </div>
+                <div class="success-detail-row">
+                  <span class="label">Metodo di Pagamento</span>
+                  <span class="value">Punti Valore (PV)</span>
+                </div>
+                <div class="success-detail-row">
+                  <span class="label">Totale Pagato</span>
+                  <span class="value">{{ formatPvNumber(lastOrderTotal) }} PV</span>
+                </div>
+                <div class="success-detail-row">
+                  <span class="label">Stato</span>
+                  <span class="value status-processing">In Elaborazione</span>
+                </div>
+              </div>
+
+              <div class="success-actions">
+                <button class="btn-primary" (click)="goToOrders()">
+                  <span class="material-icons">receipt_long</span>
+                  Vai ai Miei Ordini
+                </button>
+                <button class="btn-outline" (click)="continueShopping()">
+                  <span class="material-icons">storefront</span>
+                  Continua lo Shopping
+                </button>
+              </div>
+            </div>
           </div>
-          <div class="main-image">
-            <img [src]="selectedArticle.thumbnail_url || 'https://via.placeholder.com/400x400?text=No+Image'" 
-                 [alt]="selectedArticle.article_name">
-          </div>
         </div>
+      </ng-container>
 
-        <!-- Product Details -->
-        <div class="product-details">
-          <span class="detail-category">{{ selectedArticle.category?.name || selectedArticle.category_name }}</span>
-          <h1 class="detail-title">{{ selectedArticle.article_name }}</h1>
+      <!-- ===================================
+           MY ORDERS VIEW
+           =================================== -->
+      <ng-container *ngIf="currentView === 'orders'">
+        <div [@pageTransition] class="orders-view">
           
-          <!-- Rating (placeholder) -->
-          <div class="product-rating">
-            <div class="stars">
-              <span class="material-icons" *ngFor="let star of [1,2,3,4,5]">star</span>
-            </div>
-            <span class="rating-text">5.0 (127 recensioni)</span>
-          </div>
-
-          <!-- Price Section -->
-          <div class="price-section">
-            <div class="price-main">
-              <span class="price-label">Prezzo</span>
-              <span class="price-value">{{ formatPv(selectedArticle.pv_price) }}</span>
-            </div>
-            <div class="price-equivalent" *ngIf="selectedArticle.euro_price">
-              <span>Valore: {{ formatEuro(selectedArticle.euro_price) }}</span>
-            </div>
-          </div>
-
-          <!-- Stock Status -->
-          <div class="stock-status" *ngIf="selectedArticle.stock">
-            <span class="material-icons" [class.in-stock]="selectedArticle.stock.in_stock">
-              {{ selectedArticle.stock.in_stock ? 'check_circle' : 'error' }}
-            </span>
-            <span>{{ selectedArticle.stock.in_stock ? 'Disponibile' : 'Non disponibile' }}</span>
-          </div>
-
-          <!-- Description -->
-          <div class="product-description-full">
-            <h3>Descrizione</h3>
-            <p>{{ selectedArticle.description }}</p>
-          </div>
-
-          <!-- Features -->
-          <div class="product-features" *ngIf="selectedArticle.is_digital">
-            <div class="feature-item">
-              <span class="material-icons">flash_on</span>
-              <span>Consegna Immediata</span>
-            </div>
-            <div class="feature-item">
-              <span class="material-icons">email</span>
-              <span>Codice via Email</span>
-            </div>
-            <div class="feature-item">
-              <span class="material-icons">all_inclusive</span>
-              <span>Nessuna Scadenza</span>
-            </div>
-          </div>
-
-          <!-- Quantity & Add to Cart -->
-          <div class="add-to-cart-section">
-            <div class="quantity-selector">
-              <button (click)="decrementQuantity()" [disabled]="selectedQuantity <= 1">
-                <span class="material-icons">remove</span>
+          <div class="orders-header">
+            <h1>
+              <span class="material-icons">receipt_long</span>
+              I miei Ordini
+            </h1>
+            <div class="orders-filters">
+              <button class="filter-btn" 
+                      [class.active]="ordersFilter === ''"
+                      (click)="filterOrders('')">
+                Tutti
               </button>
-              <span class="quantity-value">{{ selectedQuantity }}</span>
-              <button (click)="incrementQuantity()" [disabled]="selectedQuantity >= maxQuantity">
-                <span class="material-icons">add</span>
+              <button class="filter-btn" 
+                      [class.active]="ordersFilter === 'in_attesa'"
+                      (click)="filterOrders('in_attesa')">
+                In Attesa
+              </button>
+              <button class="filter-btn" 
+                      [class.active]="ordersFilter === 'in_lavorazione'"
+                      (click)="filterOrders('in_lavorazione')">
+                In Elaborazione
+              </button>
+              <button class="filter-btn" 
+                      [class.active]="ordersFilter === 'completato'"
+                      (click)="filterOrders('completato')">
+                Completati
               </button>
             </div>
-
-            <button class="btn-add-to-cart-main" 
-                    [disabled]="!canAffordProduct(selectedArticle)"
-                    (click)="addToCartFromDetail()">
-              <span class="material-icons">add_shopping_cart</span>
-              <span>Aggiungi al Carrello</span>
-              <span class="btn-price">{{ formatPv(selectedArticle.pv_price * selectedQuantity) }}</span>
-            </button>
           </div>
 
-          <!-- Insufficient PV Warning -->
-          <div class="pv-warning" *ngIf="!canAffordProduct(selectedArticle)">
-            <span class="material-icons">warning</span>
-            <span>PV insufficienti. Ti servono {{ formatPv((selectedArticle.pv_price * selectedQuantity) - (userBalance?.pv_disponibili || 0)) }} in più.</span>
+          <!-- Loading State -->
+          <div class="loading-container" *ngIf="isLoadingOrders">
+            <div class="spinner"></div>
+            <p>Caricamento ordini...</p>
           </div>
 
-          <!-- User Balance Info -->
-          <div class="balance-info" *ngIf="userBalance">
-            <div class="balance-item">
-              <span class="label">I tuoi PV disponibili:</span>
-              <span class="value">{{ formatPv(userBalance.pv_disponibili) }}</span>
-            </div>
-            <div class="balance-item" *ngIf="userBalance.pv_bloccati > 0">
-              <span class="label">PV nel carrello:</span>
-              <span class="value blocked">{{ formatPv(userBalance.pv_bloccati) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===================================
-         CHECKOUT VIEW
-         =================================== -->
-    <div *ngIf="currentView === 'checkout'" [@pageTransition] class="checkout-view">
-      
-      <!-- Back Button -->
-      <div class="back-nav">
-        <button class="back-btn" (click)="cancelCheckout()">
-          <span class="material-icons">arrow_back</span>
-          Torna al Catalogo
-        </button>
-      </div>
-
-      <div class="checkout-container">
-        <!-- Checkout Main -->
-        <div class="checkout-main">
-          <h1>
-            <span class="material-icons">shopping_bag</span>
-            Riepilogo Ordine
-          </h1>
-
-          <!-- Order Items -->
-          <div class="order-items">
-            <div class="order-item" *ngFor="let item of cartItems; trackBy: trackByCartItemId">
-              <div class="order-item-image">
-                <img [src]="item.thumbnail_url || 'https://via.placeholder.com/80x80?text=No+Image'" 
-                     [alt]="item.article_name">
-              </div>
-              <div class="order-item-details">
-                <h4>{{ item.article_name }}</h4>
-                <p>SKU: {{ item.article_sku }}</p>
-                <span class="item-qty">Qtà: {{ item.quantity }}</span>
-              </div>
-              <div class="order-item-price">
-                {{ formatPv(item.pv_total) }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Customer Message -->
-          <div class="customer-message-section">
-            <h3>Note per l'ordine (opzionale)</h3>
-            <textarea [(ngModel)]="customerMessage" 
-                      placeholder="Aggiungi eventuali note o richieste speciali..."
-                      rows="3"
-                      maxlength="500"></textarea>
-            <span class="char-count">{{ customerMessage.length }}/500</span>
-          </div>
-
-          <!-- Payment Method -->
-          <div class="payment-section">
-            <h3>Metodo di Pagamento</h3>
-            <div class="payment-method selected">
-              <div class="payment-icon">
-                <span class="material-icons">account_balance_wallet</span>
-              </div>
-              <div class="payment-info">
-                <h4>Punti Valore (PV)</h4>
-                <p>Paga con i tuoi Punti Valore accumulati</p>
-              </div>
-              <span class="material-icons check">check_circle</span>
-            </div>
-            
-            <!-- Future Payment Methods (disabled) -->
-            <div class="payment-method disabled">
-              <div class="payment-icon">
-                <span class="material-icons">credit_card</span>
-              </div>
-              <div class="payment-info">
-                <h4>Carta di Credito</h4>
-                <p>Prossimamente</p>
-              </div>
-              <span class="coming-soon-badge">Coming Soon</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Checkout Sidebar -->
-        <div class="checkout-sidebar">
-          <div class="order-summary">
-            <h3>Riepilogo</h3>
-            
-            <div class="summary-row">
-              <span>Articoli ({{ cartItemsCount }})</span>
-              <span>{{ formatPv(cartTotalPv) }}</span>
-            </div>
-            
-            <div class="summary-divider"></div>
-            
-            <div class="summary-row total">
-              <span>Totale Ordine</span>
-              <span class="total-value">{{ formatPv(cartTotalPv) }}</span>
-            </div>
-
-            <div class="summary-divider"></div>
-
-            <div class="pv-balance-summary">
-              <div class="balance-row">
-                <span>PV Disponibili</span>
-                <span>{{ formatPv(userBalance?.pv_disponibili || 0) }}</span>
-              </div>
-              <div class="balance-row">
-                <span>Costo Ordine</span>
-                <span class="debit">-{{ formatPv(cartTotalPv) }}</span>
-              </div>
-              <div class="balance-row remaining" [class.insufficient]="!canAffordCart()">
-                <span>Rimanenti</span>
-                <span>{{ formatPv(getRemainingPvAfterCheckout()) }}</span>
-              </div>
-            </div>
-
-            <!-- Place Order Button -->
-            <button class="btn-place-order" 
-                    [disabled]="!canAffordCart() || isProcessingCheckout || cartItems.length === 0"
-                    (click)="placeOrder()">
-              <span class="material-icons" *ngIf="!isProcessingCheckout">lock</span>
-              <div class="spinner-small" *ngIf="isProcessingCheckout"></div>
-              <span>{{ isProcessingCheckout ? 'Elaborazione...' : 'Conferma Ordine' }}</span>
-            </button>
-
-            <!-- Insufficient PV Warning -->
-            <div class="checkout-warning" *ngIf="!canAffordCart()">
-              <span class="material-icons">warning</span>
-              <span>PV insufficienti per completare l'ordine</span>
-            </div>
-
-            <!-- Security Note -->
-            <div class="security-note">
-              <span class="material-icons">verified_user</span>
-              <span>I tuoi PV sono al sicuro. Verranno addebitati solo dopo la conferma.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===================================
-         ORDER SUCCESS VIEW
-         =================================== -->
-    <div *ngIf="currentView === 'order-success'" [@pageTransition] class="success-view">
-      <div class="success-card" [@scaleIn]>
-        <div class="success-icon">
-          <span class="material-icons">check_circle</span>
-        </div>
-        
-        <h1>Ordine Completato!</h1>
-        <p class="success-message">Il tuo ordine è stato ricevuto e sarà elaborato a breve.</p>
-
-        <div class="order-number-box">
-          <label>Numero Ordine</label>
-          <span class="order-number">{{ lastOrderNumber }}</span>
-        </div>
-
-        <div class="success-details">
-          <h3>Dettagli Ordine</h3>
-          <div class="detail-row">
-            <span class="label">Data</span>
-            <span class="value">{{ lastOrderDate }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">Totale</span>
-            <span class="value">{{ formatPv(lastOrderTotal) }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">Stato</span>
-            <span class="value status-pending">In Attesa</span>
-          </div>
-        </div>
-
-        <div class="success-info">
-          <span class="material-icons">info</span>
-          <p>Riceverai una notifica quando il tuo ordine sarà elaborato. I codici dei buoni ti saranno inviati via email.</p>
-        </div>
-
-        <div class="success-actions">
-          <button class="btn-primary" (click)="goToOrders()">
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="!isLoadingOrders && orders.length === 0">
             <span class="material-icons">receipt_long</span>
-            Vai ai Miei Ordini
-          </button>
-          <button class="btn-secondary" (click)="continueShopping()">
-            <span class="material-icons">storefront</span>
-            Continua lo Shopping
-          </button>
-        </div>
-      </div>
-    </div>
+            <h3>Nessun Ordine</h3>
+            <p>Non hai ancora effettuato ordini</p>
+            <button class="btn-primary" (click)="navigateTo('catalog')">
+              <span class="material-icons">storefront</span>
+              Vai allo Store
+            </button>
+          </div>
 
-    <!-- ===================================
-         ORDERS LIST VIEW
-         =================================== -->
-    <div *ngIf="currentView === 'orders'" [@pageTransition] class="orders-view">
-      
-      <!-- Back Button -->
-      <div class="back-nav">
-        <button class="back-btn" (click)="navigateTo('catalog')">
-          <span class="material-icons">arrow_back</span>
-          Torna al Catalogo
-        </button>
-      </div>
-
-      <div class="orders-header">
-        <h1>
-          <span class="material-icons">receipt_long</span>
-          I Miei Ordini
-        </h1>
-        
-        <div class="orders-filters">
-          <button class="filter-btn" 
-                  [class.active]="ordersFilter === ''"
-                  (click)="filterOrders('')">
-            Tutti
-          </button>
-          <button class="filter-btn" 
-                  [class.active]="ordersFilter === 'in_attesa'"
-                  (click)="filterOrders('in_attesa')">
-            In Attesa
-          </button>
-          <button class="filter-btn" 
-                  [class.active]="ordersFilter === 'in_lavorazione'"
-                  (click)="filterOrders('in_lavorazione')">
-            In Elaborazione
-          </button>
-          <button class="filter-btn" 
-                  [class.active]="ordersFilter === 'completato'"
-                  (click)="filterOrders('completato')">
-            Completati
-          </button>
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div class="loading-container" *ngIf="isLoadingOrders">
-        <div class="spinner"></div>
-        <p>Caricamento ordini...</p>
-      </div>
-
-      <!-- Empty State -->
-      <div class="empty-state" *ngIf="!isLoadingOrders && orders.length === 0">
-        <span class="material-icons">receipt_long</span>
-        <h3>Nessun Ordine</h3>
-        <p>Non hai ancora effettuato ordini</p>
-        <button class="btn-primary" (click)="navigateTo('catalog')">
-          <span class="material-icons">storefront</span>
-          Vai al Catalogo
-        </button>
-      </div>
-
-      <!-- Orders List -->
-      <div class="orders-list" *ngIf="!isLoadingOrders && orders.length > 0">
-        <div class="order-card" *ngFor="let order of orders; trackBy: trackByOrderId">
-          <div class="order-card-header">
-            <div class="order-info">
-              <div class="info-item">
-                <span class="label">Ordine</span>
-                <span class="value">{{ order.order_number }}</span>
+          <!-- Orders List -->
+          <div class="orders-list" *ngIf="!isLoadingOrders && orders.length > 0">
+            <div class="order-card" *ngFor="let order of orders; trackBy: trackByOrderId">
+              <div class="order-card-header">
+                <div class="order-info">
+                  <div class="order-info-item">
+                    <span class="label">ORDINE</span>
+                    <span class="value">{{ order.order_number }}</span>
+                  </div>
+                  <div class="order-info-item">
+                    <span class="label">DATA</span>
+                    <span class="value">{{ order.created_at }}</span>
+                  </div>
+                  <div class="order-info-item">
+                    <span class="label">ARTICOLI</span>
+                    <span class="value">{{ order.items_count }}</span>
+                  </div>
+                </div>
+                <span class="order-status" [ngClass]="getStatusClass(order.status)">
+                  {{ getStatusLabel(order.status) }}
+                </span>
               </div>
-              <div class="info-item">
-                <span class="label">Data</span>
-                <span class="value">{{ order.created_at }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">Articoli</span>
-                <span class="value">{{ order.items_count }}</span>
+              
+              <div class="order-card-body">
+                <div class="order-card-footer">
+                  <div class="order-total">{{ order.formatted_total_pv }}</div>
+                  <button class="btn-view-order" (click)="viewOrderDetail(order)">
+                    <span class="material-icons">visibility</span>
+                    Dettagli
+                  </button>
+                </div>
               </div>
             </div>
-            <span class="order-status" [ngClass]="getStatusClass(order.status)">
-              {{ order.status_label }}
-            </span>
           </div>
+        </div>
+      </ng-container>
+
+      <!-- ===================================
+           ORDER DETAIL VIEW
+           =================================== -->
+      <ng-container *ngIf="currentView === 'order-detail' && selectedOrder">
+        <div [@pageTransition] class="order-detail-view">
           
-          <div class="order-card-body">
-            <!-- Progress Bar for fulfillment -->
-            <div class="fulfillment-progress" *ngIf="order.status !== 'annullato'">
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="order.fulfillment_progress"></div>
+          <!-- Back Button -->
+          <div class="back-navigation">
+            <button class="back-btn" (click)="backToOrders()">
+              <span class="material-icons">arrow_back</span>
+              Torna agli Ordini
+            </button>
+          </div>
+
+          <div class="order-detail-container">
+            <!-- Order Header -->
+            <div class="order-detail-header">
+              <div class="order-main-info">
+                <h1>Ordine {{ selectedOrder.order_number }}</h1>
+                <span class="order-status large" [ngClass]="getStatusClass(selectedOrder.status)">
+                  {{ getStatusLabel(selectedOrder.status) }}
+                </span>
               </div>
-              <span class="progress-text">{{ order.fulfillment_progress }}% completato</span>
+              
+              <div class="order-meta">
+                <div class="meta-item">
+                  <span class="material-icons">calendar_today</span>
+                  <span>{{ selectedOrder.created_at }}</span>
+                </div>
+              </div>
             </div>
 
-            <div class="order-card-footer">
-              <div class="order-total">{{ order.formatted_total_pv }}</div>
-              <button class="btn-view-order" (click)="viewOrderDetail(order)">
-                <span class="material-icons">visibility</span>
-                Dettagli
-              </button>
+            <!-- Order Items -->
+            <div class="order-detail-items">
+              <h2>Articoli Ordinati</h2>
+              
+              <div class="detail-item" *ngFor="let item of selectedOrderItems">
+                <div class="item-info">
+                  <h4>{{ item.article_name }}</h4>
+                  <p>SKU: {{ item.article_sku }}</p>
+                  <span class="item-status" [ngClass]="getItemStatusClass(item.status)">
+                    {{ item.status_label }}
+                  </span>
+                </div>
+                
+                <div class="item-quantity">
+                  x{{ item.quantity }}
+                </div>
+                
+                <div class="item-price">
+                  {{ item.formatted_total_price }}
+                </div>
+
+                <!-- Redemption Code -->
+                <div class="redemption-code" *ngIf="item.redemption_code">
+                  <span class="code-label">Codice Riscatto:</span>
+                  <code class="code-value">{{ item.redemption_code }}</code>
+                  <button class="copy-btn" (click)="copyToClipboard(item.redemption_code)">
+                    <span class="material-icons">content_copy</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="order-detail-summary">
+              <div class="summary-box">
+                <h3>Riepilogo</h3>
+                <div class="summary-row">
+                  <span>Totale Articoli</span>
+                  <span>{{ selectedOrder.items_count }}</span>
+                </div>
+                <div class="summary-row total">
+                  <span>Totale Ordine</span>
+                  <span>{{ selectedOrder.formatted_total_pv }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Order Customer Message -->
+            <div class="order-message" *ngIf="selectedOrder.customer_message">
+              <h3>
+                <span class="material-icons">message</span>
+                Note Ordine
+              </h3>
+              <p>{{ selectedOrder.customer_message }}</p>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </ng-container>
 
-    <!-- ===================================
-         ORDER DETAIL VIEW
-         =================================== -->
-    <div *ngIf="currentView === 'order-detail' && selectedOrder" [@pageTransition] class="order-detail-view">
-      
-      <!-- Back Button -->
-      <div class="back-nav">
-        <button class="back-btn" (click)="backToOrders()">
-          <span class="material-icons">arrow_back</span>
-          Torna agli Ordini
-        </button>
-      </div>
-
-      <div class="order-detail-container">
-        <!-- Order Header -->
-        <div class="order-detail-header">
-          <div class="order-main-info">
-            <h1>Ordine {{ selectedOrder.order_number }}</h1>
-            <span class="order-status large" [ngClass]="getStatusClass(selectedOrder.status)">
-              {{ selectedOrder.status_label }}
-            </span>
-          </div>
+      <!-- ===================================
+           WALLET VIEW
+           =================================== -->
+      <ng-container *ngIf="currentView === 'wallet'">
+        <div [@pageTransition] class="wallet-view">
           
-          <div class="order-meta">
-            <div class="meta-item">
-              <span class="material-icons">calendar_today</span>
-              <span>{{ selectedOrder.created_at }}</span>
-            </div>
-            <div class="meta-item" *ngIf="selectedOrder.processed_at">
-              <span class="material-icons">check_circle</span>
-              <span>Completato: {{ selectedOrder.processed_at }}</span>
-            </div>
+          <div class="wallet-header">
+            <h1>
+              <span class="material-icons">account_balance_wallet</span>
+              Il mio Wallet
+            </h1>
+            <p>Gestisci i tuoi Punti Valore e visualizza lo storico delle transazioni</p>
           </div>
-        </div>
 
-        <!-- Order Items -->
-        <div class="order-detail-items">
-          <h2>Articoli Ordinati</h2>
-          
-          <div class="detail-item" *ngFor="let item of selectedOrderItems">
-            <div class="item-info">
-              <h4>{{ item.article_name }}</h4>
-              <p>SKU: {{ item.article_sku }}</p>
-              <span class="item-status" [ngClass]="getItemStatusClass(item.status)">
-                {{ item.status_label }}
-              </span>
+          <!-- Wallet Cards -->
+          <div class="wallet-cards">
+            <div class="wallet-card available">
+              <div class="wallet-card-icon">
+                <span class="material-icons">savings</span>
+              </div>
+              <div class="wallet-card-label">PV Disponibili</div>
+              <div class="wallet-card-value">
+                {{ formatPvNumber(userBalance?.pv_disponibili || 0) }} <span>PV</span>
+              </div>
             </div>
             
-            <div class="item-quantity">
-              x{{ item.quantity }}
+            <div class="wallet-card blocked">
+              <div class="wallet-card-icon">
+                <span class="material-icons">lock</span>
+              </div>
+              <div class="wallet-card-label">PV Bloccati</div>
+              <div class="wallet-card-value">
+                {{ formatPvNumber(userBalance?.pv_bloccati || 0) }} <span>PV</span>
+              </div>
             </div>
             
-            <div class="item-price">
-              {{ item.formatted_total_price }}
+            <div class="wallet-card total">
+              <div class="wallet-card-icon">
+                <span class="material-icons">account_balance</span>
+              </div>
+              <div class="wallet-card-label">PV Totali</div>
+              <div class="wallet-card-value">
+                {{ formatPvNumber(userBalance?.pv_totali || 0) }} <span>PV</span>
+              </div>
             </div>
+          </div>
 
-            <!-- Redemption Code (if fulfilled) -->
-            <div class="redemption-code" *ngIf="item.redemption_code">
-              <span class="code-label">Codice Riscatto:</span>
-              <code class="code-value">{{ item.redemption_code }}</code>
-              <button class="copy-btn" (click)="copyToClipboard(item.redemption_code)">
-                <span class="material-icons">content_copy</span>
-              </button>
+          <!-- Transaction History -->
+          <div class="wallet-history">
+            <div class="wallet-history-header">
+              <h2>
+                <span class="material-icons">history</span>
+                Storico Transazioni
+              </h2>
             </div>
+            <div class="wallet-transactions">
+              <div class="transaction-item" *ngFor="let tx of walletTransactions; trackBy: trackByTransactionId">
+                <div class="transaction-icon" [ngClass]="tx.type">
+                  <span class="material-icons">
+                    {{ tx.type === 'credit' ? 'add_circle' : tx.type === 'debit' ? 'remove_circle' : 'pending' }}
+                  </span>
+                </div>
+                <div class="transaction-details">
+                  <div class="transaction-title">{{ tx.title }}</div>
+                  <div class="transaction-date">{{ tx.date }}</div>
+                </div>
+                <div class="transaction-amount" [ngClass]="tx.type">
+                  {{ tx.type === 'credit' ? '+' : '-' }}{{ formatPvNumber(tx.amount) }} PV
+                </div>
+              </div>
 
-            <!-- Customer Note -->
-            <div class="customer-note" *ngIf="item.customer_note">
-              <span class="material-icons">info</span>
-              <span>{{ item.customer_note }}</span>
+              <!-- Empty transactions -->
+              <div class="empty-state small" *ngIf="walletTransactions.length === 0">
+                <span class="material-icons">receipt_long</span>
+                <p>Nessuna transazione</p>
+              </div>
             </div>
           </div>
         </div>
+      </ng-container>
 
-        <!-- Order Summary -->
-        <div class="order-detail-summary">
-          <div class="summary-box">
-            <h3>Riepilogo</h3>
-            <div class="summary-row">
-              <span>Totale Articoli</span>
-              <span>{{ selectedOrder.items_count }}</span>
-            </div>
-            <div class="summary-row total">
-              <span>Totale Ordine</span>
-              <span>{{ selectedOrder.formatted_total_pv }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Order Customer Message -->
-        <div class="order-message" *ngIf="selectedOrder.customer_message">
-          <h3>
-            <span class="material-icons">message</span>
-            Note Ordine
-          </h3>
-          <p>{{ selectedOrder.customer_message }}</p>
-        </div>
-      </div>
     </div>
-
   </main>
 
   <!-- ===================================
-       CART SIDEBAR
+       CART DRAWER
        =================================== -->
   <div class="cart-overlay" 
        [class.active]="isCartOpen" 
        (click)="closeCart()"></div>
   
-  <aside class="cart-sidebar" [@cartSlide]="isCartOpen ? 'open' : 'closed'">
+  <aside class="cart-drawer" [class.active]="isCartOpen">
     <div class="cart-header">
       <h2>
         <span class="material-icons">shopping_cart</span>
         Carrello
       </h2>
-      <button class="close-cart-btn" (click)="closeCart()">
+      <button class="close-cart" (click)="closeCart()">
         <span class="material-icons">close</span>
       </button>
     </div>
@@ -821,25 +837,21 @@
     <!-- Empty Cart -->
     <div class="cart-empty" *ngIf="cartItems.length === 0">
       <span class="material-icons">shopping_cart</span>
-      <h3>Il carrello è vuoto</h3>
+      <h3>Carrello Vuoto</h3>
       <p>Aggiungi prodotti per iniziare</p>
-      <button class="btn-primary" (click)="closeCart(); navigateTo('catalog')">
-        <span class="material-icons">storefront</span>
-        Vai al Catalogo
-      </button>
     </div>
 
     <!-- Cart Items -->
     <div class="cart-items" *ngIf="cartItems.length > 0">
       <div class="cart-item" *ngFor="let item of cartItems; trackBy: trackByCartItemId">
         <div class="cart-item-image">
-          <img [src]="item.thumbnail_url || 'https://via.placeholder.com/60x60?text=No+Image'" 
+          <img [src]="item.thumbnail_url || 'https://m.media-amazon.com/images/G/01/gc/designs/livepreview/amazon_dkblue_noto_email_v2016_us-main._CB468775337_.png'" 
                [alt]="item.article_name">
         </div>
         <div class="cart-item-details">
-          <h4>{{ item.article_name }}</h4>
-          <span class="item-price">{{ formatPv(item.pv_unit_price) }}</span>
-          <div class="item-quantity-control">
+          <div class="cart-item-name">{{ item.article_name }}</div>
+          <div class="cart-item-price">{{ formatPvNumber(item.pv_unit_price) }} PV</div>
+          <div class="cart-item-qty">
             <button (click)="updateCartItemQuantity(item.id, item.quantity - 1)">
               <span class="material-icons">remove</span>
             </button>
@@ -849,73 +861,41 @@
             </button>
           </div>
         </div>
-        <div class="cart-item-actions">
-          <span class="item-total">{{ formatPv(item.pv_total) }}</span>
-          <button class="remove-btn" (click)="removeFromCart(item.id)">
-            <span class="material-icons">delete</span>
-          </button>
+        <div class="remove-item" (click)="removeFromCart(item.id)">
+          <span class="material-icons">delete</span>
         </div>
       </div>
     </div>
 
     <!-- Cart Footer -->
     <div class="cart-footer" *ngIf="cartItems.length > 0">
-      <div class="cart-summary">
-        <div class="summary-row">
-          <span>Articoli ({{ cartItemsCount }})</span>
-          <span>{{ formatPv(cartTotalPv) }}</span>
+      <div class="cart-totals">
+        <div class="cart-total-row">
+          <span>Articoli</span>
+          <span>{{ cartItemsCount }}</span>
         </div>
-        <div class="summary-row pv-available">
-          <span>PV Disponibili</span>
-          <span>{{ formatPv(userBalance?.pv_disponibili || 0) }}</span>
+        <div class="cart-total-row grand-total">
+          <span>Totale</span>
+          <span class="total-value">{{ formatPvNumber(cartTotalPv) }} PV</span>
         </div>
       </div>
-      
-      <button class="btn-checkout" 
-              [disabled]="!canAffordCart()"
-              (click)="goToCheckout()">
-        <span class="material-icons">shopping_bag</span>
-        <span>Procedi all'Ordine</span>
-        <span class="checkout-total">{{ formatPv(cartTotalPv) }}</span>
+      <button class="btn-checkout" (click)="goToCheckout()">
+        <span class="material-icons">payment</span>
+        Procedi al Checkout
       </button>
-
-      <button class="btn-clear-cart" (click)="clearCart()">
-        <span class="material-icons">delete_sweep</span>
-        Svuota Carrello
+      <button class="btn-continue-shopping" (click)="closeCart(); navigateTo('catalog')">
+        Continua lo Shopping
       </button>
     </div>
   </aside>
 
   <!-- ===================================
-       MOBILE BOTTOM NAVIGATION
+       FLOATING CART BUTTON (MOBILE)
        =================================== -->
-  <nav class="mobile-nav" *ngIf="isMobile">
-    <button class="mobile-nav-item" 
-            [class.active]="mobileNavTab === 'catalog'"
-            (click)="setMobileNavTab('catalog')">
-      <span class="material-icons">store</span>
-      <span>Catalogo</span>
-    </button>
-    <button class="mobile-nav-item" 
-            [class.active]="mobileNavTab === 'cart'"
-            (click)="setMobileNavTab('cart')">
-      <span class="material-icons">shopping_cart</span>
-      <span>Carrello</span>
-      <span class="nav-badge" *ngIf="cartItemsCount > 0">{{ cartItemsCount }}</span>
-    </button>
-    <button class="mobile-nav-item" 
-            [class.active]="mobileNavTab === 'orders'"
-            (click)="setMobileNavTab('orders')">
-      <span class="material-icons">receipt_long</span>
-      <span>Ordini</span>
-    </button>
-    <button class="mobile-nav-item" 
-            [class.active]="mobileNavTab === 'wallet'"
-            (click)="setMobileNavTab('wallet')">
-      <span class="material-icons">account_balance_wallet</span>
-      <span>Wallet</span>
-    </button>
-  </nav>
+  <div class="floating-cart-btn" *ngIf="isMobile" (click)="toggleCart()">
+    <span class="material-icons">shopping_cart</span>
+    <span class="floating-cart-badge" *ngIf="cartItemsCount > 0">{{ cartItemsCount }}</span>
+  </div>
 
   <!-- ===================================
        TOAST NOTIFICATIONS
