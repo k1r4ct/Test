@@ -26,7 +26,7 @@
         <div class="card-header">
           <div class="d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">
-              <i class="nc-icon nc-money-coins"></i>
+              <i class="material-icons">savings</i>
               Il Mio Salvadanaio
             </h4>
             <button class="btn btn-sm btn-outline-primary" (click)="refreshWallet()">
@@ -80,7 +80,7 @@
               <div class="card stats-card">
                 <div class="card-body">
                   <div class="stats-icon bg-warning">
-                    <i class="nc-icon nc-lock-circle-open"></i>
+                    <i class="material-icons">shopping_cart</i>
                   </div>
                   <h6 class="stats-label">PV Bloccati</h6>
                   <h2 class="stats-value text-warning">
@@ -112,8 +112,8 @@
             <!-- PV Bonus Details -->
             <div class="col-lg-3 col-md-6 col-sm-12 mb-3">
               <div class="info-box">
-                <div class="info-icon bg-success">
-                  <i class="nc-icon nc-gift-2"></i>
+                <div class="info-icon bg-bonus">
+                  <i class="nc-icon nc-diamond"></i>
                 </div>
                 <div class="info-content">
                   <span class="info-label">PV Bonus</span>
@@ -154,12 +154,12 @@
           <div class="row mt-4">
             <div class="col-12">
               <div class="alert alert-info">
-                <h6><i class="nc-icon nc-bulb-63"></i> Come funziona il Salvadanaio?</h6>
+                <h6><i class="nc-icon nc-bulb-63"></i> Legenda Salvadanaio</h6>
                 <ul class="mb-0">
-                  <li><strong>PV Maturati:</strong> Punti Valore ottenuti dai contratti confermati</li>
-                  <li><strong>PV Bonus:</strong> Punti extra ricevuti come bonus</li>
-                  <li><strong>PV Disponibili:</strong> Punti che puoi usare subito per acquisti</li>
-                  <li><strong>PV Bloccati:</strong> Punti temporaneamente riservati nel carrello</li>
+                  <li><strong>PV Maturati:</strong> Punti Valore ottenuti dai contratti in stato Gettonato</li>
+                  <li><strong>PV Bonus:</strong> Punti extra generati dai contratti in stato Gettonato degli amici invitati</li>
+                  <li><strong>PV Disponibili:</strong> Punti spendibili nell'e-commerce</li>
+                  <li><strong>PV Bloccati:</strong> Punti temporaneamente bloccati perchè sono presenti articoli nel carrello</li>
                 </ul>
               </div>
             </div>

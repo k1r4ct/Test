@@ -12,7 +12,7 @@
 
 .ultra-top-header {
   height: 7%;
-  background: linear-gradient(90deg, #258630, #057da5);
+  background: linear-gradient(135deg,#667eea,#764ba2);
   border-radius: 12px 12px 0 0;
 }
 
@@ -34,7 +34,7 @@
 
 .header-title i {
   font-size: 28px;
-  color: #28a745;
+  color: #667eea;
 }
 
 .header-title h2 {
@@ -79,7 +79,7 @@
 
 /* Button to create a new ticket */
 .btn-new-ticket {
-  background: linear-gradient(135deg, #28a745, #20c997);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border: none;
   box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
@@ -213,7 +213,7 @@
 }
 
 .filter-header h3 i {
-  color: #28a745;
+  color: black;
 }
 
 /* New container for right side of filter header */
@@ -238,7 +238,7 @@
 }
 
 .ticket-count i {
-  color: #28a745;
+  color: #667eea;
   font-size: 16px;
 }
 
@@ -331,8 +331,8 @@
 
 .filter-input:focus {
   outline: none;
-  border-color: #28a745;
-  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+  border-color: #3f51b5;
+  box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.1);
 }
 
 .filter-input[type="date"] {
@@ -373,23 +373,23 @@
 
 /* Primary filter button variant */
 .btn-filter.primary {
-  background: linear-gradient(135deg, #28a745, #20c997);
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
   color: white;
 }
 
 /* Hover state for primary filter button */
 .btn-filter.primary:hover {
   background: white;
-  border-color: #28a745;
-  color: #28a745;
+  border-color: #667eea;
+  color: #667eea;
   transition: all 0.1s;
 }
 
 /* Hover state for non-primary filter buttons */
 .btn-filter:hover:not(.primary) {
-  border-color: #28a745;
-  color: #28a745;
+  border-color: #667eea;
+  color: #667eea;
 }
 
 
@@ -443,14 +443,14 @@
 }
 
 .multi-select-trigger:hover {
-  border-color: #28a745;
-  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.15);
+  border-color: #3f51b5;
+  box-shadow: 0 2px 8px rgba(63, 81, 181, 0.15);
 }
 
 .multi-select-trigger:focus {
   outline: none;
-  border-color: #28a745;
-  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+  border-color: #3f51b5;
+  box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.1);
 }
 
 .multi-select-label {
@@ -515,13 +515,13 @@
 
 /* Scrollbar thumb styling */
 .multi-select-dropdown::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #28a745, #20c997);
+  background: linear-gradient(180deg, #667eea, #764ba2);
   border-radius: 3px;
 }
 
 /* Scrollbar thumb hover state */
 .multi-select-dropdown::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #20c997, #28a745);
+  background: linear-gradient(180deg, #764ba2, #667eea);
 }
 
 /* Individual option in multi-select dropdown */
@@ -549,7 +549,7 @@
   left: 50%;
   width: 0;
   height: 0;
-  background: radial-gradient(circle, rgba(40, 167, 69, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
   transform: translate(-50%, -50%);
   transition: width 0.4s ease, height 0.4s ease;
   border-radius: 50%;
@@ -1267,7 +1267,7 @@
 
 /* Check icon for selected priority */
 .priority-option i.fa-check {
-  color: #28a745;
+  color: #3f51b5;
   font-size: 12px;
   margin-left: auto;
   animation: checkFadeIn 0.2s ease;
@@ -1553,7 +1553,7 @@
 
 /* Icon in modal title */
 .modal-title i {
-  color: #28a745;
+  color: #3f51b5;
 }
 
 /* Close button for modal */
@@ -1839,7 +1839,7 @@
 }
 
 .messages-section h3 {
-  background: linear-gradient(135deg, #268730 10%, #027cad);
+  background: linear-gradient( 135deg, #667eea 0%, #764ba2 100%);
   color: white;
   margin: -20px -20px 20px -20px;
   padding: 16px 20px;
@@ -1880,7 +1880,7 @@
 }
 
 .messages-container::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #268730 10%, #027cad);
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
   border-radius: 10px;
 }
 
@@ -2057,13 +2057,13 @@
 }
 
 .attachment-drop-zone:hover {
-  border-color: #28a745;
-  background: #f0f8f0;
+  border-color: #3f51b5;
+  background: #3f51b538;
 }
 
 .attachment-drop-zone.drag-over,
 .reply-attachments-area.drag-over .attachment-drop-zone {
-  border-color: #28a745;
+  border-color: #3f51b5;
   background: #e8f5e9;
   transform: scale(1.02);
 }
@@ -2101,9 +2101,9 @@
 }
 
 .add-more-btn:hover {
-  background: #28a745;
+  background: #3f51b5;
   color: white;
-  border-color: #28a745;
+  border-color: #3f51b5;
 }
 
 .add-more-btn i {
@@ -2264,7 +2264,7 @@
 
 /* Send message button */
 .send-btn {
-  background: linear-gradient(135deg, #268730 10%, #027cad);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   border: none;
   border-radius: 0;
   border-left: 1px solid #e0e0e0;
@@ -2276,12 +2276,12 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(100, 151, 209, 0.3);
 }
 
 .send-btn:hover:not(:disabled) {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 6px 20px rgba(100, 151, 209, 0.4);
 }
 
 .send-btn i {
@@ -2290,7 +2290,7 @@
 
 /* Hover state for send button */
 .send-btn:hover {
-  background: linear-gradient(135deg, #20c997, #28a745);
+  background: linear-gradient(135deg, #007bff, #667eea);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
@@ -2333,7 +2333,7 @@
 /* Focus state for form controls */
 .form-control:focus {
   outline: none;
-  border-color: #28a745;
+  border-color: #3f51b5;
   box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
 }
 
@@ -2470,7 +2470,7 @@
 
 /* Primary action button */
 .btn-primary {
-  background: #28a745;
+  background: #3f51b5;
   color: white;
 }
 
@@ -3457,11 +3457,11 @@
 /* Attachment cards in grid (ticket detail modal) */
 .attachments-grid .attachment-card.clickable-attachment:hover {
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border-color: #007bff;
+  border-color: #3f51b5;
 }
 
 .attachments-grid .attachment-card.clickable-attachment:hover .attachment-icon i {
-  color: #007bff;
+  color: white;
   transform: scale(1.1);
 }
 
@@ -3490,7 +3490,7 @@
 /* Preview icon for attachments */
 .preview-icon {
   margin-left: auto;
-  color: #28a745;
+  color: #3f51b5;
   opacity: 0;
   transition: opacity 0.3s ease, transform 0.3s ease;
   font-size: 14px;

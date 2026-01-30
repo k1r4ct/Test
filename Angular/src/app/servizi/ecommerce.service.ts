@@ -39,6 +39,7 @@ export interface Article {
   formatted_euro_price?: string;
   is_digital: boolean;
   is_featured: boolean;
+  is_bestseller: boolean;
   available?: boolean;
   thumbnail_url: string | null;
   category_name?: string;
@@ -208,6 +209,7 @@ export class EcommerceService implements OnDestroy {
     store_id?: number;
     category_id?: number;
     featured?: boolean;
+    bestseller?: boolean;
     min_pv?: number;
     max_pv?: number;
     search?: string;
@@ -221,6 +223,7 @@ export class EcommerceService implements OnDestroy {
       if (filters.store_id) params = params.set('store_id', filters.store_id.toString());
       if (filters.category_id) params = params.set('category_id', filters.category_id.toString());
       if (filters.featured) params = params.set('featured', '1');
+      if (filters.bestseller) params = params.set('bestseller', '1');
       if (filters.min_pv) params = params.set('min_pv', filters.min_pv.toString());
       if (filters.max_pv) params = params.set('max_pv', filters.max_pv.toString());
       if (filters.search) params = params.set('search', filters.search);

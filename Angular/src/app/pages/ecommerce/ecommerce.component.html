@@ -92,7 +92,8 @@
               <div class="carousel-slides">
                 <div class="carousel-slide" 
                      *ngFor="let slide of carouselSlides; let i = index"
-                     [class.active]="i === currentSlideIndex">
+                     [class.active]="i === currentSlideIndex"
+                     [class.slide-out]="i === previousSlideIndex && isSlideAnimating">
                   <div class="slide-content" [style.background]="slide.gradient">
                     <div class="slide-text">
                       <span class="slide-badge">{{ slide.badge }}</span>
@@ -113,104 +114,135 @@
                 </div>
               </div>
 
-              <!-- Carousel Controls -->
-              <button class="carousel-arrow prev" (click)="prevSlide()">
-                <span class="material-icons">chevron_left</span>
-              </button>
-              <button class="carousel-arrow next" (click)="nextSlide()">
-                <span class="material-icons">chevron_right</span>
-              </button>
-
-              <!-- Carousel Dots -->
+              <!-- Carousel Progress Dots (arrows removed) -->
               <div class="carousel-nav">
-                <button *ngFor="let slide of carouselSlides; let i = index"
-                        class="carousel-dot"
-                        [class.active]="i === currentSlideIndex"
-                        (click)="goToSlide(i)">
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <!-- Products Section -->
-          <section class="products-section" #catalogSection>
-            <div class="section-header">
-              <h2>
-                <span class="material-icons">card_giftcard</span>
-                Buoni Disponibili
-              </h2>
-            </div>
-
-            <!-- Loading State -->
-            <div class="loading-container" *ngIf="isLoading">
-              <div class="spinner"></div>
-              <p>Caricamento prodotti...</p>
-            </div>
-
-            <!-- Empty State -->
-            <div class="empty-state" *ngIf="!isLoading && articles.length === 0">
-              <span class="material-icons">inventory_2</span>
-              <h3>Nessun prodotto trovato</h3>
-              <p>Prova a modificare i filtri o la ricerca</p>
-              <button class="btn-primary" (click)="clearFilters()">
-                <span class="material-icons">storefront</span>
-                Vai allo Store
-              </button>
-            </div>
-
-            <!-- Products Grid -->
-            <div class="products-grid" *ngIf="!isLoading && articles.length > 0">
-              <div class="product-card" 
-                   *ngFor="let article of articles; trackBy: trackByArticleId"
-                   (click)="openProductDetail(article)">
-                
-                <!-- Product Image with Badges -->
-                <div class="product-image">
-                  <div class="product-badges">
-                    <span class="product-badge digital" *ngIf="article.is_digital">DIGITALE</span>
-                    <span class="product-badge instant" *ngIf="article.is_digital">
-                      <span class="material-icons">flash_on</span>
-                      INSTANT
-                    </span>
-                    <span class="product-badge bestseller" *ngIf="article.is_featured">BEST SELLER</span>
-                  </div>
-                  <img [src]="article.thumbnail_url || 'https://m.media-amazon.com/images/G/01/gc/designs/livepreview/amazon_dkblue_noto_email_v2016_us-main._CB468775337_.png'" 
-                       [alt]="article.article_name"
-                       loading="lazy">
-                </div>
-
-                <!-- Product Info -->
-                <div class="product-info">
-                  <span class="product-category">{{ article.category_name || 'BUONI AMAZON' }}</span>
-                  <h3 class="product-title">{{ article.article_name }}</h3>
-                  <p class="product-description">{{ article.description }}</p>
-                  
-                  <div class="product-footer">
-                    <div class="product-price">
-                      <span class="price-label">Prezzo</span>
-                      <span class="price-value">{{ formatPvNumber(article.pv_price) }} PV</span>
+                <div *ngFor="let slide of carouselSlides; let i = index"
+                     class="carousel-dot-wrapper"
+                     (click)="goToSlide(i)">
+                  <div class="carousel-dot" [class.active]="i === currentSlideIndex">
+                    <div class="progress-fill" 
+                         *ngIf="i === currentSlideIndex"
+                         [style.animationDuration.ms]="carouselIntervalDuration">
                     </div>
-                    <button class="btn-add-to-cart" 
-                            (click)="$event.stopPropagation(); addToCart(article)">
-                      <span class="material-icons">add_shopping_cart</span>
-                      Aggiungi
-                    </button>
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- Load More Button -->
-            <div class="load-more-container" *ngIf="hasMoreArticles()">
-              <button class="btn-load-more" 
-                      [disabled]="isLoadingMore"
-                      (click)="loadMoreArticles()">
-                <span class="material-icons" *ngIf="!isLoadingMore">expand_more</span>
-                <div class="spinner-small" *ngIf="isLoadingMore"></div>
-                <span>{{ isLoadingMore ? 'Caricamento...' : 'Carica Altri' }}</span>
-              </button>
-            </div>
           </section>
+
+          <!-- ===================================
+               DYNAMIC PRODUCT ROWS
+               Each row is configurable (title, icon, products)
+               Future: Managed via Page Builder by BO
+               =================================== -->
+          
+          <!-- Loading State -->
+          <div class="loading-container" *ngIf="isLoading" #catalogSection>
+            <div class="spinner"></div>
+            <p>Caricamento prodotti...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="!isLoading && articles.length === 0">
+            <span class="material-icons">inventory_2</span>
+            <h3>Nessun prodotto trovato</h3>
+            <p>Prova a modificare i filtri o la ricerca</p>
+            <button class="btn-primary" (click)="clearFilters()">
+              <span class="material-icons">storefront</span>
+              Vai allo Store
+            </button>
+          </div>
+
+          <!-- Product Rows -->
+          <ng-container *ngIf="!isLoading && productRows.length > 0">
+            
+            <!-- Each Product Row Section -->
+            <section class="products-section product-row"
+                     *ngFor="let row of productRows; trackBy: trackByRowKey; let isFirst = first"
+                     [attr.data-row-key]="row.row_key"
+                     [attr.data-row-type]="row.row_type"
+                     [class.is-featured-row]="row.row_type === 'featured'"
+                     [class.is-new-arrivals-row]="row.row_type === 'new_arrivals'"
+                     [class.is-category-row]="row.row_type === 'category'"
+                     [class.is-auto-generated]="row.is_auto_generated">
+              
+              <!-- Row Header -->
+              <div class="section-header" [id]="isFirst ? 'catalogSection' : null">
+                <h2>
+                  <span class="material-icons">{{ row.icon }}</span>
+                  {{ row.title }}
+                </h2>
+                <!-- Future: "Vedi tutti" link for category rows -->
+                <a class="view-all-link" 
+                   *ngIf="row.row_type === 'category' && row.category_id"
+                   (click)="filterByCategory(row.category_id ?? null)">
+                  Vedi tutti
+                  <span class="material-icons">arrow_forward</span>
+                </a>
+              </div>
+
+              <!-- Products Grid for this Row -->
+              <div class="products-grid" 
+                   [class.grid-4]="row.items_per_row === 4"
+                   [class.grid-3]="row.items_per_row === 3"
+                   [class.display-carousel]="row.display_style === 'carousel'"
+                   [class.display-compact]="row.display_style === 'compact'">
+                
+                <div class="product-card" 
+                     *ngFor="let article of row.articles; trackBy: trackByArticleId"
+                     (click)="openProductDetail(article)">
+                  
+                  <!-- Product Image with Badges -->
+                  <div class="product-image">
+                    <div class="product-badges">
+                      <span class="product-badge digital" *ngIf="article.is_digital">DIGITALE</span>
+                      <span class="product-badge instant" *ngIf="article.is_digital">
+                        <span class="material-icons">flash_on</span>
+                        INSTANT
+                      </span>
+                      <span class="product-badge bestseller" *ngIf="article.is_bestseller">BEST SELLER</span>
+                    </div>
+                    <img [src]="article.thumbnail_url || 'https://m.media-amazon.com/images/G/01/gc/designs/livepreview/amazon_dkblue_noto_email_v2016_us-main._CB468775337_.png'" 
+                         [alt]="article.article_name"
+                         loading="lazy">
+                  </div>
+
+                  <!-- Product Info -->
+                  <div class="product-info">
+                    <span class="product-category">{{ article.category_name || 'BUONI AMAZON' }}</span>
+                    <h3 class="product-title">{{ article.article_name }}</h3>
+                    <p class="product-description">{{ article.description }}</p>
+                    
+                    <div class="product-footer">
+                      <div class="product-price">
+                        <span class="price-label">Tuo Con</span>
+                        <span class="price-value">{{ formatPvNumber(article.pv_price) }} PV</span>
+                      </div>
+                      <button class="btn-add-to-cart" 
+                              (click)="$event.stopPropagation(); addToCart(article)">
+                        <span class="material-icons">add_shopping_cart</span>
+                        Aggiungi
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </section>
+
+          </ng-container>
+
+          <!-- Load More Button (for additional articles beyond rows) -->
+          <div class="load-more-container" *ngIf="hasMoreArticles() && !isLoading">
+            <button class="btn-load-more" 
+                    [disabled]="isLoadingMore"
+                    (click)="loadMoreArticles()">
+              <span class="material-icons" *ngIf="!isLoadingMore">expand_more</span>
+              <div class="spinner-small" *ngIf="isLoadingMore"></div>
+              <span>{{ isLoadingMore ? 'Caricamento...' : 'Carica Altri Prodotti' }}</span>
+            </button>
+          </div>
+
         </div>
       </ng-container>
 
@@ -237,7 +269,7 @@
                   <span class="material-icons">flash_on</span>
                   INSTANT
                 </span>
-                <span class="badge bestseller" *ngIf="selectedArticle.is_featured">BEST SELLER</span>
+                <span class="badge bestseller" *ngIf="selectedArticle.is_bestseller">BEST SELLER</span>
               </div>
               <div class="main-image">
                 <img [src]="selectedArticle.thumbnail_url || 'https://m.media-amazon.com/images/G/01/gc/designs/livepreview/amazon_dkblue_noto_email_v2016_us-main._CB468775337_.png'" 

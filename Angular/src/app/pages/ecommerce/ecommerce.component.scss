@@ -1,6 +1,5 @@
 /* ===================================
    SEMPRECHIARO STORE - E-COMMERCE COMPONENT
-   Complete SCSS Styles - Demo Replica
    =================================== */
 
 // ==================== VARIABLES ====================
@@ -308,23 +307,66 @@ $shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
   }
 }
 
+// Slide animation with horizontal slide effect
 .carousel-slide {
-  display: none;
-  animation: fadeIn 0.8s ease-in-out;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(100%);
+  transition: none;
 
   &.active {
-    display: block;
+    position: relative;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+    animation: slideInFromRight 0.6s ease-out forwards;
+    z-index: 2;
+  }
+
+  &.slide-out {
+    position: absolute;
+    opacity: 1;
+    visibility: visible;
+    animation: slideOutToLeft 0.6s ease-out forwards;
+    z-index: 1;
   }
 }
 
-@keyframes fadeIn {
+// Slide animations
+@keyframes slideInFromRight {
   from {
     opacity: 0;
-    transform: scale(0.98);
+    transform: translateX(100%);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+// Progress fill animation for dots
+@keyframes progressFill {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
   }
 }
 
@@ -485,6 +527,7 @@ $shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
   }
 }
 
+// Carousel navigation - Progress bar dots
 .carousel-nav {
   position: absolute;
   bottom: 20px;
@@ -493,65 +536,64 @@ $shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
   display: flex;
   gap: 10px;
   z-index: 10;
-}
-
-.carousel-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s;
-
-  &.active {
-    background: white;
-    transform: scale(1.2);
-  }
 
   @media (max-width: 768px) {
-    width: 10px;
-    height: 10px;
+    gap: 8px;
+  }
+
+  @media (max-width: 576px) {
+    gap: 6px;
   }
 }
 
-.carousel-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+// Dot wrapper for click handling
+.carousel-dot-wrapper {
   cursor: pointer;
-  transition: all 0.3s;
-  z-index: 10;
+  padding: 5px 0;
+}
 
-  &:hover {
+// Progress bar style dots
+.carousel-dot {
+  width: 40px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s ease;
+
+  &.active {
     background: rgba(255, 255, 255, 0.4);
   }
 
-  &.prev {
-    left: 20px;
-  }
-
-  &.next {
-    right: 20px;
-  }
-
-  .material-icons {
-    color: white;
-    font-size: 28px;
-  }
-
   @media (max-width: 768px) {
-    display: none;
+    width: 30px;
+    height: 5px;
+    border-radius: 2.5px;
   }
+
+  @media (max-width: 576px) {
+    width: 24px;
+    height: 4px;
+    border-radius: 2px;
+  }
+}
+
+// Progress fill inside active dot
+.progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  background: white;
+  border-radius: inherit;
+  animation: progressFill linear forwards;
+}
+
+// Hide carousel arrows (removed from HTML but keeping CSS hidden for safety)
+.carousel-arrow {
+  display: none !important;
 }
 
 // ==================== SECTION HEADERS ====================
@@ -582,17 +624,250 @@ $shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
       }
     }
   }
+
+  // "Vedi tutti" link for category rows
+  .view-all-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: $info-color;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+
+    &:hover {
+      color: $accent-color;
+      transform: translateX(3px);
+
+      .material-icons {
+        transform: translateX(3px);
+      }
+    }
+
+    .material-icons {
+      font-size: 18px;
+      transition: transform 0.3s;
+    }
+
+    @media (max-width: 576px) {
+      font-size: 13px;
+    }
+  }
 }
 
 // ==================== PRODUCTS GRID ====================
+
+/**
+ * Product Row Container
+ * Each row is a separate section with its own header and grid.
+ * Prepared for future Page Builder customization via data attributes.
+ */
 .products-section {
   margin-bottom: 40px;
+
+  // Product row wrapper - adds spacing between rows
+  &.product-row {
+    margin-bottom: 50px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid rgba($border-color, 0.5);
+
+    &:last-child {
+      border-bottom: none;
+      margin-bottom: 20px;
+    }
+  }
+
+  // Featured row - highlight styling
+  &.is-featured-row {
+    .section-header h2 {
+      .material-icons {
+        color: #f5576c;
+        animation: pulse-glow 2s ease-in-out infinite;
+      }
+    }
+
+    .product-card {
+      &:hover {
+        border-color: #f5576c;
+      }
+    }
+  }
+
+  // New arrivals row - fresh styling
+  &.is-new-arrivals-row {
+    .section-header h2 {
+      .material-icons {
+        color: $success-color;
+      }
+    }
+
+    .product-card {
+      &:hover {
+        border-color: $success-color;
+      }
+    }
+  }
+
+  // Category rows - neutral styling
+  &.is-category-row {
+    .section-header h2 {
+      .material-icons {
+        color: $info-color;
+      }
+    }
+  }
+
+  // Auto-generated rows - slightly muted
+  &.is-auto-generated {
+    .section-header h2 {
+      font-size: 24px;
+
+      .material-icons {
+        font-size: 28px;
+      }
+
+      @media (max-width: 768px) {
+        font-size: 20px;
+
+        .material-icons {
+          font-size: 24px;
+        }
+      }
+    }
+  }
 }
 
+// Pulse animation for featured icon
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+/**
+ * Products Grid
+ * Supports different column configurations and display styles.
+ * Future: Configurable via Page Builder.
+ */
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 25px;
+
+  // Fixed 4-column grid
+  &.grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @media (max-width: 992px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 576px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // Fixed 3-column grid
+  &.grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+
+    @media (max-width: 992px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 576px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // Carousel display style (horizontal scroll)
+  &.display-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    gap: 20px;
+    padding-bottom: 15px;
+
+    // Hide scrollbar but keep functionality
+    scrollbar-width: thin;
+    scrollbar-color: rgba($accent-color, 0.3) transparent;
+
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba($accent-color, 0.3);
+      border-radius: 3px;
+
+      &:hover {
+        background: rgba($accent-color, 0.5);
+      }
+    }
+
+    .product-card {
+      flex: 0 0 300px;
+      scroll-snap-align: start;
+
+      @media (max-width: 576px) {
+        flex: 0 0 280px;
+      }
+    }
+  }
+
+  // Compact display style (smaller cards)
+  &.display-compact {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+
+    .product-card {
+      .product-image {
+        height: 140px;
+      }
+
+      .product-info {
+        padding: 12px;
+      }
+
+      .product-title {
+        font-size: 14px;
+        -webkit-line-clamp: 1;
+      }
+
+      .product-description {
+        display: none;
+      }
+
+      .product-price .price-value {
+        font-size: 18px;
+      }
+
+      .btn-add-to-cart {
+        padding: 8px 12px;
+        font-size: 12px;
+
+        .material-icons {
+          font-size: 16px;
+        }
+      }
+    }
+  }
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -3308,5 +3583,10 @@ $shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
 
   .carousel-slide {
     animation: none;
+  }
+
+  .progress-fill {
+    animation: none;
+    width: 100%;
   }
 }

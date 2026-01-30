@@ -2,22 +2,25 @@
   <mat-spinner [hidden]="matspinner" class="loading-spinner"></mat-spinner>
   
   <div class="table-contracts-card">
+    <!-- Modern Header -->
     <div class="card-header modern-header">
       <div class="header-content">
         <div class="header-icon">
           <i class="material-icons">assignment</i>
         </div>
         <div class="header-text">
-          <h1 class="card-title">
-            Contratti Generati
-            <!-- <span *ngIf="User == 'Cliente'">Amici</span>
-            <span *ngIf="User != 'Cliente'">Leads</span>
-            Invitati -->
-          </h1>
+          <h1 class="card-title">Contratti Generati</h1>
           <p class="card-subtitle">Monitora i contratti generati</p>
         </div>
       </div>
       
+      <!-- Hint for expandable rows -->
+      <div class="expand-hint">
+        <i class="material-icons">touch_app</i>
+        <span>Clicca sulla singola voce di contratto per dettagli aggiuntivi</span>
+      </div>
+      
+      <!-- Filters -->
       <div class="filters-container">
         <p-multiSelect
           [options]="LeadsContract"
@@ -31,9 +34,9 @@
         />
 
         <p-multiSelect
-          [options]="LeadsContract"
+          [options]="statiUnivoci"
           [(ngModel)]="statusContractSelected"
-          optionLabel="Stato"
+          optionLabel="nome"
           display="chip"
           placeholder="Seleziona Stato"
           appendTo="body"
@@ -42,11 +45,22 @@
         />
 
         <p-multiSelect
-          [options]="LeadsContract"
+          [options]="pivaCodFiscUnivoci"
           [(ngModel)]="pivaCodFisc"
-          optionLabel="pIva_CodFisc"
+          optionLabel="valore"
           display="chip"
           placeholder="Seleziona P.iva/Cod.Fiscale"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
+
+        <p-multiSelect
+          [options]="indirizziUnivoci"
+          [(ngModel)]="indirizzoSelected"
+          optionLabel="valore"
+          display="chip"
+          placeholder="Seleziona Indirizzo di Fornitura"
           appendTo="body"
           (onChange)="applyFilter()"
           class="modern-filter"
@@ -54,97 +68,232 @@
       </div>
     </div>
     
+    <!-- Table Body -->
     <div class="card-body modern-body">
       <div class="table-container">
-        <table mat-table [dataSource]="dataSource" class="modern-table">
+        <table mat-table [dataSource]="dataSource" multiTemplateDataRows class="modern-table">
           
+          <!-- ID Column -->
           <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef class="id-column">
-              <span class="header-text">ID</span>
-            </th>
-            <td mat-cell *matCellDef="let lead" class="id-cell">
-              <span class="id-badge">{{ lead.id }}</span>
+            <th mat-header-cell *matHeaderCellDef class="col-id">ID</th>
+            <td mat-cell *matCellDef="let contract" class="col-id">
+              <span class="id-badge">{{ contract.id }}</span>
             </td>
           </ng-container>
 
+          <!-- Nominativo/Rag.Sociale Column -->
           <ng-container matColumnDef="nominativo/Rag.Sociale">
-            <th mat-header-cell *matHeaderCellDef class="name-column">
-              <span class="header-text">Nominativo/Rag.Sociale</span>
-            </th>
-            <td mat-cell *matCellDef="let lead" class="name-cell">
-              <div class="client-info">
-                <i class="material-icons client-icon">person</i>
-                <span class="client-name">{{ lead.nomeRag_Sociale }}</span>
+            <th mat-header-cell *matHeaderCellDef class="col-nominativo">NOMINATIVO/RAG.SOCIALE</th>
+            <td mat-cell *matCellDef="let contract" class="col-nominativo">
+              <div class="nominativo-cell">
+                <i class="material-icons">person</i>
+                <span>{{ contract.nomeRag_Sociale }}</span>
               </div>
             </td>
           </ng-container>
 
+          <!-- P.IVA/Cod.Fiscale Column -->
           <ng-container matColumnDef="p.iva/cod.fisc">
-            <th mat-header-cell *matHeaderCellDef class="tax-column">
-              <span class="header-text">P.IVA/Cod.Fiscale</span>
-            </th>
-            <td mat-cell *matCellDef="let lead" class="tax-cell">
-              <div class="tax-info">
-                <i class="material-icons tax-icon">business</i>
-                <span class="tax-code">{{ lead.pIva_CodFisc }}</span>
+            <th mat-header-cell *matHeaderCellDef class="col-piva">P.IVA/COD.FISCALE</th>
+            <td mat-cell *matCellDef="let contract" class="col-piva">
+              <div class="piva-cell">
+                <i class="material-icons">badge</i>
+                <span>{{ contract.pIva_CodFisc }}</span>
               </div>
             </td>
           </ng-container>
 
+          <!-- Indirizzo di Fornitura Column -->
+          <ng-container matColumnDef="indirizzo_fornitura">
+            <th mat-header-cell *matHeaderCellDef class="col-indirizzo">
+              <div class="header-with-icon">
+                <!-- <i class="material-icons">location_on</i> -->
+                <span>INDIRIZZO DI FORNITURA</span>
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let contract" class="col-indirizzo">
+              <div class="indirizzo-cell">
+                <i class="material-icons">place</i>
+                <span class="indirizzo-text" [title]="contract.indirizzo_fornitura">
+                  {{ contract.indirizzo_fornitura }}
+                </span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Data Inserimento Column -->
           <ng-container matColumnDef="Data Inserimento">
-            <th mat-header-cell *matHeaderCellDef class="date-column">
-              <span class="header-text">Data Inserimento</span>
-            </th>
-            <td mat-cell *matCellDef="let lead" class="date-cell">
-              <div class="date-info">
-                <i class="material-icons date-icon">event</i>
-                <span class="date-text">{{ lead.data_Ins }}</span>
+            <th mat-header-cell *matHeaderCellDef class="col-data">DATA INSERIMENTO</th>
+            <td mat-cell *matCellDef="let contract" class="col-data">
+              <div class="date-cell">
+                <i class="material-icons">calendar_today</i>
+                <span>{{ contract.data_Ins }}</span>
               </div>
             </td>
           </ng-container>
 
+          <!-- Prodotto Column -->
           <ng-container matColumnDef="Prodotto">
-            <th mat-header-cell *matHeaderCellDef class="product-column">
-              <span class="header-text">Prodotto</span>
-            </th>
-            <td mat-cell *matCellDef="let lead" class="product-cell">
-              <div class="product-info">
-                <i class="material-icons product-icon">inventory</i>
-                <span class="product-name">{{ lead.Prodotto }}</span>
+            <th mat-header-cell *matHeaderCellDef class="col-prodotto">PRODOTTO</th>
+            <td mat-cell *matCellDef="let contract" class="col-prodotto">
+              <div class="product-cell">
+                <!-- <i class="material-icons">inventory_2</i> -->
+                <span>{{ contract.Prodotto }}</span>
               </div>
             </td>
           </ng-container>
-
-          <ng-container matColumnDef="Seu">
-            <th mat-header-cell *matHeaderCellDef class="seu-column">
-              <span class="header-text">SEU</span>
-            </th>
-            <td mat-cell *matCellDef="let lead" class="seu-cell">
-              <div class="seu-info">
-                <i class="material-icons seu-icon">support_agent</i>
-                <span class="seu-name">{{ lead.seu }}</span>
+          
+          <!-- Consumo kWh Column -->
+          <ng-container matColumnDef="consumo_kwh">
+            <th mat-header-cell *matHeaderCellDef class="col-consumo">
+              <div class="header-with-icon">
+                <i class="material-icons">bolt</i>
+                <span>CONSUMO KWH</span>
               </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="Stato">
-            <th mat-header-cell *matHeaderCellDef class="status-column">
-              <span class="header-text">Stato</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="status-cell">
-              <span class="status-badge" [class]="'status-' + lead.Stato?.toLowerCase()">
-                {{ lead.Stato }}
+            <td mat-cell *matCellDef="let contract" class="col-consumo">
+              <span class="data-value" [class.no-data]="!contract.consumo_kwh">
+                {{ contract.consumo_kwh ? formatConsumption(contract.consumo_kwh, 'kWh') : '-' }}
               </span>
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns" [appLeadRowColor]="row" class="modern-row"></tr>
+          <!-- Consumo Gm3 Column -->
+          <ng-container matColumnDef="consumo_gm3">
+            <th mat-header-cell *matHeaderCellDef class="col-consumo">
+              <div class="header-with-icon">
+                <i class="material-icons">local_fire_department</i>
+                <span>CONSUMO GM³</span>
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let contract" class="col-consumo">
+              <span class="data-value" [class.no-data]="!contract.consumo_gm3">
+                {{ contract.consumo_gm3 ? formatConsumption(contract.consumo_gm3, 'Gm³') : '-' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- CTE Column -->
+          <ng-container matColumnDef="cte">
+            <th mat-header-cell *matHeaderCellDef class="col-cte">
+              <div class="header-with-icon">
+                <i class="material-icons">tag</i>
+                <span>CTE</span>
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let contract" class="col-cte">
+              <span class="data-value code-value" [class.no-data]="!contract.cte">
+                {{ contract.cte || '-' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- POD Column -->
+          <ng-container matColumnDef="pod">
+            <th mat-header-cell *matHeaderCellDef class="col-pod">
+              <div class="header-with-icon">
+                <i class="material-icons">confirmation_number</i>
+                <span>POD/PDR</span>
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let contract" class="col-pod">
+              <span class="data-value code-value" [class.no-data]="!contract.pod">
+                {{ contract.pod || '-' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Data Attivazione Column -->
+          <ng-container matColumnDef="data_attivazione">
+            <th mat-header-cell *matHeaderCellDef class="col-data">
+              <div class="header-with-icon">
+                <i class="material-icons">event_available</i>
+                <span>DATA ATTIVAZIONE</span>
+              </div>
+            </th>
+            <td mat-cell *matCellDef="let contract" class="col-data">
+              <span class="data-value date-value" [class.no-data]="!contract.data_attivazione" [class.active-date]="contract.data_attivazione">
+                {{ contract.data_attivazione ? formatDate(contract.data_attivazione) : '-' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- SEU Column -->
+          <ng-container matColumnDef="Seu">
+            <th mat-header-cell *matHeaderCellDef class="col-seu">SEU</th>
+            <td mat-cell *matCellDef="let contract" class="col-seu">
+              <div class="seu-cell">
+                <!-- <i class="material-icons">support_agent</i> -->
+                <span>{{ contract.seu }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Stato Column -->
+          <ng-container matColumnDef="Stato">
+            <th mat-header-cell *matHeaderCellDef class="col-stato">STATO</th>
+            <td mat-cell *matCellDef="let contract" class="col-stato">
+              <span class="status-badge" [attr.data-status]="contract.Stato">
+                {{ contract.Stato }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Expanded Row for Mobile/Details -->
+          <ng-container matColumnDef="expandedDetail">
+            <td mat-cell *matCellDef="let contract" [attr.colspan]="displayedColumns.length">
+              <div class="expanded-detail" 
+                   [@detailExpand]="isExpanded(contract) ? 'expanded' : 'collapsed'">
+                <div class="detail-grid">
+                  <!-- Indirizzo in expanded view -->
+                  <div class="detail-item" *ngIf="contract.indirizzo_fornitura && contract.indirizzo_fornitura !== '-'">
+                    <span class="detail-label"><i class="material-icons">location_on</i> Indirizzo di Fornitura</span>
+                    <span class="detail-value">{{ contract.indirizzo_fornitura }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="contract.consumo_kwh">
+                    <span class="detail-label"><i class="material-icons">bolt</i> Consumo kWh</span>
+                    <span class="detail-value">{{ formatConsumption(contract.consumo_kwh, 'kWh') }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="contract.consumo_gm3">
+                    <span class="detail-label"><i class="material-icons">local_fire_department</i> Consumo Gm³</span>
+                    <span class="detail-value">{{ formatConsumption(contract.consumo_gm3, 'Gm³') }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="contract.cte">
+                    <span class="detail-label"><i class="material-icons">tag</i> CTE</span>
+                    <span class="detail-value code">{{ contract.cte }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="contract.pod">
+                    <span class="detail-label"><i class="material-icons">confirmation_number</i> POD/PDR</span>
+                    <span class="detail-value code">{{ contract.pod }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="contract.data_attivazione">
+                    <span class="detail-label"><i class="material-icons">event_available</i> Attivato il</span>
+                    <span class="detail-value highlight">{{ formatDate(contract.data_attivazione) }}</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Table Rows -->
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row 
+              *matRowDef="let row; columns: displayedColumns;"
+              class="contract-row"
+              [class.expanded-row]="isExpanded(row)"
+              (click)="toggleRow(row)">
+          </tr>
+          <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+
         </table>
-      </div>
-      
-      <div class="pagination-container">
-        <mat-paginator #paginator class="modern-paginator" [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+        
+        <!-- Pagination -->
+        <mat-paginator 
+          #paginator 
+          class="modern-paginator" 
+          [pageSizeOptions]="[5, 10, 20, 50]" 
+          showFirstLastButtons>
+        </mat-paginator>
       </div>
     </div>
   </div>

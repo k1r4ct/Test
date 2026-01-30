@@ -55,12 +55,12 @@
             </div>
           </div>
 
-          <!-- Pulsanti Azione (solo per Clienti) - Layout responsive ottimizzato -->
+          <!-- Action Buttons (Clients only) -->
           <div class="action-buttons-section" *ngIf="User.ruolo=='Cliente'">
             <div class="row g-3">
               <div class="col-sm-6 col-12">
                 <div class="action-button-container">
-                  <button mat-raised-button class="modern-action-button invite-button w-100" (click)="vaiALead()">
+                  <div class="modern-action-button invite-button" (click)="vaiALead()" tabindex="0" role="button">
                     <div class="button-icon">
                       <i class="material-icons">person_add</i>
                     </div>
@@ -68,12 +68,12 @@
                       <span class="button-title">Invita Amico</span>
                       <span class="button-subtitle">Condividi opportunità</span>
                     </div>
-                  </button>
+                  </div>
                 </div>
               </div>
               <div class="col-sm-6 col-12">
                 <div class="action-button-container">
-                  <button mat-raised-button class="modern-action-button profile-button w-100" (click)="vaiASchedaPersonale()">
+                  <div class="modern-action-button profile-button" (click)="vaiASchedaPersonale()" tabindex="0" role="button">
                     <div class="button-icon">
                       <i class="material-icons">account_circle</i>
                     </div>
@@ -81,16 +81,19 @@
                       <span class="button-title">Scheda Personale</span>
                       <span class="button-subtitle">Gestisci profilo</span>
                     </div>
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- RIMOSSA: Colonna destra con Form Modifica Profilo -->
-      <!-- La modifica profilo è ora accessibile dal menu dropdown nella navbar -->
+          
+      <!-- ========================= 
+           WALLET (SOLO PER CLIENTI)
+           ========================= -->
+      <div class="wallet-section" *ngIf="isCliente">
+        <app-wallet-cliente></app-wallet-cliente>
+      </div>
 
     </div>
   </div>
@@ -175,24 +178,25 @@
       </div>
     </div>
 
-    <!-- Tabelle per Clienti -->
+    <!-- =====================================================
+         Tabelle per Clienti 
+         ===================================================== -->
     <div class="tables-container" *ngIf="User.ruolo == 'Cliente'">
       <div class="row">
-        <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 mb-4">
-          <div class="table-wrapper">
-            <app-tabellacontatti></app-tabellacontatti>
-          </div>
-        </div>
-        <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 mb-4">
+        <!-- Contratti Generati -->
+        <div class="col-12 mb-4">
           <div class="table-wrapper">
             <app-tabellacontratti></app-tabellacontratti>
           </div>
         </div>
-        <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-6 col-xl-6 mb-4">
+        
+        <!-- Amici Personali Invitati -->
+        <div class="col-12 mb-4">
           <div class="table-wrapper">
-            <app-contratti-personali></app-contratti-personali>
+            <app-tabellacontatti></app-tabellacontatti>
           </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -264,12 +268,3 @@
     </div>
   </div>
 </div>
-
-<!-- ========================= 
-     SEZIONE 5: WALLET (SOLO PER CLIENTI)
-     ========================= -->
-<div class="wallet-section" *ngIf="isCliente">
-  <app-wallet-cliente></app-wallet-cliente>
-</div>
-
-<!-- Fine Layout Ottimizzato -->
