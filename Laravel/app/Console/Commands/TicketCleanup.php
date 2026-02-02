@@ -34,7 +34,7 @@ class TicketCleanup extends Command
      */
     private const RESOLVED_TO_CLOSED_DAYS = 10;
     private const CLOSED_TO_DELETED_DAYS = 10;
-    private const DELETED_TO_REMOVED_DAYS = 40;
+    private const DELETED_TO_REMOVED_DAYS = 5;
 
     /**
      * Execute the console command.

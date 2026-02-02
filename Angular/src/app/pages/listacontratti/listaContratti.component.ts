@@ -2253,6 +2253,7 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
           datastipula: contratto.datastipula,
           prodotto: contratto.prodotto,
           macroprodotto: contratto.macroprodotto,
+          fornitore: contratto.supplier ?? "",
           seu: contratto.seu,
           stato: contratto.stato,
           email: dettagli.email ?? "",

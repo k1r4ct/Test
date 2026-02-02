@@ -189,6 +189,7 @@ class StoreController extends Controller
      * - store_id: Filter by store
      * - category_id: Filter by category
      * - featured: Only featured items (1/0)
+     * - bestseller: Only bestseller items (1/0)
      * - min_pv: Minimum PV price
      * - max_pv: Maximum PV price
      * - search: Search in name/description
@@ -226,7 +227,6 @@ class StoreController extends Controller
                         'message' => 'Category not accessible',
                     ], 403);
                 }
-                
                 // Include subcategories
                 $categoryIds = array_merge([$category->id], $category->getDescendantIds());
                 $query->whereIn('category_id', $categoryIds);
@@ -235,6 +235,11 @@ class StoreController extends Controller
             // Filter featured only
             if ($request->filled('featured') && $request->featured) {
                 $query->featured();
+            }
+
+            // Filter bestseller only
+            if ($request->filled('bestseller') && $request->bestseller) {
+                $query->bestseller();
             }
 
             // Price range filter
@@ -387,6 +392,7 @@ class StoreController extends Controller
                         'formatted_euro_price' => $article->formatted_euro_price,
                         'is_digital' => $article->is_digital,
                         'is_featured' => $article->is_featured,
+                        'is_bestseller' => $article->is_bestseller,
                         'available' => $article->available,
                         'category' => $article->category ? [
                             'id' => $article->category->id,
@@ -443,6 +449,7 @@ class StoreController extends Controller
             'formatted_pv_price' => $article->formatted_pv_price,
             'is_digital' => $article->is_digital,
             'is_featured' => $article->is_featured,
+            'is_bestseller' => $article->is_bestseller,
             'thumbnail_url' => $article->thumbnail?->getUrl(),
             'category_name' => $article->category?->category_name,
             'store_name' => $article->store?->store_name,

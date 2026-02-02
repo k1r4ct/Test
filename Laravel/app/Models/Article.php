@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Services\SystemLogService;
+use Illuminate\Support\Facades\Auth;
 
 class Article extends Model
 {
@@ -21,6 +22,7 @@ class Article extends Model
         'available',
         'sort_order',
         'is_featured',
+        'is_bestseller',
         'category_id',
         'store_id',
         'attribute_set_id',
@@ -34,6 +36,7 @@ class Article extends Model
         'available' => 'boolean',
         'sort_order' => 'integer',
         'is_featured' => 'boolean',
+        'is_bestseller' => 'boolean',
     ];
 
     // Fields that are important to track in logs
@@ -41,7 +44,9 @@ class Article extends Model
         'pv_price',
         'euro_price',
         'available',
+        'is_digital',
         'is_featured',
+        'is_bestseller',
         'category_id',
         'store_id',
     ];
@@ -108,6 +113,12 @@ class Article extends Model
     {
         // Log article creation
         static::created(function ($article) {
+            $article->load(['category', 'store']);
+            
+            $userName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
             SystemLogService::ecommerce()->info("Article created", [
                 'article_id' => $article->id,
                 'sku' => $article->sku,
@@ -116,17 +127,21 @@ class Article extends Model
                 'euro_price' => $article->euro_price,
                 'available' => $article->available,
                 'is_digital' => $article->is_digital,
+                'is_featured' => $article->is_featured,
+                'is_bestseller' => $article->is_bestseller,
                 'category_id' => $article->category_id,
+                'category_name' => $article->category?->category_name,
                 'store_id' => $article->store_id,
+                'store_name' => $article->store?->store_name,
+                'created_by' => $userName,
             ]);
         });
 
-        // Log article updates (especially price and availability changes)
+        // Log important updates
         static::updated(function ($article) {
             $changes = $article->getChanges();
             $original = $article->getOriginal();
 
-            // Build changes array for logging
             $changesForLog = [];
             $hasImportantChanges = false;
 
@@ -137,50 +152,44 @@ class Article extends Model
                         'new' => $newValue,
                     ];
 
-                    // Check if it's an important field
                     if (in_array($field, static::$importantFields)) {
                         $hasImportantChanges = true;
                     }
                 }
             }
 
-            if (!empty($changesForLog)) {
-                // Use warning level for important changes (price, availability)
-                $level = $hasImportantChanges ? 'warning' : 'info';
-                
-                SystemLogService::ecommerce()->{$level}("Article updated", [
+            if ($hasImportantChanges && !empty($changesForLog)) {
+                $userName = Auth::check() 
+                    ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                    : 'Sistema';
+
+                SystemLogService::ecommerce()->info("Article updated", [
                     'article_id' => $article->id,
                     'sku' => $article->sku,
                     'article_name' => $article->article_name,
                     'changes' => $changesForLog,
-                    'important_change' => $hasImportantChanges,
+                    'updated_by' => $userName,
                 ]);
             }
         });
 
-        // Log article deletion (soft delete)
+        // Log deletion
         static::deleted(function ($article) {
-            SystemLogService::ecommerce()->warning("Article deleted", [
+            $userName = Auth::check() 
+                ? Auth::user()->name . ' ' . Auth::user()->cognome 
+                : 'Sistema';
+
+            SystemLogService::ecommerce()->info("Article soft deleted", [
                 'article_id' => $article->id,
                 'sku' => $article->sku,
                 'article_name' => $article->article_name,
-                'pv_price' => $article->pv_price,
-                'was_available' => $article->available,
+                'deleted_by' => $userName,
             ]);
         });
 
-        // Log article restore (from soft delete)
-        static::restored(function ($article) {
-            SystemLogService::ecommerce()->info("Article restored", [
-                'article_id' => $article->id,
-                'sku' => $article->sku,
-                'article_name' => $article->article_name,
-            ]);
-        });
-
-        // Log permanent deletion
+        // Log force deletion
         static::forceDeleted(function ($article) {
-            SystemLogService::ecommerce()->critical("Article permanently deleted", [
+            SystemLogService::ecommerce()->warning("Article permanently deleted", [
                 'article_id' => $article->id,
                 'sku' => $article->sku,
                 'article_name' => $article->article_name,
@@ -208,6 +217,14 @@ class Article extends Model
     public function scopeFeatured($query)
     {
         return $query->where('is_featured', true);
+    }
+
+    /**
+     * Scope to filter bestseller articles.
+     */
+    public function scopeBestseller($query)
+    {
+        return $query->where('is_bestseller', true);
     }
 
     public function scopeByStore($query, $storeId)
@@ -267,6 +284,14 @@ class Article extends Model
         return $this->is_featured === true;
     }
 
+    /**
+     * Check if article is marked as bestseller.
+     */
+    public function isBestseller()
+    {
+        return $this->is_bestseller === true;
+    }
+
     public function isVisibleToUser($user)
     {
         $categoryVisible = $this->category && $this->category->isVisibleToUser($user);
@@ -299,15 +324,15 @@ class Article extends Model
     {
         return ArticleAttributeValue::getValueByCode($this->id, $attributeCode);
     }
-    
+
     public function getFormattedAttributeValue(string $attributeCode): string
     {
         $attrValue = $this->attributeValues()
-                          ->whereHas('attribute', function ($q) use ($attributeCode) {
-                              $q->where('attribute_code', $attributeCode);
-                          })
-                          ->with('attribute')
-                          ->first();
+            ->whereHas('attribute', function ($q) use ($attributeCode) {
+                $q->where('attribute_code', $attributeCode);
+            })
+            ->with('attribute')
+            ->first();
 
         return $attrValue ? $attrValue->getFormattedValue() : '';
     }

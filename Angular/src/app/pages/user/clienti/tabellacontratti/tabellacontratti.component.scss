@@ -1,10 +1,41 @@
 // ========================================
 // TABELLACONTRATTI COMPONENT - BLUE ECLIPSE THEME
 // #0F0E47 | #272757 | #505081 | #8686AC
+// 
+// FIX: Single scrollbar only (removed duplicate)
 // ========================================
 
+// FIX: Main container handles ALL horizontal scrolling
 .table-contracts-container {
   animation: fadeIn 0.5s ease-out;
+  overflow-x: auto;
+  overflow-y: visible;
+
+  // Styled scrollbar on the MAIN container only
+  &::-webkit-scrollbar {
+    height: 12px;
+    display: block !important;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #505081, #272757);
+    border-radius: 6px;
+    border: 2px solid #e2e8f0;
+    min-width: 60px;
+
+    &:hover {
+      background: linear-gradient(135deg, #8686AC, #505081);
+    }
+  }
+
+  // Firefox
+  scrollbar-width: auto;
+  scrollbar-color: #505081 #e2e8f0;
 }
 
 @keyframes fadeIn {
@@ -22,8 +53,10 @@
   background: linear-gradient(135deg, #0F0E47 0%, #272757 50%, #505081 100%);
   border-radius: 18px;
   box-shadow: 0 4px 25px rgba(15, 14, 71, 0.15);
-  overflow: hidden;
+  overflow: hidden;  // No scroll here
   transition: box-shadow 0.3s ease;
+  min-width: 1300px;
+  width: 100%;
 
   &:hover {
     box-shadow: 0 8px 35px rgba(15, 14, 71, 0.2);
@@ -33,13 +66,13 @@
 // ========================================
 // MODERN HEADER - BLUE ECLIPSE
 // ========================================
-
 .modern-header {
   background: linear-gradient(135deg, #0F0E47 0%, #272757 50%, #505081 100%);
   padding: 24px 28px;
   color: white;
   position: relative;
-  overflow: hidden;
+  overflow: hidden;  // No scroll here
+  min-width: 1300px;
 
   // Subtle pattern overlay
   &::before {
@@ -72,6 +105,7 @@
       backdrop-filter: blur(10px);
       box-shadow: 0 4px 15px rgba(15, 14, 71, 0.3);
       transition: all 0.3s ease;
+      flex-shrink: 0;
 
       &:hover {
         transform: scale(1.05);
@@ -219,38 +253,12 @@
 // ========================================
 .modern-body {
   padding: 0;
+  min-width: 1300px;
 }
 
+// FIX: Table container - NO overflow here (parent handles it)
 .table-container {
-  overflow-x: auto;
-  overflow-y: visible;
-  
-  // Scrollbar SEMPRE VISIBILE e più prominente
-  &::-webkit-scrollbar {
-    height: 12px;
-    display: block !important;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: #e2e8f0;
-    border-radius: 6px;
-    margin: 0 10px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #505081, #272757);
-    border-radius: 6px;
-    border: 2px solid #e2e8f0;
-    min-width: 60px;
-
-    &:hover {
-      background: linear-gradient(135deg, #8686AC, #505081);
-    }
-  }
-
-  // Firefox - scrollbar sempre visibile
-  scrollbar-width: auto;
-  scrollbar-color: #505081 #e2e8f0;
+  overflow: visible;  // FIX: Changed from overflow-x: auto
 }
 
 .modern-table {
@@ -269,7 +277,7 @@
     padding: 16px 12px;
     border-bottom: 2px solid #e2e8f0;
     white-space: nowrap;
-    text-align: center;;
+    text-align: center;
 
     .header-with-icon {
       display: flex;
@@ -571,6 +579,7 @@
   background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
   border-top: 1px solid #e2e8f0;
   padding: 12px 16px;
+  min-width: 1300px;
 
   ::ng-deep {
     .mat-mdc-paginator-container {
