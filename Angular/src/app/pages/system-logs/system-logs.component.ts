@@ -85,6 +85,9 @@ interface LogEntry {
   // Device tracking fields (full detail view)
   device_info?: DeviceInfo | null;
   geo_info?: GeoInfo | null;
+  // Database operation fields
+  db_table?: string;
+  db_operation?: string;
 }
 
 interface LogSource {
@@ -211,6 +214,10 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
   filterScreenResolution: string = '';
   filterTimezone: string = '';
 
+  // Database operation filters (only active for database source)
+  filterDbTable: string = '';
+  filterDbOperation: string = '';
+
   // Filter options from API
   availableEntityTypes: EntityTypeOption[] = [];
   availableUsers: UserOption[] = [];
@@ -224,6 +231,10 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
   availableOperatingSystems: FilterOption[] = [];
   availableScreenResolutions: FilterOption[] = [];
   availableTimezones: FilterOption[] = [];
+
+  // Database operation filter options from API
+  availableDbTables: FilterOption[] = [];
+  availableDbOperations: FilterOption[] = [];
 
   // UI State
   isLoading: boolean = false;
@@ -252,7 +263,7 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
   // Retention sources mapping
   retentionSources = [
     { key: 'auth', label: 'Autenticazione', settingKey: 'retention_auth' },
-    { key: 'api', label: 'API', settingKey: 'retention_api' },
+    // { key: 'api', label: 'API', settingKey: 'retention_api' },
     { key: 'database', label: 'Database', settingKey: 'retention_database' },
     { key: 'scheduler', label: 'Scheduler', settingKey: 'retention_scheduler' },
     { key: 'email', label: 'Email', settingKey: 'retention_email' },
@@ -266,7 +277,7 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
   sourceIcons: { [key: string]: string } = {
     'all': 'fa-server',
     'auth': 'fa-shield-alt',
-    'api': 'fa-code',
+    // 'api': 'fa-code',
     'database': 'fa-database',
     'scheduler': 'fa-clock',
     'email': 'fa-envelope',
@@ -380,11 +391,13 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Load available filter options including device tracking
+  // Load available filter options including device tracking and database operations
   loadAvailableFilters(): void {
     this.isLoadingFilters = true;
+    // Pass current source so backend returns db_tables/db_operations when source=database
+    const source = this.currentSource !== 'all' ? this.currentSource : undefined;
     
-    this.apiService.getLogFilters()
+    this.apiService.getLogFilters(source)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
@@ -460,6 +473,26 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
                 label: t.timezone_client,
                 count: t.count
               }));
+            }
+
+            // Database operation filter options (only populated when source=database)
+            if (response.body.db_tables) {
+              this.availableDbTables = response.body.db_tables.map((d: any) => ({
+                value: d.db_table,
+                label: d.db_table,
+                count: d.count
+              }));
+            } else {
+              this.availableDbTables = [];
+            }
+            if (response.body.db_operations) {
+              this.availableDbOperations = response.body.db_operations.map((d: any) => ({
+                value: d.db_operation,
+                label: d.db_operation.toUpperCase(),
+                count: d.count
+              }));
+            } else {
+              this.availableDbOperations = [];
             }
           }
           this.isLoadingFilters = false;
@@ -564,6 +597,15 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
       filters.timezone = this.filterTimezone;
     }
 
+    // Database operation filters (only when source is database)
+    if (this.filterDbTable) {
+      filters.db_table = this.filterDbTable;
+    }
+
+    if (this.filterDbOperation) {
+      filters.db_operation = this.filterDbOperation;
+    }
+
     this.apiService.getLogs(filters)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -627,9 +669,13 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
   filterBySource(source: string): void {
     this.currentSource = source;
     this.pagination.current_page = 1;
+    // Reset database-specific filters when changing source
+    this.filterDbTable = '';
+    this.filterDbOperation = '';
     this.loadLogs();
     this.loadStats();
     this.loadVolume();
+    this.loadAvailableFilters(); // Refresh filter options (db_tables/db_operations depend on source)
     
     if (this.currentView === 'file') {
       this.loadFileContent();
@@ -699,6 +745,11 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
     this.loadLogs();
   }
 
+  onDbFilterChange(): void {
+    this.pagination.current_page = 1;
+    this.loadLogs();
+  }
+
   toggleAdvancedFilters(): void {
     this.showAdvancedFilters = !this.showAdvancedFilters;
   }
@@ -726,6 +777,9 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
     this.filterOS = '';
     this.filterScreenResolution = '';
     this.filterTimezone = '';
+    // Database operation filters
+    this.filterDbTable = '';
+    this.filterDbOperation = '';
     
     this.pagination.current_page = 1;
     this.loadLogs();
@@ -751,7 +805,10 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
            this.filterBrowser !== '' ||
            this.filterOS !== '' ||
            this.filterScreenResolution !== '' ||
-           this.filterTimezone !== '';
+           this.filterTimezone !== '' ||
+           // Database operation filters
+           this.filterDbTable !== '' ||
+           this.filterDbOperation !== '';
   }
 
   getActiveFiltersCount(): number {
@@ -775,6 +832,9 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
     if (this.filterOS) count++;
     if (this.filterScreenResolution) count++;
     if (this.filterTimezone) count++;
+    // Database operation filters
+    if (this.filterDbTable) count++;
+    if (this.filterDbOperation) count++;
     return count;
   }
 
@@ -1230,6 +1290,15 @@ export class SystemLogsComponent implements OnInit, OnDestroy {
 
     if (this.filterContractId) {
       filters.contract_id = this.filterContractId;
+    }
+
+    // Database operation filters
+    if (this.filterDbTable) {
+      filters.db_table = this.filterDbTable;
+    }
+
+    if (this.filterDbOperation) {
+      filters.db_operation = this.filterDbOperation;
     }
 
     this.apiService.exportLogs(format, filters)

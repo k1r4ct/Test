@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Services\SystemLogService;
+use App\Traits\LogsDatabaseOperations;
 
 class contract extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsDatabaseOperations;
 
     const BONUS_COEFFICIENT = 0.5; // 50% of contract PV goes to inviter as bonus
 

@@ -829,7 +829,14 @@
           <label>Note Backoffice</label>
           <mat-form-field appearance="outline" class="modern-textarea">
             <mat-label>Note interne</mat-label>
-            <textarea matInput class="note_backoffice" [value]="contratto.note" placeholder="Inserisci note..."></textarea>
+            <textarea 
+              matInput 
+              class="note_backoffice" 
+              [value]="contratto.note" 
+              placeholder="Inserisci note..."
+              cdkTextareaAutosize
+              cdkAutosizeMinRows="2"
+              cdkAutosizeMaxRows="10"></textarea>
           </mat-form-field>
         </div>
       </div>
@@ -853,9 +860,9 @@
     <div class="contraente-details" *ngFor="let contratto of DettagliContratto">
       <div class="contraente-grid">
         <div class="contraente-item" *ngFor="let dettaglio of contratto.dettagli_contraente | keyvalue">
-          <label class="field-label">{{ dettaglio.key }}</label>
-          <mat-form-field appearance="outline" class="modern-field-contraente">
-            <mat-label>{{ dettaglio.key }}</mat-label>
+        <label class="field-label">{{ getFieldLabel(dettaglio.key) }}</label>
+        <mat-form-field appearance="outline" class="modern-field-contraente">
+          <mat-label>{{ getFieldLabel(dettaglio.key) }}</mat-label>
             <input 
               matInput 
               [value]="dettaglio.value"

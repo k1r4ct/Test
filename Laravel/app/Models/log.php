@@ -101,7 +101,7 @@ class Log extends Model
     // ==================== SOURCE CONSTANTS ====================
 
     public const SOURCE_AUTH = 'auth';
-    public const SOURCE_API = 'api';
+    // public const SOURCE_API = 'api';
     public const SOURCE_DATABASE = 'database';
     public const SOURCE_SCHEDULER = 'scheduler';
     public const SOURCE_EMAIL = 'email';
@@ -119,7 +119,7 @@ class Log extends Model
     {
         return [
             self::SOURCE_AUTH => 'Autenticazione',
-            self::SOURCE_API => 'API',
+            // self::SOURCE_API => 'API',
             self::SOURCE_DATABASE => 'Database',
             self::SOURCE_SCHEDULER => 'Scheduler',
             self::SOURCE_EMAIL => 'Email',
@@ -139,7 +139,7 @@ class Log extends Model
     {
         return [
             self::SOURCE_AUTH => 'Auth',
-            self::SOURCE_API => 'API',
+            // self::SOURCE_API => 'API',
             self::SOURCE_DATABASE => 'Database',
             self::SOURCE_SCHEDULER => 'Scheduler',
             self::SOURCE_EMAIL => 'Email',

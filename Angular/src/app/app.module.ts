@@ -123,6 +123,7 @@ import Nora from '@primeng/themes/nora';
 import Lara from '@primeng/themes/lara';
 import Material from '@primeng/themes/lara';
 import Aura from '@primeng/themes/aura';
+import { TextFieldModule } from '@angular/cdk/text-field';
 import { QrcodeGeneratorComponent } from "./pages/qrcode-generator/qrcode-generator.component";
 import { TicketManagementComponent } from "./pages/ticket-management/ticket-management.component";
 import { WalletClienteComponent } from "./pages/user/clienti/wallet-cliente/wallet-cliente.component";
@@ -214,6 +215,7 @@ import { EcommerceComponent } from "./pages/ecommerce/ecommerce.component";
     MatSlideToggleModule,
     MatIconModule,
     DragAndDropModule,
+    TextFieldModule,
     OrganizationChartModule,
     ToolbarModule,
     DockModule,

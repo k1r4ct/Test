@@ -47,10 +47,10 @@ class SystemLogService
     /**
      * Create logger for API source.
      */
-    public static function api(): self
-    {
-        return new self(Log::SOURCE_API);
-    }
+    // public static function api(): self
+    // {
+    //     return new self(Log::SOURCE_API);
+    // }
 
     /**
      * Create logger for Database source.
@@ -238,7 +238,7 @@ class SystemLogService
      * Create a log entry with specified level and source.
      * 
      * @param string $level Log level (debug, info, warning, error, critical)
-     * @param string $source Log source (auth, api, database, scheduler, email, system, user_activity)
+     * @param string $source Log source (auth, database, scheduler, email, system, user_activity)
      * @param string $message Log message
      * @param array $context Additional context data
      * @param string|null $stackTrace Stack trace for errors
@@ -421,7 +421,7 @@ class SystemLogService
     {
         $channelMap = [
             Log::SOURCE_AUTH => 'auth',
-            Log::SOURCE_API => 'api',
+            // Log::SOURCE_API => 'api',
             Log::SOURCE_DATABASE => 'database',
             Log::SOURCE_SCHEDULER => 'scheduler',
             Log::SOURCE_EMAIL => 'email',
@@ -633,23 +633,23 @@ class SystemLogService
     /**
      * Quick log for API request.
      */
-    public static function logApiRequest(string $endpoint, string $method, int $statusCode, ?float $duration = null): ?Log
-    {
-        $level = $statusCode >= 500 ? Log::LEVEL_ERROR : 
-                ($statusCode >= 400 ? Log::LEVEL_WARNING : Log::LEVEL_INFO);
-
-        $context = [
-            'endpoint' => $endpoint,
-            'method' => $method,
-            'status_code' => $statusCode,
-        ];
-
-        if ($duration !== null) {
-            $context['duration_ms'] = round($duration * 1000, 2);
-        }
-
-        return self::log($level, Log::SOURCE_API, "API {$method} {$endpoint} - {$statusCode}", $context);
-    }
+    // public static function logApiRequest(string $endpoint, string $method, int $statusCode, ?float $duration = null): ?Log
+    // {
+    //     $level = $statusCode >= 500 ? Log::LEVEL_ERROR : 
+    //             ($statusCode >= 400 ? Log::LEVEL_WARNING : Log::LEVEL_INFO);
+    //
+    //     $context = [
+    //         'endpoint' => $endpoint,
+    //         'method' => $method,
+    //         'status_code' => $statusCode,
+    //     ];
+    //
+    //     if ($duration !== null) {
+    //         $context['duration_ms'] = round($duration * 1000, 2);
+    //     }
+    //
+    //     return self::log($level, Log::SOURCE_API, "API {$method} {$endpoint} - {$statusCode}", $context);
+    // }
 
     /**
      * Quick log for slow database query.
@@ -854,5 +854,42 @@ class SystemLogService
         }
 
         return $logger->error("External API call failed: {$service} - {$operation}", $context);
+    }
+
+    /**
+     * Quick log for database operation tracking (INSERT/UPDATE/DELETE).
+     * Logs to the 'database' source with db_table and db_operation in context
+     * for filtering in the frontend.
+     *
+     * Usage (from LogsDatabaseOperations trait):
+     *   SystemLogService::logDbOperation('contracts', 'INSERT', $contract->id);
+     *   SystemLogService::logDbOperation('users', 'UPDATE', $user->id, ['changed_fields' => ['name', 'email']]);
+     *   SystemLogService::logDbOperation('leads', 'DELETE', $lead->id, [], 'warning');
+     *
+     * @param string   $table     Database table name (e.g. 'contracts', 'users')
+     * @param string   $operation DB operation: 'INSERT', 'UPDATE', 'DELETE'
+     * @param int|null $recordId  The ID of the affected record
+     * @param array    $context   Additional context (changes, field names, etc.)
+     * @param string   $level     Log level (default: 'info')
+     */
+    public static function logDbOperation(
+        string $table,
+        string $operation,
+        ?int $recordId = null,
+        array $context = [],
+        string $level = 'info'
+    ): ?Log {
+        // Merge db-specific keys into context for frontend filtering
+        $context['db_table'] = $table;
+        $context['db_operation'] = strtoupper($operation);
+
+        if ($recordId !== null) {
+            $context['db_record_id'] = $recordId;
+        }
+
+        $message = strtoupper($operation) . " on `{$table}`"
+            . ($recordId !== null ? " (ID: {$recordId})" : '');
+
+        return self::database()->{$level}($message, $context);
     }
 }

@@ -937,8 +937,8 @@ export class ApiService implements OnDestroy {
   // -------------------- SYSTEM LOGS API --------------------
 
   /**
-   * Get paginated logs with filters including audit trail and device tracking fields
-   * @param filters - Optional filters (source, level, search, date_from, date_to, entity_type, contract_id, device tracking, etc.)
+   * Get paginated logs with filters including audit trail, device tracking, and database operation fields
+   * @param filters - Optional filters (source, level, search, date_from, date_to, entity_type, contract_id, device tracking, db_table, db_operation, etc.)
    */
   getLogs(filters: {
     source?: string;
@@ -968,6 +968,9 @@ export class ApiService implements OnDestroy {
     device_os?: string;
     screen_resolution?: string;
     timezone?: string;
+    // Database operation filters
+    db_table?: string;
+    db_operation?: string;
   } = {}): Observable<any> {
     let headers = this.headers;
     let params = new HttpParams();
@@ -992,7 +995,7 @@ export class ApiService implements OnDestroy {
     if (filters.with_changes !== undefined) params = params.set('with_changes', filters.with_changes ? '1' : '0');
     if (filters.with_entity_tracking !== undefined) params = params.set('with_entity_tracking', filters.with_entity_tracking ? '1' : '0');
     
-    // Device tracking filters - FIXED: All filters now included
+    // Device tracking filters
     if (filters.device_fingerprint) params = params.set('device_fingerprint', filters.device_fingerprint);
     if (filters.geo_country) params = params.set('geo_country', filters.geo_country);
     if (filters.geo_city) params = params.set('geo_city', filters.geo_city);
@@ -1002,6 +1005,10 @@ export class ApiService implements OnDestroy {
     if (filters.device_os) params = params.set('device_os', filters.device_os);
     if (filters.screen_resolution) params = params.set('screen_resolution', filters.screen_resolution);
     if (filters.timezone) params = params.set('timezone', filters.timezone);
+
+    // Database operation filters
+    if (filters.db_table) params = params.set('db_table', filters.db_table);
+    if (filters.db_operation) params = params.set('db_operation', filters.db_operation);
 
     return this.http
       .get(this.global.API_URL + 'logs', { headers, params })
@@ -1056,12 +1063,16 @@ export class ApiService implements OnDestroy {
 
   /**
    * Get available filters for log dropdown menus
-   * Returns: entity_types, sources, levels, users, device tracking options with counts
+   * Returns: entity_types, sources, levels, users, device tracking options, db_tables, db_operations with counts
+   * @param source - Optional source filter (pass 'database' to get db_tables and db_operations)
    */
-  getLogFilters(): Observable<any> {
+  getLogFilters(source?: string): Observable<any> {
     let headers = this.headers;
+    let params = new HttpParams();
+    if (source) params = params.set('source', source);
+
     return this.http
-      .get(this.global.API_URL + 'logs/filters', { headers })
+      .get(this.global.API_URL + 'logs/filters', { headers, params })
       .pipe(takeUntil(this.destroy$));
   }
 
@@ -1105,7 +1116,7 @@ export class ApiService implements OnDestroy {
   }
 
   /**
-   * Export logs in various formats with audit trail filters
+   * Export logs in various formats with audit trail and database operation filters
    */
   exportLogs(format: 'csv' | 'json' | 'txt', filters: {
     source?: string;
@@ -1116,6 +1127,9 @@ export class ApiService implements OnDestroy {
     // Audit trail filters
     entity_type?: string;
     contract_id?: number;
+    // Database operation filters
+    db_table?: string;
+    db_operation?: string;
   } = {}): Observable<Blob> {
     let headers = this.headers;
     let params = new HttpParams().set('format', format);
@@ -1128,6 +1142,9 @@ export class ApiService implements OnDestroy {
     // Audit trail filters
     if (filters.entity_type) params = params.set('entity_type', filters.entity_type);
     if (filters.contract_id) params = params.set('contract_id', filters.contract_id.toString());
+    // Database operation filters
+    if (filters.db_table) params = params.set('db_table', filters.db_table);
+    if (filters.db_operation) params = params.set('db_operation', filters.db_operation);
 
     return this.http
       .get(this.global.API_URL + 'logs/export', { 

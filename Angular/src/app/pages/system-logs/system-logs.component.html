@@ -354,7 +354,30 @@
               </select>
             </div>
 
-            <!-- ==================== ROW 4: Checkbox Filters ==================== -->
+            <!-- ==================== ROW 4: Database Operation Filters (only for database source) ==================== -->
+            <!-- DB Table Filter -->
+            <div class="filter-group" *ngIf="currentSource === 'database'">
+              <label><i class="fas fa-table"></i> Tabella DB</label>
+              <select [(ngModel)]="filterDbTable" (change)="onDbFilterChange()">
+                <option value="">Tutte le tabelle</option>
+                <option *ngFor="let t of availableDbTables; trackBy: trackByFilterOption" [value]="t.value">
+                  {{ t.label }} ({{ t.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- DB Operation Filter -->
+            <div class="filter-group" *ngIf="currentSource === 'database'">
+              <label><i class="fas fa-cogs"></i> Operazione DB</label>
+              <select [(ngModel)]="filterDbOperation" (change)="onDbFilterChange()">
+                <option value="">Tutte le operazioni</option>
+                <option *ngFor="let o of availableDbOperations; trackBy: trackByFilterOption" [value]="o.value">
+                  {{ o.label }} ({{ o.count }})
+                </option>
+              </select>
+            </div>
+
+            <!-- ==================== ROW 5: Checkbox Filters ==================== -->
             <div class="filter-group checkbox-filters">
               <label class="checkbox-label">
                 <input type="checkbox" 
@@ -648,6 +671,33 @@
       <span class="log-detail-value" *ngIf="selectedLog.request_url">
         <code>{{ selectedLog.request_method }} {{ selectedLog.request_url }}</code>
       </span>
+
+      <!-- Database operation fields (only for database source logs) -->
+      <ng-container *ngIf="selectedLog.db_table">
+        <span class="log-detail-label">Tabella DB:</span>
+        <span class="log-detail-value">
+          <code>{{ selectedLog.db_table }}</code>
+        </span>
+      </ng-container>
+      <ng-container *ngIf="selectedLog.db_operation">
+        <span class="log-detail-label">Operazione DB:</span>
+        <span class="log-detail-value">
+          <span class="level-badge" [ngClass]="{
+            'info': selectedLog.db_operation === 'INSERT' || selectedLog.db_operation === 'up',
+            'warning': selectedLog.db_operation === 'UPDATE',
+            'error': selectedLog.db_operation === 'DELETE' || selectedLog.db_operation === 'down'
+          }">
+            <i class="fas" [ngClass]="{
+              'fa-plus-circle': selectedLog.db_operation === 'INSERT',
+              'fa-edit': selectedLog.db_operation === 'UPDATE',
+              'fa-trash': selectedLog.db_operation === 'DELETE',
+              'fa-arrow-up': selectedLog.db_operation === 'up',
+              'fa-arrow-down': selectedLog.db_operation === 'down'
+            }"></i>
+            {{ selectedLog.db_operation }}
+          </span>
+        </span>
+      </ng-container>
     </div>
 
     <!-- Entity & Contract Info -->
