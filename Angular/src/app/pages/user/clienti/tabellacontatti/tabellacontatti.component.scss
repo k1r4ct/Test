@@ -542,3 +542,58 @@
     transform: rotate(360deg);
   }
 }
+
+// ========================================
+// NEW: HEADER BADGE (count indicator)
+// ========================================
+.header-badge {
+  position: relative;
+  z-index: 1;
+
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    height: 42px;
+    padding: 0 14px;
+    background: rgba(134, 134, 172, 0.25);
+    backdrop-filter: blur(10px);
+    border-radius: 21px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+  }
+}
+
+// ========================================
+// NEW: EMPTY STATE (no data row)
+// ========================================
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem !important;
+
+  .empty-state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+
+    .empty-icon {
+      font-size: 3rem;
+      color: #cbd5e0;
+    }
+
+    p {
+      color: #505081;
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .empty-hint {
+      color: #8686AC;
+      font-size: 0.85rem;
+    }
+  }
+}

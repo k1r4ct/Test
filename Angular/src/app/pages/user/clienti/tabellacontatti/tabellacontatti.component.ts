@@ -1,9 +1,9 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { ApiService } from 'src/app/servizi/api.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { ButtonModule } from 'primeng/button';
+import { trigger, transition, style, animate } from '@angular/animations';
 
 export interface leads {
   id: number;
@@ -20,15 +20,25 @@ export interface leads {
   nominativoLead: string;
   data_appuntamento: string;
 }
+
 @Component({
   selector: 'app-tabellacontatti',
   templateUrl: './tabellacontatti.component.html',
   styleUrl: './tabellacontatti.component.scss',
   standalone: false,
+  animations: [
+    trigger('fadeIn', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(12px)' }),
+        animate('400ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })),
+      ]),
+    ]),
+  ],
 })
-export class TabellacontattiComponent implements OnInit {
+export class TabellacontattiComponent implements OnInit, AfterViewInit {
   @ViewChild('paginator') paginator!: MatPaginator;
   @ViewChild('sort') sort!: MatSort;
+
   ruoloUtente: string = '';
   userId = 0;
   roleId = 0;
@@ -38,8 +48,7 @@ export class TabellacontattiComponent implements OnInit {
   seuSelected: leads[] = [];
   DTRGinseritoil: Date[] | null = null;
   dataSource = new MatTableDataSource<leads>();
-  statiUnivoci: { nome: string; count: number; nomeConConteggio: string }[] =
-    [];
+  statiUnivoci: { nome: string; count: number; nomeConConteggio: string; label: string; conteggio: string }[] = [];
   seuUnivoci: { nome: string }[] = [];
   displayedColumns: string[] = [
     'nominativo',
@@ -50,38 +59,39 @@ export class TabellacontattiComponent implements OnInit {
     'microstato',
   ];
   textLead = '';
+
   constructor(private servizioApi: ApiService) {}
+
   ngOnInit(): void {
     this.servizioApi.PrendiUtente().subscribe((Ruolo: any) => {
-      //console.log(Ruolo);
-      
       this.ruoloUtente = Ruolo.user.role.descrizione;
-      //console.log(this.ruoloUtente);
       this.userId = Ruolo.user.id;
       this.roleId = Ruolo.user.role_id;
-      
-      // Sposta la logica che dipende dai dati dell'utente all'interno della subscription
+
       if (this.ruoloUtente == 'Cliente') {
         this.textLead = 'Amici';
       } else {
         this.textLead = 'Leads';
       }
-      //console.log(this.textLead);
-      //console.log(this.userId);
-      
-      // Chiama getCombinedData solo dopo aver ottenuto l'userId
+
       this.loadLeadsData();
     });
   }
-  
+
   private loadLeadsData(): void {
     this.servizioApi.getCombinedData(this.userId).subscribe((data) => {
-      //console.log(data);
+      const isCliente = this.ruoloUtente === 'Cliente';
+
+      // Dashboard Cliente: ONLY converted leads (amici inseriti a sistema)
+      // Other roles: all leads as before
       this.Leads = data.leads.body.risposta
-        .filter(
-          (lead: any) =>
-            lead.invitato_da_user_id === this.userId || lead.user.role_id === 3
-        )
+        .filter((lead: any) => {
+          const isMyLead = lead.invitato_da_user_id === this.userId || lead.user.role_id === 3;
+          if (isCliente) {
+            return isMyLead && lead.is_converted;
+          }
+          return isMyLead;
+        })
         .map((Lead: any) => ({
           id: Lead.id,
           nome: Lead.nome,
@@ -102,8 +112,8 @@ export class TabellacontattiComponent implements OnInit {
           nominativoLead: Lead.nome + ' ' + Lead.cognome,
           data_appuntamento:
             Lead.data_appuntamento + ' ' + Lead.ora_appuntamento,
-          //stato:Lead.
         }));
+
       const conteggiStati = this.Leads.reduce((acc: any, curr: any) => {
         acc[curr.microstato] = (acc[curr.microstato] || 0) + 1;
         return acc;
@@ -115,16 +125,18 @@ export class TabellacontattiComponent implements OnInit {
         label: `${key} (x${conteggiStati[key]})`,
         conteggio: ` (x${conteggiStati[key]})`,
       }));
+
       this.seuUnivoci = [
         ...new Set(this.Leads.map((lead) => lead.assegnato_a)),
       ].map((value) => ({
         nome: value,
       }));
+
       this.dataSource.data = this.Leads;
       this.dataSource.paginator = this.paginator;
-      //console.log(this.Leads);
     });
   }
+
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
     this.dataSource.sort = this.sort;
@@ -136,21 +148,17 @@ export class TabellacontattiComponent implements OnInit {
   }
 
   applyFilter() {
-    //console.log(this.leadsSelected);
-    //console.log(this.statusSelected);
-    // console.log(this.DTRGinseritoil);
-
     let startDate: any | Date | null = null;
     let endDate: any | Date | null = null;
 
     if (this.DTRGinseritoil != null || Array.isArray(this.DTRGinseritoil)) {
-      if (this.DTRGinseritoil.length > 1) {
-        startDate = this.DTRGinseritoil[0].toLocaleDateString('it-IT', {
+      if (this.DTRGinseritoil!.length > 1) {
+        startDate = this.DTRGinseritoil![0].toLocaleDateString('it-IT', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',
         });
-        endDate = this.DTRGinseritoil[1].toLocaleDateString('it-IT', {
+        endDate = this.DTRGinseritoil![1].toLocaleDateString('it-IT', {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',
@@ -167,11 +175,9 @@ export class TabellacontattiComponent implements OnInit {
         end: endDate,
       },
     };
-    //console.log(filterValue);
 
     this.dataSource.filterPredicate = this.filterUser.bind(this);
     this.dataSource.filter = JSON.stringify(filterValue);
-    //console.log("datasource filter"+this.dataSource.filter);
   }
 
   clearFilter() {
@@ -183,42 +189,32 @@ export class TabellacontattiComponent implements OnInit {
   }
 
   filterUser(row: any, filter: string) {
-    // console.log('dentro filterUser tabella');
-    // console.log(row.inserito);
-    // console.log(filter);
-
     if (!filter) {
-      // Controlla se filter è una stringa vuota
-      return true; // Nessun filtro attivo, mostra tutte le righe
+      return true;
     }
 
-    const filterObj = JSON.parse(filter);
-    //console.log(filterObj);
-    //console.log(this.Leads);
+    const filterValue = JSON.parse(filter);
+    let pass = true;
 
-    const utentiSelezionati = filterObj.usLead || []; // Inizializza come array vuoto se undefined
-    const statiSelezionati = filterObj.statusLead || [];
-    const seuSelezionati = filterObj.seuLead || [];
+    if (filterValue.usLead && filterValue.usLead.length > 0) {
+      pass = pass && filterValue.usLead.includes(row.nominativoLead);
+    }
 
-    // Date range handling
-    let matchDate = true;
-    if (filterObj.inserito.start && filterObj.inserito.end) {
-      const startDate = this.parseDate(filterObj.inserito.start);
-      const endDate = this.parseDate(filterObj.inserito.end);
+    if (filterValue.statusLead && filterValue.statusLead.length > 0) {
+      pass = pass && filterValue.statusLead.includes(row.microstato);
+    }
+
+    if (filterValue.seuLead && filterValue.seuLead.length > 0) {
+      pass = pass && filterValue.seuLead.includes(row.assegnato_a);
+    }
+
+    if (filterValue.inserito?.start && filterValue.inserito?.end) {
       const rowDate = this.parseDate(row.inserito);
-      matchDate = rowDate >= startDate && rowDate <= endDate;
+      const startDate = this.parseDate(filterValue.inserito.start);
+      const endDate = this.parseDate(filterValue.inserito.end);
+      pass = pass && rowDate >= startDate && rowDate <= endDate;
     }
 
-    const matchUtente =
-      !utentiSelezionati.length ||
-      utentiSelezionati.includes(row.nominativoLead);
-    const matchStato =
-      !statiSelezionati.length || statiSelezionati.includes(row.microstato);
-    const matchSeu =
-      !seuSelezionati.length || seuSelezionati.includes(row.assegnato_a);
-    //console.log(utentiSelezionati.includes(row.nominativoLead));
-    //console.log(row.nominativoLead, utentiSelezionati);
-    //console.log(row.microstato, statiSelezionati);
-    return matchUtente && matchStato && matchSeu && matchDate;
+    return pass;
   }
 }

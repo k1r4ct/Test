@@ -24,6 +24,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { ContrattoDetailsDialogComponent } from 'src/app/modal/modal.component';
 import { MatSort } from '@angular/material/sort';
+import { ActivatedRoute } from '@angular/router';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DateRange } from '@angular/material/datepicker';
 import { ButtonModule } from 'primeng/button';
@@ -63,6 +64,16 @@ export interface Lead {
   telefono: string;
   id_lead: number;
 }
+
+//Interface for contract info in expandable rows
+export interface LeadContractInfo {
+  id: number;
+  codice_contratto: string;
+  intestatario: string;
+  stato: string;
+  punti_bonus: number;
+}
+
 @Component({
   selector: 'app-leads',
   templateUrl: './leads.component.html',
@@ -87,18 +98,25 @@ export interface Lead {
     ]),
     trigger('pageTransition', [
       transition(':enter', [
-        style({ opacity: 0, transform: 'scale(0.1)' }), // Inizia piccolo al centro
+        style({ opacity: 0, transform: 'scale(0.1)' }),
         animate(
           '500ms ease-in-out',
           style({ opacity: 1, transform: 'scale(1)' })
-        ), // Espandi e rendi visibile
+        ),
       ]),
       transition(':leave', [
         animate(
           '500ms ease-in-out',
           style({ opacity: 0, transform: 'scale(0.1)' })
-        ), // Riduci e rendi invisibile
+        ),
       ]),
+    ]),
+    // Animation for expandable contract rows
+    trigger('detailExpand', [
+      state('collapsed, void', style({ height: '0px', minHeight: '0', opacity: 0 })),
+      state('expanded', style({ height: '*', opacity: 1 })),
+      transition('expanded <=> collapsed', animate('300ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
+      transition('expanded <=> void', animate('300ms cubic-bezier(0.4, 0.0, 0.2, 1)'))
     ]),
   ],
   standalone: false,
@@ -174,12 +192,19 @@ export class LeadsComponent implements OnInit {
   weekLeads: number = 0;
   useOriginalCalendar: boolean = false;
 
+  // Expandable rows properties (Client role)
+  expandedLeadIds: Set<number> = new Set();
+  leadContractsMap: Map<number, LeadContractInfo[]> = new Map();
+  rawLeadsData: any[] = []; // Store raw API data to access lead_converted
+  readonly BONUS_COEFFICIENT = 0.5;
+
   // ===== PROPRIETÀ ESISTENTI =====
 
   constructor(
     private servizioApi: ApiService,
     private fb: FormBuilder,
-    private dialogRef: MatDialog
+    private dialogRef: MatDialog,
+    private route: ActivatedRoute
   ) {
     this.leadForm = this.fb.group({
       nome: ['', Validators.required],
@@ -218,10 +243,28 @@ export class LeadsComponent implements OnInit {
         this.showCalendario = false;
         this.showDettagli = false;
       }
+
+      // Auto-show leads table for Client role
+      if (this.roleId === 3) {
+        this.allDivCard = true;
+        this.showleadsTable = true;
+      }
+
+      // Handle query param ?action=new (from dashboard "Invita Amico")
+      this.route.queryParams.subscribe(params => {
+        if (params['action'] === 'new') {
+          this.ShowCrealeads();
+        }
+      });
     });
+
+    
     this.servizioApi.getLeads().subscribe((LeadsAll: any) => {
       console.clear();
       console.log(LeadsAll);
+
+      // Store raw data for lead_converted access
+      this.rawLeadsData = LeadsAll.body.risposta;
 
       LeadsAll.body.risposta.map((Lead: any) => {
         //console.log(Lead.user.role_id === 3);
@@ -335,7 +378,72 @@ export class LeadsComponent implements OnInit {
       
       // Inizializza il calendario moderno
       this.generateCalendar();
+
+      // Load contracts for Client role expandable rows
+      if (this.roleId === 3) {
+        this.loadLeadContracts();
+      }
     });
+  }
+
+  // Load contracts and build the lead -> contracts map
+  private loadLeadContracts(): void {
+    this.servizioApi.getCombinedData(this.userId).subscribe((combinedData) => {
+      const contratti = combinedData.contratti?.body?.risposta?.data
+        || combinedData.contratti?.body?.risposta
+        || [];
+
+      // Build map: lead_id -> contracts[]
+      // Chain: lead.lead_converted.cliente_id -> contract.associato_a_user_id
+      this.Leads.forEach((lead: any) => {
+        const rawLead = this.rawLeadsData.find((l: any) => l.id === lead.id);
+        if (rawLead && rawLead.lead_converted && rawLead.lead_converted.cliente_id) {
+          const clienteId = rawLead.lead_converted.cliente_id;
+          const clientContracts = contratti
+            .filter((c: any) => c.associato_a_user_id === clienteId)
+            .map((c: any) => ({
+              id: c.id,
+              codice_contratto: c.codice_contratto || 'N/D',
+              intestatario: c.customer_data
+                ? (c.customer_data.ragione_sociale
+                  || ((c.customer_data.nome || '') + ' ' + (c.customer_data.cognome || '')).trim())
+                : '-',
+              stato: c.status_contract?.micro_stato || '-',
+              punti_bonus: c.status_contract_id === 15
+                ? Math.round((c.product?.macro_product?.punti_valore || 0) * this.BONUS_COEFFICIENT)
+                : 0,
+            }));
+
+          this.leadContractsMap.set(lead.id, clientContracts);
+        }
+      });
+    });
+  }
+
+  // Toggle expandable row for a lead
+  toggleLeadRow(lead: any): void {
+    if (this.roleId !== 3) return; // Only for Client role
+    if (this.expandedLeadIds.has(lead.id)) {
+      this.expandedLeadIds.delete(lead.id);
+    } else {
+      this.expandedLeadIds.add(lead.id);
+    }
+  }
+
+  // Check if a lead row is expanded
+  isLeadExpanded(lead: any): boolean {
+    return this.expandedLeadIds.has(lead.id);
+  }
+
+  // Get contracts for a specific lead
+  getLeadContracts(leadId: number): LeadContractInfo[] {
+    return this.leadContractsMap.get(leadId) || [];
+  }
+
+  // Check if lead has any contracts
+  leadHasContracts(leadId: number): boolean {
+    const contracts = this.leadContractsMap.get(leadId);
+    return !!contracts && contracts.length > 0;
   }
 
   parseDate(dateString: string): Date {

@@ -1,26 +1,21 @@
-<!-- Header moderno con hero section -->
-<div class="modern-header">
-  <div class="hero-section">
-    <div class="hero-content">
-      <h1 class="hero-title">
-        <mat-icon class="hero-icon">people</mat-icon>
-        {{ ruoloUtente == 'Cliente' ? 'Gestione Amici' : 'Gestione Lead' }}
-      </h1>
-      <p class="hero-subtitle">
-        {{ ruoloUtente == 'Cliente' 
-          ? 'Invita i tuoi amici e monitora i contatti' 
-          : 'Gestisci i tuoi lead e converti opportunità' }}
-      </p>
-    </div>
+<!-- Hero header -->
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">
+      <i class="material-icons hero-icon">people</i>
+      {{ ruoloUtente == 'Cliente' ? 'Gestione Amici' : 'Gestione Lead' }}
+    </h1>
+    <p class="hero-subtitle">
+      {{ ruoloUtente == 'Cliente'
+        ? 'Invita i tuoi amici e monitora i contatti'
+        : 'Gestisci i tuoi lead e converti opportunità' }}
+    </p>
   </div>
-  
-  <!-- Action buttons moderne -->
-  <div class="action-buttons">
+
+  <div class="hero-actions">
     <button
-      mat-fab
-      extended
-      color="primary"
-      class="action-button secondary-action"
+      mat-fab extended color="primary"
+      class="hero-btn"
       (click)="showLeads()"
     >
       <mat-icon>visibility</mat-icon>
@@ -28,258 +23,217 @@
       <span *ngIf="ruoloUtente != 'Cliente'">Vedi Leads</span>
     </button>
 
-    <button
-      mat-fab
-      extended
-      color="accent"
-      class="action-button secondary-action"
-      (click)="ShowCrealeads()"
-    >
+    <button mat-fab extended color="accent" class="hero-btn" (click)="ShowCrealeads()">
       <mat-icon>add_circle_outline</mat-icon>
       <span *ngIf="ruoloUtente == 'Cliente'">Nuovo Invito</span>
       <span *ngIf="ruoloUtente != 'Cliente'">Nuovo Lead</span>
     </button>
 
-    <button
-      mat-fab
-      extended
-      color="accent"
-      class="action-button secondary-action"
-      (click)="ShowAppQrcode()"
-    >
+    <button mat-fab extended color="accent" class="hero-btn" (click)="ShowAppQrcode()">
       <mat-icon>add_circle_outline</mat-icon>
       <span>Mostra QrCode</span>
-      
     </button>
   </div>
 </div>
 
-<!-- Sezione principale con design moderno -->
+<!-- ============================================ -->
+<!-- MAIN CONTENT                                 -->
+<!-- ============================================ -->
 <div class="main-content" [@pageTransition]="state" *ngIf="allDivCard">
-  
-  <!-- Lead personali con design card moderno -->
-  <mat-card class="modern-card leads-card" *ngIf="showleadsTable" [@fadeAnimation]="showleadsTable ? 'visible' : 'hidden'">
-    <mat-card-header class="card-header-modern">
-      <div mat-card-avatar class="card-avatar">
-        <mat-icon>person</mat-icon>
-      </div>
-      <mat-card-title class="card-title">
-        {{ ruoloUtente == 'Cliente' ? 'AMICI INVITATI' : 'LEAD PERSONALI' }}
-      </mat-card-title>
-      <mat-card-subtitle class="card-subtitle">
-        Gestisci i tuoi contatti e monitora lo stato
-      </mat-card-subtitle>
-    </mat-card-header>
 
-    <!-- Filtri moderni -->
-    <div class="filters-section">
-      <div class="filters-grid">
+  <!-- ========================================== -->
+  <!-- PERSONAL LEADS TABLE (dashboard pattern)   -->
+  <!-- ========================================== -->
+  <div class="contacts-card" *ngIf="showleadsTable" [@fadeAnimation]="showleadsTable ? 'visible' : 'hidden'">
+    <div class="card-header modern-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="material-icons">person</i>
+        </div>
+        <div class="header-text">
+          <h1 class="card-title">
+            {{ ruoloUtente == 'Cliente' ? 'Amici Invitati' : 'Lead Personali' }}
+          </h1>
+          <p class="card-subtitle">Gestisci i tuoi contatti e monitora lo stato</p>
+        </div>
+      </div>
+
+      <!-- Filters inside header (dashboard pattern) -->
+      <div class="filters-container">
         <ng-container *ngIf="!showDettagli">
-          <div class="filter-item">
-            <label class="filter-label">Lead</label>
-            <p-multiSelect
-              [options]="Leads"
-              [(ngModel)]="leadsSelected"
-              optionLabel="nominativoLead"
-              display="chip"
-              placeholder="Seleziona Lead"
-              appendTo="body"
-              (onChange)="applyFilter()"
-              [style]="{'width': '100%'}"
-            />
-          </div>
+          <p-multiSelect
+            [options]="Leads"
+            [(ngModel)]="leadsSelected"
+            optionLabel="nominativoLead"
+            display="chip"
+            [placeholder]="ruoloUtente == 'Cliente' ? 'Seleziona Amico' : 'Seleziona Lead'"
+            appendTo="body"
+            (onChange)="applyFilter()"
+            class="modern-filter"
+          />
         </ng-container>
 
         <ng-container *ngIf="showDettagli">
-          <div class="filter-item">
-            <label class="filter-label">Cliente</label>
-            <p-multiSelect
-              [options]="Leads"
-              [(ngModel)]="leadsSelected"
-              optionLabel="nominativoLead"
-              display="chip"
-              placeholder="Seleziona Cliente"
-              appendTo="body"
-              (onChange)="applyFilter()"
-              [style]="{'width': '100%'}"
-            />
-          </div>
-        </ng-container>
-
-        <div class="filter-item">
-          <label class="filter-label">Stato</label>
           <p-multiSelect
-            [options]="statiUnivoci"
-            [(ngModel)]="statusSelected"
-            optionLabel="label"
+            [options]="Leads"
+            [(ngModel)]="leadsSelected"
+            optionLabel="nominativoLead"
             display="chip"
-            placeholder="Seleziona Stato"
+            placeholder="Seleziona Cliente"
             appendTo="body"
             (onChange)="applyFilter()"
-            [style]="{'width': '100%'}"
+            class="modern-filter"
           />
-        </div>
-
-        <ng-container *ngIf="!showDettagli">
-          <div class="filter-item">
-            <label class="filter-label">Inserito da</label>
-            <p-multiSelect
-              [options]="seuUnivoci"
-              [(ngModel)]="seuSelected"
-              optionLabel="nome"
-              display="chip"
-              placeholder="Inserito da"
-              appendTo="body"
-              (onChange)="applyFilter()"
-              [style]="{'width': '100%'}"
-            />
-          </div>
         </ng-container>
 
-        <div class="filter-item">
-          <label class="filter-label">Data inserimento</label>
-          <p-datepicker
-            [(ngModel)]="DTRGinseritoil"
-            [iconDisplay]="'input'"
-            [showIcon]="true"
-            inputId="icondisplay"
-            appendTo="body"
-            dateFormat="dd/mm/yy"
-            (onSelect)="applyFilter()"
-            selectionMode="range"
-            [style]="{'width': '100%'}"
-          />
-        </div>
+        <p-multiSelect
+          [options]="statiUnivoci"
+          [(ngModel)]="statusSelected"
+          optionLabel="label"
+          display="chip"
+          placeholder="Seleziona Stato"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
 
-        <div class="filter-item filter-actions">
-          <button mat-stroked-button color="warn" (click)="clearFilter()" class="clear-button">
-            <mat-icon>clear</mat-icon>
-            Cancella Filtri
-          </button>
-        </div>
+        <ng-container *ngIf="!showDettagli">
+          <p-multiSelect
+            [options]="seuUnivoci"
+            [(ngModel)]="seuSelected"
+            optionLabel="nome"
+            display="chip"
+            placeholder="Inserito da"
+            appendTo="body"
+            (onChange)="applyFilter()"
+            class="modern-filter"
+          />
+        </ng-container>
+
+        <p-datepicker
+          [(ngModel)]="DTRGinseritoil"
+          [iconDisplay]="'input'"
+          [showIcon]="true"
+          inputId="icondisplay"
+          appendTo="body"
+          dateFormat="dd/mm/yy"
+          (onSelect)="applyFilter()"
+          selectionMode="range"
+          class="modern-filter"
+        />
+
+        <button type="button" class="clear-button" (click)="clearFilter()">
+          <i class="material-icons">filter_alt_off</i>
+          Resetta Filtri
+        </button>
       </div>
     </div>
 
-    <!-- Tabella moderna -->
-    <div class="table-container">
-      <div class="table-wrapper">
-        <table mat-table [dataSource]="dataSource" class="modern-table">
-          <!-- Colonne esistenti con styling migliorato -->
+    <!-- Expand hint (Client only) -->
+    <div class="expand-hint" *ngIf="roleId === 3">
+      <i class="material-icons">touch_app</i>
+      <span>Clicca sul nome di un amico per vedere i contratti associati</span>
+    </div>
+
+    <div class="card-body modern-body">
+      <div class="table-container">
+        <table mat-table [dataSource]="dataSource" class="modern-table" multiTemplateDataRows>
+
+          <!-- Nominativo -->
           <ng-container matColumnDef="nominativo">
-            <th mat-header-cell *matHeaderCellDef class="header-cell">
-              <div class="header-content">
-                <mat-icon class="header-icon">person</mat-icon>
-                Nominativo
-              </div>
+            <th mat-header-cell *matHeaderCellDef>
+              <span class="header-text">Nominativo</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="data-cell">
-              <div class="cell-content">
-                <div class="primary-text">{{ lead.nominativoLead }}</div>
+            <td mat-cell *matCellDef="let lead">
+              <div class="contact-info">
+                <i class="material-icons contact-icon">person</i>
+                <span class="contact-name">{{ lead.nominativoLead }}</span>
               </div>
             </td>
           </ng-container>
 
+          <!-- Email -->
           <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef class="header-cell">
-              <div class="header-content">
-                <mat-icon class="header-icon">email</mat-icon>
-                Email
-              </div>
+            <th mat-header-cell *matHeaderCellDef>
+              <span class="header-text">Email</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="data-cell">
-              <div class="cell-content">
-                <a href="mailto:{{ lead.email }}" class="email-link">
-                  {{ lead.email }}
-                </a>
+            <td mat-cell *matCellDef="let lead">
+              <div class="email-info">
+                <i class="material-icons email-icon">email</i>
+                <a href="mailto:{{ lead.email }}" class="email-link">{{ lead.email }}</a>
               </div>
             </td>
           </ng-container>
 
+          <!-- Telefono -->
           <ng-container matColumnDef="telefono">
-            <th mat-header-cell *matHeaderCellDef class="header-cell">
-              <div class="header-content">
-                <mat-icon class="header-icon">phone</mat-icon>
-                Telefono
-              </div>
+            <th mat-header-cell *matHeaderCellDef>
+              <span class="header-text">Telefono</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="data-cell">
-              <div class="cell-content">
-                <a href="tel:{{ lead.telefono }}" class="phone-link">
-                  {{ lead.telefono }}
-                </a>
+            <td mat-cell *matCellDef="let lead">
+              <div class="phone-info">
+                <i class="material-icons phone-icon">phone</i>
+                <a href="tel:{{ lead.telefono }}" class="phone-link">{{ lead.telefono }}</a>
               </div>
             </td>
           </ng-container>
 
+          <!-- Inserito il -->
           <ng-container matColumnDef="inserito_il">
-            <th mat-header-cell *matHeaderCellDef class="header-cell">
-              <div class="header-content">
-                <mat-icon class="header-icon">calendar_today</mat-icon>
-                Inserito il
-              </div>
+            <th mat-header-cell *matHeaderCellDef>
+              <span class="header-text">Inserito il</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="data-cell">
-              <div class="cell-content">
-                <div class="date-text">{{ lead.inserito_il }}</div>
+            <td mat-cell *matCellDef="let lead">
+              <div class="date-info">
+                <i class="material-icons date-icon">event</i>
+                <span class="date-text">{{ lead.inserito_il }}</span>
               </div>
             </td>
           </ng-container>
 
+          <!-- Assegnato a -->
           <ng-container matColumnDef="assegnato_a">
-            <th mat-header-cell *matHeaderCellDef class="header-cell">
-              <div class="header-content">
-                <mat-icon class="header-icon">assignment_ind</mat-icon>
-                Inserito da
-              </div>
+            <th mat-header-cell *matHeaderCellDef>
+              <span class="header-text">Inserito da</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="data-cell">
-              <div class="cell-content">
-                <div class="assigned-text">{{ lead.assegnato_a }}</div>
+            <td mat-cell *matCellDef="let lead">
+              <div class="assigned-info">
+                <i class="material-icons assigned-icon">assignment_ind</i>
+                <span class="assigned-name">{{ lead.assegnato_a }}</span>
               </div>
             </td>
           </ng-container>
 
+          <!-- Stato -->
           <ng-container matColumnDef="microstato">
-            <th mat-header-cell *matHeaderCellDef class="header-cell">
-              <div class="header-content">
-                <mat-icon class="header-icon">flag</mat-icon>
-                Stato
-              </div>
+            <th mat-header-cell *matHeaderCellDef>
+              <span class="header-text">Stato</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="data-cell">
-              <div class="cell-content">
-                <mat-chip class="status-chip" [style.background-color]="lead.colore">
-                  {{ lead.microstato }}
-                </mat-chip>
-              </div>
+            <td mat-cell *matCellDef="let lead">
+              <span class="status-badge" [style.background]="lead.colore">
+                {{ lead.microstato }}
+              </span>
             </td>
           </ng-container>
 
+          <!-- Azioni -->
           <ng-container matColumnDef="azioni">
-            <th mat-header-cell *matHeaderCellDef class="header-cell" [hidden]="showDettagli">
-              <div class="header-content">
-                <mat-icon class="header-icon">settings</mat-icon>
-                Azioni
-              </div>
+            <th mat-header-cell *matHeaderCellDef [hidden]="showDettagli">
+              <span class="header-text">Azioni</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="data-cell action-cell" [hidden]="showDettagli">
+            <td mat-cell *matCellDef="let lead" [hidden]="showDettagli">
               <div class="action-buttons-cell">
                 <button
-                  mat-mini-fab
-                  color="primary"
-                  class="action-btn info-btn"
-                  (click)="dettagliLead(lead, 'leads')"
+                  mat-mini-fab color="primary" class="action-btn"
+                  (click)="dettagliLead(lead, 'leads'); $event.stopPropagation()"
                   matTooltip="Visualizza dettagli"
                 >
                   <mat-icon>info</mat-icon>
                 </button>
-
                 <button
-                  mat-mini-fab
-                  color="accent"
-                  class="action-btn convert-btn"
+                  mat-mini-fab color="accent" class="action-btn"
                   [disabled]="lead.is_converted"
-                  (click)="converti(lead)"
+                  (click)="converti(lead); $event.stopPropagation()"
                   matTooltip="Converti in cliente"
                 >
                   <mat-icon>how_to_reg</mat-icon>
@@ -288,18 +242,79 @@
             </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="header-row"></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: displayedColumns"
-            class="data-row"
-            [appLeadRowColor]="row"
+          <!-- Expanded detail (Client only) -->
+          <ng-container matColumnDef="expandedDetail">
+            <td mat-cell *matCellDef="let lead" [attr.colspan]="displayedColumns.length">
+              <div class="lead-contracts-detail"
+                   [@detailExpand]="isLeadExpanded(lead) ? 'expanded' : 'collapsed'">
+
+                <div class="no-contracts-message" *ngIf="!lead.is_converted || !leadHasContracts(lead.id)">
+                  <div class="no-contracts-content">
+                    <i class="material-icons no-contracts-icon">inbox</i>
+                    <span class="no-contracts-text">Ancora nessun contratto associato</span>
+                    <span class="no-contracts-hint" *ngIf="!lead.is_converted">
+                      Questo amico non è ancora stato registrato a sistema
+                    </span>
+                    <span class="no-contracts-hint" *ngIf="lead.is_converted && !leadHasContracts(lead.id)">
+                      L'amico è registrato ma non ha ancora contratti attivi
+                    </span>
+                  </div>
+                </div>
+
+                <div class="contracts-list" *ngIf="lead.is_converted && leadHasContracts(lead.id)">
+                  <div class="contracts-header">
+                    <i class="material-icons">description</i>
+                    <span>Contratti di {{ lead.nominativoLead }}</span>
+                    <span class="contracts-count">{{ getLeadContracts(lead.id).length }}</span>
+                  </div>
+
+                  <div class="contract-cards">
+                    <div class="contract-card" *ngFor="let contract of getLeadContracts(lead.id)">
+                      <div class="contract-field">
+                        <span class="field-label"><i class="material-icons">tag</i> Codice</span>
+                        <span class="field-value code-value">{{ contract.codice_contratto }}</span>
+                      </div>
+                      <div class="contract-field">
+                        <span class="field-label"><i class="material-icons">person</i> Intestatario</span>
+                        <span class="field-value">{{ contract.intestatario }}</span>
+                      </div>
+                      <div class="contract-field">
+                        <span class="field-label"><i class="material-icons">flag</i> Stato</span>
+                        <span class="field-value">
+                          <span class="mini-status-badge" [attr.data-status]="contract.stato">
+                            {{ contract.stato }}
+                          </span>
+                        </span>
+                      </div>
+                      <div class="contract-field" *ngIf="contract.punti_bonus > 0">
+                        <span class="field-label"><i class="material-icons">star</i> Punti Bonus</span>
+                        <span class="field-value bonus-value">+{{ contract.punti_bonus }} PV</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
+          <tr mat-row
+              *matRowDef="let row; columns: displayedColumns"
+              class="modern-row"
+              [class.expandable-row]="roleId === 3"
+              [class.expanded-row]="isLeadExpanded(row)"
+              [appLeadRowColor]="row"
+              (click)="roleId === 3 ? toggleLeadRow(row) : null"
           ></tr>
+          <tr mat-row
+              *matRowDef="let row; columns: ['expandedDetail']"
+              class="detail-row"
+              [hidden]="roleId !== 3">
+          </tr>
         </table>
       </div>
-      
-      <!-- Paginator moderno -->
-      <div class="paginator-container">
+
+      <div class="pagination-container">
         <mat-paginator
           #paginator
           [pageSizeOptions]="[5, 10, 20, 50]"
@@ -308,208 +323,153 @@
         ></mat-paginator>
       </div>
     </div>
-  </mat-card>
+  </div>
 
-  <!-- Lead squadra con design moderno -->
+  <!-- ========================================== -->
+  <!-- SQUAD LEADS TABLE (dashboard pattern)      -->
+  <!-- ========================================== -->
   <ng-container *ngIf="!showDettagli">
-    <mat-card class="modern-card leads-card" *ngIf="showleadsTable" [@fadeAnimation]="showleadsTable ? 'visible' : 'hidden'">
-      <mat-card-header class="card-header-modern">
-        <div mat-card-avatar class="card-avatar team-avatar">
-          <mat-icon>groups</mat-icon>
+    <div class="contacts-card" *ngIf="showleadsTable" [@fadeAnimation]="showleadsTable ? 'visible' : 'hidden'">
+      <div class="card-header modern-header">
+        <div class="header-content">
+          <div class="header-icon">
+            <i class="material-icons">groups</i>
+          </div>
+          <div class="header-text">
+            <h1 class="card-title">Lead Squadra</h1>
+            <p class="card-subtitle">Visualizza i lead della tua squadra</p>
+          </div>
         </div>
-        <mat-card-title class="card-title">LEAD SQUADRA</mat-card-title>
-        <mat-card-subtitle class="card-subtitle">
-          Visualizza i lead della tua squadra
-        </mat-card-subtitle>
-      </mat-card-header>
 
-      <!-- Filtri per lead squadra -->
-      <div class="filters-section">
-        <div class="filters-grid">
-          <div class="filter-item">
-            <label class="filter-label">Lead</label>
-            <p-multiSelect
-              [options]="LeadsSquad"
-              [(ngModel)]="leadsSelectedSquad"
-              optionLabel="nominativoLead"
-              display="chip"
-              placeholder="Seleziona Lead"
-              appendTo="body"
-              (onChange)="applyFilterSquad()"
-              [style]="{'width': '100%'}"
-            />
-          </div>
+        <div class="filters-container">
+          <p-multiSelect
+            [options]="LeadsSquad"
+            [(ngModel)]="leadsSelectedSquad"
+            optionLabel="nominativoLead"
+            display="chip"
+            placeholder="Seleziona Lead"
+            appendTo="body"
+            (onChange)="applyFilterSquad()"
+            class="modern-filter"
+          />
 
-          <div class="filter-item">
-            <label class="filter-label">Stato</label>
-            <p-multiSelect
-              [options]="statiUnivociSquad"
-              [(ngModel)]="statusSelectedSquad"
-              optionLabel="label"
-              display="chip"
-              placeholder="Seleziona Stato"
-              appendTo="body"
-              (onChange)="applyFilterSquad()"
-              [style]="{'width': '100%'}"
-            />
-          </div>
+          <p-multiSelect
+            [options]="statiUnivociSquad"
+            [(ngModel)]="statusSelectedSquad"
+            optionLabel="label"
+            display="chip"
+            placeholder="Seleziona Stato"
+            appendTo="body"
+            (onChange)="applyFilterSquad()"
+            class="modern-filter"
+          />
 
-          <div class="filter-item">
-            <label class="filter-label">Assegnato a</label>
-            <p-multiSelect
-              [options]="seuUnivociSquad"
-              [(ngModel)]="seuSelectedSquad"
-              optionLabel="nome"
-              display="chip"
-              placeholder="Seleziona Seu"
-              appendTo="body"
-              (onChange)="applyFilterSquad()"
-              [style]="{'width': '100%'}"
-            />
-          </div>
+          <p-multiSelect
+            [options]="seuUnivociSquad"
+            [(ngModel)]="seuSelectedSquad"
+            optionLabel="nome"
+            display="chip"
+            placeholder="Seleziona Seu"
+            appendTo="body"
+            (onChange)="applyFilterSquad()"
+            class="modern-filter"
+          />
 
-          <div class="filter-item">
-            <label class="filter-label">Data inserimento</label>
-            <p-datepicker
-              [(ngModel)]="DTRGinseritoilSquad"
-              [iconDisplay]="'input'"
-              [showIcon]="true"
-              inputId="icondisplaySquad"
-              appendTo="body"
-              dateFormat="dd/mm/yy"
-              (onSelect)="applyFilterSquad()"
-              selectionMode="range"
-              [style]="{'width': '100%'}"
-            />
-          </div>
+          <p-datepicker
+            [(ngModel)]="DTRGinseritoilSquad"
+            [iconDisplay]="'input'"
+            [showIcon]="true"
+            inputId="icondisplaySquad"
+            appendTo="body"
+            dateFormat="dd/mm/yy"
+            (onSelect)="applyFilterSquad()"
+            selectionMode="range"
+            class="modern-filter"
+          />
 
-          <div class="filter-item filter-actions">
-            <button mat-stroked-button color="warn" (click)="clearFilterSquad()" class="clear-button">
-              <mat-icon>clear</mat-icon>
-              Cancella Filtri
-            </button>
-          </div>
+          <button type="button" class="clear-button" (click)="clearFilterSquad()">
+            <i class="material-icons">filter_alt_off</i>
+            Resetta Filtri
+          </button>
         </div>
       </div>
 
-      <!-- Tabella lead squadra -->
-      <div class="table-container">
-        <div class="table-wrapper">
+      <div class="card-body modern-body">
+        <div class="table-container">
           <table mat-table [dataSource]="dataSourceSquad" class="modern-table">
-            <!-- Colonne identiche alla tabella principale -->
+
             <ng-container matColumnDef="nominativo">
-              <th mat-header-cell *matHeaderCellDef class="header-cell">
-                <div class="header-content">
-                  <mat-icon class="header-icon">person</mat-icon>
-                  Nominativo
-                </div>
-              </th>
-              <td mat-cell *matCellDef="let leadSquad" class="data-cell">
-                <div class="cell-content">
-                  <div class="primary-text">{{ leadSquad.nominativoLead }}</div>
+              <th mat-header-cell *matHeaderCellDef><span class="header-text">Nominativo</span></th>
+              <td mat-cell *matCellDef="let leadSquad">
+                <div class="contact-info">
+                  <i class="material-icons contact-icon">person</i>
+                  <span class="contact-name">{{ leadSquad.nominativoLead }}</span>
                 </div>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="email">
-              <th mat-header-cell *matHeaderCellDef class="header-cell">
-                <div class="header-content">
-                  <mat-icon class="header-icon">email</mat-icon>
-                  Email
-                </div>
-              </th>
-              <td mat-cell *matCellDef="let leadSquad" class="data-cell">
-                <div class="cell-content">
-                  <a href="mailto:{{ leadSquad.email }}" class="email-link">
-                    {{ leadSquad.email }}
-                  </a>
+              <th mat-header-cell *matHeaderCellDef><span class="header-text">Email</span></th>
+              <td mat-cell *matCellDef="let leadSquad">
+                <div class="email-info">
+                  <i class="material-icons email-icon">email</i>
+                  <a href="mailto:{{ leadSquad.email }}" class="email-link">{{ leadSquad.email }}</a>
                 </div>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="telefono">
-              <th mat-header-cell *matHeaderCellDef class="header-cell">
-                <div class="header-content">
-                  <mat-icon class="header-icon">phone</mat-icon>
-                  Telefono
-                </div>
-              </th>
-              <td mat-cell *matCellDef="let leadSquad" class="data-cell">
-                <div class="cell-content">
-                  <a href="tel:{{ leadSquad.telefono }}" class="phone-link">
-                    {{ leadSquad.telefono }}
-                  </a>
+              <th mat-header-cell *matHeaderCellDef><span class="header-text">Telefono</span></th>
+              <td mat-cell *matCellDef="let leadSquad">
+                <div class="phone-info">
+                  <i class="material-icons phone-icon">phone</i>
+                  <a href="tel:{{ leadSquad.telefono }}" class="phone-link">{{ leadSquad.telefono }}</a>
                 </div>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="inserito_il">
-              <th mat-header-cell *matHeaderCellDef class="header-cell">
-                <div class="header-content">
-                  <mat-icon class="header-icon">calendar_today</mat-icon>
-                  Inserito il
-                </div>
-              </th>
-              <td mat-cell *matCellDef="let lead" class="data-cell">
-                <div class="cell-content">
-                  <div class="date-text">{{ lead.inserito_il }}</div>
+              <th mat-header-cell *matHeaderCellDef><span class="header-text">Inserito il</span></th>
+              <td mat-cell *matCellDef="let lead">
+                <div class="date-info">
+                  <i class="material-icons date-icon">event</i>
+                  <span class="date-text">{{ lead.inserito_il }}</span>
                 </div>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="assegnato_a">
-              <th mat-header-cell *matHeaderCellDef class="header-cell">
-                <div class="header-content">
-                  <mat-icon class="header-icon">assignment_ind</mat-icon>
-                  Assegnato a
-                </div>
-              </th>
-              <td mat-cell *matCellDef="let leadSquad" class="data-cell">
-                <div class="cell-content">
-                  <div class="assigned-text">{{ leadSquad.assegnato_a }}</div>
+              <th mat-header-cell *matHeaderCellDef><span class="header-text">Assegnato a</span></th>
+              <td mat-cell *matCellDef="let leadSquad">
+                <div class="assigned-info">
+                  <i class="material-icons assigned-icon">assignment_ind</i>
+                  <span class="assigned-name">{{ leadSquad.assegnato_a }}</span>
                 </div>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="microstato">
-              <th mat-header-cell *matHeaderCellDef class="header-cell">
-                <div class="header-content">
-                  <mat-icon class="header-icon">flag</mat-icon>
-                  Stato
-                </div>
-              </th>
-              <td mat-cell *matCellDef="let leadSquad" class="data-cell">
-                <div class="cell-content">
-                  <mat-chip class="status-chip" [style.background-color]="leadSquad.colore">
-                    {{ leadSquad.microstato }}
-                  </mat-chip>
-                </div>
+              <th mat-header-cell *matHeaderCellDef><span class="header-text">Stato</span></th>
+              <td mat-cell *matCellDef="let leadSquad">
+                <span class="status-badge" [style.background]="leadSquad.colore">
+                  {{ leadSquad.microstato }}
+                </span>
               </td>
             </ng-container>
 
             <ng-container matColumnDef="azioni">
-              <th mat-header-cell *matHeaderCellDef class="header-cell">
-                <div class="header-content">
-                  <mat-icon class="header-icon">settings</mat-icon>
-                  Azioni
-                </div>
-              </th>
-              <td mat-cell *matCellDef="let leadSquad" class="data-cell action-cell">
+              <th mat-header-cell *matHeaderCellDef><span class="header-text">Azioni</span></th>
+              <td mat-cell *matCellDef="let leadSquad">
                 <div class="action-buttons-cell">
                   <button
-                    mat-mini-fab
-                    color="primary"
-                    class="action-btn info-btn"
+                    mat-mini-fab color="primary" class="action-btn"
                     (click)="dettagliLead(leadSquad, 'leads')"
                     matTooltip="Visualizza dettagli"
                   >
                     <mat-icon>info</mat-icon>
                   </button>
-                  
                   <button
-                    mat-mini-fab
-                    color="accent"
-                    class="action-btn convert-btn"
+                    mat-mini-fab color="accent" class="action-btn"
                     [disabled]="leadSquad.is_converted"
                     (click)="converti(leadSquad)"
                     matTooltip="Converti in cliente"
@@ -520,18 +480,12 @@
               </td>
             </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="header-row"></tr>
-            <tr
-              mat-row
-              *matRowDef="let row; columns: displayedColumns"
-              class="data-row"
-              [appLeadRowColor]="row"
-            ></tr>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns" class="modern-row" [appLeadRowColor]="row"></tr>
           </table>
         </div>
-        
-        <!-- Paginator per squadra -->
-        <div class="paginator-container">
+
+        <div class="pagination-container">
           <mat-paginator
             #paginatorSquad
             [pageSizeOptions]="[5, 10, 20, 50]"
@@ -540,176 +494,153 @@
           ></mat-paginator>
         </div>
       </div>
-    </mat-card>
+    </div>
   </ng-container>
 
-  <!-- Lead del giorno con design moderno -->
-  <mat-card class="modern-card daily-leads-card" *ngIf="showleadsCard" [@fadeAnimation]="showleadsCard ? 'visible' : 'hidden'">
-    <mat-card-header class="card-header-modern">
-      <div mat-card-avatar class="card-avatar daily-avatar">
-        <mat-icon>today</mat-icon>
+  <!-- ========================================== -->
+  <!-- DAILY LEADS CARD (dashboard pattern)       -->
+  <!-- ========================================== -->
+  <div class="contacts-card" *ngIf="showleadsCard" [@fadeAnimation]="showleadsCard ? 'visible' : 'hidden'">
+    <div class="card-header modern-header">
+      <div class="header-content">
+        <div class="header-icon"><i class="material-icons">today</i></div>
+        <div class="header-text">
+          <h1 class="card-title">Lead del Giorno</h1>
+          <p class="card-subtitle">Lead programmati per oggi</p>
+        </div>
       </div>
-      <mat-card-title class="card-title">LEAD DEL GIORNO</mat-card-title>
-      <mat-card-subtitle class="card-subtitle">
-        Lead programmati per oggi
-      </mat-card-subtitle>
-    </mat-card-header>
+    </div>
 
-    <div class="daily-leads-container">
+    <div class="card-body modern-body daily-leads-container">
       <form [formGroup]="leadSingleForm">
         <div class="leads-grid" *ngIf="Leads.length > 0; else noLeads">
           <div class="lead-card" *ngFor="let lead of Leads">
             <div class="lead-card-content">
               <div class="lead-info">
                 <h3 class="lead-name">
-                  <mat-icon class="name-icon">person</mat-icon>
+                  <i class="material-icons">person</i>
                   {{ lead.nome }} {{ lead.cognome }}
                 </h3>
-                
-                <div class="contact-info">
-                  <div class="contact-item">
-                    <mat-icon class="contact-icon">email</mat-icon>
-                    <a href="mailto:{{ lead.email }}" class="contact-link">{{ lead.email }}</a>
+                <div class="lead-contact-list">
+                  <div class="lead-contact-item">
+                    <i class="material-icons email-icon">email</i>
+                    <a href="mailto:{{ lead.email }}" class="email-link">{{ lead.email }}</a>
                   </div>
-                  
-                  <div class="contact-item">
-                    <mat-icon class="contact-icon">phone</mat-icon>
-                    <a href="tel:{{ lead.telefono }}" class="contact-link">{{ lead.telefono }}</a>
+                  <div class="lead-contact-item">
+                    <i class="material-icons phone-icon">phone</i>
+                    <a href="tel:{{ lead.telefono }}" class="phone-link">{{ lead.telefono }}</a>
                   </div>
-                  
-                  <div class="contact-item">
-                    <mat-icon class="contact-icon">assignment_ind</mat-icon>
-                    <span class="assigned-to">{{ lead.assegnato_a }}</span>
+                  <div class="lead-contact-item">
+                    <i class="material-icons assigned-icon">assignment_ind</i>
+                    <span>{{ lead.assegnato_a }}</span>
                   </div>
                 </div>
               </div>
-
               <div class="lead-actions">
-                <button
-                  mat-mini-fab
-                  color="primary"
-                  class="action-btn"
-                  (click)="dettagliLead(lead, 'leads')"
-                  matTooltip="Visualizza dettagli"
-                >
+                <button mat-mini-fab color="primary" class="action-btn" (click)="dettagliLead(lead, 'leads')" matTooltip="Visualizza dettagli">
                   <mat-icon>info</mat-icon>
                 </button>
-                
-                <button
-                  mat-mini-fab
-                  color="accent"
-                  class="action-btn"
-                  [disabled]="lead.is_converted"
-                  (click)="converti(lead)"
-                  matTooltip="Converti in cliente"
-                >
+                <button mat-mini-fab color="accent" class="action-btn" [disabled]="lead.is_converted" (click)="converti(lead)" matTooltip="Converti in cliente">
                   <mat-icon>how_to_reg</mat-icon>
                 </button>
               </div>
             </div>
           </div>
         </div>
-        
         <ng-template #noLeads>
-          <div class="no-leads-message">
-            <mat-icon class="no-leads-icon">info</mat-icon>
-            <h3>Nessun lead programmato per oggi</h3>
-            <p>Non ci sono lead schedlati per la giornata di oggi.</p>
+          <div class="empty-state">
+            <div class="empty-state-content">
+              <i class="material-icons empty-icon">info</i>
+              <p>Nessun lead programmato per oggi</p>
+              <span class="empty-hint">Non ci sono lead schedlati per la giornata di oggi.</span>
+            </div>
           </div>
         </ng-template>
       </form>
     </div>
-  </mat-card>
+  </div>
 
-  <mat-card class="modern-card daily-leads-card" *ngIf="showQrcode" [@fadeAnimation]="showQrcode ? 'visible' : 'hidden'">
-    <mat-card-header class="card-header-modern">
-      <div mat-card-avatar class="card-avatar daily-avatar">
-        <mat-icon>today</mat-icon>
+  <!-- ========================================== -->
+  <!-- QRCODE CARD (dashboard pattern)            -->
+  <!-- ========================================== -->
+  <div class="contacts-card" *ngIf="showQrcode" [@fadeAnimation]="showQrcode ? 'visible' : 'hidden'">
+    <div class="card-header modern-header">
+      <div class="header-content">
+        <div class="header-icon"><i class="material-icons">qr_code</i></div>
+        <div class="header-text">
+          <h1 class="card-title">QrCode</h1>
+          <p class="card-subtitle">Link di invito e scansione QrCode</p>
+        </div>
       </div>
-      <mat-card-title class="card-title">QRCODE</mat-card-title>
-      <mat-card-subtitle class="card-subtitle">
-        link di invito e scansione Qrcode
-      </mat-card-subtitle>
-    </mat-card-header>
+    </div>
+    <div class="card-body modern-body">
+      <app-qrcode-generator></app-qrcode-generator>
+    </div>
+  </div>
 
-    <app-qrcode-generator></app-qrcode-generator>
-  </mat-card>
-  <!-- Form creazione lead moderno -->
-  <mat-card class="modern-card create-lead-card" *ngIf="showCreateLead" [@fadeAnimation]="showCreateLead ? 'visible' : 'hidden'">
-    <mat-card-header class="card-header-modern">
-      <div mat-card-avatar class="card-avatar create-avatar">
-        <mat-icon>add_circle</mat-icon>
+  <!-- ========================================== -->
+  <!-- CREATE LEAD FORM (dashboard pattern)       -->
+  <!-- ========================================== -->
+  <div class="contacts-card" *ngIf="showCreateLead" [@fadeAnimation]="showCreateLead ? 'visible' : 'hidden'">
+    <div class="card-header modern-header">
+      <div class="header-content">
+        <div class="header-icon"><i class="material-icons">add_circle</i></div>
+        <div class="header-text">
+          <h1 class="card-title">
+            {{ ruoloUtente != 'Cliente' ? 'Crea Nuovo Lead' : 'Aggiungi Nuovo Contatto' }}
+          </h1>
+          <p class="card-subtitle">
+            Inserisci i dati del nuovo {{ ruoloUtente != 'Cliente' ? 'lead' : 'contatto' }}
+          </p>
+        </div>
       </div>
-      <mat-card-title class="card-title">
-        {{ ruoloUtente != 'Cliente' ? 'Crea Nuovo Lead' : 'Aggiungi Nuovo Contatto' }}
-      </mat-card-title>
-      <mat-card-subtitle class="card-subtitle">
-        Inserisci i dati del nuovo {{ ruoloUtente != 'Cliente' ? 'lead' : 'contatto' }}
-      </mat-card-subtitle>
-    </mat-card-header>
+    </div>
 
-    <div class="form-container">
+    <div class="card-body modern-body form-container">
       <form [formGroup]="leadForm" (ngSubmit)="creaLead()" class="create-lead-form">
         <div class="form-grid">
-          <!-- Nome e Cognome -->
           <div class="form-row">
             <mat-form-field appearance="outline" class="modern-field">
               <mat-label>Nome</mat-label>
               <input matInput formControlName="nome" placeholder="Inserisci il nome" required />
               <mat-icon matSuffix>person</mat-icon>
-              <mat-error *ngIf="leadForm.get('nome')?.hasError('required')">
-                Il nome è obbligatorio
-              </mat-error>
+              <mat-error *ngIf="leadForm.get('nome')?.hasError('required')">Il nome è obbligatorio</mat-error>
             </mat-form-field>
-            
             <mat-form-field appearance="outline" class="modern-field">
               <mat-label>Cognome</mat-label>
               <input matInput formControlName="cognome" placeholder="Inserisci il cognome" required />
               <mat-icon matSuffix>badge</mat-icon>
-              <mat-error *ngIf="leadForm.get('cognome')?.hasError('required')">
-                Il cognome è obbligatorio
-              </mat-error>
+              <mat-error *ngIf="leadForm.get('cognome')?.hasError('required')">Il cognome è obbligatorio</mat-error>
             </mat-form-field>
           </div>
 
-          <!-- Email e Telefono -->
           <div class="form-row">
             <mat-form-field appearance="outline" class="modern-field">
               <mat-label>Email</mat-label>
               <input matInput type="email" formControlName="email" placeholder="nome@esempio.it" required />
               <mat-icon matSuffix>email</mat-icon>
-              <mat-error *ngIf="leadForm.get('email')?.hasError('required')">
-                L'email è obbligatoria
-              </mat-error>
-              <mat-error *ngIf="leadForm.get('email')?.hasError('email')">
-                L'email non è valida
-              </mat-error>
+              <mat-error *ngIf="leadForm.get('email')?.hasError('required')">L'email è obbligatoria</mat-error>
+              <mat-error *ngIf="leadForm.get('email')?.hasError('email')">L'email non è valida</mat-error>
             </mat-form-field>
-
             <mat-form-field appearance="outline" class="modern-field">
               <mat-label>Telefono</mat-label>
               <input matInput formControlName="telefono" placeholder="+39 xxx xxx xxxx" required />
               <mat-icon matSuffix>phone</mat-icon>
-              <mat-error *ngIf="leadForm.get('telefono')?.hasError('required')">
-                Il telefono è obbligatorio
-              </mat-error>
+              <mat-error *ngIf="leadForm.get('telefono')?.hasError('required')">Il telefono è obbligatorio</mat-error>
             </mat-form-field>
           </div>
 
-          <!-- Consenso privacy -->
           <div class="consent-section">
             <div class="consent-card">
               <div class="consent-header">
-                <mat-icon class="consent-icon">security</mat-icon>
+                <i class="material-icons consent-icon">security</i>
                 <h4 class="consent-title">Consenso al trattamento dati</h4>
               </div>
-              
               <p class="consent-text">
-                Creando questo contatto ti prendi la responsabilità di autorizzare 
-                Semprechiaro ad utilizzare i dati da te inseriti per contattare il tuo 
+                Creando questo contatto ti prendi la responsabilità di autorizzare
+                Semprechiaro ad utilizzare i dati da te inseriti per contattare il tuo
                 {{ ruoloUtente == 'Cliente' ? 'amico/conoscente' : 'contatto' }}
               </p>
-              
               <div class="consent-toggle">
                 <mat-slide-toggle
                   formControlName="consenso"
@@ -720,23 +651,14 @@
                   Accetto il trattamento dei dati
                 </mat-slide-toggle>
               </div>
-              
               <mat-error *ngIf="leadForm.get('consenso')?.hasError('required') && leadForm.get('consenso')?.touched">
                 Il consenso è obbligatorio
               </mat-error>
             </div>
           </div>
 
-          <!-- Pulsante submit -->
           <div class="submit-section">
-            <button
-              mat-fab
-              extended
-              color="primary"
-              type="submit"
-              [disabled]="!leadForm.valid"
-              class="submit-button"
-            >
+            <button mat-fab extended color="primary" type="submit" [disabled]="!leadForm.valid" class="submit-button">
               <mat-icon>add_circle_outline</mat-icon>
               {{ ruoloUtente == "Cliente" ? "Crea Contatto" : "Crea Lead" }}
             </button>
@@ -744,10 +666,12 @@
         </div>
       </form>
     </div>
-  </mat-card>
+  </div>
 </div>
 
-<!-- Componenti esterni con design migliorato -->
+<!-- ============================================ -->
+<!-- EXTERNAL COMPONENTS                          -->
+<!-- ============================================ -->
 <div class="external-components">
   <app-converti-lead
     class="convert-lead-component"
@@ -755,83 +679,42 @@
     [lead]="lead"
   ></app-converti-lead>
 
-  <!-- Calendario con wrapper moderno -->
-  <section 
-    [@pageTransition]="state" 
-    class="calendar-section"
-    [hidden]="showCalendario"
-  >
-    <mat-card class="modern-card calendar-card">
-      <mat-card-header class="card-header-modern">
-        <div mat-card-avatar class="card-avatar calendar-avatar">
-          <mat-icon>event</mat-icon>
+  <section [@pageTransition]="state" class="calendar-section" [hidden]="showCalendario">
+    <div class="contacts-card calendar-card">
+      <div class="card-header modern-header">
+        <div class="header-content">
+          <div class="header-icon"><i class="material-icons">event</i></div>
+          <div class="header-text">
+            <h1 class="card-title">Calendario Lead</h1>
+            <p class="card-subtitle">Visualizza i lead programmati per data</p>
+          </div>
         </div>
-        <mat-card-title class="card-title">CALENDARIO LEAD</mat-card-title>
-        <mat-card-subtitle class="card-subtitle">
-          Visualizza i lead programmati per data
-        </mat-card-subtitle>
-      </mat-card-header>
-      
-      <div class="calendar-container">
-        <!-- Controlli del calendario migliorati -->
+      </div>
+
+      <div class="card-body modern-body calendar-container">
         <div class="calendar-controls">
           <div class="view-selector">
             <div class="view-buttons">
-              <button 
-                mat-stroked-button 
-                class="view-button"
-                [class.active]="calendarView === 'month'"
-                (click)="changeView('month')"
-              >
-                <mat-icon>calendar_view_month</mat-icon>
-                Mese
+              <button mat-stroked-button class="view-button" [class.active]="calendarView === 'month'" (click)="changeView('month')">
+                <mat-icon>calendar_view_month</mat-icon> Mese
               </button>
-              <button 
-                mat-stroked-button 
-                class="view-button"
-                [class.active]="calendarView === 'week'"
-                (click)="changeView('week')"
-              >
-                <mat-icon>view_week</mat-icon>
-                Settimana
+              <button mat-stroked-button class="view-button" [class.active]="calendarView === 'week'" (click)="changeView('week')">
+                <mat-icon>view_week</mat-icon> Settimana
               </button>
-              <button 
-                mat-stroked-button 
-                class="view-button"
-                [class.active]="calendarView === 'day'"
-                (click)="changeView('day')"
-              >
-                <mat-icon>today</mat-icon>
-                Giorno
+              <button mat-stroked-button class="view-button" [class.active]="calendarView === 'day'" (click)="changeView('day')">
+                <mat-icon>today</mat-icon> Giorno
               </button>
             </div>
           </div>
 
           <div class="navigation-controls">
-            <button 
-              mat-icon-button 
-              class="nav-button"
-              (click)="previousPeriod()"
-              matTooltip="Periodo precedente"
-            >
+            <button mat-icon-button class="nav-button" (click)="previousPeriod()" matTooltip="Periodo precedente">
               <mat-icon>chevron_left</mat-icon>
             </button>
-            
-            <button 
-              mat-stroked-button 
-              class="today-button"
-              (click)="goToToday()"
-            >
-              <mat-icon>today</mat-icon>
-              Oggi
+            <button mat-stroked-button class="today-button" (click)="goToToday()">
+              <mat-icon>today</mat-icon> Oggi
             </button>
-            
-            <button 
-              mat-icon-button 
-              class="nav-button"
-              (click)="nextPeriod()"
-              matTooltip="Periodo successivo"
-            >
+            <button mat-icon-button class="nav-button" (click)="nextPeriod()" matTooltip="Periodo successivo">
               <mat-icon>chevron_right</mat-icon>
             </button>
           </div>
@@ -841,128 +724,69 @@
           </div>
         </div>
 
-        <!-- Legenda del calendario -->
         <div class="calendar-legend">
-          <div class="legend-item">
-            <div class="legend-color status-new"></div>
-            <span>Nuovi Lead</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color status-contacted"></div>
-            <span>Contattati</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color status-meeting"></div>
-            <span>Appuntamenti</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-color status-converted"></div>
-            <span>Convertiti</span>
-          </div>
+          <div class="legend-item"><div class="legend-color status-new"></div><span>Nuovi Lead</span></div>
+          <div class="legend-item"><div class="legend-color status-contacted"></div><span>Contattati</span></div>
+          <div class="legend-item"><div class="legend-color status-meeting"></div><span>Appuntamenti</span></div>
+          <div class="legend-item"><div class="legend-color status-converted"></div><span>Convertiti</span></div>
         </div>
 
-        <!-- Calendario moderno con griglia migliorata -->
-        <div class="modern-calendar" 
-             [class.week-view]="calendarView === 'week'"
-             [class.day-view]="calendarView === 'day'">
-          <!-- Header giorni della settimana -->
+        <div class="modern-calendar" [class.week-view]="calendarView === 'week'" [class.day-view]="calendarView === 'day'">
           <div class="calendar-header" *ngIf="calendarView !== 'day'">
-            <div class="day-header" *ngFor="let day of weekDays">
-              {{ day }}
-            </div>
+            <div class="day-header" *ngFor="let day of weekDays">{{ day }}</div>
           </div>
-
-          <!-- Griglia calendario -->
           <div class="calendar-grid">
-            <div 
-              class="calendar-day"
-              *ngFor="let day of calendarDays; trackBy: trackByDay"
-              [class.other-month]="!day.isCurrentMonth"
-              [class.today]="day.isToday"
-              [class.selected]="day.isSelected"
-              [class.has-leads]="day.leadsCount > 0"
-              (click)="selectDay(day)"
-            >
+            <div class="calendar-day"
+                 *ngFor="let day of calendarDays; trackBy: trackByDay"
+                 [class.other-month]="!day.isCurrentMonth"
+                 [class.today]="day.isToday"
+                 [class.selected]="day.isSelected"
+                 [class.has-leads]="day.leadsCount > 0"
+                 (click)="selectDay(day)">
               <div class="day-number">{{ day.date }}</div>
-              
               <div class="day-content" *ngIf="day.leadsCount > 0">
                 <div class="leads-indicator">
-                  <mat-icon class="leads-icon">people</mat-icon>
+                  <i class="material-icons leads-icon">people</i>
                   <span class="leads-count">{{ day.leadsCount }}</span>
                 </div>
-                
-                <!-- Punti colorati per stati -->
                 <div class="status-indicators">
-                  <div 
-                    class="status-dot"
-                    *ngFor="let status of day.statuses"
-                    [style.background-color]="status.color"
-                    [matTooltip]="status.name + ': ' + status.count"
-                  ></div>
+                  <div class="status-dot" *ngFor="let status of day.statuses" [style.background-color]="status.color" [matTooltip]="status.name + ': ' + status.count"></div>
                 </div>
               </div>
-
-              <!-- Overflow indicator -->
-              <div class="overflow-indicator" *ngIf="day.leadsCount > 3">
-                +{{ day.leadsCount - 3 }}
-              </div>
+              <div class="overflow-indicator" *ngIf="day.leadsCount > 3">+{{ day.leadsCount - 3 }}</div>
             </div>
           </div>
 
-          <!-- Loading state -->
           <div class="calendar-loading" *ngIf="isCalendarLoading">
             <mat-spinner diameter="40"></mat-spinner>
             <p>Caricamento eventi...</p>
           </div>
-
-          <!-- Empty state -->
           <div class="calendar-empty" *ngIf="!isCalendarLoading && totalLeads === 0">
-            <mat-icon class="empty-icon">event_busy</mat-icon>
+            <i class="material-icons empty-icon">event_busy</i>
             <h4>Nessun lead programmato</h4>
             <p>Non ci sono lead schedlati per questo periodo.</p>
           </div>
         </div>
 
-        <!-- Quick stats -->
         <div class="calendar-stats">
           <div class="stat-card">
-            <div class="stat-icon">
-              <mat-icon>people</mat-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-number">{{ totalLeads }}</div>
-              <div class="stat-label">Lead Totali</div>
-            </div>
+            <div class="stat-icon"><i class="material-icons">people</i></div>
+            <div class="stat-content"><div class="stat-number">{{ totalLeads }}</div><div class="stat-label">Lead Totali</div></div>
           </div>
-
           <div class="stat-card">
-            <div class="stat-icon">
-              <mat-icon>event</mat-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-number">{{ todayLeads }}</div>
-              <div class="stat-label">Oggi</div>
-            </div>
+            <div class="stat-icon"><i class="material-icons">event</i></div>
+            <div class="stat-content"><div class="stat-number">{{ todayLeads }}</div><div class="stat-label">Oggi</div></div>
           </div>
-
           <div class="stat-card">
-            <div class="stat-icon">
-              <mat-icon>trending_up</mat-icon>
-            </div>
-            <div class="stat-content">
-              <div class="stat-number">{{ weekLeads }}</div>
-              <div class="stat-label">Questa Settimana</div>
-            </div>
+            <div class="stat-icon"><i class="material-icons">trending_up</i></div>
+            <div class="stat-content"><div class="stat-number">{{ weekLeads }}</div><div class="stat-label">Questa Settimana</div></div>
           </div>
         </div>
 
-        <!-- Fallback al componente originale se necessario -->
         <div class="original-calendar" [hidden]="!useOriginalCalendar">
-          <app-calendar
-            (arrayidLeadChange)="onArrayidLeadChange($event)"
-          ></app-calendar>
+          <app-calendar (arrayidLeadChange)="onArrayidLeadChange($event)"></app-calendar>
         </div>
       </div>
-    </mat-card>
+    </div>
   </section>
 </div>

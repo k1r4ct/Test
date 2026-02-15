@@ -1,21 +1,27 @@
-<div class="contacts-container">
+<!-- Dashboard: Only converted leads (amici inseriti a sistema) -->
+<div class="contacts-container" @fadeIn>
   <div class="contacts-card">
     <div class="card-header modern-header">
       <div class="header-content">
         <div class="header-icon">
-          <i class="material-icons">contacts</i>
+          <i class="material-icons">how_to_reg</i>
         </div>
         <div class="header-text">
           <h1 class="card-title">
-            <span *ngIf="ruoloUtente == 'Cliente'">Amici</span>
-            <span *ngIf="ruoloUtente != 'Cliente'">Leads</span>
-            Personali Invitati
+            <span *ngIf="ruoloUtente == 'Cliente'">Amici Inseriti</span>
+            <span *ngIf="ruoloUtente != 'Cliente'">Leads Convertiti</span>
           </h1>
-          <p class="card-subtitle">Gestisci i tuoi contatti</p>
+          <p class="card-subtitle">
+            <span *ngIf="ruoloUtente == 'Cliente'">I tuoi amici invitati che sono stati inseriti nel sistema</span>
+            <span *ngIf="ruoloUtente != 'Cliente'">Lead convertiti in clienti</span>
+          </p>
+        </div>
+        <div class="header-badge" *ngIf="Leads.length > 0">
+          <span class="count-badge">{{ Leads.length }}</span>
         </div>
       </div>
-      
-      <div class="filters-container">
+
+      <div class="filters-container" *ngIf="Leads.length > 0">
         <p-multiSelect
           [options]="Leads"
           [(ngModel)]="leadsSelected"
@@ -63,21 +69,22 @@
         />
 
         <button type="button" class="clear-button" (click)="clearFilter()">
-        <i class="material-icons">filter_alt_off</i>
-        Resetta Filtri
+          <i class="material-icons">filter_alt_off</i>
+          Resetta Filtri
         </button>
       </div>
     </div>
-    
+
     <div class="card-body modern-body">
       <div class="table-container">
         <table mat-table [dataSource]="dataSource" class="modern-table">
-          
+
+          <!-- Nominativo -->
           <ng-container matColumnDef="nominativo">
-            <th mat-header-cell *matHeaderCellDef class="name-column">
+            <th mat-header-cell *matHeaderCellDef>
               <span class="header-text">Nominativo</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="name-cell">
+            <td mat-cell *matCellDef="let lead">
               <div class="contact-info">
                 <i class="material-icons contact-icon">person</i>
                 <span class="contact-name">{{ lead.nominativoLead }}</span>
@@ -85,11 +92,12 @@
             </td>
           </ng-container>
 
+          <!-- Email -->
           <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef class="email-column">
+            <th mat-header-cell *matHeaderCellDef>
               <span class="header-text">Email</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="email-cell">
+            <td mat-cell *matCellDef="let lead">
               <div class="email-info">
                 <i class="material-icons email-icon">email</i>
                 <a href="mailto:{{ lead.email }}" class="email-link">{{ lead.email }}</a>
@@ -97,11 +105,12 @@
             </td>
           </ng-container>
 
+          <!-- Telefono -->
           <ng-container matColumnDef="telefono">
-            <th mat-header-cell *matHeaderCellDef class="phone-column">
+            <th mat-header-cell *matHeaderCellDef>
               <span class="header-text">Telefono</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="phone-cell">
+            <td mat-cell *matCellDef="let lead">
               <div class="phone-info">
                 <i class="material-icons phone-icon">phone</i>
                 <a href="tel:{{ lead.telefono }}" class="phone-link">{{ lead.telefono }}</a>
@@ -109,11 +118,12 @@
             </td>
           </ng-container>
 
+          <!-- Inserito il -->
           <ng-container matColumnDef="inserito">
-            <th mat-header-cell *matHeaderCellDef class="date-column">
+            <th mat-header-cell *matHeaderCellDef>
               <span class="header-text">Inserito</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="date-cell">
+            <td mat-cell *matCellDef="let lead">
               <div class="date-info">
                 <i class="material-icons date-icon">event</i>
                 <span class="date-text">{{ lead.inserito }}</span>
@@ -121,11 +131,12 @@
             </td>
           </ng-container>
 
+          <!-- Assegnato a -->
           <ng-container matColumnDef="assegnato_a">
-            <th mat-header-cell *matHeaderCellDef class="assigned-column">
-              <span class="header-text">Assegnato a</span>
+            <th mat-header-cell *matHeaderCellDef>
+              <span class="header-text">Inserito da</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="assigned-cell">
+            <td mat-cell *matCellDef="let lead">
               <div class="assigned-info">
                 <i class="material-icons assigned-icon">assignment_ind</i>
                 <span class="assigned-name">{{ lead.assegnato_a }}</span>
@@ -133,22 +144,35 @@
             </td>
           </ng-container>
 
+          <!-- Stato -->
           <ng-container matColumnDef="microstato">
-            <th mat-header-cell *matHeaderCellDef class="status-column">
+            <th mat-header-cell *matHeaderCellDef>
               <span class="header-text">Stato</span>
             </th>
-            <td mat-cell *matCellDef="let lead" class="status-cell">
-              <span class="status-badge" [class]="'status-' + lead.microstato?.toLowerCase()">
-                {{ lead.microstato }}
+            <td mat-cell *matCellDef="let lead">
+              <span class="status-badge status-completato">
+                <i class="material-icons" style="font-size: 14px; vertical-align: middle; margin-right: 2px;">check_circle</i>
+                Registrato
               </span>
             </td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns" [appLeadRowColor]="row" class="modern-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns" class="modern-row"></tr>
+
+          <!-- Empty state -->
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell empty-state" [attr.colspan]="displayedColumns.length">
+              <div class="empty-state-content">
+                <i class="material-icons empty-icon">person_off</i>
+                <p>Nessun amico ancora registrato a sistema</p>
+                <span class="empty-hint">Gli amici invitati appariranno qui una volta inseriti</span>
+              </div>
+            </td>
+          </tr>
         </table>
       </div>
-      
+
       <div class="pagination-container">
         <mat-paginator #paginator class="modern-paginator" [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
       </div>
