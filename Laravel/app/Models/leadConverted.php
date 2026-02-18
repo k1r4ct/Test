@@ -6,14 +6,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use App\Services\SystemLogService;
+use App\Traits\LogsDatabaseOperations;
 
 class leadConverted extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsDatabaseOperations;
 
     protected $fillable = [
         'lead_id',
         'cliente_id',
+        'converted_by_user_id',
     ];
 
     // ==================== RELATIONSHIPS ====================
@@ -28,13 +30,21 @@ class leadConverted extends Model
         return $this->belongsTo(lead::class, 'lead_id');
     }
 
+    /**
+     * The user (SEU/BO/Admin) who performed the conversion.
+     */
+    public function convertedBy()
+    {
+        return $this->belongsTo(User::class, 'converted_by_user_id');
+    }
+
     // ==================== EVENTS ====================
 
     protected static function booted()
     {
         // Log lead conversion (CRITICAL business event) with entity tracking
         static::created(function ($conversion) {
-            $conversion->load(['Lead', 'User']);
+            $conversion->load(['Lead', 'User', 'convertedBy']);
 
             $leadName = $conversion->Lead 
                 ? $conversion->Lead->nome . ' ' . $conversion->Lead->cognome 
@@ -60,6 +70,11 @@ class leadConverted extends Model
                 ? Auth::user()->name . ' ' . Auth::user()->cognome 
                 : 'Sistema';
 
+            // Get converted_by name (may differ from Auth user in edge cases)
+            $convertedByName = $conversion->convertedBy
+                ? $conversion->convertedBy->name . ' ' . $conversion->convertedBy->cognome
+                : $operatorName;
+
             // Use forEntity for audit trail - track both lead and the conversion itself
             SystemLogService::userActivity()
                 ->forEntity('lead_converted', $conversion->id)
@@ -73,7 +88,8 @@ class leadConverted extends Model
                     'client_email' => $conversion->User?->email,
                     'inviter' => $inviterInfo,
                     'potential_bonus_recipient' => $inviterInfo ? $inviterInfo['name'] : null,
-                    'converted_by' => $operatorName,
+                    'converted_by' => $convertedByName,
+                    'converted_by_user_id' => $conversion->converted_by_user_id,
                 ]);
 
             // Also log on the lead entity for cross-reference
@@ -85,7 +101,7 @@ class leadConverted extends Model
                     'lead_name' => $leadName,
                     'new_client_id' => $conversion->cliente_id,
                     'new_client_name' => $clientName,
-                    'converted_by' => $operatorName,
+                    'converted_by' => $convertedByName,
                 ]);
         });
 

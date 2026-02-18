@@ -597,28 +597,30 @@ class ContractController extends Controller
     {
         $statoContrattoOld = "";
         $statoContrattoNew = "";
-        $contratto = Contract::with('status_contract')->where('id', $request->idContratto)->get();
+        $updateContratto = null;
+        $idContraente = null;
+
+        $contratto = Contract::with('status_contract')->where('id', $request->idContratto)->first();
         if ($contratto) {
-            foreach ($contratto as $cont) {
-                $idContraente = $cont->customer_data_id;
-                $statoContrattoOld = $cont->status_contract->micro_stato;
-            }
+            $idContraente = $contratto->customer_data_id;
+            $statoContrattoOld = $contratto->status_contract ? $contratto->status_contract->micro_stato : '';
         }
 
         if (is_numeric($request->stato_avanzamento)) {
             $updateContratto = Contract::where('id', $request->idContratto)->update(['status_contract_id' => $request->stato_avanzamento]);
             $contrattoNew = Contract::with(['status_contract', 'User', 'UserSeu', 'customer_data'])->where('id', $request->idContratto)->first();
             
-            $statoContrattoNew = $contrattoNew->status_contract->micro_stato;
-            $mailSeu = $contrattoNew->UserSeu->email;
+            if ($contrattoNew && $contrattoNew->status_contract) {
+                $statoContrattoNew = $contrattoNew->status_contract->micro_stato;
+            }
             
             // Check if status requires email and notification
             if (in_array((int)$request->stato_avanzamento, self::STATUS_REQUIRING_NOTIFICATION)) {
-                // Send email
-                Mail::to($mailSeu)->send(new \App\Mail\CambioStatoContratto($contrattoNew));
-                
-                // Send in-app notification to SEU
-                $this->notifyContractStatusChange($contrattoNew, $statoContrattoOld, $statoContrattoNew);
+                if ($contrattoNew && $contrattoNew->UserSeu && $contrattoNew->UserSeu->email) {
+                    $mailSeu = $contrattoNew->UserSeu->email;
+                    Mail::to($mailSeu)->send(new \App\Mail\CambioStatoContratto($contrattoNew));
+                    $this->notifyContractStatusChange($contrattoNew, $statoContrattoOld, $statoContrattoNew);
+                }
             }
         }
         if ($request->note_backoffice) {
@@ -632,73 +634,101 @@ class ContractController extends Controller
         }
 
         $contr = $request->nome_contraente;
-        list($nome, $cognome) = explode(' ', $contr, 2);
-        $findContraente = customer_data::where('id', $idContraente)->get();
-        $updateProduct = contract::where('id', $request->idContratto)->update(['product_id' => $request->microprodotto, 'inserito_da_user_id' => $request->inserito_da]);
-        foreach ($findContraente as $contraente) {
-            if ($nome != $contraente->nome) {
-                $updateContraente = customer_data::where('id', $idContraente)->update(["nome" => $nome]);
+        $nome = '';
+        $cognome = '';
+        if (!empty($contr)) {
+            $parts = explode(' ', trim($contr), 2);
+            $nome = $parts[0];
+            $cognome = $parts[1] ?? '';
+        }
+
+        if ($idContraente) {
+            $findContraente = customer_data::where('id', $idContraente)->get();
+            $updateProduct = contract::where('id', $request->idContratto)->update(['product_id' => $request->microprodotto, 'inserito_da_user_id' => $request->inserito_da]);
+            foreach ($findContraente as $contraente) {
+                if ($nome != $contraente->nome) {
+                    $updateContraente = customer_data::where('id', $idContraente)->update(["nome" => $nome]);
+                }
+                if ($cognome != $contraente->cognome) {
+                    $updateContraente = customer_data::where('id', $idContraente)->update(["cognome" => $cognome]);
+                }
+                if ($request->pivacodfisc_contraente != $contraente->codice_fiscale) {
+                    $updateContraente = customer_data::where('id', $idContraente)->update(["codice_fiscale" => $request->pivacodfisc_contraente]);
+                }
+                if ($request->cap_contraente != $contraente->cap) {
+                    $updateContraente = customer_data::where('id', $idContraente)->update(["cap" => $request->cap_contraente]);
+                }
+                if ($request->citta_contraente != $contraente->citta) {
+                    $updateContraente = customer_data::where('id', $idContraente)->update(["citta" => $request->citta_contraente]);
+                }
+                if ($request->email_contraente != $contraente->email) {
+                    $updateContraente = customer_data::where('id', $idContraente)->update(["email" => $request->email_contraente]);
+                }
+                if ($request->indirizzo_contraente != $contraente->indirizzo) {
+                    $updateContraente = customer_data::where('id', $idContraente)->update(["indirizzo" => $request->indirizzo_contraente]);
+                }
+                if ($request->telefono_contraente != $contraente->telefono) {
+                    $updateContraente = customer_data::where('id', $idContraente)->update(["telefono" => $request->telefono_contraente]);
+                }
             }
-            if ($cognome != $contraente->cognome) {
-                $updateContraente = customer_data::where('id', $idContraente)->update(["cognome" => $cognome]);
-            }
-            if ($request->pivacodfisc_contraente != $contraente->codice_fiscale) {
-                $updateContraente = customer_data::where('id', $idContraente)->update(["codice_fiscale" => $request->pivacodfisc_contraente]);
-            }
-            if ($request->cap_contraente != $contraente->cap) {
-                $updateContraente = customer_data::where('id', $idContraente)->update(["cap" => $request->cap_contraente]);
-            }
-            if ($request->citta_contraente != $contraente->citta) {
-                $updateContraente = customer_data::where('id', $idContraente)->update(["citta" => $request->citta_contraente]);
-            }
-            if ($request->email_contraente != $contraente->email) {
-                $updateContraente = customer_data::where('id', $idContraente)->update(["email" => $request->email_contraente]);
-            }
-            if ($request->indirizzo_contraente != $contraente->indirizzo) {
-                $updateContraente = customer_data::where('id', $idContraente)->update(["indirizzo" => $request->indirizzo_contraente]);
-            }
-            if ($request->telefono_contraente != $contraente->telefono) {
-                $updateContraente = customer_data::where('id', $idContraente)->update(["telefono" => $request->telefono_contraente]);
-            }
+        } else {
+            $updateProduct = contract::where('id', $request->idContratto)->update(['product_id' => $request->microprodotto, 'inserito_da_user_id' => $request->inserito_da]);
         }
 
         // Gestione aggiornamento specific_data
         if ($request->specific_data) {
             $specificDataArray = json_decode($request->specific_data, true);
             if ($specificDataArray && is_array($specificDataArray)) {
-                $idsToKeep = [];
+                try {
+                    $idsToKeep = [];
 
-                foreach ($specificDataArray as $item) {
-                    if (isset($item['id']) && $item['id'] !== null) {
-                        Specific_data::where('id', $item['id'])
-                            ->where('contract_id', $request->idContratto)
-                            ->update([
+                    foreach ($specificDataArray as $item) {
+                        if (isset($item['id']) && $item['id'] !== null) {
+                            Specific_data::where('id', $item['id'])
+                                ->where('contract_id', $request->idContratto)
+                                ->update([
+                                    'domanda' => $item['domanda'],
+                                    'risposta_tipo_numero' => $item['risposta_tipo_numero'],
+                                    'risposta_tipo_stringa' => $item['risposta_tipo_stringa'],
+                                    'risposta_tipo_bool' => $item['risposta_tipo_bool'],
+                                    'tipo_risposta' => $item['tipo'],
+                                ]);
+
+                            $idsToKeep[] = $item['id'];
+                        } else {
+                            $newRecord = Specific_data::create([
                                 'domanda' => $item['domanda'],
                                 'risposta_tipo_numero' => $item['risposta_tipo_numero'],
                                 'risposta_tipo_stringa' => $item['risposta_tipo_stringa'],
                                 'risposta_tipo_bool' => $item['risposta_tipo_bool'],
-                                'tipo_risposta' => $item['tipo'],
+                                'tipo_risposta' => $item['tipo_risposta'],
+                                'contract_id' => $request->idContratto,
                             ]);
 
-                        $idsToKeep[] = $item['id'];
-                    } else {
-                        $newRecord = Specific_data::create([
-                            'domanda' => $item['domanda'],
-                            'risposta_tipo_numero' => $item['risposta_tipo_numero'],
-                            'risposta_tipo_stringa' => $item['risposta_tipo_stringa'],
-                            'risposta_tipo_bool' => $item['risposta_tipo_bool'],
-                            'tipo_risposta' => $item['tipo_risposta'],
-                            'contract_id' => $request->idContratto,
-                        ]);
-
-                        $idsToKeep[] = $newRecord->id;
+                            $idsToKeep[] = $newRecord->id;
+                        }
                     }
-                }
 
-                if (!empty($idsToKeep)) {
-                    Specific_data::where('contract_id', $request->idContratto)
-                        ->whereNotIn('id', $idsToKeep)
-                        ->delete();
+                    if (!empty($idsToKeep)) {
+                        Specific_data::where('contract_id', $request->idContratto)
+                            ->whereNotIn('id', $idsToKeep)
+                            ->delete();
+                    }
+                } catch (\Illuminate\Database\QueryException $e) {
+                    if ($e->getCode() === '45000') {
+                        $domandaName = $this->extractDomandaFromSqlException($e);
+
+                        return response()->json([
+                            "response" => "error",
+                            "status" => "422",
+                            "error_type" => "invalid_specific_data",
+                            "body" => [
+                                "message" => "Il campo \"{$domandaName}\" contiene un valore non valido. Seleziona un'opzione tra quelle disponibili.",
+                                "domanda" => $domandaName,
+                            ]
+                        ], 422);
+                    }
+                    throw $e;
                 }
             }
         }
@@ -713,7 +743,7 @@ class ContractController extends Controller
             );
         }
 
-        return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => ["nome" => $nome, "cognome" => $cognome, "id" => $contratto, "old" => $contratto, "new" => $updateContratto]]]);
+        return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => ["nome" => $nome, "cognome" => $cognome, "id" => $request->idContratto, "old" => $statoContrattoOld, "new" => $updateContratto]]]);
     }
 
 
@@ -855,6 +885,26 @@ class ContractController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Extract the "domanda" field name from a SQLSTATE 45000 QueryException.
+     * The SQL in the exception contains: `domanda` = SomeValue, ...
+     */
+    private function extractDomandaFromSqlException(\Illuminate\Database\QueryException $e): string
+    {
+        $sql = $e->getMessage();
+
+        // Pattern: `domanda` = VALUE,
+        if (preg_match('/`domanda`\s*=\s*([^,]+),/', $sql, $matches)) {
+            $value = trim($matches[1]);
+            $value = trim($value, "'\"?");
+            if (!empty($value)) {
+                return $value;
+            }
+        }
+
+        return 'sconosciuto';
     }
 
     public function contrattiPersonali($id)

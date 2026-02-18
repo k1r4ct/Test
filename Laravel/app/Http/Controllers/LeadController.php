@@ -126,67 +126,120 @@ class LeadController extends Controller
         //
     }
 
+    /**
+     * Convert a lead into a new client user.
+     * 
+     * Validation rules:
+     * - Lead must exist
+     * - Lead must be in 'Lead OK' status (lead_statuses where micro_stato = 'Lead OK')
+     * - Lead must not already be converted
+     * - User with same codice_fiscale/partita_iva must not exist
+     * 
+     * After conversion:
+     * - Creates the new user
+     * - Creates lead_converteds record with converted_by_user_id tracking
+     */
     public function nuovoClienteLead(Request $request)
     {
-        $nome = $cognome = $codice_fiscale = $partita_iva = $ragione_sociale = "";
+        try {
+            // Verify lead exists
+            $leadId = $request->input('id_lead');
+            $leadRecord = lead::with('leadstatus')->find($leadId);
 
-        if (request('tipo') == "consumer") {
-            $nome = request('nome');
-            $cognome = request('cognome');
-            $codice_fiscale = request('codice_fiscale');
-            $controlloEsistente = User::where('codice_fiscale', $codice_fiscale)->get();
-            $ragione_sociale = null;
-            $partita_iva = null;
-        }
+            if (!$leadRecord) {
+                return response()->json([
+                    "response" => "ko",
+                    "status" => "404",
+                    "body" => ["error" => "Lead non trovato"]
+                ], 404);
+            }
 
-        if (request('tipo') == "business") {
-            $ragione_sociale = request('ragione_sociale');
-            $partita_iva = request('partita_iva');
-            $controlloEsistente = User::where('partita_iva', $partita_iva)->get();
-            $nome = null;
-            $cognome = null;
-            $codice_fiscale = null;
-        }
+            // Check if lead is already converted
+            $alreadyConverted = leadConverted::where('lead_id', $leadId)->exists();
+            if ($alreadyConverted) {
+                return response()->json([
+                    "response" => "ko",
+                    "status" => "400",
+                    "body" => ["error" => "Questo lead è già stato convertito in cliente"]
+                ], 400);
+            }
 
-        $email = request('email');
-        $telefono = request('telefono');
-        $indirizzo = request('indirizzo');
-        $provincia = request('provincia');
-        $citta = request('citta');
-        $nazione = request('nazione');
-        $cap = request('cap');
-        $qualifica = request('qualifica');
-        $ruolo = request('ruolo');
-        $user_padre = request('us_padre');
-        $password = request('password');
-        if ($controlloEsistente->isEmpty()) {
-            $utente = User::create([
-                "name" => $nome,
-                "cognome" => $cognome,
-                "ragione_sociale" => $ragione_sociale,
-                "email" => $email,
-                "telefono" => $telefono,
-                "codice_fiscale" => $codice_fiscale,
-                "partita_iva" => $partita_iva,
-                "indirizzo" => $indirizzo,
-                "provincia" => $provincia,
-                "citta" => $citta,
-                "nazione" => $nazione,
-                "cap" => $cap,
-                "qualification_id" => $qualifica,
-                "role_id" => $ruolo,
-                "user_id_padre" => $user_padre,
-                "password" => $password,
-            ]);
+            // Check if lead is in 'Lead OK' status
+            $leadOkStatusIds = lead_status::where('micro_stato', 'Lead OK')->pluck('id')->toArray();
+            if (!in_array($leadRecord->lead_status_id, $leadOkStatusIds)) {
+                $currentStatus = $leadRecord->leadstatus ? $leadRecord->leadstatus->micro_stato : 'Sconosciuto';
+                return response()->json([
+                    "response" => "ko",
+                    "status" => "400",
+                    "body" => [
+                        "error" => "Il lead deve essere in stato 'Lead OK' per essere convertito. Stato attuale: " . $currentStatus
+                    ]
+                ], 400);
+            }
 
-            $nuovaConversione = leadConverted::create([
-                "lead_id" => $request->id_lead,
-                "cliente_id" => $utente->id,
-            ]);
+            // Prepare user data based on type
+            $nome = $cognome = $codice_fiscale = $partita_iva = $ragione_sociale = "";
 
-            return response()->json(["response" => "ok", "status" => "200", "body" => ["id" => $utente->id, "tipo" => request('tipo')]]);
-        } else {
-            return response()->json(["response" => "ko", "body" => "Utente gia esistente"]);
+            if (request('tipo') == "consumer") {
+                $nome = request('nome');
+                $cognome = request('cognome');
+                $codice_fiscale = request('codice_fiscale');
+                $controlloEsistente = User::where('codice_fiscale', $codice_fiscale)->get();
+                $ragione_sociale = null;
+                $partita_iva = null;
+            }
+
+            if (request('tipo') == "business") {
+                $ragione_sociale = request('ragione_sociale');
+                $partita_iva = request('partita_iva');
+                $controlloEsistente = User::where('partita_iva', $partita_iva)->get();
+                $nome = null;
+                $cognome = null;
+                $codice_fiscale = null;
+            }
+
+            if ($controlloEsistente->isEmpty()) {
+                $utente = User::create([
+                    "name" => $nome,
+                    "cognome" => $cognome,
+                    "ragione_sociale" => $ragione_sociale,
+                    "email" => request('email'),
+                    "telefono" => request('telefono'),
+                    "codice_fiscale" => $codice_fiscale,
+                    "partita_iva" => $partita_iva,
+                    "indirizzo" => request('indirizzo'),
+                    "provincia" => request('provincia'),
+                    "citta" => request('citta'),
+                    "nazione" => request('nazione'),
+                    "cap" => request('cap'),
+                    "qualification_id" => request('qualifica'),
+                    "role_id" => request('ruolo'),
+                    "user_id_padre" => request('us_padre'),
+                    "password" => request('password'),
+                ]);
+
+                // Create conversion record with who performed it
+                $nuovaConversione = leadConverted::create([
+                    "lead_id" => $leadId,
+                    "cliente_id" => $utente->id,
+                    "converted_by_user_id" => Auth::id(),
+                ]);
+
+                return response()->json([
+                    "response" => "ok",
+                    "status" => "200",
+                    "body" => ["id" => $utente->id, "tipo" => request('tipo')]
+                ]);
+            } else {
+                return response()->json(["response" => "ko", "body" => "Utente gia esistente"]);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                "response" => "ko",
+                "status" => "500",
+                "body" => ["error" => $e->getMessage()]
+            ], 500);
         }
     }
 
@@ -247,6 +300,7 @@ class LeadController extends Controller
                 $query->with('Colors');
             },
             'User',
+            'invitedBy',
             'leadConverted'
         ])->where(function ($q) use ($userIds) {
             $q->whereIn('invitato_da_user_id', $userIds)
@@ -268,9 +322,64 @@ class LeadController extends Controller
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $userForLeads]]);
     }
 
+    /**
+     * Update lead assignment to a different SEU/BO/Admin.
+     * Called from the lead detail modal when changing "Assegnato a" dropdown.
+     */
     public function updateAssegnazioneLead(Request $request)
     {
-        return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $request->all()]]);
+        try {
+            $leadId = $request->input('id_lead');
+            $newUserId = $request->input('id_user');
+
+            if (!$leadId || !$newUserId) {
+                return response()->json([
+                    "response" => "ko",
+                    "status" => "400",
+                    "body" => ["error" => "id_lead e id_user sono obbligatori"]
+                ], 400);
+            }
+
+            // Verify the target user exists
+            $targetUser = User::find($newUserId);
+            if (!$targetUser) {
+                return response()->json([
+                    "response" => "ko",
+                    "status" => "404",
+                    "body" => ["error" => "Utente non trovato"]
+                ], 404);
+            }
+
+            // Verify the lead exists
+            $leadRecord = lead::find($leadId);
+            if (!$leadRecord) {
+                return response()->json([
+                    "response" => "ko",
+                    "status" => "404",
+                    "body" => ["error" => "Lead non trovato"]
+                ], 404);
+            }
+
+            // Update the lead assignment
+            $leadRecord->update(['assegnato_a' => $newUserId]);
+
+            return response()->json([
+                "response" => "ok",
+                "status" => "200",
+                "body" => [
+                    "risposta" => "Lead assegnato a " . $targetUser->name . " " . $targetUser->cognome,
+                    "lead_id" => $leadId,
+                    "assegnato_a" => $newUserId,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                "response" => "ko",
+                "status" => "500",
+                "body" => ["error" => $e->getMessage()]
+            ], 500);
+        }
     }
 
     public function getLeadsDayClicked(Request $request)
@@ -315,5 +424,68 @@ class LeadController extends Controller
     {
         $color = lead_status::with('Colors')->where('id', $id)->get();
         return response()->json(["response" => "ok", "status" => "200", "body" => ["risposta" => $color]]);
+    }
+
+    /**
+     * Check if an email or phone number already exists in the leads table.
+     * Used when BO creates a new user from the Clienti section to warn them
+     * if a matching lead exists that should be converted from the Leads page instead.
+     * 
+     * GET /api/checkLeadMatch?email=xxx&telefono=xxx
+     */
+    public function checkLeadMatch(Request $request)
+    {
+        $email = $request->input('email');
+        $telefono = $request->input('telefono');
+
+        if (!$email && !$telefono) {
+            return response()->json([
+                "response" => "ok",
+                "status" => "200",
+                "body" => ["matches" => [], "has_match" => false]
+            ]);
+        }
+
+        $query = lead::with(['leadstatus', 'invitedBy', 'leadConverted']);
+
+        $query->where(function ($q) use ($email, $telefono) {
+            if ($email) {
+                $q->where('email', $email);
+            }
+            if ($telefono) {
+                if ($email) {
+                    $q->orWhere('telefono', $telefono);
+                } else {
+                    $q->where('telefono', $telefono);
+                }
+            }
+        });
+
+        $matches = $query->get()->map(function ($leadRecord) {
+            return [
+                'lead_id' => $leadRecord->id,
+                'nome' => $leadRecord->nome,
+                'cognome' => $leadRecord->cognome,
+                'email' => $leadRecord->email,
+                'telefono' => $leadRecord->telefono,
+                'stato' => $leadRecord->leadstatus ? $leadRecord->leadstatus->micro_stato : 'Sconosciuto',
+                'invitato_da' => $leadRecord->invitedBy
+                    ? $leadRecord->invitedBy->name . ' ' . $leadRecord->invitedBy->cognome
+                    : null,
+                'invitato_da_user_id' => $leadRecord->invitato_da_user_id,
+                'is_converted' => $leadRecord->is_converted,
+                'data_inserimento' => $leadRecord->created_at ? $leadRecord->created_at->format('d/m/Y') : null,
+            ];
+        });
+
+        return response()->json([
+            "response" => "ok",
+            "status" => "200",
+            "body" => [
+                "matches" => $matches,
+                "has_match" => $matches->count() > 0,
+                "match_count" => $matches->count(),
+            ]
+        ]);
     }
 }

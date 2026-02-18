@@ -53,20 +53,23 @@ class QueryListener
             return;
         }
 
+        // Check if query targets the logs table (recursive logging)
+        $isLogsQuery = str_contains($event->sql, '`logs`') || str_contains($event->sql, ' logs ');
+
+        // For recursive log queries, only log if extremely slow (>5000ms)
+        if ($isLogsQuery && $event->time < 5000) {
+            return;
+        }
+
         // Format the query with bindings for better debugging
         $sql = $event->sql;
         $bindings = $event->bindings;
         $formattedSql = $this->formatQueryWithBindings($sql, $bindings);
 
-        // Determine severity based on time
-        $level = 'warning';
-        if ($event->time > ($this->slowQueryThreshold * 3)) {
-            $level = 'error'; // Very slow query (3x threshold)
-        }
-
         // Build context
         $context = [
             'sql' => $sql,
+            'formatted_sql' => $formattedSql,
             'time_ms' => round($event->time, 2),
             'time_seconds' => round($event->time / 1000, 3),
             'connection' => $event->connectionName,
@@ -81,14 +84,15 @@ class QueryListener
             $context['bindings_sample'] = array_slice($bindings, 0, 10);
         }
 
-        // Log the slow query
+        // Log message
         $message = sprintf(
             'Slow query detected: %.2fms (threshold: %dms)',
             $event->time,
             $this->slowQueryThreshold
         );
 
-        if ($level === 'error') {
+        // Recursive log queries (>5000ms) → ERROR, all others → WARNING
+        if ($isLogsQuery) {
             SystemLogService::database()->error($message, $context);
         } else {
             SystemLogService::database()->warning($message, $context);

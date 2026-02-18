@@ -130,6 +130,16 @@ class LogController extends Controller
                 $query->forTimezone($request->timezone);
             }
 
+            // ==================== DATABASE OPERATION FILTERS ====================
+
+            if ($request->filled('db_table') && $request->source === 'database') {
+                $query->where('context->db_table', $request->db_table);
+            }
+
+            if ($request->filled('db_operation') && $request->source === 'database') {
+                $query->where('context->db_operation', $request->db_operation);
+            }
+
             // ==================== END FILTERS ====================
 
             // Sorting
@@ -184,7 +194,7 @@ class LogController extends Controller
      * 
      * GET /api/logs/filters
      */
-    public function getFilters(): JsonResponse
+    public function getFilters(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -324,7 +334,32 @@ class LogController extends Controller
                 ->limit(30)
                 ->get();
 
-            // ==================== END DEVICE TRACKING FILTER OPTIONS ====================
+
+            // ==================== DATABASE OPERATION FILTER OPTIONS ====================
+
+            $dbTables = [];
+            $dbOperations = [];
+
+            if ($request->input('source') === 'database') {
+                $dbTables = Log::where('source', 'database')
+                    ->whereNotNull('context')
+                    ->whereRaw("JSON_EXTRACT(context, '$.db_table') IS NOT NULL")
+                    ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(context, '$.db_table')) as db_table, COUNT(*) as count")
+                    ->groupBy('db_table')
+                    ->orderBy('count', 'desc')
+                    ->limit(50)
+                    ->get();
+
+                $dbOperations = Log::where('source', 'database')
+                    ->whereNotNull('context')
+                    ->whereRaw("JSON_EXTRACT(context, '$.db_operation') IS NOT NULL")
+                    ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(context, '$.db_operation')) as db_operation, COUNT(*) as count")
+                    ->groupBy('db_operation')
+                    ->orderBy('count', 'desc')
+                    ->get();
+            }
+
+            // ==================== END DATABASE OPERATION FILTER OPTIONS ====================
 
             return response()->json([
                 'response' => 'ok',
@@ -343,6 +378,9 @@ class LogController extends Controller
                     'operating_systems' => $operatingSystems,
                     'screen_resolutions' => $screenResolutions,
                     'timezones' => $timezones,
+                    // Database operation options (only populated for database source)
+                    'db_tables' => $dbTables,
+                    'db_operations' => $dbOperations,
                 ]
             ]);
 
@@ -889,6 +927,15 @@ class LogController extends Controller
                 $query->forContract($request->contract_id);
             }
 
+            // Database operation filters (only for database source)
+            if ($request->filled('db_table') && $request->source === 'database') {
+                $query->where('context->db_table', $request->db_table);
+            }
+
+            if ($request->filled('db_operation') && $request->source === 'database') {
+                $query->where('context->db_operation', $request->db_operation);
+            }
+
             $logs = $query->orderBy('datetime', 'desc')->get();
 
             $source = $request->input('source', 'all');
@@ -900,6 +947,10 @@ class LogController extends Controller
             
             if ($request->filled('contract_id')) {
                 $filename .= '_contract_' . $request->contract_id;
+            }
+
+            if ($request->filled('db_table')) {
+                $filename .= '_' . $request->db_table;
             }
             
             $timestamp = Carbon::now()->format('Y-m-d_His');
@@ -1096,7 +1147,7 @@ class LogController extends Controller
         $fileMap = [
             'all' => 'laravel.log',
             'auth' => 'auth.log',
-            'api' => 'api.log',
+            // 'api' => 'api.log',
             'database' => 'database.log',
             'scheduler' => 'scheduler.log',
             'email' => 'email.log',
@@ -1261,7 +1312,7 @@ class LogController extends Controller
     {
         $sourceMap = [
             'auth' => 'auth',
-            'api' => 'api',
+            // 'api' => 'api',
             'database' => 'database',
             'scheduler' => 'scheduler',
             'email' => 'email',
@@ -1315,6 +1366,8 @@ class LogController extends Controller
             'device_type' => $log->device_type,
             'geo_city' => $log->geo_city,
             'geo_country' => $log->geo_country,
+            'db_table' => $log->context['db_table'] ?? null,
+            'db_operation' => $log->context['db_operation'] ?? null,
         ];
 
         if ($full) {

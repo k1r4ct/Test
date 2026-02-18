@@ -24,6 +24,8 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { ContrattoDetailsDialogComponent } from 'src/app/modal/modal.component';
 import { MatSort } from '@angular/material/sort';
+import { ActivatedRoute } from '@angular/router';
+import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DateRange } from '@angular/material/datepicker';
 import { ButtonModule } from 'primeng/button';
@@ -58,11 +60,25 @@ export interface leadsSquad {
   nominativoLead: string;
   data_appuntamento: string;
 }
+
+// Enhanced Lead interface — includes nome/cognome for pre-filling conversion form
 export interface Lead {
   email: string;
   telefono: string;
   id_lead: number;
+  nome: string;
+  cognome: string;
 }
+
+//Interface for contract info in expandable rows
+export interface LeadContractInfo {
+  id: number;
+  codice_contratto: string;
+  intestatario: string;
+  stato: string;
+  punti_bonus: number;
+}
+
 @Component({
   selector: 'app-leads',
   templateUrl: './leads.component.html',
@@ -87,18 +103,25 @@ export interface Lead {
     ]),
     trigger('pageTransition', [
       transition(':enter', [
-        style({ opacity: 0, transform: 'scale(0.1)' }), // Inizia piccolo al centro
+        style({ opacity: 0, transform: 'scale(0.1)' }),
         animate(
           '500ms ease-in-out',
           style({ opacity: 1, transform: 'scale(1)' })
-        ), // Espandi e rendi visibile
+        ),
       ]),
       transition(':leave', [
         animate(
           '500ms ease-in-out',
           style({ opacity: 0, transform: 'scale(0.1)' })
-        ), // Riduci e rendi invisibile
+        ),
       ]),
+    ]),
+    // Animation for expandable contract rows
+    trigger('detailExpand', [
+      state('collapsed, void', style({ height: '0px', minHeight: '0', opacity: 0 })),
+      state('expanded', style({ height: '*', opacity: 1 })),
+      transition('expanded <=> collapsed', animate('300ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
+      transition('expanded <=> void', animate('300ms cubic-bezier(0.4, 0.0, 0.2, 1)'))
     ]),
   ],
   standalone: false,
@@ -108,7 +131,9 @@ export class LeadsComponent implements OnInit {
   @ViewChild('paginatorSquad') paginatorSquad!: MatPaginator;
   @ViewChild('sort') sort!: MatSort;
   @ViewChild('sortSquad') sortSquad!: MatSort;
-  lead: Lead = { email: '', telefono: '', id_lead: 0 };
+
+  // Enhanced lead object — now includes nome/cognome for conversion form pre-fill
+  lead: Lead = { email: '', telefono: '', id_lead: 0, nome: '', cognome: '' };
   state: any;
   leadForm: FormGroup;
   leadSingleForm: FormGroup;
@@ -147,6 +172,7 @@ export class LeadsComponent implements OnInit {
 
   showCalendario = true;
   showDettagli = true;
+  showCalendarTab = false;
 
   ruoloUtente = '';
   userId = 0;
@@ -174,12 +200,32 @@ export class LeadsComponent implements OnInit {
   weekLeads: number = 0;
   useOriginalCalendar: boolean = false;
 
-  // ===== PROPRIETÀ ESISTENTI =====
+  // Expandable rows properties (Client role)
+  expandedLeadIds: Set<number> = new Set();
+  leadContractsMap: Map<number, LeadContractInfo[]> = new Map();
+  rawLeadsData: any[] = []; // Store raw API data to access lead_converted
+  readonly BONUS_COEFFICIENT = 0.5;
+
+  // ===== NEW CLIENT CREATION PROPERTIES =====
+  showNewClient = false;
+  selectTipoCliente: string = 'consumer';
+  newClientForm: FormGroup;
+  showClientFormError: boolean = false;
+
+  // Conversion mode: true when opening form from "Converti" button
+  isConvertMode = false;
+  convertingLeadId: number = 0;
+
+  // Duplicate lead warning
+  showDuplicateWarning = false;
+  duplicateLeadFound: any = null;
 
   constructor(
     private servizioApi: ApiService,
     private fb: FormBuilder,
-    private dialogRef: MatDialog
+    private dialogRef: MatDialog,
+    private route: ActivatedRoute,
+    private _snackBar: MatSnackBar
   ) {
     this.leadForm = this.fb.group({
       nome: ['', Validators.required],
@@ -199,17 +245,85 @@ export class LeadsComponent implements OnInit {
       assegnato_a: ['', Validators.required],
       id_assegnato: ['', Validators.required],
     });
-  }
-  onConsensoChange(event: any) {
-    //console.log(event);
 
+    // New client creation form (consumer/business)
+    this.newClientForm = this.fb.group({
+      nome: ['', Validators.required],
+      cognome: ['', Validators.required],
+      ragione_sociale: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      telefono: ['', Validators.required],
+      codice_fiscale: ['', [Validators.required, Validators.minLength(16)]],
+      partita_iva: ['', [Validators.required, Validators.minLength(11)]],
+      indirizzo: ['', Validators.required],
+      provincia: ['', [Validators.required, Validators.minLength(2)]],
+      citta: ['', Validators.required],
+      nazione: ['', Validators.required],
+      cap: ['', Validators.required],
+    });
+  }
+
+  onConsensoChange(event: any) {
     this.checked = event.checked;
     this.leadForm.get('consenso')?.setValue(this.checked);
     this.leadForm.get('consenso')?.markAsTouched();
   }
+
+  // ===== LEAD STATUS COLOR MAPPING =====
+  // Maps micro_stato to proper badge colors (database colors are for row bg, not badges)
+  private getLeadStatusColor(microStato: string): string {
+    const colorMap: Record<string, string> = {
+      'Lead inserito':        'linear-gradient(135deg, #6366f1, #818cf8)',
+      'Amico Inserito':       'linear-gradient(135deg, #6366f1, #818cf8)',
+      'Lead Sospeso':         'linear-gradient(135deg, #f59e0b, #fbbf24)',
+      'Lead Non Interessato': 'linear-gradient(135deg, #ef4444, #f87171)',
+      'Appuntamento Preso':   'linear-gradient(135deg, #3b82f6, #60a5fa)',
+      'Appuntamento KO':      'linear-gradient(135deg, #ef4444, #f87171)',
+      'Lead OK':              'linear-gradient(135deg, #10b981, #34d399)',
+    };
+    return colorMap[microStato] || 'linear-gradient(135deg, #64748b, #94a3b8)';
+  }
+
+  // ===== PERSONAL/SQUAD LEAD FILTERING =====
+
+  /**
+   * Determines if a lead belongs to the current user's personal leads.
+   * - Client (role 3): leads they CREATED (invitato_da_user_id) — survives reassignment
+   * - SEU/Advisor: leads ASSIGNED to them OR assigned to their direct clients
+   */
+  private isPersonalLead(lead: any): boolean {
+    if (this.roleId === 3) {
+      return lead.invitato_da_user_id === this.userId;
+    } else {
+      return lead.assegnato_a === this.userId ||
+        (lead.user && lead.user.role_id === 3 && lead.user.user_id_padre === this.userId);
+    }
+  }
+
+  /**
+   * Returns the display name for the "Inserito da" column.
+   * - Client: shows the assignee (themselves, since they auto-assign)
+   * - SEU/Advisor: shows who CREATED the lead (invited_by from backend)
+   */
+  private getInseritoDaDisplay(Lead: any): string {
+    if (this.roleId === 3) {
+      return Lead.user.name || Lead.user.cognome
+        ? Lead.user.name + ' ' + Lead.user.cognome
+        : Lead.user.ragione_sociale;
+    } else {
+      if (Lead.invited_by) {
+        return Lead.invited_by.name || Lead.invited_by.cognome
+          ? (Lead.invited_by.name || '') + ' ' + (Lead.invited_by.cognome || '')
+          : Lead.invited_by.ragione_sociale || 'N/D';
+      }
+      return Lead.user.name || Lead.user.cognome
+        ? Lead.user.name + ' ' + Lead.user.cognome
+        : Lead.user.ragione_sociale;
+    }
+  }
+
   ngOnInit(): void {
     this.servizioApi.PrendiUtente().subscribe((Ruolo: any) => {
-      // console.log(Ruolo);
       this.ruoloUtente = Ruolo.user.qualification.descrizione;
       this.userId = Ruolo.user.id;
       this.roleId = Ruolo.user.role_id;
@@ -218,20 +332,31 @@ export class LeadsComponent implements OnInit {
         this.showCalendario = false;
         this.showDettagli = false;
       }
+
+      // Auto-show leads table on page load (all roles)
+      this.allDivCard = true;
+      this.showleadsTable = true;
+
+      // Handle query param ?action=new (from dashboard "Invita Amico")
+      this.route.queryParams.subscribe(params => {
+        if (params['action'] === 'new') {
+          this.ShowCrealeads();
+        }
+      });
     });
+
     this.servizioApi.getLeads().subscribe((LeadsAll: any) => {
       console.clear();
       console.log(LeadsAll);
 
-      LeadsAll.body.risposta.map((Lead: any) => {
-        //console.log(Lead.user.role_id === 3);
+      // Store raw data for lead_converted access and duplicate checking
+      this.rawLeadsData = LeadsAll.body.risposta;
 
+      LeadsAll.body.risposta.map((Lead: any) => {
+
+        // Personal leads: role-based filtering
         this.Leads = LeadsAll.body.risposta
-          .filter(
-            (lead: any) =>
-              lead.invitato_da_user_id === this.userId ||
-              lead.user.role_id === 3
-          )
+          .filter((lead: any) => this.isPersonalLead(lead))
           .map((Lead: any) => ({
             id: Lead.id,
             nome: Lead.nome,
@@ -239,13 +364,14 @@ export class LeadsComponent implements OnInit {
             email: Lead.email,
             telefono: Lead.telefono,
             inserito_il: Lead.data_inserimento,
-            assegnato_a:
-              Lead.user.name || Lead.user.cognome
-                ? Lead.user.name + ' ' + Lead.user.cognome
-                : Lead.user.ragione_sociale,
+            assegnato_a: this.getInseritoDaDisplay(Lead),
             id_assegnato: Lead.user.id,
             stato: Lead.lead_status_id,
-            colore: Lead.leadstatus.color_id,
+            colore: this.getLeadStatusColor(
+              this.ruoloUtente === 'Cliente' && Lead.leadstatus.micro_stato === 'Lead inserito'
+                ? 'Amico Inserito'
+                : Lead.leadstatus.micro_stato
+            ),
             microstato:
               this.ruoloUtente == 'Cliente' &&
               Lead.leadstatus.micro_stato == 'Lead inserito'
@@ -255,7 +381,6 @@ export class LeadsComponent implements OnInit {
             nominativoLead: Lead.nome + ' ' + Lead.cognome,
             data_appuntamento:
               Lead.data_appuntamento + ' ' + Lead.ora_appuntamento,
-            //stato:Lead.
           }));
 
         const conteggiStati = this.Leads.reduce((acc: any, curr: any) => {
@@ -280,11 +405,9 @@ export class LeadsComponent implements OnInit {
         this.dataSource.data = this.Leads;
         this.dataSource.paginator = this.paginator;
 
+        // Squad leads: everything that is NOT personal
         this.LeadsSquad = LeadsAll.body.risposta
-          .filter(
-            (lead: any) =>
-              lead.invitato_da_user_id != this.userId && lead.user.role_id != 3
-          )
+          .filter((lead: any) => !this.isPersonalLead(lead))
           .map((Lead: any) => ({
             id: Lead.id,
             nome: Lead.nome,
@@ -295,13 +418,12 @@ export class LeadsComponent implements OnInit {
             assegnato_a: Lead.user.name + ' ' + Lead.user.cognome,
             id_assegnato: Lead.user.id,
             stato: Lead.lead_status_id,
-            colore: Lead.leadstatus.color_id,
+            colore: this.getLeadStatusColor(Lead.leadstatus.micro_stato),
             microstato: Lead.leadstatus.micro_stato,
             is_converted: Lead.is_converted,
             nominativoLead: Lead.nome + ' ' + Lead.cognome,
             data_appuntamento:
               Lead.data_appuntamento + ' ' + Lead.ora_appuntamento,
-            //stato:Lead.
           }));
 
         const conteggiStatiSquad = this.LeadsSquad.reduce(
@@ -330,12 +452,69 @@ export class LeadsComponent implements OnInit {
         this.dataSourceSquad.paginator = this.paginatorSquad;
       });
 
-      //this.leadsSelected=this.Leads;
-      //console.log(this.dataSource);
-      
       // Inizializza il calendario moderno
       this.generateCalendar();
+
+      // Load contracts for Client role expandable rows
+      if (this.roleId === 3) {
+        this.loadLeadContracts();
+      }
     });
+  }
+
+  // Load contracts and build the lead -> contracts map
+  private loadLeadContracts(): void {
+    this.servizioApi.getCombinedData(this.userId).subscribe((combinedData) => {
+      const contratti = combinedData.contratti?.body?.risposta?.data
+        || combinedData.contratti?.body?.risposta
+        || [];
+
+      this.Leads.forEach((lead: any) => {
+        const rawLead = this.rawLeadsData.find((l: any) => l.id === lead.id);
+        if (rawLead && rawLead.lead_converted && rawLead.lead_converted.cliente_id) {
+          const clienteId = rawLead.lead_converted.cliente_id;
+          const clientContracts = contratti
+            .filter((c: any) => c.associato_a_user_id === clienteId)
+            .map((c: any) => ({
+              id: c.id,
+              codice_contratto: c.codice_contratto || 'N/D',
+              intestatario: c.customer_data
+                ? (c.customer_data.ragione_sociale
+                  || ((c.customer_data.nome || '') + ' ' + (c.customer_data.cognome || '')).trim())
+                : '-',
+              stato: c.status_contract?.micro_stato || '-',
+              punti_bonus: c.status_contract_id === 15
+                ? Math.round((c.product?.macro_product?.punti_valore || 0) * this.BONUS_COEFFICIENT)
+                : 0,
+            }));
+
+          this.leadContractsMap.set(lead.id, clientContracts);
+        }
+      });
+    });
+  }
+
+  // Toggle expandable row for a lead
+  toggleLeadRow(lead: any): void {
+    if (this.roleId !== 3) return;
+    if (this.expandedLeadIds.has(lead.id)) {
+      this.expandedLeadIds.delete(lead.id);
+    } else {
+      this.expandedLeadIds.add(lead.id);
+    }
+  }
+
+  isLeadExpanded(lead: any): boolean {
+    return this.expandedLeadIds.has(lead.id);
+  }
+
+  getLeadContracts(leadId: number): LeadContractInfo[] {
+    return this.leadContractsMap.get(leadId) || [];
+  }
+
+  leadHasContracts(leadId: number): boolean {
+    const contracts = this.leadContractsMap.get(leadId);
+    return !!contracts && contracts.length > 0;
   }
 
   parseDate(dateString: string): Date {
@@ -357,13 +536,10 @@ export class LeadsComponent implements OnInit {
       .storeNewLead(this.leadForm.value)
       .subscribe((Risposta: any) => {
         console.log('Lead creato:', Risposta);
-        // Ricarica i dati dopo la creazione del lead
         this.ngOnInit();
       });
     this.showLeads();
   }
-
-  
 
   clearFilter() {
     this.leadsSelected = [];
@@ -384,24 +560,15 @@ export class LeadsComponent implements OnInit {
   }
 
   filterUser(row: any, filter: string) {
-    // console.log('applica filtri con filterUser');
-    // console.log(row.inserito_il);
-    // console.log(filter);
-
     if (!filter) {
-      // Controlla se filter è una stringa vuota
-      return true; // Nessun filtro attivo, mostra tutte le righe
+      return true;
     }
 
     const filterObj = JSON.parse(filter);
-    //console.log(filterObj);
-    //console.log(this.Leads);
-
-    const utentiSelezionati = filterObj.usLead || []; // Inizializza come array vuoto se undefined
+    const utentiSelezionati = filterObj.usLead || [];
     const statiSelezionati = filterObj.statusLead || [];
     const seuSelezionati = filterObj.seuLead || [];
 
-    // Date range handling
     let matchDate = true;
     if (filterObj.inseritoil.start && filterObj.inseritoil.end) {
       const startDate = this.parseDate(filterObj.inseritoil.start);
@@ -417,29 +584,20 @@ export class LeadsComponent implements OnInit {
       !statiSelezionati.length || statiSelezionati.includes(row.microstato);
     const matchSeu =
       !seuSelezionati.length || seuSelezionati.includes(row.assegnato_a);
-    //console.log(seuSelezionati);
 
     return matchUtente && matchStato && matchSeu && matchDate;
   }
 
   filterUserSquad(row: any, filter: string) {
-    // console.log('applica filtri da filterUserSquad');
-    // console.log(filter);
-
     if (!filter) {
-      // Controlla se filter è una stringa vuota
-      return true; // Nessun filtro attivo, mostra tutte le righe
+      return true;
     }
 
     const filterObjSquad = JSON.parse(filter);
-    //console.log(filterObj);
-    //console.log(this.Leads);
-
-    const utentiSelezionatiSquad = filterObjSquad.usLeadSquad || []; // Inizializza come array vuoto se undefined
+    const utentiSelezionatiSquad = filterObjSquad.usLeadSquad || [];
     const statiSelezionatiSquad = filterObjSquad.statusLeadSquad || [];
     const seuSelezionatiSquad = filterObjSquad.seuLeadSquad || [];
 
-    // Date range handling
     let matchDateSquad = true;
     if (filterObjSquad.inseritoil.start && filterObjSquad.inseritoil.end) {
       const startDate = this.parseDate(filterObjSquad.inseritoil.start);
@@ -458,22 +616,12 @@ export class LeadsComponent implements OnInit {
       !seuSelezionatiSquad.length ||
       seuSelezionatiSquad.includes(row.assegnato_a);
 
-    // console.log('Filter Object:', filterObjSquad);
-    // console.log('seuSelezionati:', seuSelezionatiSquad);
-    // console.log('row.assegnato_a:', row.assegnato_a);
     return (
       matchUtenteSquad && matchStatoSquad && matchSeuSquad && matchDateSquad
     );
-    //
   }
 
   applyFilter() {
-    // console.log('applyFilter');
-    // console.log(this.leadsSelected);
-    // console.log(this.statusSelected);
-    // console.log(this.seuSelected);
-    // console.log(this.DTRGinseritoil);
-
     let startDate: any | Date | null = null;
     let endDate: any | Date | null = null;
 
@@ -501,17 +649,12 @@ export class LeadsComponent implements OnInit {
         end: endDate,
       },
     };
-    //console.log(filterValue);
 
     this.dataSource.filterPredicate = this.filterUser.bind(this);
     this.dataSource.filter = JSON.stringify(filterValue);
-    //console.log("datasource filter"+this.dataSource.filter);
   }
 
   applyFilterSquad() {
-    //console.log(this.leadsSelected);
-    //console.log(this.statusSelected);
-
     let startDate: any | Date | null = null;
     let endDate: any | Date | null = null;
 
@@ -533,9 +676,6 @@ export class LeadsComponent implements OnInit {
       }
     }
 
-    console.log(startDate);
-    console.log(endDate);
-
     const filterValueSquad = {
       usLeadSquad: this.leadsSelectedSquad.map(
         (usLeadSquad) => usLeadSquad.nominativoLead
@@ -551,11 +691,9 @@ export class LeadsComponent implements OnInit {
         end: endDate,
       },
     };
-    //console.log(filterValue);
 
     this.dataSourceSquad.filterPredicate = this.filterUserSquad.bind(this);
     this.dataSourceSquad.filter = JSON.stringify(filterValueSquad);
-    //console.log("datasource filter"+this.dataSource.filter);
   }
 
   showLeadsForDay(array: any) {
@@ -564,6 +702,8 @@ export class LeadsComponent implements OnInit {
     this.showleadsCard = true;
     this.showCreateLead = false;
     this.showQrcode = false;
+    this.showNewClient = false;
+    this.showCalendarTab = false;
     this.servizioApi.getLeadsDayClicked(array).subscribe((Risposta: any) => {
       console.log(Risposta.body.risposta);
       this.Leads = Risposta.body.risposta.map((Lead: any) => ({
@@ -575,21 +715,22 @@ export class LeadsComponent implements OnInit {
         assegnato_a: Lead.user.name + ' ' + Lead.user.cognome,
         id_assegnato: Lead.user.id,
         stato: Lead.lead_status_id,
+        colore: this.getLeadStatusColor(Lead.leadstatus.micro_stato),
         microstato: Lead.leadstatus.micro_stato,
         is_converted: Lead.is_converted,
         nominativoLead: Lead.nome + ' ' + Lead.cognome,
-        //stato:Lead.
       }));
-      //console.log(this.Leads);
     });
   }
 
   showLeads() {
     this.allDivCard = true;
-    this.showleadsTable = !this.showleadsTable ;
+    this.showleadsTable = !this.showleadsTable;
     this.showleadsCard = false;
     this.showCreateLead = false;
     this.showQrcode = false;
+    this.showNewClient = false;
+    this.showCalendarTab = false;
   }
 
   ShowCrealeads() {
@@ -598,12 +739,8 @@ export class LeadsComponent implements OnInit {
     this.showleadsTable = false;
     this.showleadsCard = false;
     this.showQrcode = false;
-    /* this.divTable.classList.remove("show");
-    this.divTable.classList.add("d-none");
-    this.divCard.classList.remove("show");
-    this.divCard.classList.add("d-none");
-    this.divNewLead.classList.remove("d-none");
-    this.divNewLead.classList.add("show"); */
+    this.showNewClient = false;
+    this.showCalendarTab = false;
   }
 
   ShowAppQrcode() {
@@ -612,12 +749,8 @@ export class LeadsComponent implements OnInit {
     this.showleadsTable = false;
     this.showleadsCard = false;
     this.showQrcode = !this.showQrcode;
-    /* this.divTable.classList.remove("show");
-    this.divTable.classList.add("d-none");
-    this.divCard.classList.remove("show");
-    this.divCard.classList.add("d-none");
-    this.divNewLead.classList.remove("d-none");
-    this.divNewLead.classList.add("show"); */
+    this.showNewClient = false;
+    this.showCalendarTab = false;
   }
 
   showCalendarOnly() {
@@ -626,34 +759,390 @@ export class LeadsComponent implements OnInit {
     this.showleadsTable = false;
     this.showleadsCard = false;
     this.showQrcode = false;
+    this.showNewClient = false;
+    this.showCalendarTab = false;
   }
-  dettagliLead(lead: any, reparto: string) {
-    this.dialogRef.open(ContrattoDetailsDialogComponent, {
-      width: 'calc(50% - 50px)',
-      enterAnimationDuration: '500ms',
-      exitAnimationDuration: '500ms',
-      /* position: { left: '20%' }, */
-      /* panelClass:['centered-element-spinner' ,'large-spinner'], */
-      data: { lead: lead, reparto: reparto },
+
+  /**
+   * Toggle the calendar tab inside main-content (same pattern as other tabs)
+   */
+  ShowCalendar() {
+    this.allDivCard = true;
+    this.showCalendarTab = !this.showCalendarTab;
+    this.showCreateLead = false;
+    this.showleadsTable = false;
+    this.showleadsCard = false;
+    this.showQrcode = false;
+    this.showNewClient = false;
+
+    // Refresh calendar when opening
+    if (this.showCalendarTab) {
+      this.generateCalendar();
+    }
+  }
+
+  // ===== NEW CLIENT CREATION (Punto 3) =====
+
+  /**
+   * Toggle "Nuovo Cliente" form — standalone mode (not from lead conversion)
+   */
+  ShowNewClient() {
+    this.allDivCard = true;
+    this.showNewClient = !this.showNewClient;
+    this.showCreateLead = false;
+    this.showleadsTable = false;
+    this.showleadsCard = false;
+    this.showQrcode = false;
+    this.showCalendarTab = false;
+
+    // Reset form and flags
+    this.isConvertMode = false;
+    this.convertingLeadId = 0;
+    this.showDuplicateWarning = false;
+    this.duplicateLeadFound = null;
+    this.showClientFormError = false;
+    this.selectTipoCliente = 'consumer';
+    this.newClientForm.reset();
+  }
+
+  /**
+   * Check if email or phone matches an existing lead in the system.
+   * Called on blur/change of email and telefono fields in the new client form.
+   */
+  checkDuplicateLead(): void {
+    // Skip check in convert mode — we ARE converting the lead
+    if (this.isConvertMode) {
+      this.showDuplicateWarning = false;
+      this.duplicateLeadFound = null;
+      return;
+    }
+
+    const email = (this.newClientForm.get('email')?.value || '').trim().toLowerCase();
+    const telefono = (this.newClientForm.get('telefono')?.value || '').trim();
+
+    if (!email && !telefono) {
+      this.showDuplicateWarning = false;
+      this.duplicateLeadFound = null;
+      return;
+    }
+
+    // Search through ALL leads (raw API data) for matching email or phone
+    const matchingLead = this.rawLeadsData.find((lead: any) => {
+      const leadEmail = (lead.email || '').trim().toLowerCase();
+      const leadPhone = (lead.telefono || '').trim();
+
+      const emailMatch = email && leadEmail && email === leadEmail;
+      const phoneMatch = telefono && leadPhone && telefono === leadPhone;
+
+      return emailMatch || phoneMatch;
     });
-    //console.log(lead);
+
+    if (matchingLead) {
+      this.showDuplicateWarning = true;
+      this.duplicateLeadFound = {
+        id: matchingLead.id,
+        nome: matchingLead.nome,
+        cognome: matchingLead.cognome,
+        email: matchingLead.email,
+        telefono: matchingLead.telefono,
+        stato: matchingLead.leadstatus?.micro_stato || 'N/D',
+        is_converted: matchingLead.is_converted,
+        inserito_da: matchingLead.invited_by
+          ? (matchingLead.invited_by.name || '') + ' ' + (matchingLead.invited_by.cognome || '')
+          : (matchingLead.user?.name || '') + ' ' + (matchingLead.user?.cognome || ''),
+      };
+    } else {
+      this.showDuplicateWarning = false;
+      this.duplicateLeadFound = null;
+    }
   }
 
-  onArrayidLeadChange(newArray: number[]) {
-    //console.log("Array ricevuto da CalendarComponent:", newArray);
-    this.showLeadsForDay(newArray);
-    // Qui puoi utilizzare newArray nel tuo LeadsComponent
+  /**
+   * User dismisses the duplicate warning — go to conversion of the existing lead instead
+   */
+  goToConvertExistingLead(): void {
+    if (!this.duplicateLeadFound) return;
+
+    // Use the existing converti flow with the duplicate lead data
+    this.converti({
+      id: this.duplicateLeadFound.id,
+      nome: this.duplicateLeadFound.nome,
+      cognome: this.duplicateLeadFound.cognome,
+      email: this.duplicateLeadFound.email,
+      telefono: this.duplicateLeadFound.telefono,
+      is_converted: this.duplicateLeadFound.is_converted,
+    });
+
+    this.showDuplicateWarning = false;
+    this.duplicateLeadFound = null;
+    this.showNewClient = false;
   }
 
+  /**
+   * User confirms creating client despite duplicate lead warning.
+   * This is a PROCEDURE VIOLATION — we log it as an error.
+   */
+  proceedWithDuplicateClient(): void {
+    this.showDuplicateWarning = false;
+    // The form submission continues — the actual API call will also log the violation
+    this.createNewClient(true);
+  }
+
+  /**
+   * Create a new client from the form.
+   * @param skipLeadConversion If true, logs a procedure violation warning
+   */
+  createNewClient(skipLeadConversion: boolean = false): void {
+    this.showClientFormError = true;
+
+    // Build client data based on tipo
+    const clienteData: any = {
+      email: this.newClientForm.value.email,
+      telefono: this.newClientForm.value.telefono,
+      indirizzo: this.newClientForm.value.indirizzo,
+      provincia: this.newClientForm.value.provincia,
+      citta: this.newClientForm.value.citta,
+      nazione: this.newClientForm.value.nazione,
+      cap: this.newClientForm.value.cap,
+      qualifica: 9,
+      ruolo: 3,
+      us_padre: localStorage.getItem('userLogin'),
+      tipo: this.selectTipoCliente,
+      password: 'Benvenutoinsemprechiaro',
+    };
+
+    if (this.selectTipoCliente === 'consumer') {
+      clienteData.nome = this.newClientForm.value.nome;
+      clienteData.cognome = this.newClientForm.value.cognome;
+      clienteData.codice_fiscale = this.newClientForm.value.codice_fiscale;
+      clienteData.ragione_sociale = '-';
+      clienteData.partita_iva = '00000000000';
+    } else {
+      clienteData.ragione_sociale = this.newClientForm.value.ragione_sociale;
+      clienteData.partita_iva = this.newClientForm.value.partita_iva;
+      clienteData.nome = '-';
+      clienteData.cognome = '-';
+      clienteData.codice_fiscale = '0000000000000000';
+    }
+
+    // In convert mode, use nuovoClienteLead (creates user + leadConverted record)
+    if (this.isConvertMode && this.convertingLeadId) {
+      clienteData.id_lead = this.convertingLeadId;
+      this.servizioApi.nuovoClienteLead(clienteData).subscribe((risultato: any) => {
+        if (risultato.response === 'ok') {
+          console.log('Client created from lead conversion:', risultato);
+          this.showNewClient = false;
+          this.isConvertMode = false;
+          this.convertingLeadId = 0;
+          this.newClientForm.reset();
+          this.showClientFormError = false;
+          this.ngOnInit(); // Reload data
+        } else {
+          console.error('Client already exists:', risultato);
+        }
+      });
+      return;
+    }
+
+    // Standalone mode: use nuovoUtente + log violation if duplicate was skipped
+    if (skipLeadConversion && this.duplicateLeadFound) {
+      clienteData.procedure_violation = true;
+      clienteData.matching_lead_id = this.duplicateLeadFound.id;
+      clienteData.matching_lead_nome = this.duplicateLeadFound.nome + ' ' + this.duplicateLeadFound.cognome;
+    }
+
+    this.servizioApi.nuovoUtente(clienteData).subscribe((risultato: any) => {
+      if (risultato.response === 'ok') {
+        console.log('Client created (standalone):', risultato);
+
+        // Log procedure violation if a matching lead was skipped
+        if (skipLeadConversion && this.duplicateLeadFound) {
+          this.logProcedureViolation(this.duplicateLeadFound, clienteData);
+        }
+
+        this.showNewClient = false;
+        this.newClientForm.reset();
+        this.showClientFormError = false;
+        this.duplicateLeadFound = null;
+        this.ngOnInit();
+      } else {
+        console.error('Client already exists:', risultato);
+      }
+    });
+  }
+
+  /**
+   * Log a procedure violation when a client is created without converting the matching lead.
+   * Calls backend endpoint to create a system log entry.
+   */
+  private logProcedureViolation(duplicateLead: any, clienteData: any): void {
+    const logData = {
+      level: 'error',
+      source: 'user_activity',
+      message: `Procedure violation: Client created without converting matching lead #${duplicateLead.id}`,
+      entity_type: 'lead',
+      entity_id: duplicateLead.id,
+      context: {
+        matching_lead: {
+          id: duplicateLead.id,
+          nome: duplicateLead.nome,
+          cognome: duplicateLead.cognome,
+          email: duplicateLead.email,
+          telefono: duplicateLead.telefono,
+          stato: duplicateLead.stato,
+        },
+        new_client: {
+          email: clienteData.email,
+          telefono: clienteData.telefono,
+          tipo: clienteData.tipo,
+        },
+        user_id: this.userId,
+        action: 'client_created_without_lead_conversion',
+      },
+    };
+
+    // Use a generic log endpoint if available, otherwise just console.error
+    // TODO: Connect to backend logging endpoint (POST /api/logProcedureViolation)
+    console.error('[PROCEDURE VIOLATION]', logData);
+    // this.servizioApi.logProcedureViolation(logData).subscribe();
+  }
+
+  // ===== LEAD CONVERSION (Punto 4) =====
+
+  /**
+   * Open the new client form pre-filled with lead data for conversion.
+   * This replaces the old converti() that only passed email/telefono/id.
+   */
   converti(lead: any) {
-    //console.log(lead);
+    // Set conversion mode
+    this.isConvertMode = true;
+    this.convertingLeadId = lead.id;
+
+    // Also set the old lead object for backward compatibility with converti-lead component
     this.nuovocliente = false;
     this.lead = {
       email: lead.email,
       telefono: lead.telefono,
       id_lead: lead.id,
+      nome: lead.nome,
+      cognome: lead.cognome,
     };
-    //console.log(this.lead);
+
+    // Open the new client form and pre-fill with lead data
+    this.allDivCard = true;
+    this.showNewClient = true;
+    this.showCreateLead = false;
+    this.showleadsTable = false;
+    this.showleadsCard = false;
+    this.showQrcode = false;
+    this.showCalendarTab = false;
+
+    this.showDuplicateWarning = false;
+    this.duplicateLeadFound = null;
+    this.showClientFormError = false;
+    this.selectTipoCliente = 'consumer';
+
+    // Pre-fill form with lead data
+    this.newClientForm.reset();
+    this.newClientForm.patchValue({
+      nome: lead.nome || '',
+      cognome: lead.cognome || '',
+      email: lead.email || '',
+      telefono: lead.telefono || '',
+    });
+  }
+
+  /**
+   * Cancel the new client form and go back to leads table
+   */
+  cancelNewClient(): void {
+    this.showNewClient = false;
+    this.isConvertMode = false;
+    this.convertingLeadId = 0;
+    this.showDuplicateWarning = false;
+    this.duplicateLeadFound = null;
+    this.showClientFormError = false;
+    this.newClientForm.reset();
+    this.nuovocliente = true;
+
+    // Show leads table
+    this.showleadsTable = true;
+  }
+
+  /**
+   * Show a snackbar notification when user clicks the thumb-up icon
+   * on a lead that has already been converted to a client.
+   */
+  showConvertedSnackbar(lead: any): void {
+    this._snackBar.open(
+      `Il lead "${lead.nominativoLead}" è già stato convertito in cliente!`,
+      'OK',
+      {
+        duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['converted-snackbar'],
+      }
+    );
+  }
+
+  /**
+   * Submit the new client form.
+   * If duplicate warning is active and not yet confirmed, show warning first.
+   */
+  submitNewClient(): void {
+    // If duplicate warning is showing, don't submit — user must choose
+    if (this.showDuplicateWarning) {
+      return;
+    }
+
+    // Check for required fields based on tipo
+    const isValid = this.isClientFormValid();
+    if (!isValid) {
+      this.showClientFormError = true;
+      return;
+    }
+
+    // Check for duplicates one last time before submit
+    this.checkDuplicateLead();
+    if (this.showDuplicateWarning) {
+      return; // Show warning, don't submit yet
+    }
+
+    this.createNewClient(false);
+  }
+
+  /**
+   * Validates the client form based on the selected client type.
+   */
+  private isClientFormValid(): boolean {
+    const f = this.newClientForm.value;
+
+    // Common required fields
+    if (!f.email || !f.telefono || !f.indirizzo || !f.citta || !f.nazione || !f.cap || !f.provincia) {
+      return false;
+    }
+
+    if (this.selectTipoCliente === 'consumer') {
+      return !!(f.nome && f.cognome && f.codice_fiscale && f.codice_fiscale.length >= 16);
+    } else {
+      return !!(f.ragione_sociale && f.partita_iva && f.partita_iva.length >= 11);
+    }
+  }
+
+  // ===== LEAD DETAILS DIALOG =====
+
+  dettagliLead(lead: any, reparto: string) {
+    this.dialogRef.open(ContrattoDetailsDialogComponent, {
+      width: 'calc(50% - 50px)',
+      enterAnimationDuration: '500ms',
+      exitAnimationDuration: '500ms',
+      data: { lead: lead, reparto: reparto },
+    });
+  }
+
+  onArrayidLeadChange(newArray: number[]) {
+    this.showLeadsForDay(newArray);
   }
 
   // ===== METODI CALENDARIO MODERNO =====
@@ -705,7 +1194,7 @@ export class LeadsComponent implements OnInit {
     } else if (this.calendarView === 'day') {
       this.generateDayView();
     }
-    
+
     this.calculateStats();
   }
 
@@ -741,13 +1230,11 @@ export class LeadsComponent implements OnInit {
     const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
 
-    // Inizia dal lunedì della settimana
     startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
 
     this.calendarDays = [];
     const currentDate = new Date(startDate);
 
-    // Genera 6 settimane (42 giorni)
     for (let i = 0; i < 42; i++) {
       const day = this.createCalendarDay(currentDate, month);
       this.calendarDays.push(day);
@@ -756,7 +1243,6 @@ export class LeadsComponent implements OnInit {
   }
 
   generateWeekView() {
-    // Implementazione vista settimana
     const startOfWeek = new Date(this.currentDate);
     startOfWeek.setDate(this.currentDate.getDate() - this.currentDate.getDay() + 1);
 
@@ -771,7 +1257,6 @@ export class LeadsComponent implements OnInit {
   }
 
   generateDayView() {
-    // Implementazione vista giorno
     this.calendarDays = [this.createCalendarDay(this.currentDate, this.currentDate.getMonth())];
   }
 
@@ -796,10 +1281,9 @@ export class LeadsComponent implements OnInit {
       return [];
     }
 
-    // Filtra solo i lead con appuntamenti validi
-    const leadsWithAppointments = this.Leads.filter(lead => 
-      lead.data_appuntamento && 
-      lead.data_appuntamento !== null && 
+    const leadsWithAppointments = this.Leads.filter(lead =>
+      lead.data_appuntamento &&
+      lead.data_appuntamento !== null &&
       lead.data_appuntamento !== 'null null' &&
       typeof lead.data_appuntamento === 'string'
     );
@@ -807,23 +1291,18 @@ export class LeadsComponent implements OnInit {
     const matchingLeads = leadsWithAppointments.filter(lead => {
       try {
         let leadDate: Date;
-        
-        // Gestisce il formato "YYYY-MM-DD HH:mm:ss HH:mm:ss"
+
         if (lead.data_appuntamento.includes(' ') && lead.data_appuntamento.length > 10) {
           const datePart = lead.data_appuntamento.split(' ')[0];
           leadDate = new Date(datePart);
-        }
-        // Formato DD/MM/YYYY
-        else if (lead.data_appuntamento.includes('/')) {
+        } else if (lead.data_appuntamento.includes('/')) {
           const parts = lead.data_appuntamento.split('/');
           if (parts.length === 3) {
             leadDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
           } else {
             leadDate = new Date(lead.data_appuntamento);
           }
-        } 
-        // Altri formati standard
-        else {
+        } else {
           leadDate = new Date(lead.data_appuntamento);
         }
 
@@ -873,13 +1352,9 @@ export class LeadsComponent implements OnInit {
   }
 
   selectDay(day: any) {
-    // Deseleziona tutti gli altri giorni
     this.calendarDays.forEach((d) => (d.isSelected = false));
-
-    // Seleziona il giorno corrente
     day.isSelected = true;
 
-    // Mostra i lead per quel giorno
     if (day.leadsCount > 0) {
       this.showLeadsForDay(day.leads.map((lead: any) => lead.id));
     }
@@ -891,7 +1366,6 @@ export class LeadsComponent implements OnInit {
     const today = new Date();
     this.todayLeads = this.getLeadsForDate(today).length;
 
-    // Calcola lead della settimana
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay() + 1);
     const endOfWeek = new Date(startOfWeek);
@@ -918,11 +1392,6 @@ export class LeadsComponent implements OnInit {
     return day.fullDate.getTime();
   }
 
-  // ===== UTILITY METHODS =====
-
-  // ===== METODI ESISTENTI =====
-
-  // ===== METODO PER AGGIORNARE CALENDARIO =====
   refreshCalendar() {
     console.log('Aggiornamento calendario - Lead totali:', this.Leads.length);
     this.generateCalendar();

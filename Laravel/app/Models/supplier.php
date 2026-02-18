@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsDatabaseOperations;
 
 class supplier extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsDatabaseOperations;
 
     protected $fillable=[
         'nome_fornitore',

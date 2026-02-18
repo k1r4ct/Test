@@ -140,7 +140,7 @@ export class UserComponent implements OnInit, OnDestroy {
 
 
   vaiALead() {
-    this.router.navigate(["/leads"]);
+    this.router.navigate(["/leads"], { queryParams: { action: 'new' } });
   }
 
   vaiASchedaPersonale() {
@@ -329,6 +329,7 @@ export class UserComponent implements OnInit, OnDestroy {
     }
   }
 
+// Forza Inter !(by Filippo Sciacca)
   private handleResize = () => {
     if (this.jsChart) {
       clearTimeout(this.resizeTimeout);

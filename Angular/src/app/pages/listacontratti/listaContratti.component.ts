@@ -1785,18 +1785,54 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
         this.contrattoselezionato = true;
       },
       (error) => {
-        this.snackBar.open(
-          "Errore durante l'aggiornamento del contratto",
-          "Chiudi",
-          {
-            duration: 3000,
-            horizontalPosition: "center",
-            verticalPosition: "bottom",
-            panelClass: ["error-snackbar"],
+        let errorMessage = "Errore durante l'aggiornamento del contratto";
+
+        if (error?.error?.error_type === 'invalid_specific_data') {
+          const domanda = error.error.body?.domanda || '';
+          errorMessage = error.error.body?.message
+            || `Il campo "${domanda}" contiene un valore non valido`;
+
+          if (domanda) {
+            this.highlightInvalidField(domanda);
           }
-        );
+        }
+
+        this.snackBar.open(errorMessage, "Chiudi", {
+          duration: 6000,
+          horizontalPosition: "center",
+          verticalPosition: "bottom",
+          panelClass: ["error-snackbar"],
+        });
       }
     );
+  }
+
+  /**
+   * Highlight an invalid specific_data field and scroll to it.
+   */
+  highlightInvalidField(domandaName: string): void {
+    setTimeout(() => {
+      const questionItem = document.querySelector(
+        `.question-item[tag="${domandaName}"]`
+      ) as HTMLElement;
+
+      if (questionItem) {
+        questionItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        questionItem.classList.add('field-validation-error');
+
+        const input = questionItem.querySelector('input, select') as HTMLElement;
+        if (input) {
+          input.classList.add('field-validation-error');
+        }
+
+        setTimeout(() => {
+          questionItem.classList.remove('field-validation-error');
+          if (input) {
+            input.classList.remove('field-validation-error');
+          }
+        }, 8000);
+      }
+    }, 100);
   }
 
   private reloadContrattiWithCurrentFilters(): void {
@@ -1943,6 +1979,18 @@ export class ListaContrattiComponent implements OnInit, DoCheck, AfterViewInit {
     }
 
     return specificDataArray;
+  }
+
+  // Label mapping for contraente fields
+  getFieldLabel(key: string): string {
+    const labelMap: { [key: string]: string } = {
+      'indirizzo': 'Indirizzo di fatturazione',
+      'cap': 'CAP',
+      'citta': 'Città',
+      'email': 'Email',
+      'telefono': 'Telefono'
+    };
+    return labelMap[key] || key;
   }
 
   mapTipoRisposta(tipoNumerico: number | string): string {

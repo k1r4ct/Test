@@ -55,7 +55,7 @@
   box-shadow: 0 4px 25px rgba(15, 14, 71, 0.15);
   overflow: hidden;  // No scroll here
   transition: box-shadow 0.3s ease;
-  min-width: 1300px;
+  min-width: 1400px;
   width: 100%;
 
   &:hover {
@@ -263,7 +263,7 @@
 
 .modern-table {
   width: 100%;
-  min-width: 1200px; 
+  min-width: 1400px; 
   border-collapse: collapse;
 
   // Header Row
@@ -422,7 +422,8 @@
 // Status Badge
 .status-badge {
   display: inline-block;
-  padding: 6px 14px;
+  text-align: center;
+  padding: 0px 5px;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -443,8 +444,8 @@
 
   &[data-status*="GETTONATO"],
   &[data-status*="Gettonato"] {
-    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-    color: #047857;
+    background: linear-gradient(135deg, #d1fae5 0%, #38aa75 100%);
+    color: #0d694f;
   }
 
   &[data-status*="ATTIVO"],
@@ -456,7 +457,7 @@
   &[data-status*="KO"],
   &[data-status*="Ko"],
   &[data-status*="CONTRATTO KO"] {
-    background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+    background: linear-gradient(135deg, #fecaca 0%, #720000 100%);
     color: #b91c1c;
   }
 

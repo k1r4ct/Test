@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use App\Services\SystemLogService;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\LogsDatabaseOperations;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, LogsDatabaseOperations;
 
     /**
      * The attributes that are mass assignable.

@@ -1,31 +1,21 @@
-// ===== DESIGN SYSTEM MODERNO =====
+// ========================================
+// LEADS COMPONENT - BLUE ECLIPSE THEME
+// Matches dashboard (tabellacontatti) exactly
+// #0F0E47 | #272757 | #505081 | #8686AC
+// ========================================
 
-// Variabili di design
-$primary-gradient: linear-gradient(180deg,#268730 10%,#027cad);
-$accent-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-$success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-$surface-gradient: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-
-$border-radius-sm: 8px;
-$border-radius-md: 12px;
-$border-radius-lg: 16px;
-$border-radius-xl: 24px;
-
-$shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-
-// ===== HEADER MODERNO =====
-.modern-header {
-  background: $primary-gradient;
+// ========================================
+// HERO HEADER
+// ========================================
+.hero-header {
+  background: linear-gradient(135deg, #0F0E47 0%, #272757 50%, #505081 100%);
   padding: 2rem 1.5rem;
-  border-radius: 0 0 $border-radius-xl $border-radius-xl;
-  box-shadow: $shadow-lg;
+  border-radius: 0 0 24px 24px;
+  box-shadow: 0 10px 15px -3px rgba(15, 14, 71, 0.12);
   margin-bottom: 2rem;
   position: relative;
   overflow: hidden;
-  z-index:103;
+  z-index: 103;
 
   &::before {
     content: '';
@@ -34,45 +24,41 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-    opacity: 0.3;
+    background: radial-gradient(circle at 80% 20%, rgba(134, 134, 172, 0.15) 0%, transparent 50%);
+    pointer-events: none;
   }
 
-  .hero-section {
+  .hero-content {
     position: relative;
     z-index: 2;
     text-align: center;
     margin-bottom: 2rem;
 
-    .hero-content {
-      .hero-title {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
+    .hero-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: white;
+      margin: 0 0 0.5rem 0;
+      text-shadow: 0 2px 4px rgba(15, 14, 71, 0.3);
+
+      .hero-icon {
         font-size: 2.5rem;
-        font-weight: 700;
-        color: white;
-        margin: 0 0 0.5rem 0;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-        .hero-icon {
-          font-size: 2.5rem;
-          width: auto;
-          height: auto;
-        }
       }
+    }
 
-      .hero-subtitle {
-        font-size: 1.1rem;
-        color: rgba(255, 255, 255, 0.9);
-        margin: 0;
-        font-weight: 400;
-      }
+    .hero-subtitle {
+      font-size: 1.1rem;
+      color: #8686AC;
+      margin: 0;
+      font-weight: 400;
     }
   }
 
-  .action-buttons {
+  .hero-actions {
     display: flex;
     justify-content: center;
     gap: 1rem;
@@ -80,1453 +66,2254 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
     position: relative;
     z-index: 2;
 
-    .action-button {
+    .hero-btn {
       min-width: 200px;
       height: 56px;
-      border-radius: $border-radius-lg;
+      border-radius: 16px;
       font-weight: 600;
       text-transform: none;
       letter-spacing: 0.5px;
-      box-shadow: $shadow-md;
+      background: linear-gradient(146deg, #667eea, #764ba200);
+      // background: rgba(134, 134, 172, 0.2);
+      backdrop-filter: blur(10px);
+      // border: 1px solid #3c3e471e;
+      color: white;
+      box-shadow: 7px 8px 6px -1px rgb(22 22 25 / 73%);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
       &:hover {
-        transform: translateY(-2px);
-        box-shadow: $shadow-xl;
-      }
-
-      &.primary-action {
-        background: white;
-        color: #667eea;
-        
-        &:hover {
-          background: #f8f9ff;
-        }
-      }
-
-      &.secondary-action {
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.25);
-        }
+      transform: translateY(-2px);
+      background: #ffffff;
+      box-shadow: 7px 8px 6px -1px #8686ac;
+      color: #764ba2;
       }
 
       mat-icon {
         margin-right: 0.5rem;
       }
+
+      // New Client hero button accent
+      &.hero-btn-client {
+        background: linear-gradient(135deg, rgb(255, 120, 0), rgb(255 0 0));
+        border: 1px solid #3c3e472a;
+
+        &:hover {
+          transform: translateY(-2px);
+          background: #ffffff;
+          box-shadow: 7px 8px 6px -1px #8686ac;
+          color: red;
+        }
+      }
     }
   }
 }
 
-// ===== CONTENUTO PRINCIPALE =====
+// ========================================
+// MAIN CONTENT
+// ========================================
 .main-content {
-  //max-width: 1600px; // Aumentato da 1400px
   margin: 0 auto;
   padding: 0 1rem;
   position: relative;
-  z-index: 1000; // Z-index alto per essere sopra i triangoli decorativi
-  //background: white; // Sfondo per coprire triangoli sottostanti
+  z-index: 1000;
+}
 
-  .modern-card {
-    border-radius: $border-radius-lg;
-    box-shadow: $shadow-lg;
-    border: none;
-    overflow: hidden;
-    margin-bottom: 2rem;
-    //background: white !important; // Forza sfondo bianco
-    width: 100%; // Assicura larghezza completa
+// ========================================
+// CONTACTS CARD (same as dashboard)
+// ========================================
+.contacts-card {
+  background: linear-gradient(135deg, #0F0E47 0%, #272757 50%, #505081 100%);
+  border-radius: 18px;
+  box-shadow: 0 4px 25px rgba(15, 14, 71, 0.15);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+  margin-bottom: 2rem;
+
+  &:hover {
+      box-shadow: 0 4px 25px rgba(15, 14, 71, 0.15);
+  }
+}
+
+// ========================================
+// MODERN HEADER (same as dashboard)
+// ========================================
+.modern-header {
+  background: linear-gradient(135deg, #0F0E47 0%, #272757 50%, #505081 100%);
+  color: white;
+  padding: 24px 28px;
+  border: none;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(134, 134, 172, 0.15) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
     position: relative;
-    z-index: 1001; // Z-index per le singole card
+    z-index: 1;
 
-    .card-header-modern {
-      background: linear-gradient(135deg, #f6f9fc 0%, #e9f4f8 100%);
-      padding: 1.5rem 2rem;
-      border-bottom: 1px solid #e2e8f0;
-      position: relative;
-      z-index: 1002; // Z-index per l'header
+    .header-icon {
+      background: rgba(134, 134, 172, 0.2);
+      border-radius: 14px;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 15px rgba(15, 14, 71, 0.3);
+      transition: all 0.3s ease;
 
-      .card-avatar {
-        background: $primary-gradient;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        width: 48px;
-        height: 48px;
-
-        mat-icon {
-          font-size: 24px;
-        }
+      &:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(80, 80, 129, 0.4);
       }
 
+      .material-icons {
+        font-size: 28px;
+        color: white;
+      }
+    }
+
+    .header-text {
+      flex: 1;
+
       .card-title {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
         font-weight: 700;
-        color: #2d3748;
-        margin: 0;
+        margin: 0 0 4px 0;
+        letter-spacing: -0.5px;
+        text-shadow: 0 2px 4px rgba(15, 14, 71, 0.3);
       }
 
       .card-subtitle {
-        color: #718096;
         margin: 0;
-        font-size: 0.9rem;
+        opacity: 0.85;
+        font-size: 0.95rem;
+        color: #8686AC;
+      }
+    }
+  }
+
+  .filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .modern-filter {
+      min-width: 180px;
+      flex: 1;
+
+      @media (max-width: 768px) {
+        min-width: auto;
+        width: 100%;
+      }
+    }
+
+    .clear-button {
+      display: inline-flex;
+      align-items: center;
+      height: 44px;
+      gap: 6px;
+      background: black;
+      border: none;
+      border-radius: 25px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 2px 3px 7px rgb(41 41 61) !important;
+      padding: 0 20px;
+
+      .material-icons {
+        font-size: 18px;
+      }
+
+      &:hover {
+        background: linear-gradient(135deg, #272757 0%, #505081 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(15, 14, 71, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0) scale(0.98);
       }
     }
   }
 }
 
-// ===== SEZIONE FILTRI =====
-.filters-section {
-  padding: 1.5rem 2rem;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+// ========================================
+// TABLE BODY (same as dashboard)
+// ========================================
+.modern-body {
+  padding: 0;
+  background: white;
+}
+
+.table-container {
+  overflow-x: auto;
+  overflow-y: visible;
+  border-radius: 0;
+  box-shadow: none;
+
+  &::-webkit-scrollbar {
+    height: 12px;
+    display: block !important;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 6px;
+    margin: 0 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #505081, #272757);
+    border-radius: 6px;
+    border: 2px solid #e2e8f0;
+    min-width: 60px;
+
+    &:hover {
+      background: linear-gradient(135deg, #8686AC, #505081);
+    }
+  }
+
+  scrollbar-width: auto;
+  scrollbar-color: #505081 #e2e8f0;
+
+  // Scrollable table with max-height
+  &.table-scrollable {
+    max-height: 520px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 12px;
+      display: block !important;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #e2e8f0;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #505081, #272757);
+      border-radius: 4px;
+      border: 2px solid #e2e8f0;
+
+      &:hover {
+        background: linear-gradient(180deg, #8686AC, #505081);
+      }
+    }
+
+    // Sticky header when scrolling
+    .modern-table th.mat-header-cell {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+    }
+  }
+}
+
+// ========================================
+// MODERN TABLE (same as dashboard)
+// ========================================
+.modern-table {
+  width: 100%;
+  min-width: 1000px;
+  background: white;
+  border-radius: 0;
+  box-shadow: none;
+  border-collapse: collapse;
+
+th.mat-header-cell {
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+    color: #272757;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 12px;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+    text-align: center;
+
+    .header-with-icon {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      .material-icons {
+        font-size: 16px;
+        color: #505081;
+      }
+    }
+  }
+
+  .modern-row {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-bottom: 1px solid #f1f5f9;
+
+    &:hover {
+      background: linear-gradient(90deg, rgba(134, 134, 172, 0.15) 0%, rgba(80, 80, 129, 0.1) 100%);
+      transform: translateX(4px);
+      box-shadow: 4px 0 15px rgba(15, 14, 71, 0.1);
+    }
+
+    td {
+      padding: 14px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #272757;
+      font-size: 0.9rem;
+      vertical-align: middle;
+
+      &:first-child {
+        border-left: 3px solid transparent;
+        transition: border-color 0.3s ease;
+      }
+    }
+
+    &:hover td:first-child {
+      border-left-color: #505081;
+    }
+  }
+}
+
+// ========================================
+// INFO CONTAINERS WITH ICONS (same as dashboard)
+// ========================================
+.contact-info, .email-info, .phone-info, .date-info, .assigned-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  .material-icons {
+    font-size: 1.2rem;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+  }
+
+  &:hover .material-icons {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.contact-icon { color: #0F0E47; }
+.email-icon { color: #505081; }
+.phone-icon { color: #8686AC; }
+.date-icon { color: #505081; }
+.assigned-icon { color: #272757; }
+
+.contact-name {
+  font-weight: 600;
+  color: #0F0E47;
+}
+
+.date-text {
+  color: #505081;
+  font-size: 0.875rem;
+}
+
+.assigned-name {
+  color: #272757;
+  font-weight: 500;
+}
+
+// ========================================
+// LINK STYLES (same as dashboard)
+// ========================================
+.email-link, .phone-link {
+  color: #272757;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-weight: 500;
+
+  &:hover {
+    color: #505081;
+    text-decoration: underline;
+  }
+}
+
+// ========================================
+// STATUS BADGES (same as dashboard)
+// ========================================
+.status-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: inline-block;
+  transition: all 0.3s ease;
+  color: white;
+  white-space: nowrap;
+
+  &.status-attivo, &.status-active {
+    background: linear-gradient(135deg, #272757 0%, #0F0E47 100%);
+    box-shadow: 0 2px 8px rgba(15, 14, 71, 0.25);
+  }
+
+  &.status-sospeso, &.status-suspended {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #b45309;
+  }
+
+  &.status-pending, &.status-in-sospeso {
+    background: linear-gradient(135deg, #505081 0%, #8686AC 100%);
+    box-shadow: 0 2px 8px rgba(80, 80, 129, 0.25);
+  }
+
+  &.status-completato, &.status-completed {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #047857;
+  }
+
+  &.status-nuovo, &.status-new {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    color: #3730a3;
+  }
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+// ========================================
+// ACTION BUTTONS IN TABLE (NEW — rectangular)
+// ========================================
+.action-buttons-cell {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: nowrap;
+
+  // "Gestisci Lead" rectangular button
+  .manage-lead-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: none;
+    white-space: nowrap;
+    height: 36px;
+    min-width: auto;
+    border: 1.5px solid #505081;
+    color: #505081;
+    background: transparent;
+    transition: all 0.25s ease;
+    line-height: 1;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      background: rgba(80, 80, 129, 0.1);
+      border-color: #272757;
+      color: #272757;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(15, 14, 71, 0.15);
+    }
+  }
+
+  // "Converti" button
+  .convert-lead-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: none;
+    white-space: nowrap;
+    height: 36px;
+    min-width: auto;
+    background: linear-gradient(135deg, #0F0E47, #505081) !important;
+    color: white !important;
+    border: none;
+    transition: all 0.25s ease;
+    line-height: 1;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #272757, #8686AC) !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(15, 14, 71, 0.25);
+    }
+
+    &:disabled {
+      background: #e2e8f0 !important;
+      color: #a0aec0 !important;
+      cursor: not-allowed;
+      box-shadow: none;
+      opacity: 0.7;
+    }
+  }
+
+  // "Convertito" thumb-up badge button (green)
+  .converted-badge-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: none;
+    white-space: nowrap;
+    height: 36px;
+    min-width: auto;
+    border: 1.5px solid #10b981;
+    color: #047857;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    transition: all 0.25s ease;
+    line-height: 1;
+    cursor: pointer;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #047857;
+    }
+
+    &:hover {
+      background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+  }
+
+  .btn-label {
+    @media (max-width: 1100px) {
+      display: none;
+    }
+  }
+}
+
+// ========================================
+// PAGINATION (same as dashboard)
+// ========================================
+.pagination-container {
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+  border-top: 1px solid #e2e8f0;
+}
+
+.modern-paginator {
+  background: transparent;
+
+  ::ng-deep {
+    .mat-mdc-paginator-container {
+      justify-content: center;
+    }
+
+    .mat-mdc-paginator-range-label {
+      font-weight: 600;
+      color: #272757;
+    }
+
+    .mat-mdc-icon-button {
+      color: #505081;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(80, 80, 129, 0.15);
+        color: #0F0E47;
+        transform: scale(1.1);
+      }
+    }
+  }
+}
+
+// ========================================
+// EXPANDABLE ROWS (Client only)
+// ========================================
+.expand-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(134, 134, 172, 0.15);
+  border: 1px dashed rgba(134, 134, 172, 0.5);
+  border-radius: 12px;
+  padding: 12px 20px;
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  font-weight: 500;
   position: relative;
-  z-index: 1003; // Z-index per i filtri
-  background: white !important; // Sfondo bianco forzato
+  z-index: 1;
 
-  .filters-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-    align-items: end;
+  .material-icons {
+    font-size: 1.3rem;
+    color: #8686AC;
+    animation: pulse-hint 2s infinite;
+  }
+}
 
-    .filter-item {
+@keyframes pulse-hint {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.expandable-row {
+  cursor: pointer;
+
+  &:hover {
+    background: linear-gradient(90deg, rgba(134, 134, 172, 0.18) 0%, rgba(80, 80, 129, 0.12) 100%) !important;
+  }
+}
+
+.expanded-row {
+  background: rgba(80, 80, 129, 0.08) !important;
+
+  td:first-child {
+    border-left-color: #505081 !important;
+  }
+}
+
+.detail-row {
+  height: 0;
+  border-bottom: none !important;
+
+  td {
+    padding: 0 !important;
+    border-bottom: none !important;
+  }
+}
+
+.lead-contracts-detail {
+  overflow: hidden;
+
+  .no-contracts-message {
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+
+    .no-contracts-content {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      align-items: center;
+      gap: 0.25rem;
+      text-align: center;
 
-      .filter-label {
-        font-weight: 600;
-        color: #4a5568;
-        font-size: 0.875rem;
-        margin: 0;
+      .no-contracts-icon {
+        font-size: 2rem;
+        color: #cbd5e0;
       }
 
-      &.filter-actions {
-        justify-content: end;
+      .no-contracts-text {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #505081;
+      }
 
-        .clear-button {
-          height: 40px;
-          border-radius: $border-radius-md;
-          font-weight: 500;
-          
-          mat-icon {
+      .no-contracts-hint {
+        font-size: 0.8rem;
+        color: #8686AC;
+      }
+    }
+  }
+
+  .contracts-list {
+    padding: 1rem 2rem 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+
+    .contracts-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #0F0E47;
+
+      .material-icons {
+        font-size: 20px;
+        color: #505081;
+      }
+
+      .contracts-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        padding: 0 6px;
+        background: #505081;
+        color: white;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-left: 0.25rem;
+      }
+    }
+
+    .contract-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+
+      .contract-card {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        background: white;
+        border-radius: 12px;
+        border-left: 4px solid #505081;
+        box-shadow: 0 2px 4px rgba(15, 14, 71, 0.08);
+        transition: all 0.2s ease;
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 6px -1px rgba(15, 14, 71, 0.12);
+        }
+
+        .contract-field {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+
+          .field-label {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #8686AC;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+
+            .material-icons {
+              font-size: 14px;
+            }
+          }
+
+          .field-value {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #0F0E47;
+
+            &.code-value {
+              font-family: 'Courier New', monospace;
+              font-weight: 700;
+              color: #505081;
+              letter-spacing: 0.5px;
+            }
+
+            &.bonus-value {
+              display: inline-block;
+              padding: 2px 10px;
+              background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+              color: #047857;
+              border-radius: 8px;
+              font-weight: 700;
+              font-size: 0.85rem;
+            }
+          }
+
+          .mini-status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            background: #e2e8f0;
+            color: #272757;
+
+            &[data-status="Gettonato"],
+            &[data-status="Attivo"] {
+              background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+              color: #047857;
+            }
+
+            &[data-status="Inserito"],
+            &[data-status="In Lavorazione"] {
+              background: linear-gradient(135deg, #505081 0%, #8686AC 100%);
+              color: white;
+            }
+
+            &[data-status="KO"],
+            &[data-status="Annullato"] {
+              background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+              color: #dc3545;
+            }
+
+            &[data-status="In Attesa"],
+            &[data-status="Sospeso"] {
+              background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+              color: #b45309;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// ========================================
+// DAILY LEADS
+// ========================================
+.daily-leads-container {
+  padding: 2rem;
+
+  .leads-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+
+    .lead-card {
+      background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+      border-radius: 16px;
+      padding: 1.5rem;
+      border: 1px solid #e2e8f0;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(15, 14, 71, 0.15);
+      }
+
+      .lead-card-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+
+        .lead-info {
+          flex: 1;
+
+          .lead-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0F0E47;
+            margin: 0 0 1rem 0;
+
+            .material-icons {
+              color: #505081;
+              font-size: 20px;
+            }
+          }
+
+          .lead-contact-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+
+            .lead-contact-item {
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+
+              .material-icons {
+                font-size: 16px;
+                width: 20px;
+              }
+            }
+          }
+        }
+
+        .lead-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+      }
+    }
+  }
+}
+
+// ========================================
+// FORM CREATION
+// ========================================
+.form-container {
+  padding: 2rem;
+  background: white !important;
+  border-radius: 0 0 18px 18px;
+
+  .create-lead-form {
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+
+        // 3-col row for provincia/cap/nazione
+        &:has(.modern-field:nth-child(3)) {
+          grid-template-columns: 1fr 1fr 1fr;
+        }
+      }
+
+      // Tipo cliente selector
+      .tipo-selector-row {
+        display: block;
+
+        .tipo-selector {
+          .tipo-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #272757;
+            margin-bottom: 0.75rem;
+          }
+
+          .tipo-buttons {
+            display: flex;
+            gap: 0.75rem;
+
+            button {
+              flex: 1;
+              max-width: 200px;
+              height: 48px;
+              border-radius: 12px;
+              font-weight: 600;
+              text-transform: none;
+              border: 2px solid #e2e8f0;
+              color: #505081;
+              background: white;
+              transition: all 0.25s ease;
+
+              mat-icon {
+                margin-right: 6px;
+              }
+
+              &.tipo-active {
+                border-color: #505081;
+                background: linear-gradient(135deg, rgba(80, 80, 129, 0.1) 0%, rgba(134, 134, 172, 0.1) 100%);
+                color: #0F0E47;
+                box-shadow: 0 2px 8px rgba(80, 80, 129, 0.2);
+              }
+
+              &:hover:not(.tipo-active) {
+                border-color: #8686AC;
+                background: #f8fafc;
+              }
+            }
+          }
+        }
+      }
+
+      // Convert mode info banner
+      .convert-info-banner {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1.25rem;
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+        border-left: 4px solid #505081;
+        border-radius: 0 12px 12px 0;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #272757;
+
+        .material-icons {
+          color: #505081;
+          font-size: 20px;
+        }
+      }
+
+      .consent-section {
+        .consent-card {
+          background: linear-gradient(135deg, #f0f1f8 0%, #e8e9f5 100%);
+          border: 1px solid rgba(80, 80, 129, 0.2);
+          border-radius: 16px;
+          padding: 1.5rem;
+
+          .consent-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+
+            .consent-icon {
+              color: #505081;
+              font-size: 24px;
+            }
+
+            .consent-title {
+              margin: 0;
+              font-size: 1.1rem;
+              font-weight: 600;
+              color: #0F0E47;
+            }
+          }
+
+          .consent-text {
+            color: #272757;
+            line-height: 1.6;
+            margin: 0 0 1rem 0;
+            font-size: 0.95rem;
+          }
+
+          .consent-toggle {
+            display: flex;
+            align-items: center;
+          }
+        }
+      }
+
+      .submit-section {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+
+        .submit-button {
+          min-width: 200px;
+          height: 56px;
+          font-weight: 600;
+          text-transform: none;
+          letter-spacing: 0.5px;
+          background: linear-gradient(135deg, #0F0E47 0%, #272757 50%, #505081 100%) !important;
+          color: white !important;
+
+          mat-icon, i {
             margin-right: 0.5rem;
           }
         }
-      }
-    }
-  }
-}
 
-// ===== TABELLA MODERNA =====
-.table-container {
-  position: relative;
-  z-index: 1004; // Z-index per la tabella
-  background: white !important; // Sfondo bianco forzato
-  
-  .table-wrapper {
-    overflow-x: auto;
-    
-    .modern-table {
-      width: 100%;
-      background: white;
-
-      .header-row {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        border-bottom: 2px solid #cbd5e0;
-        
-        .header-cell {
-          color: #4a5568;
+        .cancel-button {
+          height: 56px;
+          border-radius: 16px;
           font-weight: 600;
-          font-size: 0.875rem;
-          letter-spacing: 0.5px;
-          padding: 1rem;
-          border-bottom: none;
+          text-transform: none;
+          color: #505081;
+          border-color: #505081;
 
-          .header-content {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-
-            .header-icon {
-              font-size: 18px;
-              color: #667eea;
-            }
-          }
-        }
-      }
-
-      .data-row {
-        transition: all 0.2s ease;
-        border-bottom: 1px solid #f1f5f9;
-
-        &:hover {
-          background-color: #f8fafc;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .data-cell {
-          padding: 1rem;
-          vertical-align: middle;
-
-          .cell-content {
-            .primary-text {
-              font-weight: 600;
-              color: #2d3748;
-            }
-
-            .email-link, .phone-link {
-              color: #4299e1;
-              text-decoration: none;
-              font-weight: 500;
-              transition: color 0.2s;
-
-              &:hover {
-                color: #3182ce;
-                text-decoration: underline;
-              }
-            }
-
-            .date-text, .assigned-text {
-              color: #718096;
-              font-size: 0.875rem;
-            }
-
-            .status-chip {
-              padding: 0.25rem 0.75rem;
-              border-radius: $border-radius-lg;
-              font-size: 0.75rem;
-              font-weight: 600;
-              color: white;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
+          mat-icon {
+            margin-right: 0.25rem;
           }
 
-          &.action-cell {
-            .action-buttons-cell {
-              display: flex;
-              gap: 0.5rem;
-              align-items: center;
-
-              .action-btn {
-                width: 36px;
-                height: 36px;
-                transition: all 0.2s ease;
-
-                &:hover {
-                  transform: scale(1.1);
-                }
-
-                mat-icon {
-                  font-size: 18px;
-                }
-              }
-            }
+          &:hover {
+            background: rgba(80, 80, 129, 0.08);
           }
         }
       }
     }
   }
 
-  .paginator-container {
-    padding: 1rem 2rem;
-    background: #f8fafc;
-    border-top: 1px solid #e2e8f0;
+  // Form field overrides for light background
+  ::ng-deep .modern-field,
+  ::ng-deep .mat-mdc-form-field {
+    .mat-mdc-text-field-wrapper {
+      background: #f8f9fc !important;
+      border-radius: 12px !important;
+    }
 
-    .modern-paginator {
-      background: transparent;
-      
-      .mat-mdc-paginator-range-actions {
-        gap: 0.5rem;
+    .mdc-text-field--outlined .mdc-notched-outline {
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: rgba(80, 80, 129, 0.25) !important;
       }
+    }
+
+    &.mat-focused .mdc-text-field--outlined .mdc-notched-outline {
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: #505081 !important;
+      }
+    }
+
+    .mat-mdc-form-field-icon-suffix {
+      color: #505081 !important;
+    }
+
+    input, .mat-mdc-input-element {
+      color: #0F0E47 !important;
+    }
+
+    .mat-mdc-floating-label {
+      color: #505081 !important;
     }
   }
 }
 
-// ===== SEZIONI SPECIFICHE =====
+// ========================================
+// DUPLICATE LEAD WARNING
+// ========================================
+.duplicate-warning {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-left: 5px solid #f59e0b;
+  border-radius: 0 16px 16px 0;
+  margin-bottom: 1.5rem;
 
-// Avatar specifici per sezioni
-.team-avatar {
-  background: $accent-gradient !important;
-}
+  .duplicate-warning-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(245, 158, 11, 0.25);
+    border-radius: 50%;
 
-.daily-avatar {
-  background: $success-gradient !important;
-}
+    .material-icons {
+      font-size: 28px;
+      color: #b45309;
+    }
+  }
 
-.create-avatar {
-  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%) !important;
-}
+  .duplicate-warning-content {
+    flex: 1;
 
-// ===== LEAD DEL GIORNO =====
-.daily-leads-card {
-  position: relative;
-  z-index: 1005; // Z-index per i lead del giorno
-  background: white !important; // Sfondo bianco forzato
-  
-  .daily-leads-container {
-    padding: 2rem;
-    position: relative;
-    z-index: 1006;
-    
-    .leads-grid {
+    .duplicate-warning-title {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #92400e;
+    }
+
+    .duplicate-warning-text {
+      margin: 0 0 1rem 0;
+      font-size: 0.9rem;
+      color: #78350f;
+      line-height: 1.5;
+    }
+
+    .duplicate-lead-info {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-      gap: 1.5rem;
-      
-      .lead-card {
-        background: linear-gradient(135deg, #f6f9fc 0%, #e9f4f8 100%);
-        border-radius: $border-radius-lg;
-        padding: 1.5rem;
-        border: 1px solid #e2e8f0;
-        transition: all 0.3s ease;
-        
-        &:hover {
-          transform: translateY(-4px);
-          box-shadow: $shadow-xl;
-          background: linear-gradient(135deg, #fef5e7 0%, #fff2cc 100%);
-        }
-        
-        .lead-card-content {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 1rem;
-          
-          .lead-info {
-            flex: 1;
-            
-            .lead-name {
-              display: flex;
-              align-items: center;
-              gap: 0.5rem;
-              font-size: 1.25rem;
-              font-weight: 700;
-              color: #2d3748;
-              margin: 0 0 1rem 0;
-              
-              .name-icon {
-                color: #667eea;
-                font-size: 20px;
-              }
-            }
-            
-            .contact-info {
-              display: flex;
-              flex-direction: column;
-              gap: 0.75rem;
-              
-              .contact-item {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                
-                .contact-icon {
-                  font-size: 16px;
-                  color: #718096;
-                  width: 20px;
-                }
-                
-                .contact-link {
-                  color: #4299e1;
-                  text-decoration: none;
-                  font-weight: 500;
-                  transition: color 0.2s;
-                  
-                  &:hover {
-                    color: #3182ce;
-                    text-decoration: underline;
-                  }
-                }
-                
-                .assigned-to {
-                  color: #4a5568;
-                  font-weight: 500;
-                }
-              }
-            }
-          }
-          
-          .lead-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            
-            .action-btn {
-              width: 40px;
-              height: 40px;
-              transition: all 0.2s ease;
-              
-              &:hover {
-                transform: scale(1.1);
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    .no-leads-message {
-      text-align: center;
-      padding: 3rem 1rem;
-      color: #718096;
-      
-      .no-leads-icon {
-        font-size: 48px;
-        color: #cbd5e0;
-        margin-bottom: 1rem;
-      }
-      
-      h3 {
-        font-size: 1.5rem;
-        margin: 0 0 0.5rem 0;
-        color: #4a5568;
-      }
-      
-      p {
-        margin: 0;
-        font-size: 1rem;
-      }
-    }
-  }
-}
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.5rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 12px;
+      margin-bottom: 1.25rem;
 
-// ===== FORM CREAZIONE LEAD =====
-.create-lead-card {
-  position: relative;
-  z-index: 1007; // Z-index per il form di creazione
-  background: white !important; // Sfondo bianco forzato
-  
-  .form-container {
-    padding: 2rem;
-    position: relative;
-    z-index: 1008;
-    
-    .create-lead-form {
-      .form-grid {
+      .duplicate-lead-field {
         display: flex;
         flex-direction: column;
-        gap: 2rem;
-        
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1rem;
-          
-          .form-field {
-            width: 100%;
-            // Rimosso tutto il CSS conflittuale per lasciare il controllo al fix globale
-          }
+        gap: 2px;
+
+        .field-label {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: #92400e;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
-        
-        .consent-section {
-          .consent-card {
-            background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
-            border: 1px solid #bee3f8;
-            border-radius: $border-radius-lg;
-            padding: 1.5rem;
-            
-            .consent-header {
-              display: flex;
-              align-items: center;
-              gap: 0.75rem;
-              margin-bottom: 1rem;
-              
-              .consent-icon {
-                color: #3182ce;
-                font-size: 24px;
-              }
-              
-              .consent-title {
-                margin: 0;
-                font-size: 1.1rem;
-                font-weight: 600;
-                color: #2d3748;
-              }
-            }
-            
-            .consent-text {
-              color: #4a5568;
-              line-height: 1.6;
-              margin: 0 0 1rem 0;
-              font-size: 0.95rem;
-            }
-            
-            .consent-toggle {
-              display: flex;
-              align-items: center;
-              
-              .mat-mdc-slide-toggle {
-                margin: 0;
-              }
-            }
-          }
+
+        .field-value {
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: #78350f;
         }
-        
-        .submit-section {
-          display: flex;
-          justify-content: center;
-          margin-top: 1rem;
-          
-          .submit-button {
-            min-width: 200px;
-            height: 56px;
-            font-weight: 600;
-            text-transform: none;
-            letter-spacing: 0.5px;
-            
-            mat-icon {
-              margin-right: 0.5rem;
-            }
-          }
-        }
+      }
+    }
+
+    .duplicate-warning-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+
+      button {
+        border-radius: 10px;
+        font-weight: 600;
+        text-transform: none;
+        font-size: 0.85rem;
       }
     }
   }
 }
 
-// ===== COMPONENTI ESTERNI =====
+// ========================================
+// CALENDAR SECTION
+// ========================================
 .external-components {
-  max-width: 1600px; // Aumentato da 1400px 
+  max-width: 1600px;
   margin: 2rem auto 0;
   padding: 0 1rem;
   position: relative;
-  z-index: 1000; // Z-index molto alto per essere sopra qualsiasi elemento decorativo
-  //background: white; // Sfondo bianco per coprire triangoli sottostanti
-  
+  z-index: 1000;
+
   .convert-lead-component {
-    display: block;
     margin-bottom: 2rem;
+
+    &[hidden] {
+      display: none !important;
+    }
   }
-  
+
   .calendar-section {
-    width: 100%; // Assicura larghezza completa
+    width: 100%;
     position: relative;
-    z-index: 1001; // Z-index ancora più alto per il calendario
-    background: white; // Sfondo aggiuntivo
-    border-radius: $border-radius-lg; // Bordi arrotondati per un look migliore
-    box-shadow: $shadow-xl; // Ombra per elevare visualmente il calendario
-    
-    .calendar-card {
-      width: 100%; // Larghezza completa per la card
-      position: relative;
-      z-index: 1002;
-      background: white !important; // Forza sfondo bianco
-      
-      .calendar-avatar {
-        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%) !important;
+    z-index: 1001;
+  }
+}
+
+.calendar-container {
+  padding: 2rem;
+
+  .calendar-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    .view-selector .view-buttons {
+      display: flex;
+      gap: 0.5rem;
+      border-radius: 12px;
+      overflow: hidden;
+
+      .view-button {
+        border-radius: 0 !important;
+        padding: 0.5rem 1rem;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: #272757;
+        transition: all 0.2s ease;
+
+        &:first-child { border-radius: 12px 0 0 12px !important; }
+        &:last-child { border-radius: 0 12px 12px 0 !important; }
+
+        &.active {
+          background: #505081 !important;
+          color: white !important;
+          border-color: #505081 !important;
+        }
+
+        &:hover:not(.active) {
+          background: #f8fafc;
+          border-color: #8686AC;
+        }
+
+        mat-icon {
+          margin-right: 0.25rem;
+          font-size: 18px;
+        }
       }
-      
-      .calendar-container {
-        padding: 2rem;
-        width: 100%; // Larghezza completa per il contenitore
+    }
+
+    .navigation-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .nav-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        color: #505081;
+
+        &:hover { background: rgba(80, 80, 129, 0.1); }
+      }
+
+      .today-button {
+        border-radius: 12px;
+        padding: 0.5rem 1rem;
+        color: #272757;
+
+        mat-icon { margin-right: 0.25rem; font-size: 18px; }
+      }
+    }
+
+    .period-info .current-period {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #0F0E47;
+    }
+  }
+
+  .calendar-legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #272757;
+
+      .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+
+        &.status-new { background: #505081; }
+        &.status-contacted { background: #38a169; }
+        &.status-meeting { background: #d69e2e; }
+        &.status-converted { background: #805ad5; }
+      }
+    }
+  }
+
+  .modern-calendar {
+    position: relative;
+    background: white !important;
+    border-radius: 16px;
+    overflow: hidden;
+
+    .calendar-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      margin-bottom: 1px;
+
+      .day-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+        padding: 1rem 0.5rem;
+        text-align: center;
+        font-weight: 700;
+        color: #272757;
+        font-size: 0.875rem;
+        border-radius: 8px;
+      }
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      width: 100%;
+      box-shadow: 0 4px 6px -1px rgba(15, 14, 71, 0.12);
+
+      .calendar-day {
+        background: white;
+        min-height: 120px;
+        padding: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
         position: relative;
-        z-index: 1003; // Z-index per il contenitore del calendario
-        background: white !important; // Sfondo bianco forzato per coprire eventuali elementi sottostanti
-        
-        // ===== CONTROLLI CALENDARIO =====
-        .calendar-controls {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-          flex-wrap: wrap;
-          gap: 1rem;
-          
-          .view-selector {
-            .view-buttons {
-              display: flex;
-              gap: 0.5rem;
-              border-radius: $border-radius-md;
-              overflow: hidden;
-              
-              .view-button {
-                border-radius: 0 !important;
-                padding: 0.5rem 1rem;
-                border: 1px solid #e2e8f0;
-                background: white;
-                color: #4a5568;
-                transition: all 0.2s ease;
-                
-                &:first-child {
-                  border-radius: $border-radius-md 0 0 $border-radius-md !important;
-                }
-                
-                &:last-child {
-                  border-radius: 0 $border-radius-md $border-radius-md 0 !important;
-                }
-                
-                &.active {
-                  background: #667eea !important;
-                  color: white !important;
-                  border-color: #667eea !important;
-                }
-                
-                &:hover:not(.active) {
-                  background: #f8fafc;
-                  border-color: #cbd5e0;
-                }
-                
-                mat-icon {
-                  margin-right: 0.25rem;
-                  font-size: 18px;
-                }
-              }
-            }
-            
-            // Mantieni anche gli stili per il toggle group originale
-            .view-toggle-group {
-              border-radius: $border-radius-md;
-              box-shadow: $shadow-sm;
-              
-              .view-toggle {
-                border-radius: $border-radius-md;
-                padding: 0.5rem 1rem;
-                
-                &.mat-button-toggle-checked {
-                  background: #667eea;
-                  color: white;
-                }
-                
-                mat-icon {
-                  margin-right: 0.25rem;
-                  font-size: 18px;
-                }
-              }
-            }
-          }
-          
-          .navigation-controls {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            
-            .nav-button {
-              width: 40px;
-              height: 40px;
-              border-radius: 50%;
-              
-              &:hover {
-                background: #f0f4f8;
-              }
-            }
-            
-            .today-button {
-              border-radius: $border-radius-md;
-              padding: 0.5rem 1rem;
-              
-              mat-icon {
-                margin-right: 0.25rem;
-                font-size: 18px;
-              }
-            }
-          }
-          
-          .period-info {
-            .current-period {
-              margin: 0;
-              font-size: 1.25rem;
-              font-weight: 600;
-              color: #2d3748;
-            }
-          }
+        display: flex;
+        flex-direction: column;
+
+        &:hover {
+          background: rgba(80, 80, 129, 0.06);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 6px -1px rgba(15, 14, 71, 0.12);
+          z-index: 2;
         }
-        
-        // ===== LEGENDA =====
-        .calendar-legend {
-          display: flex;
-          justify-content: center;
-          gap: 2rem;
-          margin-bottom: 1.5rem;
-          flex-wrap: wrap;
-          
-          .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-            color: #4a5568;
-            
-            .legend-color {
-              width: 12px;
-              height: 12px;
-              border-radius: 50%;
-              
-              &.status-new {
-                background: #3182ce;
-              }
-              
-              &.status-contacted {
-                background: #38a169;
-              }
-              
-              &.status-meeting {
-                background: #d69e2e;
-              }
-              
-              &.status-converted {
-                background: #805ad5;
-              }
-            }
-          }
+
+        &.other-month {
+          background: #f8fafc;
+          color: #a0aec0;
+          .day-number { opacity: 0.5; }
         }
-        
-        // ===== CALENDARIO MODERNO =====
-        .modern-calendar {
-          position: relative;
-          z-index: 1004; // Z-index specifico per il calendario moderno
-          background: white !important; // Sfondo forzato per assicurare visibilità
-          border-radius: $border-radius-lg; // Bordi arrotondati
-          overflow: hidden; // Nasconde eventuali overflow
-          
-          .calendar-header {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            margin-bottom: 1px;
-            
-            .day-header {
-              background: #f7fafc;
-              padding: 1rem 0.5rem;
-              text-align: center;
-              font-weight: 600;
-              color: #4a5568;
-              font-size: 0.875rem;
-              border-radius: $border-radius-sm;
-            }
-          }
-          
-          .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            background: #e2e8f0;
-            border-radius: $border-radius-md;
-            overflow: hidden;
-            width: 100%; // Utilizza tutta la larghezza disponibile
-            min-width: 100%; // Assicura che non si restringa mai sotto il 100%
-            position: relative;
-            z-index: 1005; // Z-index per la griglia del calendario
-            margin: 0; // Rimuove eventuali margini
-            box-shadow: $shadow-md; // Ombra per elevare la griglia
-            
-            .calendar-day {
-              background: white;
-              min-height: 120px;
-              padding: 0.75rem;
-              cursor: pointer;
-              transition: all 0.2s ease;
-              position: relative;
-              display: flex;
-              flex-direction: column;
-              
-              &:hover {
-                background: #f0f8ff;
-                transform: translateY(-1px);
-                box-shadow: $shadow-md;
-                z-index: 2;
-              }
-              
-              &.other-month {
-                background: #f8fafc;
-                color: #a0aec0;
-                
-                .day-number {
-                  opacity: 0.5;
-                }
-              }
-              
-              &.today {
-                background: linear-gradient(135deg, #e6f3ff 0%, #cce7ff 100%);
-                border: 2px solid #3182ce;
-                
-                .day-number {
-                  background: #3182ce;
-                  color: white;
-                  border-radius: 50%;
-                  width: 28px;
-                  height: 28px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  font-weight: 600;
-                }
-              }
-              
-              &.selected {
-                background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
-                border: 2px solid #667eea;
-              }
-              
-              &.has-leads {
-                border-left: 4px solid #38a169;
-              }
-              
-              .day-number {
-                font-weight: 600;
-                color: #2d3748;
-                margin-bottom: 0.5rem;
-                align-self: flex-start;
-              }
-              
-              .day-content {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                gap: 0.25rem;
-                
-                .leads-indicator {
-                  display: flex;
-                  align-items: center;
-                  gap: 0.25rem;
-                  background: #e6fffa;
-                  border-radius: $border-radius-sm;
-                  padding: 0.25rem 0.5rem;
-                  
-                  .leads-icon {
-                    font-size: 14px;
-                    color: #38a169;
-                  }
-                  
-                  .leads-count {
-                    font-size: 0.75rem;
-                    font-weight: 600;
-                    color: #38a169;
-                  }
-                }
-                
-                .status-indicators {
-                  display: flex;
-                  gap: 2px;
-                  flex-wrap: wrap;
-                  
-                  .status-dot {
-                    width: 6px;
-                    height: 6px;
-                    border-radius: 50%;
-                    flex-shrink: 0;
-                  }
-                }
-              }
-              
-              .overflow-indicator {
-                position: absolute;
-                bottom: 0.25rem;
-                right: 0.25rem;
-                background: #667eea;
-                color: white;
-                border-radius: 50%;
-                font-size: 0.625rem;
-                padding: 0.125rem 0.25rem;
-                min-width: 16px;
-                text-align: center;
-                font-weight: 600;
-              }
-            }
-          }
-          
-          .calendar-loading {
+
+        &.today {
+          background: linear-gradient(135deg, rgba(80, 80, 129, 0.08) 0%, rgba(134, 134, 172, 0.1) 100%);
+          border: 2px solid #505081;
+
+          .day-number {
+            background: #505081;
+            color: white;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 3rem;
-            color: #718096;
-            
-            p {
-              margin-top: 1rem;
-              font-weight: 500;
-            }
-          }
-          
-          .calendar-empty {
-            text-align: center;
-            padding: 3rem;
-            color: #718096;
-            
-            .empty-icon {
-              font-size: 48px;
-              color: #cbd5e0;
-              margin-bottom: 1rem;
-            }
-            
-            h4 {
-              font-size: 1.25rem;
-              margin: 0 0 0.5rem 0;
-              color: #4a5568;
-            }
-            
-            p {
-              margin: 0;
-            }
+            font-weight: 600;
           }
         }
-        
-        // ===== STATISTICHE =====
-        .calendar-stats {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 1rem;
-          margin-top: 2rem;
-          
-          .stat-card {
-            background: linear-gradient(135deg, #f6f9fc 0%, #e9f4f8 100%);
-            border-radius: $border-radius-lg;
-            padding: 1.5rem;
+
+        &.selected {
+          background: linear-gradient(135deg, rgba(80, 80, 129, 0.06) 0%, rgba(134, 134, 172, 0.08) 100%);
+          border: 2px solid #272757;
+        }
+
+        &.has-leads { border-left: 4px solid #505081; }
+
+        .day-number {
+          font-weight: 600;
+          color: #0F0E47;
+          margin-bottom: 0.5rem;
+          align-self: flex-start;
+        }
+
+        .day-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+
+          .leads-indicator {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            transition: all 0.2s ease;
-            
-            &:hover {
-              transform: translateY(-2px);
-              box-shadow: $shadow-md;
-            }
-            
-            .stat-icon {
-              background: #667eea;
-              color: white;
-              width: 48px;
-              height: 48px;
+            gap: 0.25rem;
+            background: rgba(80, 80, 129, 0.1);
+            border-radius: 8px;
+            padding: 0.25rem 0.5rem;
+
+            .leads-icon { font-size: 14px; color: #505081; }
+            .leads-count { font-size: 0.75rem; font-weight: 600; color: #505081; }
+          }
+
+          .status-indicators {
+            display: flex;
+            gap: 2px;
+            flex-wrap: wrap;
+
+            .status-dot {
+              width: 6px;
+              height: 6px;
               border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              
-              mat-icon {
-                font-size: 24px;
-              }
-            }
-            
-            .stat-content {
-              .stat-number {
-                font-size: 1.5rem;
-                font-weight: 700;
-                color: #2d3748;
-                line-height: 1;
-              }
-              
-              .stat-label {
-                font-size: 0.875rem;
-                color: #718096;
-                margin-top: 0.25rem;
-              }
+              flex-shrink: 0;
             }
           }
         }
-        
-        // ===== CALENDARIO ORIGINALE (FALLBACK) =====
-        .original-calendar {
-          // Override per il componente calendario esterno
-          ::ng-deep app-calendar {
-            display: block;
-            width: 100%;
-            
-            // Stili per il calendario esistente se necessario
-            .calendar-wrapper {
-              border-radius: $border-radius-lg;
-              overflow: hidden;
-              box-shadow: $shadow-md;
+
+        .overflow-indicator {
+          position: absolute;
+          bottom: 0.25rem;
+          right: 0.25rem;
+          background: #505081;
+          color: white;
+          border-radius: 50%;
+          font-size: 0.625rem;
+          padding: 0.125rem 0.25rem;
+          min-width: 16px;
+          text-align: center;
+          font-weight: 600;
+        }
+      }
+    }
+
+    .calendar-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      color: #8686AC;
+      p { margin-top: 1rem; font-weight: 500; }
+    }
+
+    .calendar-empty {
+      text-align: center;
+      padding: 3rem;
+      color: #8686AC;
+      .empty-icon { font-size: 48px; color: #cbd5e0; margin-bottom: 1rem; }
+      h4 { font-size: 1.25rem; margin: 0 0 0.5rem 0; color: #272757; }
+      p { margin: 0; }
+    }
+  }
+
+  .calendar-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+
+    .stat-card {
+      background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(15, 14, 71, 0.12);
+      }
+
+      .stat-icon {
+        background: linear-gradient(135deg, #0F0E47 0%, #272757 50%, #505081 100%);
+        color: white;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .material-icons { font-size: 24px; }
+      }
+
+      .stat-content {
+        .stat-number { font-size: 1.5rem; font-weight: 700; color: #0F0E47; line-height: 1; }
+        .stat-label { font-size: 0.875rem; color: #8686AC; margin-top: 0.25rem; }
+      }
+    }
+  }
+}
+
+// ========================================
+// EMPTY STATE (same as dashboard)
+// ========================================
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem !important;
+
+  .empty-state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+
+    .empty-icon {
+      font-size: 3rem;
+      color: #cbd5e0;
+    }
+
+    p {
+      color: #505081;
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .empty-hint {
+      color: #8686AC;
+      font-size: 0.85rem;
+    }
+  }
+}
+
+// ========================================
+// LOADING STATE
+// ========================================
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px;
+
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(80, 80, 129, 0.2);
+    border-top-color: #505081;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ========================================
+// FORM FIELD OVERRIDES
+// ========================================
+::ng-deep .modern-field {
+  width: 100%;
+  margin-bottom: 16px;
+
+  .mat-mdc-form-field-wrapper { background: #fafafa; border-radius: 12px; }
+  .mat-mdc-form-field-outline { border-radius: 12px; border-color: #e0e0e0; }
+  .mat-mdc-form-field-focus-overlay { background: rgba(80, 80, 129, 0.04); border-radius: 12px; }
+
+  .mat-mdc-form-field-outline-start,
+  .mat-mdc-form-field-outline-end,
+  .mat-mdc-form-field-outline-notch { border: none !important; border-color: transparent !important; }
+  .mat-mdc-form-field-outline-thick { border: none !important; border-color: transparent !important; }
+
+  &.mat-focused {
+    .mat-mdc-form-field-outline-start,
+    .mat-mdc-form-field-outline-end,
+    .mat-mdc-form-field-outline-notch,
+    .mat-mdc-form-field-outline-thick { border: none !important; border-color: transparent !important; }
+  }
+
+  .mat-mdc-form-field-icon-suffix {
+    color: #505081;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    &:hover { opacity: 1; color: #272757; }
+  }
+
+  &.mat-focused .mat-mdc-form-field-icon-suffix { color: #505081; opacity: 1; }
+  &.mat-form-field-invalid .mat-mdc-form-field-icon-suffix { color: #e53e3e; opacity: 1; }
+}
+
+// ========================================
+// PRIMENG FILTER OVERRIDES (same as dashboard)
+// ========================================
+::ng-deep {
+  .p-multiselect {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    color: #272757;
+    min-height: 44px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #ffffff;
+      border-color: #8686AC !important;
+      box-shadow: 0 4px 12px rgba(15, 14, 71, 0.15);
+    }
+
+    // Focused / open state — Blue Eclipse instead of green
+    &.p-focus,
+    &.p-multiselect-open,
+    &:focus,
+    &.p-inputwrapper-focus {
+      border-color: #505081 !important;
+      box-shadow: 0 0 0 2px rgba(80, 80, 129, 0.25) !important;
+      outline: none !important;
+    }
+
+    .p-multiselect-label {
+      color: #272757;
+      font-weight: 500;
+    }
+
+    .p-multiselect-trigger {
+      color: #505081;
+    }
+  }
+
+  // Multiselect dropdown panel
+  .p-multiselect-panel {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(15, 14, 71, 0.15);
+
+    .p-multiselect-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0.75rem;
+
+      // "Select all" checkbox
+      .p-checkbox {
+        .p-checkbox-box {
+          border-color: #8686AC;
+          border-radius: 4px;
+
+          &.p-highlight,
+          &:has(.p-checkbox-icon) {
+            background: #505081 !important;
+            border-color: #505081 !important;
+          }
+        }
+      }
+
+      // Search input inside panel
+      .p-multiselect-filter-container {
+        .p-inputtext,
+        input {
+          border-color: #e2e8f0;
+          border-radius: 8px;
+
+          &:focus {
+            border-color: #505081 !important;
+            box-shadow: 0 0 0 2px rgba(80, 80, 129, 0.2) !important;
+            outline: none !important;
+          }
+        }
+      }
+    }
+
+    .p-multiselect-items {
+      .p-multiselect-item {
+        color: #272757;
+        transition: background 0.15s ease;
+
+        &:hover,
+        &.p-highlight {
+          background: rgba(80, 80, 129, 0.08) !important;
+          color: #0F0E47;
+        }
+
+        &.p-highlight {
+          background: rgba(80, 80, 129, 0.12) !important;
+        }
+
+        // Checkbox inside each item
+        .p-checkbox {
+          .p-checkbox-box {
+            border-color: #8686AC;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+
+            &.p-highlight,
+            &:has(.p-checkbox-icon) {
+              background: #505081 !important;
+              border-color: #505081 !important;
+            }
+
+            &:hover {
+              border-color: #505081;
             }
           }
         }
       }
     }
   }
+
+  // Global PrimeNG checkbox override (catches all variants)
+  .p-checkbox .p-checkbox-box {
+    &.p-highlight {
+      background: #505081 !important;
+      border-color: #505081 !important;
+    }
+
+    &:hover {
+      border-color: #505081 !important;
+    }
+
+    &.p-focus {
+      box-shadow: 0 0 0 2px rgba(80, 80, 129, 0.25) !important;
+      border-color: #505081 !important;
+    }
+  }
+
+  .p-datepicker {
+    input {
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid transparent;
+      border-radius: 10px;
+      color: #272757;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: #ffffff;
+        border-color: #8686AC;
+      }
+
+      // Focused state — Blue Eclipse instead of green
+      &:focus,
+      &.p-inputtext:focus {
+        border-color: #505081 !important;
+        box-shadow: 0 0 0 2px rgba(80, 80, 129, 0.25) !important;
+        outline: none !important;
+      }
+    }
+
+    // Calendar popup panel
+    .p-datepicker-panel,
+    &.p-datepicker-panel {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(15, 14, 71, 0.15);
+    }
+  }
+
+  // Datepicker panel (standalone popup)
+  .p-datepicker-panel {
+    .p-datepicker-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      color: #272757;
+
+      button {
+        color: #505081;
+
+        &:hover {
+          background: rgba(80, 80, 129, 0.1) !important;
+          color: #272757;
+        }
+      }
+    }
+
+    .p-datepicker-calendar {
+      td {
+        span {
+          color: #272757;
+          border-radius: 8px;
+
+          &:hover {
+            background: rgba(80, 80, 129, 0.1) !important;
+            color: #0F0E47;
+          }
+
+          // Today highlight
+          &.p-datepicker-today,
+          &.p-highlight {
+            background: #505081 !important;
+            color: white !important;
+          }
+        }
+
+        // Today's date cell
+        &.p-datepicker-today > span {
+          background: rgba(80, 80, 129, 0.15) !important;
+          color: #0F0E47 !important;
+          font-weight: 700;
+          border: 1px solid #505081;
+
+          &.p-highlight {
+            background: #505081 !important;
+            color: white !important;
+          }
+        }
+      }
+    }
+  }
+
+  // Global PrimeNG focus ring override
+  .p-component:focus,
+  .p-inputtext:focus,
+  .p-inputwrapper-focus {
+    box-shadow: 0 0 0 2px rgba(80, 80, 129, 0.25) !important;
+  }
 }
 
-// ===== LOADING STATES =====
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  color: #718096;
-  
-  .loading-spinner {
-    margin-bottom: 1rem;
+// ========================================
+// ANGULAR MATERIAL OVERRIDES
+// ========================================
+::ng-deep {
+  .mat-mdc-slide-toggle {
+    .mdc-switch .mdc-switch__track { border-radius: 12px !important; }
+    &.mat-checked .mdc-switch__track { background-color: #505081 !important; border-color: #505081 !important; }
   }
-  
-  .loading-text {
-    font-size: 1.1rem;
-    font-weight: 500;
-  }
-}
 
-// ===== EMPTY STATES =====
-.empty-state {
-  text-align: center;
-  padding: 3rem 2rem;
-  color: #718096;
-  
-  .empty-icon {
-    font-size: 64px;
-    color: #cbd5e0;
-    margin-bottom: 1rem;
+  .mat-mdc-chip {
+    border-radius: 16px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.5px !important;
   }
-  
-  .empty-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #4a5568;
-    margin: 0 0 0.5rem 0;
+
+  // Force accent color to Blue Eclipse everywhere
+  .mat-accent {
+    .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) .mdc-list-item__primary-text,
+    .mdc-list-item__primary-text {
+      color: #505081 !important;
+    }
   }
-  
-  .empty-description {
-    margin: 0 0 2rem 0;
-    line-height: 1.6;
+
+  // Mat-form-field focus underline/outline color
+  .mat-mdc-form-field {
+    &.mat-focused {
+      .mdc-line-ripple::after {
+        border-bottom-color: #505081 !important;
+      }
+
+      .mat-mdc-form-field-focus-overlay {
+        background-color: rgba(80, 80, 129, 0.04) !important;
+      }
+
+      .mdc-text-field--outlined .mdc-notched-outline {
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+          border-color: #505081 !important;
+        }
+      }
+
+      .mdc-floating-label,
+      .mat-mdc-floating-label {
+        color: #505081 !important;
+      }
+    }
   }
-  
-  .empty-action {
-    .action-button {
-      min-width: 200px;
-      height: 48px;
+
+  // Mat-select panel and options
+  .mat-mdc-select-panel {
+    border-radius: 12px !important;
+    box-shadow: 0 8px 25px rgba(15, 14, 71, 0.15) !important;
+
+    .mat-mdc-option {
+      &:hover {
+        background: rgba(80, 80, 129, 0.08) !important;
+      }
+
+      &.mdc-list-item--selected,
+      &.mat-mdc-option-active {
+        background: rgba(80, 80, 129, 0.12) !important;
+
+        .mdc-list-item__primary-text {
+          color: #0F0E47 !important;
+        }
+      }
+
+      .mat-pseudo-checkbox-checked {
+        background: #505081 !important;
+      }
+    }
+  }
+
+  // Mat-select trigger focused
+  .mat-mdc-select {
+    &:focus,
+    &.mat-mdc-select-focused {
+      .mat-mdc-select-trigger {
+        border-color: #505081 !important;
+      }
+    }
+
+    .mat-mdc-select-arrow {
+      color: #505081;
+    }
+  }
+
+  // Ripple effect color
+  .mat-ripple-element {
+    background-color: rgba(80, 80, 129, 0.12) !important;
+  }
+
+  // Mat-checkbox accent override
+  .mat-mdc-checkbox {
+    &.mat-accent {
+      .mdc-checkbox__native-control:checked ~ .mdc-checkbox__background,
+      .mdc-checkbox__native-control:indeterminate ~ .mdc-checkbox__background {
+        background-color: #505081 !important;
+        border-color: #505081 !important;
+      }
+    }
+
+    .mdc-checkbox:hover .mdc-checkbox__ripple {
+      background-color: rgba(80, 80, 129, 0.1) !important;
+    }
+  }
+
+  // Mat-radio accent override
+  .mat-mdc-radio-button {
+    &.mat-accent {
+      .mdc-radio__native-control:checked + .mdc-radio__background {
+        .mdc-radio__outer-circle {
+          border-color: #505081 !important;
+        }
+        .mdc-radio__inner-circle {
+          border-color: #505081 !important;
+        }
+      }
+    }
+  }
+
+  // Global Angular Material focus ring
+  .cdk-focused,
+  .cdk-keyboard-focused {
+    .mat-mdc-focus-indicator::before {
+      border-color: #505081 !important;
     }
   }
 }
 
-// ===== TOAST NOTIFICATIONS (se necessario) =====
+// ========================================
+// SNACKBAR OVERRIDE (converted lead)
+// ========================================
+::ng-deep .converted-snackbar {
+  .mdc-snackbar__surface {
+    background: linear-gradient(135deg, #047857 0%, #10b981 100%) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3) !important;
+  }
+
+  .mdc-snackbar__label {
+    color: white !important;
+    font-weight: 600 !important;
+  }
+
+  .mat-mdc-snack-bar-action {
+    color: #d1fae5 !important;
+    font-weight: 700 !important;
+  }
+}
+
+// ========================================
+// TOOLTIP OVERRIDE (scoped via matTooltipClass)
+// ========================================
+::ng-deep .leads-tooltip {
+  .mdc-tooltip__surface {
+    background-color: #0F0E47 !important;
+    color: white !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    padding: 8px 14px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 12px rgba(15, 14, 71, 0.3) !important;
+    max-width: 280px !important;
+    line-height: 1.4 !important;
+  }
+}
+
+// ========================================
+// LEGACY
+// ========================================
+.lead-container { display: flex; flex-wrap: wrap; justify-content: space-around; margin-top: 20px; width: 100%; }
+
+.leadCard {
+  max-height: 550px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+  &::-webkit-scrollbar-thumb { background: #8686AC; border-radius: 3px; &:hover { background: #505081; } }
+}
+
+.button-row { display: flex; gap: 4px; justify-content: flex-start; }
+
+.rounded-row {
+  display: flex; margin-bottom: 10px; border-radius: 15px; overflow: hidden; border: 1px solid #ccc;
+  td { padding: 10px; flex: 1; border-right: 1px solid #eee; &:last-child { border-right: none; } }
+}
+
+// ========================================
+// RESPONSIVE
+// ========================================
+@media (max-width: 768px) {
+  .hero-header {
+    padding: 1.5rem 1rem;
+    z-index: 102;
+
+    .hero-content .hero-title {
+      font-size: 2rem;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .hero-actions {
+      flex-direction: column;
+      align-items: center;
+      .hero-btn { width: 100%; max-width: 300px; }
+    }
+  }
+
+  .modern-header {
+    padding: 16px 20px;
+
+    .header-content {
+      .header-icon { width: 48px; height: 48px; .material-icons { font-size: 24px; } }
+      .header-text { .card-title { font-size: 1.4rem; } .card-subtitle { font-size: 0.85rem; } }
+    }
+  }
+
+  .modern-table {
+    font-size: 0.85rem;
+
+    .modern-header-row th,
+    .modern-row td { padding: 10px 8px; }
+
+    .contact-info, .email-info, .phone-info, .date-info, .assigned-info {
+      flex-direction: column;
+      gap: 0.25rem;
+      text-align: center;
+      .material-icons { font-size: 1rem; }
+    }
+  }
+
+  .status-badge { padding: 4px 10px; font-size: 0.7rem; }
+
+  .expand-hint { padding: 0.5rem 20px; font-size: 0.8rem; }
+
+  .lead-contracts-detail .contracts-list {
+    padding: 0.75rem 1rem 1rem;
+    .contract-cards .contract-card { grid-template-columns: 1fr 1fr; padding: 0.75rem 1rem; }
+  }
+
+  .daily-leads-container .leads-grid {
+    grid-template-columns: 1fr;
+    .lead-card .lead-card-content {
+      flex-direction: column;
+      align-items: stretch;
+      .lead-actions { flex-direction: row; justify-content: center; margin-top: 1rem; }
+    }
+  }
+
+  .create-lead-form .form-grid .form-row { grid-template-columns: 1fr; }
+
+  // Duplicate warning responsive
+  .duplicate-warning {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    .duplicate-warning-content .duplicate-warning-actions {
+      justify-content: center;
+    }
+
+    .duplicate-lead-info {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .calendar-container {
+    padding: 1rem;
+
+    .calendar-controls {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+      .view-selector { order: 3; align-self: center; }
+      .navigation-controls { order: 1; justify-content: center; }
+      .period-info { order: 2; text-align: center; }
+    }
+
+    .calendar-legend { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+
+    .modern-calendar .calendar-grid {
+      .calendar-day { min-height: 80px; padding: 0.5rem;
+        .day-content .leads-indicator { padding: 0.125rem 0.25rem; .leads-icon { font-size: 12px; } .leads-count { font-size: 0.625rem; } }
+      }
+    }
+
+    .calendar-stats {
+      grid-template-columns: 1fr;
+      .stat-card { padding: 1rem; .stat-icon { width: 40px; height: 40px; .material-icons { font-size: 20px; } } .stat-content .stat-number { font-size: 1.25rem; } }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .lead-contracts-detail .contracts-list .contract-cards .contract-card { grid-template-columns: 1fr; }
+
+  .duplicate-warning .duplicate-lead-info { grid-template-columns: 1fr; }
+
+  .calendar-container {
+    .modern-calendar {
+      .calendar-header .day-header { padding: 0.5rem 0.25rem; font-size: 0.75rem; }
+      .calendar-grid .calendar-day { min-height: 60px; padding: 0.25rem; .day-number { font-size: 0.875rem; } }
+    }
+    .calendar-legend { grid-template-columns: 1fr; gap: 0.5rem; .legend-item { font-size: 0.75rem; justify-content: center; } }
+  }
+}
+
+@media (min-width: 1200px) {
+  .external-components {
+    max-width: 100%;
+    padding: 0 2rem;
+
+    .calendar-container {
+      padding: 3rem;
+      .modern-calendar .calendar-grid { gap: 2px; .calendar-day { min-height: 140px; padding: 1rem; } }
+    }
+  }
+}
+
+// ========================================
+// ACCESSIBILITY
+// ========================================
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid #505081;
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: high) {
+  .contacts-card { border: 2px solid #000; }
+  .manage-lead-btn, .convert-lead-btn, .converted-badge-btn { border: 1px solid currentColor; }
+}
+
+// ========================================
+// TOAST NOTIFICATIONS
+// ========================================
 .toast-notification {
   position: fixed;
   top: 20px;
   right: 20px;
   z-index: 9999;
   max-width: 400px;
-  border-radius: $border-radius-lg;
-  box-shadow: $shadow-xl;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(15, 14, 71, 0.1), 0 10px 10px -5px rgba(15, 14, 71, 0.04);
   animation: slideInRight 0.3s ease-out;
-  
+
   &.success {
-    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-    border-left: 4px solid #28a745;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border-left: 4px solid #047857;
   }
-  
+
   &.error {
     background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
     border-left: 4px solid #dc3545;
   }
-  
+
   &.warning {
-    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-    border-left: 4px solid #ffc107;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-left: 4px solid #b45309;
   }
 }
 
 @keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
-// ===== PRINT STYLES =====
-@media print {
-  .modern-header,
-  .action-buttons,
-  .filters-section,
-  .action-buttons-cell,
-  .external-components {
-    display: none !important;
-  }
-  
-  .modern-card {
-    box-shadow: none !important;
-    border: 1px solid #000 !important;
-    break-inside: avoid;
-  }
-  
-  .modern-table {
-    font-size: 12px;
-    
-    .header-row {
-      background: #f0f0f0 !important;
-      color: #000 !important;
-    }
-  }
-}
+// ========================================
+// UTILITIES
+// ========================================
+.text-center { text-align: center; }
+.w-100 { width: 100%; }
+.m-2 { margin: 0.5rem; }
+.p-3 { padding: 0.75rem; }
+.mt-2 { margin-top: 0.5rem; }
+.d-flex { display: flex; }
+.justify-content-center { justify-content: center; }
 
-// ===== RESPONSIVE DESIGN =====
-@media (max-width: 768px) {
-  .modern-header {
-    padding: 1.5rem 1rem;
-    position: relative;
-    z-index:102;
-    
-    .hero-section .hero-content .hero-title {
-      font-size: 2rem;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .action-buttons {
-      flex-direction: column;
-      align-items: center;
-
-      .action-button {
-        width: 100%;
-        max-width: 300px;
-      }
-    }
-  }
-
-  .filters-section .filters-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .table-container .table-wrapper {
-    .modern-table .data-row .data-cell .action-buttons-cell {
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-  }
-  
-  .daily-leads-card {
-    .daily-leads-container .leads-grid {
-      grid-template-columns: 1fr;
-      
-      .lead-card .lead-card-content {
-        flex-direction: column;
-        align-items: stretch;
-        
-        .lead-actions {
-          flex-direction: row;
-          justify-content: center;
-          margin-top: 1rem;
-        }
-      }
-    }
-  }
-  
-  .create-lead-card {
-    .form-container .create-lead-form .form-grid .form_row {
-      grid-template-columns: 1fr;
-    }
-  }
-}
-
-// ===== CALENDARIO RESPONSIVE =====
-@media (max-width: 768px) {
-  .calendar-section .calendar-card .calendar-container {
-    padding: 1rem;
-    
-    .calendar-controls {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 1rem;
-      
-      .view-selector {
-        order: 3;
-        align-self: center;
-      }
-      
-      .navigation-controls {
-        order: 1;
-        justify-content: center;
-      }
-      
-      .period-info {
-        order: 2;
-        text-align: center;
-      }
-    }
-    
-    .calendar-legend {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-    }
-    
-    .modern-calendar {
-      .calendar-grid {
-        width: 100% !important; // Forza larghezza completa anche su mobile
-        min-width: 100% !important;
-        
-        .calendar-day {
-          min-height: 80px;
-          padding: 0.5rem;
-          
-          .day-content {
-            .leads-indicator {
-              padding: 0.125rem 0.25rem;
-              
-              .leads-icon {
-                font-size: 12px;
-              }
-              
-              .leads-count {
-                font-size: 0.625rem;
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    .calendar-stats {
-      grid-template-columns: 1fr;
-      
-      .stat-card {
-        padding: 1rem;
-        
-        .stat-icon {
-          width: 40px;
-          height: 40px;
-          
-          mat-icon {
-            font-size: 20px;
-          }
-        }
-        
-        .stat-content .stat-number {
-          font-size: 1.25rem;
-        }
-      }
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .calendar-section .calendar-card .calendar-container {
-    .modern-calendar {
-      .calendar-header .day-header {
-        padding: 0.5rem 0.25rem;
-        font-size: 0.75rem;
-      }
-      
-      .calendar-grid .calendar-day {
-        min-height: 60px;
-        padding: 0.25rem;
-        
-        .day-number {
-          font-size: 0.875rem;
-        }
-      }
-    }
-    
-    .calendar-legend {
-      grid-template-columns: 1fr;
-      gap: 0.5rem;
-      
-      .legend-item {
-        font-size: 0.75rem;
-        justify-content: center;
-      }
-    }
-  }
-}
-
-// ===== RESPONSIVE RULES =====
-// ===== DESKTOP OPTIMIZATION =====
-@media (min-width: 1200px) {
-  .external-components {
-    max-width: 100%; // Su desktop, usa tutta la larghezza disponibile
-    padding: 0 2rem; // Padding più generoso sui lati
-    
-    .calendar-section {
-      width: 100%;
-      
-      .calendar-card {
-        width: 100%;
-        
-        .calendar-container {
-          padding: 3rem; // Padding più generoso per desktop
-          
-          .calendar-grid {
-            width: 100% !important;
-            min-width: 100% !important;
-            gap: 2px; // Gap leggermente più ampio per desktop
-            
-            .calendar-day {
-              min-height: 140px; // Altezza maggiore per desktop
-              padding: 1rem; // Padding più generoso
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-// ===== FIX AGGIUNTIVO SUPER SPECIFICO =====
-// Stili super specifici per vincere qualsiasi conflitto
-::ng-deep .create-lead-card .create-lead-form .form-field .mat-mdc-form-field {
-  // Override forzato per tutti i form fields del form di creazione lead
-  .mat-mdc-text-field-wrapper .mat-mdc-form-field-flex {
-    background: white !important;
-    //border: 2px solid #e2e8f0 !important;
-    border-radius: 12px !important;
-    //padding-left: 16px !important;
-    //padding-right: 16px !important;
-    //min-height: 56px !important;
-    
-    .mat-mdc-form-field-icon-prefix {
-      margin-right: 12px !important;
-      order: 1 !important; // Forza l'ordine dell'icona
-    }
-    
-    .mat-mdc-form-field-infix {
-      order: 2 !important; // Forza l'ordine del contenuto input
-      padding: 0 !important;
-      
-      .mat-mdc-input-element {
-        padding: 16px 0 !important;
-        
-        &::placeholder {
-          color: transparent !important; // Nasconde il placeholder nativo per usare solo la label
-        }
-      }
-    }
-  }
-  
-  .mat-mdc-form-field-label {
-    left: 52px !important; // Posizione iniziale dopo icona
-    color: #a0aec0 !important;
-    font-size: 16px !important;
-    top: 16px !important;
-    
-    // Quando è flottante
-    &.mdc-floating-label--float-above {
-      left: 16px !important;
-      top: -8px !important;
-      font-size: 12px !important;
-      color: #667eea !important;
-      background: white !important;
-      padding: 0 4px !important;
-    }
-  }
-}
-
-// ===== STILI SPECIFICI PER FORM ICONS =====
-.create-lead-card .form-container .create-lead-form {
-  .form-field {
-    ::ng-deep .mat-mdc-form-field {
-      // Stili per l'outline quando in focus
-      &.mat-focused {
-        .mat-mdc-text-field-wrapper .mat-mdc-form-field-flex {
-          border-color: #667eea !important;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-        }
-        
-        .mat-mdc-form-field-icon-prefix {
-          color: #667eea !important;
-        }
-      }
-      
-      // Stili per lo stato di errore
-      &.mat-form-field-invalid {
-        .mat-mdc-text-field-wrapper .mat-mdc-form-field-flex {
-          border-color: #e53e3e !important;
-        }
-        
-        .mat-mdc-form-field-icon-prefix {
-          color: #e53e3e !important;
-        }
-      }
-    }
-  }
-}
-
-// ===== STILI FORM FIELDS COME IN LISTACONTRATTI =====
-::ng-deep .modern-field {
-  width: 100%;
-  margin-bottom: 16px;
-
-  // Stili base dal listaContratti per comportamento corretto delle label
-  .mat-mdc-form-field-wrapper {
-    background: #fafafa;
-    border-radius: 12px;
-  }
-
-  .mat-mdc-form-field-outline {
-    border-radius: 12px;
-    border-color: #e0e0e0;
-  }
-
-  .mat-mdc-form-field-focus-overlay {
-    background: rgba(33, 150, 243, 0.04);
-    border-radius: 12px;
-  }
-  
-  // Rimuovi i bordi di outline indesiderati
-  .mat-mdc-form-field-outline-start,
-  .mat-mdc-form-field-outline-end,
-  .mat-mdc-form-field-outline-notch {
-    border: none !important;
-    border-color: transparent !important;
-  }
-  
-  .mat-mdc-form-field-outline-thick {
-    border: none !important;
-    border-color: transparent !important;
-  }
-  
-  // Rimuovi outline su focus
-  &.mat-focused {
-    .mat-mdc-form-field-outline-start,
-    .mat-mdc-form-field-outline-end,
-    .mat-mdc-form-field-outline-notch,
-    .mat-mdc-form-field-outline-thick {
-      border: none !important;
-      border-color: transparent !important;
-    }
-  }
-  
-  // Stile per le icone suffix (a destra) - Non interferisce con il layout
-  .mat-mdc-form-field-icon-suffix {
-    color: #667eea;
-    opacity: 0.7;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      opacity: 1;
-      color: #5a6fd8;
-    }
-  }
-  
-  // Focus state - Mantieni comportamento nativo delle label
-  &.mat-focused {
-    .mat-mdc-form-field-icon-suffix {
-      color: #667eea;
-      opacity: 1;
-    }
-  }
-  
-  // Error state  
-  &.mat-form-field-invalid {
-    .mat-mdc-form-field-icon-suffix {
-      color: #e53e3e;
-      opacity: 1;
-    }
-  }
-}
-
-// ===== OVERRIDE GLOBALI PER CALENDARIO =====
-// Assicura che il calendario sia sempre visibile sopra elementi decorativi
+// ========================================
+// HOST ISOLATION (calendar stacking)
+// ========================================
 :host {
   .external-components {
-    isolation: isolate; // Crea un nuovo stacking context
-    
+    isolation: isolate;
+
     .calendar-section {
-      isolation: isolate; // Isolamento per il calendario
-      transform: translateZ(0); // Forza il rendering su layer separato
-      will-change: transform; // Ottimizza per le trasformazioni
-      
-      .calendar-card {
+      isolation: isolate;
+      transform: translateZ(0);
+      will-change: transform;
+
+      .contacts-card {
         isolation: isolate;
         transform: translateZ(0);
-        
+
         .modern-calendar {
           transform: translateZ(0);
           isolation: isolate;
@@ -1536,234 +2323,101 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   }
 }
 
-// ===== MIGLIORAMENTI LEGACY E PULIZIA =====
-
-.lead-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  margin-top: 20px;
-  width: 100%;
-}
-
-.leadCard {
-  max-height: 550px;
-  overflow-y: auto;
-  
-  // Stile personalizzato per scrollbar
-  &::-webkit-scrollbar {
-    width: 6px;
+// ========================================
+// ANGULAR MATERIAL OUTLINE OVERRIDES
+// ========================================
+::ng-deep .mat-mdc-form-field-appearance-outline {
+  .mat-mdc-form-field-outline {
+    border-radius: 12px !important;
+    border: none !important;
   }
-  
-  &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 3px;
-    
-    &:hover {
-      background: #a8a8a8;
-    }
-  }
-}
 
-.button-row {
-  display: flex;
-  gap: 4px;
-  justify-content: flex-start;
-}
-
-.rounded-row {
-  display: flex;
-  margin-bottom: 10px;
-  border-radius: 15px;
-  overflow: hidden;
-  border: 1px solid #ccc;
-  
-  td {
-    padding: 10px;
-    flex: 1;
-    border-right: 1px solid #eee;
-    
-    &:last-child {
-      border-right: none;
-    }
+  .mat-mdc-form-field-outline-start,
+  .mat-mdc-form-field-outline-end,
+  .mat-mdc-form-field-outline-notch {
+    border: none !important;
   }
-}
 
-// ===== OVERRIDE PER COMPONENTI EXTERNAL =====
+  .mat-mdc-form-field-outline-thick {
+    border: none !important;
+  }
 
-// PrimeNG overrides
-::ng-deep {
-  .p-multiselect {
-    width: 100% !important;
-    border-radius: $border-radius-md !important;
-    
-    .p-multiselect-label {
-      padding: 0.75rem !important;
-    }
-    
-    &.p-focus {
-      border-color: #667eea !important;
-      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
-    }
-  }
-  
-  .p-datepicker {
-    width: 100% !important;
-    
-    .p-inputtext {
-      border-radius: $border-radius-md !important;
-      padding: 0.75rem !important;
-      border: 1px solid #d1d5db !important;
-      
-      &:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
-      }
-    }
-  }
-  
-  .p-button {
-    border-radius: $border-radius-md !important;
-    padding: 0.75rem 1rem !important;
-    font-weight: 500 !important;
-    
-    &.p-button-outlined {
-      border: 1px solid #ef4444 !important;
-      color: #ef4444 !important;
-      
-      &:hover {
-        background: #fef2f2 !important;
-      }
-    }
-  }
-}
-
-// Angular Material overrides
-::ng-deep {
-  .mat-mdc-form-field-appearance-outline {
-    .mat-mdc-form-field-outline {
-      border-radius: $border-radius-md !important;
-      // Rimuovi completamente i bordi outline
-      border: none !important;
-    }
-    
+  &.mat-focused {
+    .mat-mdc-form-field-outline,
+    .mat-mdc-form-field-outline-thick,
     .mat-mdc-form-field-outline-start,
     .mat-mdc-form-field-outline-end,
     .mat-mdc-form-field-outline-notch {
       border: none !important;
-    }
-    
-    .mat-mdc-form-field-outline-thick {
-      border: none !important;
-    }
-    
-    &.mat-focused {
-      .mat-mdc-form-field-outline,
-      .mat-mdc-form-field-outline-thick,
-      .mat-mdc-form-field-outline-start,
-      .mat-mdc-form-field-outline-end,
-      .mat-mdc-form-field-outline-notch {
-        border: none !important;
-        border-color: transparent !important;
-      }
-    }
-  }
-  
-  .mat-mdc-slide-toggle {
-    .mdc-switch {
-      .mdc-switch__track {
-        border-radius: 12px !important;
-      }
-    }
-    
-    &.mat-checked .mdc-switch__track {
-      background-color: #667eea !important;
-      border-color: #667eea !important;
-    }
-  }
-  
-  .mat-mdc-chip {
-    border-radius: $border-radius-lg !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.5px !important;
-  }
-  
-  .mat-mdc-paginator {
-    .mat-mdc-paginator-page-size-select {
-      .mat-mdc-select-trigger {
-        border-radius: $border-radius-md !important;
-      }
-    }
-    
-    .mat-mdc-icon-button {
-      border-radius: $border-radius-md !important;
+      border-color: transparent !important;
     }
   }
 }
 
-// ===== UTILITIES =====
-.text-center {
-  text-align: center;
-}
+// ========================================
+// PRIMENG BUTTON OVERRIDE
+// ========================================
+::ng-deep .p-button {
+  border-radius: 12px !important;
+  padding: 0.75rem 1rem !important;
+  font-weight: 500 !important;
 
-.w-100 {
-  width: 100%;
-}
+  &.p-button-outlined {
+    border: 1px solid #ef4444 !important;
+    color: #ef4444 !important;
 
-.m-2 {
-  margin: 0.5rem;
-}
-
-.p-3 {
-  padding: 0.75rem;
-}
-
-.mt-2 {
-  margin-top: 0.5rem;
-}
-
-.d-flex {
-  display: flex;
-}
-
-.justify-content-center {
-  justify-content: center;
-}
-
-// ===== ACCESSIBILITY =====
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    &:hover {
+      background: #fef2f2 !important;
+    }
   }
 }
 
-// Focus indicators
-button:focus-visible,
-input:focus-visible,
-select:focus-visible {
-  outline: 2px solid #667eea;
-  outline-offset: 2px;
+// ========================================
+// PAGINATOR SELECT OVERRIDE
+// ========================================
+::ng-deep .mat-mdc-paginator {
+  .mat-mdc-paginator-page-size-select {
+    .mat-mdc-select-trigger {
+      border-radius: 12px !important;
+    }
+  }
+
+  .mat-mdc-icon-button {
+    border-radius: 50% !important;
+    overflow: hidden;
+
+    // Kill the rectangular focus/hover overlay
+    .mat-mdc-button-persistent-ripple,
+    .mat-mdc-focus-indicator {
+      border-radius: 50% !important;
+    }
+
+    // Remove the rectangular state layer
+    &::before {
+      border-radius: 50% !important;
+    }
+
+    .mat-mdc-button-touch-target {
+      border-radius: 50% !important;
+    }
+
+    // Clean circular hover
+    &:hover {
+      background-color: rgba(80, 80, 129, 0.12) !important;
+    }
+
+    // Ripple should also be circular
+    .mat-ripple {
+      border-radius: 50% !important;
+    }
+  }
 }
 
-// High contrast mode support
-@media (prefers-contrast: high) {
-  .modern-card {
-    border: 2px solid #000;
-  }
-  
-  .action-btn {
-    border: 1px solid currentColor;
-  }
+// ========================================
+// PRINT
+// ========================================
+@media print {
+  .hero-header, .hero-actions, .filters-container, .action-buttons-cell, .external-components { display: none !important; }
+  .contacts-card { box-shadow: none !important; border: 1px solid #000 !important; break-inside: avoid; }
+  .modern-table { font-size: 12px; .modern-header-row { background: #f0f0f0 !important; color: #000 !important; } }
 }
-
-
-
-
-

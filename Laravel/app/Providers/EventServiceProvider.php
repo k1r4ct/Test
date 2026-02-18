@@ -13,6 +13,7 @@ use App\Listeners\AuthEventsListener;
 use App\Listeners\EmailEventsListener;
 use App\Listeners\QueryListener;
 use App\Listeners\JobEventsListener;
+use App\Listeners\MigrationEventsListener;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -43,6 +44,7 @@ class EventServiceProvider extends ServiceProvider
         AuthEventsListener::class,
         EmailEventsListener::class,
         JobEventsListener::class,
+        MigrationEventsListener::class,
     ];
 
     /**

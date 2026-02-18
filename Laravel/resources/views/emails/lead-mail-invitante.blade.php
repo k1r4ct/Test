@@ -45,7 +45,7 @@
             <p>Abbiamo inviato una notifica al tuo amico {{$nameInvitato}}</p>
             
             <!-- You'll need to pass these variables from your LeadMail class -->
-            <p>Verrà contattato il prima possibile dal nostreo Team Semprechiaro</p>
+            <p>Verrà contattato il prima possibile dal nostro Team Semprechiaro</p>
         </div>
 
         <div class="footer">

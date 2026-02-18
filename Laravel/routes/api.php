@@ -20,6 +20,7 @@ use App\Http\Controllers\ContractTypeInformationController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\ContractDataOverviewController;
+use App\Http\Controllers\UserDataOverviewController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\LogSettingsController;
 use App\Http\Controllers\NotificationController;
@@ -49,6 +50,16 @@ Route::prefix('contract-data-overview')->group(function () {
     Route::get('/', [ContractDataOverviewController::class, 'index']);
     Route::post('/bulk-update', [ContractDataOverviewController::class, 'bulkUpdate']);
     Route::get('/{id}', [ContractDataOverviewController::class, 'show']);
+});
+
+// ============================================
+// USER DATA OVERVIEW - Google Sheets Integration
+// These routes use API key authentication (not JWT)
+// ============================================
+Route::prefix('user-data-overview')->group(function () {
+    Route::get('/', [UserDataOverviewController::class, 'index']);
+    Route::post('/bulk-update', [UserDataOverviewController::class, 'bulkUpdate']);
+    Route::get('/{id}', [UserDataOverviewController::class, 'show']);
 });
 
 
@@ -206,6 +217,7 @@ Route::group(['middleware'=>'api'],function(){
     Route::post('getLeadsDayClicked',[LeadController::class,'getLeadsDayClicked'])->name('getLeadsDayClicked');
     Route::get('getColorRowStatusLead{id}',[LeadController::class,'getColorRowStatusLead'])->name('getColorRowStatusLead');
     Route::post('nuovoClienteLead',[LeadController::class,'nuovoClienteLead'])->name('nuovoClienteLead');
+    Route::get('checkLeadMatch',[LeadController::class,'checkLeadMatch'])->name('checkLeadMatch');
 
     //GESTIONE MESSAGGI
     Route::get('getMessageNotification',[AuthController::class,'getMessageNotification'])->name('getMessageNotification');

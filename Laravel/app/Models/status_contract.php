@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Services\SystemLogService;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\LogsDatabaseOperations;  
 
 class status_contract extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsDatabaseOperations;
 
     protected $fillable = [
         'micro_stato',

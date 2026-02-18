@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Services\SystemLogService;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\LogsDatabaseOperations;
 
 class Order extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsDatabaseOperations;
 
     /**
      * Order priority levels.

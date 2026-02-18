@@ -75,6 +75,16 @@ class AuthController extends Controller
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
 
+            // Check if user account is active
+            if ($user->stato_user === 0) {
+                SystemLogService::auth()->warning('Login attempt by disabled user', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'name' => trim(($user->name ?? '') . ' ' . ($user->cognome ?? '')),
+                ]);
+                return response()->json(['error' => 'Account disabilitato. Contattare l\'amministratore.'], 403);
+            }
+
             // Generate token
             $token = auth()->login($user);
 

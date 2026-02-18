@@ -117,12 +117,12 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { providePrimeNG } from 'primeng/config';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { SchedaUtenteComponent } from "./pages/scheda-utente/scheda-utente.component";
-import { ContrattiPersonaliComponent } from "./pages/user/clienti/contratti-personali/contratti-personali.component";
 import { ChartsModule } from "./pages/user/chart/chart.module";
 import Nora from '@primeng/themes/nora';
 import Lara from '@primeng/themes/lara';
 import Material from '@primeng/themes/lara';
 import Aura from '@primeng/themes/aura';
+import { TextFieldModule } from '@angular/cdk/text-field';
 import { QrcodeGeneratorComponent } from "./pages/qrcode-generator/qrcode-generator.component";
 import { TicketManagementComponent } from "./pages/ticket-management/ticket-management.component";
 import { WalletClienteComponent } from "./pages/user/clienti/wallet-cliente/wallet-cliente.component";
@@ -173,7 +173,6 @@ import { EcommerceComponent } from "./pages/ecommerce/ecommerce.component";
     CardStatisticComponent,
     CardStatisticComponentSeu,
     SchedaUtenteComponent,
-    ContrattiPersonaliComponent,
     TicketManagementComponent,
     WalletClienteComponent,
     AttachmentPreviewModalComponent,
@@ -214,6 +213,7 @@ import { EcommerceComponent } from "./pages/ecommerce/ecommerce.component";
     MatSlideToggleModule,
     MatIconModule,
     DragAndDropModule,
+    TextFieldModule,
     OrganizationChartModule,
     ToolbarModule,
     DockModule,

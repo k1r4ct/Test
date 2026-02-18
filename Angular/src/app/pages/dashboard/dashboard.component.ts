@@ -1,55 +1,47 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ApiService } from 'src/app/servizi/api.service';
-import {trigger,style,animate,transition} from '@angular/animations';
-
-/* import Chart from 'chart.js'; */
-
+import { trigger, style, animate, transition } from '@angular/animations';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'dashboard-cmp',
     moduleId: module.id,
     templateUrl: 'dashboard.component.html',
-    styleUrl: 'dashboard.component.scss',
+    styleUrls: ['dashboard.component.scss'],
     animations: [
         trigger("pageTransition", [
-            transition(":enter,:leave", [
-                style({ opacity: 0, transform: "scale(0.1)" }), // Inizia piccolo al centro
-                animate("500ms ease-in-out", style({ opacity: 1, transform: "scale(1)" })) // Espandi e rendi visibile
+            transition(":enter", [
+                style({ opacity: 0, transform: "scale(0.95)" }),
+                animate("400ms ease-out", style({ opacity: 1, transform: "scale(1)" }))
             ]),
             transition(":leave", [
-                animate("500ms ease-in-out", style({ opacity: 0, transform: "scale(0.1)" })) // Riduci e rendi invisibile
+                animate("300ms ease-in", style({ opacity: 0, transform: "scale(0.95)" }))
             ])
         ])
     ],
     standalone: false
 })
+export class DashboardComponent implements OnInit, OnDestroy {
 
-export class DashboardComponent implements OnInit{
-  
-  public canvas : any;
-  public ctx: any;
-  public chartColor!: string;
-  public chartEmail: any;
-  public chartHours: any;
-  User:any;
-  state:any;
-  constructor(private servizioAPI:ApiService){}
-    /* ngOnInit(){
-      this.user=this.servzioAPI.PrendiUtente('alessioscionti@gmail.com');
-      console.log(this.servzioAPI.utente);
-    } */
-    
-    ngOnInit() {     
-      this.servizioAPI.PrendiUtente().subscribe(user => {
-        this.User = user.user;
-        //console.log(this.User);
+  User: any;
+  isLoading = true;
+  private sub!: Subscription;
+
+  constructor(private servizioAPI: ApiService) {}
+
+  ngOnInit() {
+    this.sub = this.servizioAPI.PrendiUtente().subscribe(user => {
+      this.User = user.user;
+      // Small delay to let user-cmp initialize before revealing
+      setTimeout(() => {
+        this.isLoading = false;
+      }, 100);
     });
+  }
+
+  ngOnDestroy() {
+    if (this.sub) {
+      this.sub.unsubscribe();
     }
-    
-    animationDone(event: any) { // Metodo per gestire la fine dell'animazione
-      if (event.toState === 'out' && event.phaseName === 'done') {
-        // Qui puoi aggiungere la logica per navigare alla pagina successiva o eseguire altre azioni dopo l'animazione
-      }
-    }
-    
+  }
 }

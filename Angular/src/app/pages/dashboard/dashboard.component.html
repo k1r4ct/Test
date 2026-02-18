@@ -1,9 +1,9 @@
-<div *ngIf="User" class="row" @pageTransition>
-
+<!-- Loading State - shown while waiting for user data -->
+<div class="dashboard-loading" *ngIf="isLoading">
+  <mat-spinner diameter="48"></mat-spinner>
 </div>
 
-
-
-<div *ngIf="User" class="row">
+<!-- Dashboard Content - fade in after data is ready -->
+<div *ngIf="User && !isLoading" class="dashboard-ready" @pageTransition>
   <user-cmp></user-cmp>
 </div>

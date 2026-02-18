@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Services\SystemLogService;
+use App\Traits\LogsDatabaseOperations;
 
 class contract_type_information extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsDatabaseOperations;
 
     protected $fillable = [
         'macro_product_id',
