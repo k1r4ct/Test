@@ -1,849 +1,1399 @@
-<!-- Hero header -->
-<div class="hero-header">
-  <div class="hero-content">
-    <h1 class="hero-title">
-      <i class="material-icons hero-icon">people</i>
-      {{ ruoloUtente == 'Cliente' ? 'Gestione Amici' : 'Gestione Lead' }}
-    </h1>
-    <p class="hero-subtitle">
-      {{ ruoloUtente == 'Cliente'
-        ? 'Invita i tuoi amici e monitora i contatti'
-        : 'Gestisci i tuoi lead e converti opportunità' }}
-    </p>
-  </div>
+import {
+  Component,
+  OnInit,
+  Renderer2,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
+import {
+  trigger,
+  state,
+  style,
+  animate,
+  transition,
+} from '@angular/animations';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  FormControl,
+} from '@angular/forms';
+import { ApiService } from 'src/app/servizi/api.service';
+import { MatDialog } from '@angular/material/dialog';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { ContrattoDetailsDialogComponent } from 'src/app/modal/modal.component';
+import { MatSort } from '@angular/material/sort';
+import { ActivatedRoute } from '@angular/router';
+import { MatSnackBar, MatSnackBarHorizontalPosition, MatSnackBarVerticalPosition } from '@angular/material/snack-bar';
+import { DatePickerModule } from 'primeng/datepicker';
+import { DateRange } from '@angular/material/datepicker';
+import { ButtonModule } from 'primeng/button';
 
-  <div class="hero-actions">
-    <button mat-fab extended color="primary" class="hero-btn" (click)="showLeads()">
-      <mat-icon>visibility</mat-icon>
-      <span *ngIf="ruoloUtente == 'Cliente'">Vedi Amici Invitati</span>
-      <span *ngIf="ruoloUtente != 'Cliente'">Vedi Leads</span>
-    </button>
+export interface leads {
+  id: number;
+  nome: string;
+  cognome: string;
+  email: string;
+  telefono: string;
+  stato: string;
+  inserito_il: string;
+  assegnato_a: string;
+  id_assegnato: number;
+  microstato: string;
+  is_converted: boolean;
+  nominativoLead: string;
+  data_appuntamento: string;
+}
+export interface leadsSquad {
+  id: number;
+  nome: string;
+  cognome: string;
+  email: string;
+  telefono: string;
+  stato: string;
+  inserito_il: string;
+  assegnato_a: string;
+  id_assegnato: number;
+  microstato: string;
+  is_converted: boolean;
+  nominativoLead: string;
+  data_appuntamento: string;
+}
 
-    <!-- New Client button (SEU/Advisor only) -->
-    <button *ngIf="ruoloUtente != 'Cliente'" mat-fab extended color="primary"
-      class="hero-btn hero-btn-client" (click)="ShowNewClient()">
-      <mat-icon>person_add</mat-icon>
-      <span>Nuovo Cliente</span>
-    </button>
+// Enhanced Lead interface — includes nome/cognome for pre-filling conversion form
+export interface Lead {
+  email: string;
+  telefono: string;
+  id_lead: number;
+  nome: string;
+  cognome: string;
+}
 
-    <button mat-fab extended color="accent" class="hero-btn" (click)="ShowCrealeads()">
-      <mat-icon>add_circle_outline</mat-icon>
-      <span *ngIf="ruoloUtente == 'Cliente'">Nuovo Invito</span>
-      <span *ngIf="ruoloUtente != 'Cliente'">Nuovo Lead</span>
-    </button>
+//Interface for contract info in expandable rows
+export interface LeadContractInfo {
+  id: number;
+  codice_contratto: string;
+  intestatario: string;
+  stato: string;
+  punti_bonus: number;
+}
 
-    <button mat-fab extended color="accent" class="hero-btn" (click)="ShowAppQrcode()">
-      <mat-icon>qr_code</mat-icon>
-      <span>Mostra QrCode</span>
-    </button>
+@Component({
+  selector: 'app-leads',
+  templateUrl: './leads.component.html',
+  styleUrls: ['./leads.component.scss'],
+  animations: [
+    trigger('fadeAnimation', [
+      state(
+        'visible',
+        style({
+          opacity: 1,
+          display: 'block',
+        })
+      ),
+      state(
+        'hidden',
+        style({
+          opacity: 0,
+          display: 'none',
+        })
+      ),
+      transition('visible <=> hidden', [animate('400ms ease-in-out')]),
+    ]),
+    trigger('pageTransition', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'scale(0.1)' }),
+        animate(
+          '500ms ease-in-out',
+          style({ opacity: 1, transform: 'scale(1)' })
+        ),
+      ]),
+      transition(':leave', [
+        animate(
+          '500ms ease-in-out',
+          style({ opacity: 0, transform: 'scale(0.1)' })
+        ),
+      ]),
+    ]),
+    // Animation for expandable contract rows
+    trigger('detailExpand', [
+      state('collapsed, void', style({ height: '0px', minHeight: '0', opacity: 0 })),
+      state('expanded', style({ height: '*', opacity: 1 })),
+      transition('expanded <=> collapsed', animate('300ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
+      transition('expanded <=> void', animate('300ms cubic-bezier(0.4, 0.0, 0.2, 1)'))
+    ]),
+  ],
+  standalone: false,
+})
+export class LeadsComponent implements OnInit {
+  @ViewChild('paginator') paginator!: MatPaginator;
+  @ViewChild('paginatorSquad') paginatorSquad!: MatPaginator;
+  @ViewChild('sort') sort!: MatSort;
+  @ViewChild('sortSquad') sortSquad!: MatSort;
 
-    <!-- Calendar button (SEU/Advisor only) -->
-    <button *ngIf="ruoloUtente != 'Cliente'" mat-fab extended color="accent"
-      class="hero-btn hero-btn-calendar" (click)="ShowCalendar()">
-      <mat-icon>event</mat-icon>
-      <span>Calendario</span>
-    </button>
-  </div>
-</div>
+  // Enhanced lead object — now includes nome/cognome for conversion form pre-fill
+  lead: Lead = { email: '', telefono: '', id_lead: 0, nome: '', cognome: '' };
+  state: any;
+  leadForm: FormGroup;
+  leadSingleForm: FormGroup;
+  Leads: leads[] = [];
+  LeadsSquad: leadsSquad[] = [];
+  leadsSelected: leads[] = [];
+  leadsSelectedSquad: leadsSquad[] = [];
+  seuSelected: leads[] = [];
+  seuSelectedSquad: leadsSquad[] = [];
+  statusSelected: leads[] = [];
+  statusSelectedSquad: leadsSquad[] = [];
+  inseritoIl: leads[] = [];
+  inseritoIlSquad: leadsSquad[] = [];
 
-<!-- ============================================ -->
-<!-- MAIN CONTENT                                 -->
-<!-- ============================================ -->
-<div class="main-content" [@pageTransition]="state" *ngIf="allDivCard">
+  DTRGinseritoil: Date[] | null = null;
+  DTRGinseritoilSquad: Date[] | null = null;
 
-  <!-- ========================================== -->
-  <!-- NEW CLIENT FORM (Punto 3)                  -->
-  <!-- ========================================== -->
-  <div class="contacts-card" *ngIf="showNewClient" [@fadeAnimation]="showNewClient ? 'visible' : 'hidden'">
-    <div class="card-header modern-header">
-      <div class="header-content">
-        <div class="header-icon">
-          <i class="material-icons">{{ isConvertMode ? 'how_to_reg' : 'person_add' }}</i>
-        </div>
-        <div class="header-text">
-          <h1 class="card-title">
-            {{ isConvertMode ? 'Converti Lead in Cliente' : 'Nuovo Cliente' }}
-          </h1>
-          <p class="card-subtitle">
-            {{ isConvertMode
-              ? 'Completa i dati per registrare il lead come cliente'
-              : 'Inserisci i dati del nuovo cliente' }}
-          </p>
-        </div>
-      </div>
-    </div>
+  showleadsTable = false;
+  showleadsCard = false;
+  showCreateLead = false;
+  showQrcode = false;
+  allDivCard = false;
+  displayedColumns: string[] = [
+    'nominativo',
+    'email',
+    'telefono',
+    'inserito_il',
+    'assegnato_a',
+    'microstato',
+    'azioni',
+  ];
 
-    <div class="card-body modern-body form-container">
+  nuovocliente = true;
+  dataSource = new MatTableDataSource<leads>();
+  dataSourceSquad = new MatTableDataSource<leadsSquad>();
 
-      <!-- DUPLICATE LEAD WARNING -->
-      <div class="duplicate-warning" *ngIf="showDuplicateWarning && duplicateLeadFound">
-        <div class="duplicate-warning-icon">
-          <i class="material-icons">warning</i>
-        </div>
-        <div class="duplicate-warning-content">
-          <h3 class="duplicate-warning-title">Attenzione: Lead corrispondente trovato!</h3>
-          <p class="duplicate-warning-text">
-            Esiste già un lead a sistema con gli stessi dati. La procedura corretta prevede
-            la conversione del lead esistente tramite l'apposito bottone.
-          </p>
-          <div class="duplicate-lead-info">
-            <div class="duplicate-lead-field">
-              <span class="field-label">Nominativo</span>
-              <span class="field-value">{{ duplicateLeadFound.nome }} {{ duplicateLeadFound.cognome }}</span>
-            </div>
-            <div class="duplicate-lead-field">
-              <span class="field-label">Email</span>
-              <span class="field-value">{{ duplicateLeadFound.email }}</span>
-            </div>
-            <div class="duplicate-lead-field">
-              <span class="field-label">Telefono</span>
-              <span class="field-value">{{ duplicateLeadFound.telefono }}</span>
-            </div>
-            <div class="duplicate-lead-field">
-              <span class="field-label">Stato</span>
-              <span class="field-value">{{ duplicateLeadFound.stato }}</span>
-            </div>
-            <div class="duplicate-lead-field">
-              <span class="field-label">Inserito da</span>
-              <span class="field-value">{{ duplicateLeadFound.inserito_da }}</span>
-            </div>
-          </div>
-          <div class="duplicate-warning-actions">
-            <button mat-raised-button color="primary" (click)="goToConvertExistingLead()">
-              <mat-icon>how_to_reg</mat-icon> Converti il lead esistente
-            </button>
-            <button mat-stroked-button color="warn" (click)="proceedWithDuplicateClient()">
-              <mat-icon>warning</mat-icon> Procedi comunque (violazione procedura)
-            </button>
-            <button mat-stroked-button (click)="cancelNewClient()">Annulla</button>
-          </div>
-        </div>
-      </div>
+  showCalendario = true;
+  showDettagli = true;
+  showCalendarTab = false;
 
-      <!-- CLIENT CREATION FORM -->
-      <form [formGroup]="newClientForm" *ngIf="!showDuplicateWarning" class="create-lead-form">
-        <div class="form-grid">
+  ruoloUtente = '';
+  userId = 0;
+  roleId = 0;
+  statiUnivoci: { nome: string; count: number; nomeConConteggio: string }[] =
+    [];
+  statiUnivociSquad: {
+    nome: string;
+    count: number;
+    nomeConConteggioSquad: string;
+  }[] = [];
+  seuUnivoci: { nome: string }[] = [];
+  seuUnivociSquad: { nome: string }[] = [];
+  checked: boolean = false;
 
-          <!-- Tipo cliente selector -->
-          <div class="form-row tipo-selector-row">
-            <div class="tipo-selector">
-              <label class="tipo-label">Tipologia Cliente</label>
-              <div class="tipo-buttons">
-                <button type="button" mat-stroked-button
-                  [class.tipo-active]="selectTipoCliente === 'consumer'"
-                  (click)="selectTipoCliente = 'consumer'">
-                  <mat-icon>person</mat-icon> Consumer
-                </button>
-                <button type="button" mat-stroked-button
-                  [class.tipo-active]="selectTipoCliente === 'business'"
-                  (click)="selectTipoCliente = 'business'">
-                  <mat-icon>business</mat-icon> Business
-                </button>
-              </div>
-            </div>
-          </div>
+  // ===== PROPRIETÀ CALENDARIO MODERNO =====
+  calendarView: 'month' | 'week' | 'day' = 'month';
+  currentDate: Date = new Date();
+  currentPeriodText: string = '';
+  weekDays: string[] = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+  calendarDays: any[] = [];
+  isCalendarLoading: boolean = false;
+  totalLeads: number = 0;
+  todayLeads: number = 0;
+  weekLeads: number = 0;
+  useOriginalCalendar: boolean = false;
 
-          <!-- Convert mode info banner -->
-          <div class="convert-info-banner" *ngIf="isConvertMode">
-            <i class="material-icons">info</i>
-            <span>Stai convertendo il lead #{{ convertingLeadId }} — i dati del lead sono stati pre-compilati.</span>
-          </div>
+  // Expandable rows properties (Client role)
+  expandedLeadIds: Set<number> = new Set();
+  leadContractsMap: Map<number, LeadContractInfo[]> = new Map();
+  rawLeadsData: any[] = []; // Store raw API data to access lead_converted
+  readonly BONUS_COEFFICIENT = 0.5;
 
-          <!-- Consumer fields -->
-          <div class="form-row" *ngIf="selectTipoCliente === 'consumer'">
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Nome</mat-label>
-              <input matInput formControlName="nome" placeholder="Nome cliente" />
-              <mat-icon matSuffix>person</mat-icon>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Cognome</mat-label>
-              <input matInput formControlName="cognome" placeholder="Cognome cliente" />
-              <mat-icon matSuffix>badge</mat-icon>
-            </mat-form-field>
-          </div>
+  // ===== NEW CLIENT CREATION PROPERTIES =====
+  showNewClient = false;
+  selectTipoCliente: string = 'consumer';
+  newClientForm: FormGroup;
+  showClientFormError: boolean = false;
 
-          <div class="form-row" *ngIf="selectTipoCliente === 'consumer'">
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Codice Fiscale</mat-label>
-              <input matInput formControlName="codice_fiscale" placeholder="16 caratteri" maxlength="16" />
-              <mat-icon matSuffix>fingerprint</mat-icon>
-            </mat-form-field>
-          </div>
+  // Conversion mode: true when opening form from "Converti" button
+  isConvertMode = false;
+  convertingLeadId: number = 0;
 
-          <!-- Business fields -->
-          <div class="form-row" *ngIf="selectTipoCliente === 'business'">
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Ragione Sociale</mat-label>
-              <input matInput formControlName="ragione_sociale" placeholder="Ragione sociale" />
-              <mat-icon matSuffix>business</mat-icon>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Partita IVA</mat-label>
-              <input matInput formControlName="partita_iva" placeholder="11 cifre" maxlength="11" />
-              <mat-icon matSuffix>receipt</mat-icon>
-            </mat-form-field>
-          </div>
+  // Duplicate lead warning
+  showDuplicateWarning = false;
+  duplicateLeadFound: any = null;
 
-          <!-- Common fields -->
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Email</mat-label>
-              <input matInput type="email" formControlName="email" placeholder="email@esempio.it"
-                (blur)="checkDuplicateLead()" />
-              <mat-icon matSuffix>email</mat-icon>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Telefono</mat-label>
-              <input matInput formControlName="telefono" placeholder="+39 xxx xxx xxxx"
-                (blur)="checkDuplicateLead()" />
-              <mat-icon matSuffix>phone</mat-icon>
-            </mat-form-field>
-          </div>
+  constructor(
+    private servizioApi: ApiService,
+    private fb: FormBuilder,
+    private dialogRef: MatDialog,
+    private route: ActivatedRoute,
+    private _snackBar: MatSnackBar
+  ) {
+    this.leadForm = this.fb.group({
+      nome: ['', Validators.required],
+      cognome: ['', Validators.required],
+      email: ['', Validators.required],
+      telefono: ['', Validators.required],
+      assegnato_a: [''],
+      id_assegnato: [''],
+      consenso: new FormControl(false, Validators.requiredTrue),
+    });
 
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Indirizzo</mat-label>
-              <input matInput formControlName="indirizzo" placeholder="Via/Piazza..." />
-              <mat-icon matSuffix>home</mat-icon>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Città</mat-label>
-              <input matInput formControlName="citta" placeholder="Città" />
-              <mat-icon matSuffix>location_city</mat-icon>
-            </mat-form-field>
-          </div>
+    this.leadSingleForm = this.fb.group({
+      nome: ['', Validators.required],
+      cognome: ['', Validators.required],
+      email: ['', Validators.required],
+      telefono: ['', Validators.required],
+      assegnato_a: ['', Validators.required],
+      id_assegnato: ['', Validators.required],
+    });
 
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Provincia</mat-label>
-              <input matInput formControlName="provincia" placeholder="XX" maxlength="2" />
-              <mat-icon matSuffix>map</mat-icon>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>CAP</mat-label>
-              <input matInput formControlName="cap" placeholder="00000" maxlength="5" />
-              <mat-icon matSuffix>markunread_mailbox</mat-icon>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Nazione</mat-label>
-              <input matInput formControlName="nazione" placeholder="Italia" />
-              <mat-icon matSuffix>public</mat-icon>
-            </mat-form-field>
-          </div>
+    // New client creation form (consumer/business)
+    this.newClientForm = this.fb.group({
+      nome: ['', Validators.required],
+      cognome: ['', Validators.required],
+      ragione_sociale: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      telefono: ['', Validators.required],
+      codice_fiscale: ['', [Validators.required, Validators.minLength(16)]],
+      partita_iva: ['', [Validators.required, Validators.minLength(11)]],
+      indirizzo: ['', Validators.required],
+      provincia: ['', [Validators.required, Validators.minLength(2)]],
+      citta: ['', Validators.required],
+      nazione: ['', Validators.required],
+      cap: ['', Validators.required],
+    });
+  }
 
-          <!-- Action buttons -->
-          <div class="submit-section">
-            <button mat-fab extended color="primary" type="button"
-              (click)="submitNewClient()" class="submit-button">
-              <mat-icon>{{ isConvertMode ? 'how_to_reg' : 'person_add' }}</mat-icon>
-              {{ isConvertMode ? 'Converti e Registra Cliente' : 'Registra Cliente' }}
-            </button>
-            <button mat-stroked-button type="button" (click)="cancelNewClient()" class="cancel-button">
-              <mat-icon>close</mat-icon> Annulla
-            </button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
+  onConsensoChange(event: any) {
+    this.checked = event.checked;
+    this.leadForm.get('consenso')?.setValue(this.checked);
+    this.leadForm.get('consenso')?.markAsTouched();
+  }
 
-  <!-- ========================================== -->
-  <!-- PERSONAL LEADS TABLE                       -->
-  <!-- ========================================== -->
-  <div class="contacts-card" *ngIf="showleadsTable" [@fadeAnimation]="showleadsTable ? 'visible' : 'hidden'">
-    <div class="card-header modern-header">
-      <div class="header-content">
-        <div class="header-icon"><i class="material-icons">person</i></div>
-        <div class="header-text">
-          <h1 class="card-title">
-            {{ ruoloUtente == 'Cliente' ? 'Amici Invitati' : 'Lead Personali' }}
-          </h1>
-          <p class="card-subtitle">Gestisci i tuoi contatti e monitora lo stato</p>
-        </div>
-      </div>
+  // ===== LEAD STATUS COLOR MAPPING =====
+  // Maps micro_stato to proper badge colors (database colors are for row bg, not badges)
+  private getLeadStatusColor(microStato: string): string {
+    const colorMap: Record<string, string> = {
+      'Lead inserito':        'linear-gradient(135deg, #6366f1, #818cf8)',
+      'Amico Inserito':       'linear-gradient(135deg, #6366f1, #818cf8)',
+      'Lead Sospeso':         'linear-gradient(135deg, #f59e0b, #fbbf24)',
+      'Lead Non Interessato': 'linear-gradient(135deg, #ef4444, #f87171)',
+      'Appuntamento Preso':   'linear-gradient(135deg, #3b82f6, #60a5fa)',
+      'Appuntamento KO':      'linear-gradient(135deg, #ef4444, #f87171)',
+      'Lead OK':              'linear-gradient(135deg, #10b981, #34d399)',
+    };
+    return colorMap[microStato] || 'linear-gradient(135deg, #64748b, #94a3b8)';
+  }
 
-      <div class="expand-hint" *ngIf="roleId === 3">
-        <i class="material-icons">touch_app</i>
-        <span>Clicca sul nome di un amico per vedere i contratti associati</span>
-      </div>
+  // ===== PERSONAL/SQUAD LEAD FILTERING =====
 
-      <div class="filters-container">
-        <ng-container *ngIf="!showDettagli">
-          <p-multiSelect [options]="Leads" [(ngModel)]="leadsSelected" optionLabel="nominativoLead" display="chip"
-            [placeholder]="ruoloUtente == 'Cliente' ? 'Seleziona Amico' : 'Seleziona Lead'"
-            appendTo="body" (onChange)="applyFilter()" class="modern-filter" />
-        </ng-container>
-        <ng-container *ngIf="showDettagli">
-          <p-multiSelect [options]="Leads" [(ngModel)]="leadsSelected" optionLabel="nominativoLead" display="chip"
-            placeholder="Seleziona Cliente" appendTo="body" (onChange)="applyFilter()" class="modern-filter" />
-        </ng-container>
+  /**
+   * Determines if a lead belongs to the current user's personal leads.
+   * - Client (role 3): leads they CREATED (invitato_da_user_id) — survives reassignment
+   * - SEU/Advisor: leads ASSIGNED to them OR assigned to their direct clients
+   */
+  private isPersonalLead(lead: any): boolean {
+    if (this.roleId === 3) {
+      return lead.invitato_da_user_id === this.userId;
+    } else {
+      return lead.assegnato_a === this.userId ||
+        (lead.user && lead.user.role_id === 3 && lead.user.user_id_padre === this.userId);
+    }
+  }
 
-        <p-multiSelect [options]="statiUnivoci" [(ngModel)]="statusSelected" optionLabel="label" display="chip"
-          placeholder="Seleziona Stato" appendTo="body" (onChange)="applyFilter()" class="modern-filter" />
+  /**
+   * Returns the display name for the "Inserito da" column.
+   * - Client: shows the assignee (themselves, since they auto-assign)
+   * - SEU/Advisor: shows who CREATED the lead (invited_by from backend)
+   */
+  private getInseritoDaDisplay(Lead: any): string {
+    if (this.roleId === 3) {
+      return Lead.user.name || Lead.user.cognome
+        ? Lead.user.name + ' ' + Lead.user.cognome
+        : Lead.user.ragione_sociale;
+    } else {
+      if (Lead.invited_by) {
+        return Lead.invited_by.name || Lead.invited_by.cognome
+          ? (Lead.invited_by.name || '') + ' ' + (Lead.invited_by.cognome || '')
+          : Lead.invited_by.ragione_sociale || 'N/D';
+      }
+      return Lead.user.name || Lead.user.cognome
+        ? Lead.user.name + ' ' + Lead.user.cognome
+        : Lead.user.ragione_sociale;
+    }
+  }
 
-        <ng-container *ngIf="!showDettagli">
-          <p-multiSelect [options]="seuUnivoci" [(ngModel)]="seuSelected" optionLabel="nome" display="chip"
-            placeholder="Inserito da" appendTo="body" (onChange)="applyFilter()" class="modern-filter" />
-        </ng-container>
+  ngOnInit(): void {
+    this.servizioApi.PrendiUtente().subscribe((Ruolo: any) => {
+      this.ruoloUtente = Ruolo.user.qualification.descrizione;
+      this.userId = Ruolo.user.id;
+      this.roleId = Ruolo.user.role_id;
 
-        <p-datepicker [(ngModel)]="DTRGinseritoil" [iconDisplay]="'input'" [showIcon]="true"
-          inputId="icondisplay" appendTo="body" dateFormat="dd/mm/yy" (onSelect)="applyFilter()"
-          selectionMode="range" class="modern-filter" />
+      if (this.ruoloUtente != 'Cliente') {
+        this.showCalendario = false;
+        this.showDettagli = false;
+      }
 
-        <button type="button" class="clear-button" (click)="clearFilter()">
-          <i class="material-icons">filter_alt_off</i> Resetta Filtri
-        </button>
-      </div>
-    </div>
+      // Auto-show leads table on page load (all roles)
+      this.allDivCard = true;
+      this.showleadsTable = true;
 
-    <div class="card-body modern-body">
-      <div class="table-container table-scrollable">
-        <table mat-table [dataSource]="dataSource" class="modern-table" multiTemplateDataRows>
+      // Handle query param ?action=new (from dashboard "Invita Amico")
+      this.route.queryParams.subscribe(params => {
+        if (params['action'] === 'new') {
+          this.ShowCrealeads();
+        }
+      });
+    });
 
-          <ng-container matColumnDef="nominativo">
-            <th mat-header-cell *matHeaderCellDef><span class="header-text">NOMINATIVO</span></th>
-            <td mat-cell *matCellDef="let lead">
-              <div class="contact-info">
-                <i class="material-icons contact-icon">person</i>
-                <span class="contact-name">{{ lead.nominativoLead }}</span>
-              </div>
-            </td>
-          </ng-container>
+    this.servizioApi.getLeads().subscribe((LeadsAll: any) => {
+      console.clear();
+      console.log(LeadsAll);
 
-          <ng-container matColumnDef="email">
-            <th mat-header-cell *matHeaderCellDef><span class="header-text">E-MAIL</span></th>
-            <td mat-cell *matCellDef="let lead">
-              <div class="email-info">
-                <i class="material-icons email-icon">email</i>
-                <a href="mailto:{{ lead.email }}" class="email-link">{{ lead.email }}</a>
-              </div>
-            </td>
-          </ng-container>
+      // Store raw data for lead_converted access and duplicate checking
+      this.rawLeadsData = LeadsAll.body.risposta;
 
-          <ng-container matColumnDef="telefono">
-            <th mat-header-cell *matHeaderCellDef><span class="header-text">TELEFONO</span></th>
-            <td mat-cell *matCellDef="let lead">
-              <div class="phone-info">
-                <i class="material-icons phone-icon">phone</i>
-                <a href="tel:{{ lead.telefono }}" class="phone-link">{{ lead.telefono }}</a>
-              </div>
-            </td>
-          </ng-container>
+      LeadsAll.body.risposta.map((Lead: any) => {
 
-          <ng-container matColumnDef="inserito_il">
-            <th mat-header-cell *matHeaderCellDef><span class="header-text">INSERITO IL</span></th>
-            <td mat-cell *matCellDef="let lead">
-              <div class="date-info">
-                <i class="material-icons date-icon">event</i>
-                <span class="date-text">{{ lead.inserito_il }}</span>
-              </div>
-            </td>
-          </ng-container>
+        // Personal leads: role-based filtering
+        this.Leads = LeadsAll.body.risposta
+          .filter((lead: any) => this.isPersonalLead(lead))
+          .map((Lead: any) => ({
+            id: Lead.id,
+            nome: Lead.nome,
+            cognome: Lead.cognome,
+            email: Lead.email,
+            telefono: Lead.telefono,
+            inserito_il: Lead.data_inserimento,
+            assegnato_a: this.getInseritoDaDisplay(Lead),
+            id_assegnato: Lead.user.id,
+            stato: Lead.lead_status_id,
+            colore: this.getLeadStatusColor(
+              this.ruoloUtente === 'Cliente' && Lead.leadstatus.micro_stato === 'Lead inserito'
+                ? 'Amico Inserito'
+                : Lead.leadstatus.micro_stato
+            ),
+            microstato:
+              this.ruoloUtente == 'Cliente' &&
+              Lead.leadstatus.micro_stato == 'Lead inserito'
+                ? 'Amico Inserito'
+                : Lead.leadstatus.micro_stato,
+            is_converted: Lead.is_converted,
+            nominativoLead: Lead.nome + ' ' + Lead.cognome,
+            data_appuntamento:
+              Lead.data_appuntamento + ' ' + Lead.ora_appuntamento,
+          }));
 
-          <ng-container matColumnDef="assegnato_a">
-            <th mat-header-cell *matHeaderCellDef><span class="header-text">INSERITO DA</span></th>
-            <td mat-cell *matCellDef="let lead">
-              <div class="assigned-info">
-                <i class="material-icons assigned-icon">assignment_ind</i>
-                <span class="assigned-name">{{ lead.assegnato_a }}</span>
-              </div>
-            </td>
-          </ng-container>
+        const conteggiStati = this.Leads.reduce((acc: any, curr: any) => {
+          acc[curr.microstato] = (acc[curr.microstato] || 0) + 1;
+          return acc;
+        }, {});
 
-          <ng-container matColumnDef="microstato">
-            <th mat-header-cell *matHeaderCellDef><span class="header-text">STATO</span></th>
-            <td mat-cell *matCellDef="let lead">
-              <span class="status-badge" [style.background]="lead.colore">
-                {{ lead.microstato }}
-              </span>
-            </td>
-          </ng-container>
+        this.statiUnivoci = Object.keys(conteggiStati).map((key) => ({
+          nome: key,
+          count: conteggiStati[key],
+          nomeConConteggio: `${key}`,
+          label: `${key} (x${conteggiStati[key]})`,
+          conteggio: ` (x${conteggiStati[key]})`,
+        }));
 
-          <!-- Azioni: Gestisci (rettangolare) + Converti (solo se Lead OK) -->
-          <ng-container matColumnDef="azioni">
-            <th mat-header-cell *matHeaderCellDef [hidden]="showDettagli">
-              <span class="header-text">AZIONI</span>
-            </th>
-            <td mat-cell *matCellDef="let lead" [hidden]="showDettagli">
-              <div class="action-buttons-cell">
-                <button mat-stroked-button color="primary" class="manage-lead-btn"
-                  (click)="dettagliLead(lead, 'leads'); $event.stopPropagation()"
-                  matTooltip="Gestisci stato, appuntamento e riassegnazione"
-                  matTooltipClass="leads-tooltip">
-                  <mat-icon>settings</mat-icon>
-                  <span class="btn-label">Gestisci</span>
-                </button>
-                <!-- Already converted: thumb-up badge -->
-                <button *ngIf="lead.is_converted" mat-stroked-button class="converted-badge-btn"
-                  (click)="showConvertedSnackbar(lead); $event.stopPropagation()"
-                  matTooltip="Lead già convertito in cliente"
-                  matTooltipClass="leads-tooltip">
-                  <mat-icon>thumb_up</mat-icon>
-                  <span class="btn-label">Convertito</span>
-                </button>
-                <!-- Not converted: convert button (only if Lead OK) -->
-                <button *ngIf="!lead.is_converted" mat-raised-button color="accent" class="convert-lead-btn"
-                  [disabled]="lead.microstato !== 'Lead OK'"
-                  (click)="converti(lead); $event.stopPropagation()"
-                  [matTooltip]="lead.microstato !== 'Lead OK' ? 'Il lead deve essere in stato OK per la conversione' : 'Converti in cliente'"
-                  matTooltipClass="leads-tooltip">
-                  <mat-icon>how_to_reg</mat-icon>
-                  <span class="btn-label">Converti</span>
-                </button>
-              </div>
-            </td>
-          </ng-container>
+        this.seuUnivoci = [
+          ...new Set(this.Leads.map((lead) => lead.assegnato_a)),
+        ].map((value) => ({
+          nome: value,
+        }));
 
-          <!-- Expanded detail (Client only) -->
-          <ng-container matColumnDef="expandedDetail">
-            <td mat-cell *matCellDef="let lead" [attr.colspan]="displayedColumns.length">
-              <div class="lead-contracts-detail" [@detailExpand]="isLeadExpanded(lead) ? 'expanded' : 'collapsed'">
-                <div class="no-contracts-message" *ngIf="!lead.is_converted || !leadHasContracts(lead.id)">
-                  <div class="no-contracts-content">
-                    <i class="material-icons no-contracts-icon">inbox</i>
-                    <span class="no-contracts-text">Ancora nessun contratto associato</span>
-                    <span class="no-contracts-hint" *ngIf="!lead.is_converted">
-                      Questo amico non è ancora stato registrato a sistema
-                    </span>
-                    <span class="no-contracts-hint" *ngIf="lead.is_converted && !leadHasContracts(lead.id)">
-                      L'amico è registrato ma non ha ancora contratti attivi
-                    </span>
-                  </div>
-                </div>
-                <div class="contracts-list" *ngIf="lead.is_converted && leadHasContracts(lead.id)">
-                  <div class="contracts-header">
-                    <i class="material-icons">description</i>
-                    <span>Contratti di {{ lead.nominativoLead }}</span>
-                    <span class="contracts-count">{{ getLeadContracts(lead.id).length }}</span>
-                  </div>
-                  <div class="contract-cards">
-                    <div class="contract-card" *ngFor="let contract of getLeadContracts(lead.id)">
-                      <div class="contract-field">
-                        <span class="field-label"><i class="material-icons">tag</i> Codice</span>
-                        <span class="field-value code-value">{{ contract.codice_contratto }}</span>
-                      </div>
-                      <div class="contract-field">
-                        <span class="field-label"><i class="material-icons">person</i> Intestatario</span>
-                        <span class="field-value">{{ contract.intestatario }}</span>
-                      </div>
-                      <div class="contract-field">
-                        <span class="field-label"><i class="material-icons">flag</i> Stato</span>
-                        <span class="field-value">
-                          <span class="mini-status-badge" [attr.data-status]="contract.stato">{{ contract.stato }}</span>
-                        </span>
-                      </div>
-                      <div class="contract-field" *ngIf="contract.punti_bonus > 0">
-                        <span class="field-label"><i class="material-icons">star</i> Punti Bonus</span>
-                        <span class="field-value bonus-value">+{{ contract.punti_bonus }} PV</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </td>
-          </ng-container>
+        this.dataSource.data = this.Leads;
+        this.dataSource.paginator = this.paginator;
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns" class="modern-row"
-              [class.expandable-row]="roleId === 3" [class.expanded-row]="isLeadExpanded(row)"
-              [appLeadRowColor]="row" (click)="roleId === 3 ? toggleLeadRow(row) : null"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"
-              [hidden]="roleId !== 3"></tr>
-        </table>
-      </div>
+        // Squad leads: everything that is NOT personal
+        this.LeadsSquad = LeadsAll.body.risposta
+          .filter((lead: any) => !this.isPersonalLead(lead))
+          .map((Lead: any) => ({
+            id: Lead.id,
+            nome: Lead.nome,
+            cognome: Lead.cognome,
+            email: Lead.email,
+            telefono: Lead.telefono,
+            inserito_il: Lead.data_inserimento,
+            assegnato_a: Lead.user.name + ' ' + Lead.user.cognome,
+            id_assegnato: Lead.user.id,
+            stato: Lead.lead_status_id,
+            colore: this.getLeadStatusColor(Lead.leadstatus.micro_stato),
+            microstato: Lead.leadstatus.micro_stato,
+            is_converted: Lead.is_converted,
+            nominativoLead: Lead.nome + ' ' + Lead.cognome,
+            data_appuntamento:
+              Lead.data_appuntamento + ' ' + Lead.ora_appuntamento,
+          }));
 
-      <div class="pagination-container">
-        <mat-paginator #paginator [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons class="modern-paginator"></mat-paginator>
-      </div>
-    </div>
-  </div>
+        const conteggiStatiSquad = this.LeadsSquad.reduce(
+          (acc: any, curr: any) => {
+            acc[curr.microstato] = (acc[curr.microstato] || 0) + 1;
+            return acc;
+          },
+          {}
+        );
 
-  <!-- ========================================== -->
-  <!-- SQUAD LEADS TABLE                          -->
-  <!-- ========================================== -->
-  <ng-container *ngIf="!showDettagli">
-    <div class="contacts-card" *ngIf="showleadsTable" [@fadeAnimation]="showleadsTable ? 'visible' : 'hidden'">
-      <div class="card-header modern-header">
-        <div class="header-content">
-          <div class="header-icon"><i class="material-icons">groups</i></div>
-          <div class="header-text">
-            <h1 class="card-title">Lead Squadra</h1>
-            <p class="card-subtitle">Visualizza i lead della tua squadra</p>
-          </div>
-        </div>
+        this.statiUnivociSquad = Object.keys(conteggiStatiSquad).map((key) => ({
+          nome: key,
+          count: conteggiStati[key],
+          nomeConConteggioSquad: `${key}`,
+          label: `${key} (x${conteggiStatiSquad[key]})`,
+          conteggio: `(x${conteggiStatiSquad[key]})`,
+        }));
 
-        <div class="filters-container">
-          <p-multiSelect [options]="LeadsSquad" [(ngModel)]="leadsSelectedSquad" optionLabel="nominativoLead"
-            display="chip" placeholder="Seleziona Lead" appendTo="body" (onChange)="applyFilterSquad()" class="modern-filter" />
-          <p-multiSelect [options]="statiUnivociSquad" [(ngModel)]="statusSelectedSquad" optionLabel="label"
-            display="chip" placeholder="Seleziona Stato" appendTo="body" (onChange)="applyFilterSquad()" class="modern-filter" />
-          <p-multiSelect [options]="seuUnivociSquad" [(ngModel)]="seuSelectedSquad" optionLabel="nome"
-            display="chip" placeholder="Seleziona Seu" appendTo="body" (onChange)="applyFilterSquad()" class="modern-filter" />
-          <p-datepicker [(ngModel)]="DTRGinseritoilSquad" [iconDisplay]="'input'" [showIcon]="true"
-            inputId="icondisplaySquad" appendTo="body" dateFormat="dd/mm/yy" (onSelect)="applyFilterSquad()"
-            selectionMode="range" class="modern-filter" />
-          <button type="button" class="clear-button" (click)="clearFilterSquad()">
-            <i class="material-icons">filter_alt_off</i> Resetta Filtri
-          </button>
-        </div>
-      </div>
+        this.seuUnivociSquad = [
+          ...new Set(this.LeadsSquad.map((leadSquad) => leadSquad.assegnato_a)),
+        ].map((value) => ({
+          nome: value,
+        }));
 
-      <div class="card-body modern-body">
-        <div class="table-container table-scrollable">
-          <table mat-table [dataSource]="dataSourceSquad" class="modern-table">
+        this.dataSourceSquad.data = this.LeadsSquad;
+        this.dataSourceSquad.paginator = this.paginatorSquad;
+      });
 
-            <ng-container matColumnDef="nominativo">
-              <th mat-header-cell *matHeaderCellDef><span class="header-text">NOMINATIVO</span></th>
-              <td mat-cell *matCellDef="let leadSquad">
-                <div class="contact-info"><i class="material-icons contact-icon">person</i>
-                  <span class="contact-name">{{ leadSquad.nominativoLead }}</span></div>
-              </td>
-            </ng-container>
+      // Inizializza il calendario moderno
+      this.generateCalendar();
 
-            <ng-container matColumnDef="email">
-              <th mat-header-cell *matHeaderCellDef><span class="header-text">E-MAIL</span></th>
-              <td mat-cell *matCellDef="let leadSquad">
-                <div class="email-info"><i class="material-icons email-icon">email</i>
-                  <a href="mailto:{{ leadSquad.email }}" class="email-link">{{ leadSquad.email }}</a></div>
-              </td>
-            </ng-container>
+      // Load contracts for Client role expandable rows
+      if (this.roleId === 3) {
+        this.loadLeadContracts();
+      }
+    });
+  }
 
-            <ng-container matColumnDef="telefono">
-              <th mat-header-cell *matHeaderCellDef><span class="header-text">TELEFONO</span></th>
-              <td mat-cell *matCellDef="let leadSquad">
-                <div class="phone-info"><i class="material-icons phone-icon">phone</i>
-                  <a href="tel:{{ leadSquad.telefono }}" class="phone-link">{{ leadSquad.telefono }}</a></div>
-              </td>
-            </ng-container>
+  // Load contracts and build the lead -> contracts map
+  private loadLeadContracts(): void {
+    this.servizioApi.getCombinedData(this.userId).subscribe((combinedData) => {
+      const contratti = combinedData.contratti?.body?.risposta?.data
+        || combinedData.contratti?.body?.risposta
+        || [];
 
-            <ng-container matColumnDef="inserito_il">
-              <th mat-header-cell *matHeaderCellDef><span class="header-text">INSERITO IL</span></th>
-              <td mat-cell *matCellDef="let lead">
-                <div class="date-info"><i class="material-icons date-icon">event</i>
-                  <span class="date-text">{{ lead.inserito_il }}</span></div>
-              </td>
-            </ng-container>
+      this.Leads.forEach((lead: any) => {
+        const rawLead = this.rawLeadsData.find((l: any) => l.id === lead.id);
+        if (rawLead && rawLead.lead_converted && rawLead.lead_converted.cliente_id) {
+          const clienteId = rawLead.lead_converted.cliente_id;
+          const clientContracts = contratti
+            .filter((c: any) => c.associato_a_user_id === clienteId)
+            .map((c: any) => ({
+              id: c.id,
+              codice_contratto: c.codice_contratto || 'N/D',
+              intestatario: c.customer_data
+                ? (c.customer_data.ragione_sociale
+                  || ((c.customer_data.nome || '') + ' ' + (c.customer_data.cognome || '')).trim())
+                : '-',
+              stato: c.status_contract?.micro_stato || '-',
+              punti_bonus: c.status_contract_id === 15
+                ? Math.round((c.product?.macro_product?.punti_valore || 0) * this.BONUS_COEFFICIENT)
+                : 0,
+            }));
 
-            <ng-container matColumnDef="assegnato_a">
-              <th mat-header-cell *matHeaderCellDef><span class="header-text">ASSEGNATO A</span></th>
-              <td mat-cell *matCellDef="let leadSquad">
-                <div class="assigned-info"><i class="material-icons assigned-icon">assignment_ind</i>
-                  <span class="assigned-name">{{ leadSquad.assegnato_a }}</span></div>
-              </td>
-            </ng-container>
+          this.leadContractsMap.set(lead.id, clientContracts);
+        }
+      });
+    });
+  }
 
-            <ng-container matColumnDef="microstato">
-              <th mat-header-cell *matHeaderCellDef><span class="header-text">STATO</span></th>
-              <td mat-cell *matCellDef="let leadSquad">
-                <span class="status-badge" [style.background]="leadSquad.colore">{{ leadSquad.microstato }}</span>
-              </td>
-            </ng-container>
+  // Toggle expandable row for a lead
+  toggleLeadRow(lead: any): void {
+    if (this.roleId !== 3) return;
+    if (this.expandedLeadIds.has(lead.id)) {
+      this.expandedLeadIds.delete(lead.id);
+    } else {
+      this.expandedLeadIds.add(lead.id);
+    }
+  }
 
-            <ng-container matColumnDef="azioni">
-              <th mat-header-cell *matHeaderCellDef><span class="header-text">AZIONI</span></th>
-              <td mat-cell *matCellDef="let leadSquad">
-                <div class="action-buttons-cell">
-                  <button mat-stroked-button color="primary" class="manage-lead-btn"
-                    (click)="dettagliLead(leadSquad, 'leads')"
-                    matTooltip="Gestisci stato, appuntamento e riassegnazione"
-                    matTooltipClass="leads-tooltip">
-                    <mat-icon>settings</mat-icon>
-                    <span class="btn-label">Gestisci</span>
-                  </button>
-                  <button *ngIf="leadSquad.is_converted" mat-stroked-button class="converted-badge-btn"
-                    (click)="showConvertedSnackbar(leadSquad)"
-                    matTooltip="Lead già convertito in cliente"
-                    matTooltipClass="leads-tooltip">
-                    <mat-icon>thumb_up</mat-icon>
-                    <span class="btn-label">Convertito</span>
-                  </button>
-                  <button *ngIf="!leadSquad.is_converted" mat-raised-button color="accent" class="convert-lead-btn"
-                    [disabled]="leadSquad.microstato !== 'Lead OK'"
-                    (click)="converti(leadSquad)"
-                    [matTooltip]="leadSquad.microstato !== 'Lead OK' ? 'Il lead deve essere in stato OK' : 'Converti in cliente'"
-                    matTooltipClass="leads-tooltip">
-                    <mat-icon>how_to_reg</mat-icon>
-                    <span class="btn-label">Converti</span>
-                  </button>
-                </div>
-              </td>
-            </ng-container>
+  isLeadExpanded(lead: any): boolean {
+    return this.expandedLeadIds.has(lead.id);
+  }
 
-            <tr mat-header-row *matHeaderRowDef="displayedColumns" class="modern-header-row"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns" class="modern-row" [appLeadRowColor]="row"></tr>
-          </table>
-        </div>
+  getLeadContracts(leadId: number): LeadContractInfo[] {
+    return this.leadContractsMap.get(leadId) || [];
+  }
 
-        <div class="pagination-container">
-          <mat-paginator #paginatorSquad [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons class="modern-paginator"></mat-paginator>
-        </div>
-      </div>
-    </div>
-  </ng-container>
+  leadHasContracts(leadId: number): boolean {
+    const contracts = this.leadContractsMap.get(leadId);
+    return !!contracts && contracts.length > 0;
+  }
 
-  <!-- ========================================== -->
-  <!-- DAILY LEADS CARD                           -->
-  <!-- ========================================== -->
-  <div class="contacts-card" *ngIf="showleadsCard" [@fadeAnimation]="showleadsCard ? 'visible' : 'hidden'">
-    <div class="card-header modern-header">
-      <div class="header-content">
-        <div class="header-icon"><i class="material-icons">today</i></div>
-        <div class="header-text">
-          <h1 class="card-title">Lead del Giorno</h1>
-          <p class="card-subtitle">Lead programmati per oggi</p>
-        </div>
-      </div>
-    </div>
-    <div class="card-body modern-body daily-leads-container">
-      <form [formGroup]="leadSingleForm">
-        <div class="leads-grid" *ngIf="Leads.length > 0; else noLeads">
-          <div class="lead-card" *ngFor="let lead of Leads">
-            <div class="lead-card-content">
-              <div class="lead-info">
-                <h3 class="lead-name"><i class="material-icons">person</i> {{ lead.nome }} {{ lead.cognome }}</h3>
-                <div class="lead-contact-list">
-                  <div class="lead-contact-item"><i class="material-icons email-icon">email</i>
-                    <a href="mailto:{{ lead.email }}" class="email-link">{{ lead.email }}</a></div>
-                  <div class="lead-contact-item"><i class="material-icons phone-icon">phone</i>
-                    <a href="tel:{{ lead.telefono }}" class="phone-link">{{ lead.telefono }}</a></div>
-                  <div class="lead-contact-item"><i class="material-icons assigned-icon">assignment_ind</i>
-                    <span>{{ lead.assegnato_a }}</span></div>
-                </div>
-              </div>
-              <div class="lead-actions">
-                <button mat-stroked-button color="primary" class="manage-lead-btn"
-                  (click)="dettagliLead(lead, 'leads')" matTooltip="Gestisci lead" matTooltipClass="leads-tooltip">
-                  <mat-icon>settings</mat-icon> Gestisci
-                </button>
-                <button *ngIf="lead.is_converted" mat-stroked-button class="converted-badge-btn"
-                  (click)="showConvertedSnackbar(lead)"
-                  matTooltip="Lead già convertito in cliente" matTooltipClass="leads-tooltip">
-                  <mat-icon>thumb_up</mat-icon> Convertito
-                </button>
-                <button *ngIf="!lead.is_converted" mat-raised-button color="accent" class="convert-lead-btn"
-                  [disabled]="lead.microstato !== 'Lead OK'"
-                  (click)="converti(lead)" matTooltip="Converti in cliente" matTooltipClass="leads-tooltip">
-                  <mat-icon>how_to_reg</mat-icon> Converti
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <ng-template #noLeads>
-          <div class="empty-state">
-            <div class="empty-state-content">
-              <i class="material-icons empty-icon">info</i>
-              <p>Nessun lead programmato per oggi</p>
-              <span class="empty-hint">Non ci sono lead schedulati per la giornata di oggi.</span>
-            </div>
-          </div>
-        </ng-template>
-      </form>
-    </div>
-  </div>
+  parseDate(dateString: string): Date {
+    const [day, month, year] = dateString.split('/');
+    return new Date(+year, +month - 1, +day);
+  }
 
-  <!-- ========================================== -->
-  <!-- QRCODE CARD                                -->
-  <!-- ========================================== -->
-  <div class="contacts-card" *ngIf="showQrcode" [@fadeAnimation]="showQrcode ? 'visible' : 'hidden'">
-    <div class="card-header modern-header">
-      <div class="header-content">
-        <div class="header-icon"><i class="material-icons">qr_code</i></div>
-        <div class="header-text">
-          <h1 class="card-title">QrCode</h1>
-          <p class="card-subtitle">Link di invito e scansione QrCode</p>
-        </div>
-      </div>
-    </div>
-    <div class="card-body modern-body">
-      <app-qrcode-generator></app-qrcode-generator>
-    </div>
-  </div>
+  ngAfterViewInit() {
+    this.dataSource.paginator = this.paginator;
+    this.dataSource.sort = this.sort;
 
-  <!-- ========================================== -->
-  <!-- CREATE LEAD FORM                           -->
-  <!-- ========================================== -->
-  <div class="contacts-card" *ngIf="showCreateLead" [@fadeAnimation]="showCreateLead ? 'visible' : 'hidden'">
-    <div class="card-header modern-header">
-      <div class="header-content">
-        <div class="header-icon"><i class="material-icons">add_circle</i></div>
-        <div class="header-text">
-          <h1 class="card-title">{{ ruoloUtente != 'Cliente' ? 'Crea Nuovo Lead' : 'Aggiungi Nuovo Contatto' }}</h1>
-          <p class="card-subtitle">Inserisci i dati del nuovo {{ ruoloUtente != 'Cliente' ? 'lead' : 'contatto' }}</p>
-        </div>
-      </div>
-    </div>
-    <div class="card-body modern-body form-container">
-      <form [formGroup]="leadForm" (ngSubmit)="creaLead()" class="create-lead-form">
-        <div class="form-grid">
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Nome</mat-label>
-              <input matInput formControlName="nome" placeholder="Inserisci il nome" required />
-              <mat-icon matSuffix>person</mat-icon>
-              <mat-error *ngIf="leadForm.get('nome')?.hasError('required')">Il nome è obbligatorio</mat-error>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Cognome</mat-label>
-              <input matInput formControlName="cognome" placeholder="Inserisci il cognome" required />
-              <mat-icon matSuffix>badge</mat-icon>
-              <mat-error *ngIf="leadForm.get('cognome')?.hasError('required')">Il cognome è obbligatorio</mat-error>
-            </mat-form-field>
-          </div>
-          <div class="form-row">
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Email</mat-label>
-              <input matInput type="email" formControlName="email" placeholder="nome@esempio.it" required />
-              <mat-icon matSuffix>email</mat-icon>
-              <mat-error *ngIf="leadForm.get('email')?.hasError('required')">L'email è obbligatoria</mat-error>
-              <mat-error *ngIf="leadForm.get('email')?.hasError('email')">L'email non è valida</mat-error>
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="modern-field">
-              <mat-label>Telefono</mat-label>
-              <input matInput formControlName="telefono" placeholder="+39 xxx xxx xxxx" required />
-              <mat-icon matSuffix>phone</mat-icon>
-              <mat-error *ngIf="leadForm.get('telefono')?.hasError('required')">Il telefono è obbligatorio</mat-error>
-            </mat-form-field>
-          </div>
-          <div class="consent-section">
-            <div class="consent-card">
-              <div class="consent-header">
-                <i class="material-icons consent-icon">security</i>
-                <h4 class="consent-title">Consenso al trattamento dati</h4>
-              </div>
-              <p class="consent-text">
-                Creando questo contatto ti prendi la responsabilità di autorizzare
-                Semprechiaro ad utilizzare i dati da te inseriti per contattare il tuo
-                {{ ruoloUtente == 'Cliente' ? 'amico/conoscente' : 'contatto' }}
-              </p>
-              <div class="consent-toggle">
-                <mat-slide-toggle formControlName="consenso" [(ngModel)]="checked"
-                  (change)="onConsensoChange($event)" color="primary">
-                  Accetto il trattamento dei dati
-                </mat-slide-toggle>
-              </div>
-              <mat-error *ngIf="leadForm.get('consenso')?.hasError('required') && leadForm.get('consenso')?.touched">
-                Il consenso è obbligatorio
-              </mat-error>
-            </div>
-          </div>
-          <div class="submit-section">
-            <button mat-fab extended color="primary" type="submit" [disabled]="!leadForm.valid" class="submit-button">
-              <mat-icon>add_circle_outline</mat-icon>
-              {{ ruoloUtente == "Cliente" ? "Crea Contatto" : "Crea Lead" }}
-            </button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
+    this.dataSourceSquad.paginator = this.paginatorSquad;
+    this.dataSourceSquad.sort = this.sortSquad;
+  }
 
-  <!-- ========================================== -->
-  <!-- CALENDAR TAB (SEU/Advisor only)            -->
-  <!-- ========================================== -->
-  <div class="contacts-card calendar-card" *ngIf="showCalendarTab"
-       [@fadeAnimation]="showCalendarTab ? 'visible' : 'hidden'">
-    <div class="card-header modern-header">
-      <div class="header-content">
-        <div class="header-icon"><i class="material-icons">event</i></div>
-        <div class="header-text">
-          <h1 class="card-title">Calendario Lead</h1>
-          <p class="card-subtitle">Visualizza i lead programmati per data</p>
-        </div>
-      </div>
-    </div>
-    <div class="card-body modern-body calendar-container">
-      <div class="calendar-controls">
-        <div class="view-selector">
-          <div class="view-buttons">
-            <button mat-stroked-button class="view-button" [class.active]="calendarView === 'month'" (click)="changeView('month')">
-              <mat-icon>calendar_view_month</mat-icon> Mese
-            </button>
-            <button mat-stroked-button class="view-button" [class.active]="calendarView === 'week'" (click)="changeView('week')">
-              <mat-icon>view_week</mat-icon> Settimana
-            </button>
-            <button mat-stroked-button class="view-button" [class.active]="calendarView === 'day'" (click)="changeView('day')">
-              <mat-icon>today</mat-icon> Giorno
-            </button>
-          </div>
-        </div>
-        <div class="navigation-controls">
-          <button mat-icon-button class="nav-button" (click)="previousPeriod()" matTooltip="Periodo precedente">
-            <mat-icon>chevron_left</mat-icon>
-          </button>
-          <button mat-stroked-button class="today-button" (click)="goToToday()">
-            <mat-icon>today</mat-icon> Oggi
-          </button>
-          <button mat-icon-button class="nav-button" (click)="nextPeriod()" matTooltip="Periodo successivo">
-            <mat-icon>chevron_right</mat-icon>
-          </button>
-        </div>
-        <div class="period-info">
-          <h3 class="current-period">{{ currentPeriodText }}</h3>
-        </div>
-      </div>
-      <div class="calendar-legend">
-        <div class="legend-item"><div class="legend-color status-new"></div><span>Nuovi Lead</span></div>
-        <div class="legend-item"><div class="legend-color status-contacted"></div><span>Contattati</span></div>
-        <div class="legend-item"><div class="legend-color status-meeting"></div><span>Appuntamenti</span></div>
-        <div class="legend-item"><div class="legend-color status-converted"></div><span>Convertiti</span></div>
-      </div>
-      <div class="modern-calendar" [class.week-view]="calendarView === 'week'" [class.day-view]="calendarView === 'day'">
-        <div class="calendar-header" *ngIf="calendarView !== 'day'">
-          <div class="day-header" *ngFor="let day of weekDays">{{ day }}</div>
-        </div>
-        <div class="calendar-grid">
-          <div class="calendar-day" *ngFor="let day of calendarDays; trackBy: trackByDay"
-               [class.other-month]="!day.isCurrentMonth" [class.today]="day.isToday"
-               [class.selected]="day.isSelected" [class.has-leads]="day.leadsCount > 0"
-               (click)="selectDay(day)">
-            <div class="day-number">{{ day.date }}</div>
-            <div class="day-content" *ngIf="day.leadsCount > 0">
-              <div class="leads-indicator">
-                <i class="material-icons leads-icon">people</i>
-                <span class="leads-count">{{ day.leadsCount }}</span>
-              </div>
-              <div class="status-indicators">
-                <div class="status-dot" *ngFor="let status of day.statuses" [style.background-color]="status.color"
-                  [matTooltip]="status.name + ': ' + status.count"></div>
-              </div>
-            </div>
-            <div class="overflow-indicator" *ngIf="day.leadsCount > 3">+{{ day.leadsCount - 3 }}</div>
-          </div>
-        </div>
-        <div class="calendar-loading" *ngIf="isCalendarLoading">
-          <mat-spinner diameter="40"></mat-spinner><p>Caricamento eventi...</p>
-        </div>
-        <div class="calendar-empty" *ngIf="!isCalendarLoading && totalLeads === 0">
-          <i class="material-icons empty-icon">event_busy</i>
-          <h4>Nessun lead programmato</h4><p>Non ci sono lead schedulati per questo periodo.</p>
-        </div>
-      </div>
-      <div class="calendar-stats">
-        <div class="stat-card">
-          <div class="stat-icon"><i class="material-icons">people</i></div>
-          <div class="stat-content"><div class="stat-number">{{ totalLeads }}</div><div class="stat-label">Lead Totali</div></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="material-icons">event</i></div>
-          <div class="stat-content"><div class="stat-number">{{ todayLeads }}</div><div class="stat-label">Oggi</div></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon"><i class="material-icons">trending_up</i></div>
-          <div class="stat-content"><div class="stat-number">{{ weekLeads }}</div><div class="stat-label">Questa Settimana</div></div>
-        </div>
-      </div>
-      <div class="original-calendar" [hidden]="!useOriginalCalendar">
-        <app-calendar (arrayidLeadChange)="onArrayidLeadChange($event)"></app-calendar>
-      </div>
-    </div>
-  </div>
-</div>
+  creaLead() {
+    console.log('Creazione lead:', this.leadForm.value);
+    this.servizioApi
+      .storeNewLead(this.leadForm.value)
+      .subscribe((Risposta: any) => {
+        console.log('Lead creato:', Risposta);
+        this.ngOnInit();
+      });
+    this.showLeads();
+  }
 
-<!-- ============================================ -->
-<!-- EXTERNAL COMPONENTS (legacy only)            -->
-<!-- ============================================ -->
-<div class="external-components">
-  <app-converti-lead class="convert-lead-component" [hidden]="nuovocliente" [lead]="lead"></app-converti-lead>
-</div>
+  clearFilter() {
+    this.leadsSelected = [];
+    this.statusSelected = [];
+    this.seuSelected = [];
+    this.DTRGinseritoil = [];
+    this.dataSource.filter = '';
+    this.dataSourceSquad.filter = '';
+  }
+
+  clearFilterSquad() {
+    this.leadsSelectedSquad = [];
+    this.statusSelectedSquad = [];
+    this.seuSelectedSquad = [];
+    this.DTRGinseritoilSquad = [];
+    this.dataSource.filter = '';
+    this.dataSourceSquad.filter = '';
+  }
+
+  filterUser(row: any, filter: string) {
+    if (!filter) {
+      return true;
+    }
+
+    const filterObj = JSON.parse(filter);
+    const utentiSelezionati = filterObj.usLead || [];
+    const statiSelezionati = filterObj.statusLead || [];
+    const seuSelezionati = filterObj.seuLead || [];
+
+    let matchDate = true;
+    if (filterObj.inseritoil.start && filterObj.inseritoil.end) {
+      const startDate = this.parseDate(filterObj.inseritoil.start);
+      const endDate = this.parseDate(filterObj.inseritoil.end);
+      const rowDate = this.parseDate(row.inserito_il);
+      matchDate = rowDate >= startDate && rowDate <= endDate;
+    }
+
+    const matchUtente =
+      !utentiSelezionati.length ||
+      utentiSelezionati.includes(row.nominativoLead);
+    const matchStato =
+      !statiSelezionati.length || statiSelezionati.includes(row.microstato);
+    const matchSeu =
+      !seuSelezionati.length || seuSelezionati.includes(row.assegnato_a);
+
+    return matchUtente && matchStato && matchSeu && matchDate;
+  }
+
+  filterUserSquad(row: any, filter: string) {
+    if (!filter) {
+      return true;
+    }
+
+    const filterObjSquad = JSON.parse(filter);
+    const utentiSelezionatiSquad = filterObjSquad.usLeadSquad || [];
+    const statiSelezionatiSquad = filterObjSquad.statusLeadSquad || [];
+    const seuSelezionatiSquad = filterObjSquad.seuLeadSquad || [];
+
+    let matchDateSquad = true;
+    if (filterObjSquad.inseritoil.start && filterObjSquad.inseritoil.end) {
+      const startDate = this.parseDate(filterObjSquad.inseritoil.start);
+      const endDate = this.parseDate(filterObjSquad.inseritoil.end);
+      const rowDate = this.parseDate(row.inserito_il);
+      matchDateSquad = rowDate >= startDate && rowDate <= endDate;
+    }
+
+    const matchUtenteSquad =
+      !utentiSelezionatiSquad.length ||
+      utentiSelezionatiSquad.includes(row.nominativoLead);
+    const matchStatoSquad =
+      !statiSelezionatiSquad.length ||
+      statiSelezionatiSquad.includes(row.microstato);
+    const matchSeuSquad =
+      !seuSelezionatiSquad.length ||
+      seuSelezionatiSquad.includes(row.assegnato_a);
+
+    return (
+      matchUtenteSquad && matchStatoSquad && matchSeuSquad && matchDateSquad
+    );
+  }
+
+  applyFilter() {
+    let startDate: any | Date | null = null;
+    let endDate: any | Date | null = null;
+
+    if (this.DTRGinseritoil != null || Array.isArray(this.DTRGinseritoil)) {
+      if (this.DTRGinseritoil.length > 1) {
+        startDate = this.DTRGinseritoil[0].toLocaleDateString('it-IT', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+        endDate = this.DTRGinseritoil[1].toLocaleDateString('it-IT', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+      }
+    }
+
+    const filterValue = {
+      usLead: this.leadsSelected.map((usLead) => usLead.nominativoLead),
+      statusLead: this.statusSelected.map((statusLead) => statusLead.nome),
+      seuLead: this.seuSelected.map((seuLead) => seuLead.nome),
+      inseritoil: {
+        start: startDate,
+        end: endDate,
+      },
+    };
+
+    this.dataSource.filterPredicate = this.filterUser.bind(this);
+    this.dataSource.filter = JSON.stringify(filterValue);
+  }
+
+  applyFilterSquad() {
+    let startDate: any | Date | null = null;
+    let endDate: any | Date | null = null;
+
+    if (
+      this.DTRGinseritoilSquad != null ||
+      Array.isArray(this.DTRGinseritoilSquad)
+    ) {
+      if (this.DTRGinseritoilSquad.length > 1) {
+        startDate = this.DTRGinseritoilSquad[0].toLocaleDateString('it-IT', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+        endDate = this.DTRGinseritoilSquad[1].toLocaleDateString('it-IT', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+      }
+    }
+
+    const filterValueSquad = {
+      usLeadSquad: this.leadsSelectedSquad.map(
+        (usLeadSquad) => usLeadSquad.nominativoLead
+      ),
+      statusLeadSquad: this.statusSelectedSquad.map(
+        (statusLeadSquad) => statusLeadSquad.nome
+      ),
+      seuLeadSquad: this.seuSelectedSquad.map(
+        (seuLeadSquad) => seuLeadSquad.nome
+      ),
+      inseritoil: {
+        start: startDate,
+        end: endDate,
+      },
+    };
+
+    this.dataSourceSquad.filterPredicate = this.filterUserSquad.bind(this);
+    this.dataSourceSquad.filter = JSON.stringify(filterValueSquad);
+  }
+
+  showLeadsForDay(array: any) {
+    this.allDivCard = true;
+    this.showleadsTable = false;
+    this.showleadsCard = true;
+    this.showCreateLead = false;
+    this.showQrcode = false;
+    this.showNewClient = false;
+    this.showCalendarTab = false;
+    this.servizioApi.getLeadsDayClicked(array).subscribe((Risposta: any) => {
+      console.log(Risposta.body.risposta);
+      this.Leads = Risposta.body.risposta.map((Lead: any) => ({
+        id: Lead.id,
+        nome: Lead.nome,
+        cognome: Lead.cognome,
+        email: Lead.email,
+        telefono: Lead.telefono,
+        assegnato_a: Lead.user.name + ' ' + Lead.user.cognome,
+        id_assegnato: Lead.user.id,
+        stato: Lead.lead_status_id,
+        colore: this.getLeadStatusColor(Lead.leadstatus.micro_stato),
+        microstato: Lead.leadstatus.micro_stato,
+        is_converted: Lead.is_converted,
+        nominativoLead: Lead.nome + ' ' + Lead.cognome,
+      }));
+    });
+  }
+
+  showLeads() {
+    this.allDivCard = true;
+    this.showleadsTable = !this.showleadsTable;
+    this.showleadsCard = false;
+    this.showCreateLead = false;
+    this.showQrcode = false;
+    this.showNewClient = false;
+    this.showCalendarTab = false;
+  }
+
+  ShowCrealeads() {
+    this.allDivCard = true;
+    this.showCreateLead = !this.showCreateLead;
+    this.showleadsTable = false;
+    this.showleadsCard = false;
+    this.showQrcode = false;
+    this.showNewClient = false;
+    this.showCalendarTab = false;
+  }
+
+  ShowAppQrcode() {
+    this.allDivCard = true;
+    this.showCreateLead = false;
+    this.showleadsTable = false;
+    this.showleadsCard = false;
+    this.showQrcode = !this.showQrcode;
+    this.showNewClient = false;
+    this.showCalendarTab = false;
+  }
+
+  showCalendarOnly() {
+    this.allDivCard = false;
+    this.showCreateLead = false;
+    this.showleadsTable = false;
+    this.showleadsCard = false;
+    this.showQrcode = false;
+    this.showNewClient = false;
+    this.showCalendarTab = false;
+  }
+
+  /**
+   * Toggle the calendar tab inside main-content (same pattern as other tabs)
+   */
+  ShowCalendar() {
+    this.allDivCard = true;
+    this.showCalendarTab = !this.showCalendarTab;
+    this.showCreateLead = false;
+    this.showleadsTable = false;
+    this.showleadsCard = false;
+    this.showQrcode = false;
+    this.showNewClient = false;
+
+    // Refresh calendar when opening
+    if (this.showCalendarTab) {
+      this.generateCalendar();
+    }
+  }
+
+  // ===== NEW CLIENT CREATION (Punto 3) =====
+
+  /**
+   * Toggle "Nuovo Cliente" form — standalone mode (not from lead conversion)
+   */
+  ShowNewClient() {
+    this.allDivCard = true;
+    this.showNewClient = !this.showNewClient;
+    this.showCreateLead = false;
+    this.showleadsTable = false;
+    this.showleadsCard = false;
+    this.showQrcode = false;
+    this.showCalendarTab = false;
+
+    // Reset form and flags
+    this.isConvertMode = false;
+    this.convertingLeadId = 0;
+    this.showDuplicateWarning = false;
+    this.duplicateLeadFound = null;
+    this.showClientFormError = false;
+    this.selectTipoCliente = 'consumer';
+    this.newClientForm.reset();
+  }
+
+  /**
+   * Check if email or phone matches an existing lead in the system.
+   * Called on blur/change of email and telefono fields in the new client form.
+   */
+  checkDuplicateLead(): void {
+    // Skip check in convert mode — we ARE converting the lead
+    if (this.isConvertMode) {
+      this.showDuplicateWarning = false;
+      this.duplicateLeadFound = null;
+      return;
+    }
+
+    const email = (this.newClientForm.get('email')?.value || '').trim().toLowerCase();
+    const telefono = (this.newClientForm.get('telefono')?.value || '').trim();
+
+    if (!email && !telefono) {
+      this.showDuplicateWarning = false;
+      this.duplicateLeadFound = null;
+      return;
+    }
+
+    // Search through ALL leads (raw API data) for matching email or phone
+    const matchingLead = this.rawLeadsData.find((lead: any) => {
+      const leadEmail = (lead.email || '').trim().toLowerCase();
+      const leadPhone = (lead.telefono || '').trim();
+
+      const emailMatch = email && leadEmail && email === leadEmail;
+      const phoneMatch = telefono && leadPhone && telefono === leadPhone;
+
+      return emailMatch || phoneMatch;
+    });
+
+    if (matchingLead) {
+      this.showDuplicateWarning = true;
+      this.duplicateLeadFound = {
+        id: matchingLead.id,
+        nome: matchingLead.nome,
+        cognome: matchingLead.cognome,
+        email: matchingLead.email,
+        telefono: matchingLead.telefono,
+        stato: matchingLead.leadstatus?.micro_stato || 'N/D',
+        is_converted: matchingLead.is_converted,
+        inserito_da: matchingLead.invited_by
+          ? (matchingLead.invited_by.name || '') + ' ' + (matchingLead.invited_by.cognome || '')
+          : (matchingLead.user?.name || '') + ' ' + (matchingLead.user?.cognome || ''),
+      };
+    } else {
+      this.showDuplicateWarning = false;
+      this.duplicateLeadFound = null;
+    }
+  }
+
+  /**
+   * User dismisses the duplicate warning — go to conversion of the existing lead instead
+   */
+  goToConvertExistingLead(): void {
+    if (!this.duplicateLeadFound) return;
+
+    // Use the existing converti flow with the duplicate lead data
+    this.converti({
+      id: this.duplicateLeadFound.id,
+      nome: this.duplicateLeadFound.nome,
+      cognome: this.duplicateLeadFound.cognome,
+      email: this.duplicateLeadFound.email,
+      telefono: this.duplicateLeadFound.telefono,
+      is_converted: this.duplicateLeadFound.is_converted,
+    });
+
+    this.showDuplicateWarning = false;
+    this.duplicateLeadFound = null;
+    this.showNewClient = false;
+  }
+
+  /**
+   * User confirms creating client despite duplicate lead warning.
+   * This is a PROCEDURE VIOLATION — we log it as an error.
+   */
+  proceedWithDuplicateClient(): void {
+    this.showDuplicateWarning = false;
+    // The form submission continues — the actual API call will also log the violation
+    this.createNewClient(true);
+  }
+
+  /**
+   * Create a new client from the form.
+   * @param skipLeadConversion If true, logs a procedure violation warning
+   */
+  createNewClient(skipLeadConversion: boolean = false): void {
+    this.showClientFormError = true;
+
+    // Build client data based on tipo
+    const clienteData: any = {
+      email: this.newClientForm.value.email,
+      telefono: this.newClientForm.value.telefono,
+      indirizzo: this.newClientForm.value.indirizzo,
+      provincia: this.newClientForm.value.provincia,
+      citta: this.newClientForm.value.citta,
+      nazione: this.newClientForm.value.nazione,
+      cap: this.newClientForm.value.cap,
+      qualifica: 9,
+      ruolo: 3,
+      us_padre: localStorage.getItem('userLogin'),
+      tipo: this.selectTipoCliente,
+      password: 'Benvenutoinsemprechiaro',
+    };
+
+    if (this.selectTipoCliente === 'consumer') {
+      clienteData.nome = this.newClientForm.value.nome;
+      clienteData.cognome = this.newClientForm.value.cognome;
+      clienteData.codice_fiscale = this.newClientForm.value.codice_fiscale;
+      clienteData.ragione_sociale = '-';
+      clienteData.partita_iva = '00000000000';
+    } else {
+      clienteData.ragione_sociale = this.newClientForm.value.ragione_sociale;
+      clienteData.partita_iva = this.newClientForm.value.partita_iva;
+      clienteData.nome = '-';
+      clienteData.cognome = '-';
+      clienteData.codice_fiscale = '0000000000000000';
+    }
+
+    // In convert mode, use nuovoClienteLead (creates user + leadConverted record)
+    if (this.isConvertMode && this.convertingLeadId) {
+      clienteData.id_lead = this.convertingLeadId;
+      this.servizioApi.nuovoClienteLead(clienteData).subscribe((risultato: any) => {
+        if (risultato.response === 'ok') {
+          console.log('Client created from lead conversion:', risultato);
+          this.showNewClient = false;
+          this.isConvertMode = false;
+          this.convertingLeadId = 0;
+          this.newClientForm.reset();
+          this.showClientFormError = false;
+          this.ngOnInit(); // Reload data
+        } else {
+          console.error('Client already exists:', risultato);
+        }
+      });
+      return;
+    }
+
+    // Standalone mode: use nuovoUtente + log violation if duplicate was skipped
+    if (skipLeadConversion && this.duplicateLeadFound) {
+      clienteData.procedure_violation = true;
+      clienteData.matching_lead_id = this.duplicateLeadFound.id;
+      clienteData.matching_lead_nome = this.duplicateLeadFound.nome + ' ' + this.duplicateLeadFound.cognome;
+    }
+
+    this.servizioApi.nuovoUtente(clienteData).subscribe((risultato: any) => {
+      if (risultato.response === 'ok') {
+        console.log('Client created (standalone):', risultato);
+
+        // Log procedure violation if a matching lead was skipped
+        if (skipLeadConversion && this.duplicateLeadFound) {
+          this.logProcedureViolation(this.duplicateLeadFound, clienteData);
+        }
+
+        this.showNewClient = false;
+        this.newClientForm.reset();
+        this.showClientFormError = false;
+        this.duplicateLeadFound = null;
+        this.ngOnInit();
+      } else {
+        console.error('Client already exists:', risultato);
+      }
+    });
+  }
+
+  /**
+   * Log a procedure violation when a client is created without converting the matching lead.
+   * Calls backend endpoint to create a system log entry.
+   */
+  private logProcedureViolation(duplicateLead: any, clienteData: any): void {
+    const logData = {
+      level: 'error',
+      source: 'user_activity',
+      message: `Procedure violation: Client created without converting matching lead #${duplicateLead.id}`,
+      entity_type: 'lead',
+      entity_id: duplicateLead.id,
+      context: {
+        matching_lead: {
+          id: duplicateLead.id,
+          nome: duplicateLead.nome,
+          cognome: duplicateLead.cognome,
+          email: duplicateLead.email,
+          telefono: duplicateLead.telefono,
+          stato: duplicateLead.stato,
+        },
+        new_client: {
+          email: clienteData.email,
+          telefono: clienteData.telefono,
+          tipo: clienteData.tipo,
+        },
+        user_id: this.userId,
+        action: 'client_created_without_lead_conversion',
+      },
+    };
+
+    // Use a generic log endpoint if available, otherwise just console.error
+    // TODO: Connect to backend logging endpoint (POST /api/logProcedureViolation)
+    console.error('[PROCEDURE VIOLATION]', logData);
+    // this.servizioApi.logProcedureViolation(logData).subscribe();
+  }
+
+  // ===== LEAD CONVERSION (Punto 4) =====
+
+  /**
+   * Open the new client form pre-filled with lead data for conversion.
+   * This replaces the old converti() that only passed email/telefono/id.
+   */
+  converti(lead: any) {
+    // Set conversion mode
+    this.isConvertMode = true;
+    this.convertingLeadId = lead.id;
+
+    // Also set the old lead object for backward compatibility with converti-lead component
+    this.nuovocliente = false;
+    this.lead = {
+      email: lead.email,
+      telefono: lead.telefono,
+      id_lead: lead.id,
+      nome: lead.nome,
+      cognome: lead.cognome,
+    };
+
+    // Open the new client form and pre-fill with lead data
+    this.allDivCard = true;
+    this.showNewClient = true;
+    this.showCreateLead = false;
+    this.showleadsTable = false;
+    this.showleadsCard = false;
+    this.showQrcode = false;
+    this.showCalendarTab = false;
+
+    this.showDuplicateWarning = false;
+    this.duplicateLeadFound = null;
+    this.showClientFormError = false;
+    this.selectTipoCliente = 'consumer';
+
+    // Pre-fill form with lead data
+    this.newClientForm.reset();
+    this.newClientForm.patchValue({
+      nome: lead.nome || '',
+      cognome: lead.cognome || '',
+      email: lead.email || '',
+      telefono: lead.telefono || '',
+    });
+  }
+
+  /**
+   * Cancel the new client form and go back to leads table
+   */
+  cancelNewClient(): void {
+    this.showNewClient = false;
+    this.isConvertMode = false;
+    this.convertingLeadId = 0;
+    this.showDuplicateWarning = false;
+    this.duplicateLeadFound = null;
+    this.showClientFormError = false;
+    this.newClientForm.reset();
+    this.nuovocliente = true;
+
+    // Show leads table
+    this.showleadsTable = true;
+  }
+
+  /**
+   * Show a snackbar notification when user clicks the thumb-up icon
+   * on a lead that has already been converted to a client.
+   */
+  showConvertedSnackbar(lead: any): void {
+    this._snackBar.open(
+      `Il lead "${lead.nominativoLead}" è già stato convertito in cliente!`,
+      'OK',
+      {
+        duration: 4000,
+        horizontalPosition: 'center',
+        verticalPosition: 'bottom',
+        panelClass: ['converted-snackbar'],
+      }
+    );
+  }
+
+  /**
+   * Submit the new client form.
+   * If duplicate warning is active and not yet confirmed, show warning first.
+   */
+  submitNewClient(): void {
+    // If duplicate warning is showing, don't submit — user must choose
+    if (this.showDuplicateWarning) {
+      return;
+    }
+
+    // Check for required fields based on tipo
+    const isValid = this.isClientFormValid();
+    if (!isValid) {
+      this.showClientFormError = true;
+      return;
+    }
+
+    // Check for duplicates one last time before submit
+    this.checkDuplicateLead();
+    if (this.showDuplicateWarning) {
+      return; // Show warning, don't submit yet
+    }
+
+    this.createNewClient(false);
+  }
+
+  /**
+   * Validates the client form based on the selected client type.
+   */
+  private isClientFormValid(): boolean {
+    const f = this.newClientForm.value;
+
+    // Common required fields
+    if (!f.email || !f.telefono || !f.indirizzo || !f.citta || !f.nazione || !f.cap || !f.provincia) {
+      return false;
+    }
+
+    if (this.selectTipoCliente === 'consumer') {
+      return !!(f.nome && f.cognome && f.codice_fiscale && f.codice_fiscale.length >= 16);
+    } else {
+      return !!(f.ragione_sociale && f.partita_iva && f.partita_iva.length >= 11);
+    }
+  }
+
+  // ===== LEAD DETAILS DIALOG =====
+
+  dettagliLead(lead: any, reparto: string) {
+    this.dialogRef.open(ContrattoDetailsDialogComponent, {
+      width: 'calc(50% - 50px)',
+      enterAnimationDuration: '500ms',
+      exitAnimationDuration: '500ms',
+      data: { lead: lead, reparto: reparto },
+    });
+  }
+
+  onArrayidLeadChange(newArray: number[]) {
+    this.showLeadsForDay(newArray);
+  }
+
+  // ===== METODI CALENDARIO MODERNO =====
+
+  changeView(view: 'month' | 'week' | 'day') {
+    console.log('Cambio vista da', this.calendarView, 'a', view);
+    this.calendarView = view;
+    this.generateCalendar();
+  }
+
+  onViewChange(event: any) {
+    console.log('Vista cambiata:', event.value);
+    this.calendarView = event.value;
+    this.generateCalendar();
+  }
+
+  previousPeriod() {
+    if (this.calendarView === 'month') {
+      this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+    } else if (this.calendarView === 'week') {
+      this.currentDate.setDate(this.currentDate.getDate() - 7);
+    } else {
+      this.currentDate.setDate(this.currentDate.getDate() - 1);
+    }
+    this.generateCalendar();
+  }
+
+  nextPeriod() {
+    if (this.calendarView === 'month') {
+      this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+    } else if (this.calendarView === 'week') {
+      this.currentDate.setDate(this.currentDate.getDate() + 7);
+    } else {
+      this.currentDate.setDate(this.currentDate.getDate() + 1);
+    }
+    this.generateCalendar();
+  }
+
+  goToToday() {
+    this.currentDate = new Date();
+    this.generateCalendar();
+  }
+
+  generateCalendar() {
+    if (this.calendarView === 'month') {
+      this.generateMonthView();
+    } else if (this.calendarView === 'week') {
+      this.generateWeekView();
+    } else if (this.calendarView === 'day') {
+      this.generateDayView();
+    }
+
+    this.calculateStats();
+  }
+
+  updatePeriodText() {
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'long',
+    };
+
+    if (this.calendarView === 'month') {
+      this.currentPeriodText = this.currentDate.toLocaleDateString('it-IT', options);
+    } else if (this.calendarView === 'week') {
+      const startOfWeek = new Date(this.currentDate);
+      startOfWeek.setDate(this.currentDate.getDate() - this.currentDate.getDay() + 1);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+      this.currentPeriodText = `${startOfWeek.getDate()} - ${endOfWeek.getDate()} ${endOfWeek.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })}`;
+    } else {
+      this.currentPeriodText = this.currentDate.toLocaleDateString('it-IT', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    }
+  }
+
+  generateMonthView() {
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+
+    startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
+
+    this.calendarDays = [];
+    const currentDate = new Date(startDate);
+
+    for (let i = 0; i < 42; i++) {
+      const day = this.createCalendarDay(currentDate, month);
+      this.calendarDays.push(day);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  }
+
+  generateWeekView() {
+    const startOfWeek = new Date(this.currentDate);
+    startOfWeek.setDate(this.currentDate.getDate() - this.currentDate.getDay() + 1);
+
+    this.calendarDays = [];
+    const currentDate = new Date(startOfWeek);
+
+    for (let i = 0; i < 7; i++) {
+      const day = this.createCalendarDay(currentDate, currentDate.getMonth());
+      this.calendarDays.push(day);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  }
+
+  generateDayView() {
+    this.calendarDays = [this.createCalendarDay(this.currentDate, this.currentDate.getMonth())];
+  }
+
+  createCalendarDay(date: Date, currentMonth: number) {
+    const today = new Date();
+    const leadsForDay = this.getLeadsForDate(date);
+
+    return {
+      date: date.getDate(),
+      fullDate: new Date(date),
+      isCurrentMonth: date.getMonth() === currentMonth,
+      isToday: this.isSameDate(date, today),
+      isSelected: false,
+      leadsCount: leadsForDay.length,
+      statuses: this.getStatusesForDay(leadsForDay),
+      leads: leadsForDay,
+    };
+  }
+
+  getLeadsForDate(date: Date): any[] {
+    if (!this.Leads || this.Leads.length === 0) {
+      return [];
+    }
+
+    const leadsWithAppointments = this.Leads.filter(lead =>
+      lead.data_appuntamento &&
+      lead.data_appuntamento !== null &&
+      lead.data_appuntamento !== 'null null' &&
+      typeof lead.data_appuntamento === 'string'
+    );
+
+    const matchingLeads = leadsWithAppointments.filter(lead => {
+      try {
+        let leadDate: Date;
+
+        if (lead.data_appuntamento.includes(' ') && lead.data_appuntamento.length > 10) {
+          const datePart = lead.data_appuntamento.split(' ')[0];
+          leadDate = new Date(datePart);
+        } else if (lead.data_appuntamento.includes('/')) {
+          const parts = lead.data_appuntamento.split('/');
+          if (parts.length === 3) {
+            leadDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+          } else {
+            leadDate = new Date(lead.data_appuntamento);
+          }
+        } else {
+          leadDate = new Date(lead.data_appuntamento);
+        }
+
+        if (isNaN(leadDate.getTime())) {
+          return false;
+        }
+
+        return this.isSameDate(leadDate, date);
+      } catch (error) {
+        return false;
+      }
+    });
+
+    return matchingLeads;
+  }
+
+  getStatusesForDay(leads: any[]) {
+    const statusMap = new Map();
+
+    leads.forEach((lead) => {
+      const status = lead.microstato;
+      if (statusMap.has(status)) {
+        statusMap.set(status, statusMap.get(status) + 1);
+      } else {
+        statusMap.set(status, 1);
+      }
+    });
+
+    return Array.from(statusMap.entries()).map(([name, count]) => ({
+      name,
+      count,
+      color: this.getStatusColor(name),
+    }));
+  }
+
+  getStatusColor(status: string): string {
+    const colorMap: { [key: string]: string } = {
+      'Lead inserito': '#3182ce',
+      'Amico Inserito': '#3182ce',
+      'Contattato': '#38a169',
+      'Appuntamento fissato': '#d69e2e',
+      'Convertito': '#805ad5',
+      'Non interessato': '#e53e3e',
+    };
+
+    return colorMap[status] || '#718096';
+  }
+
+  selectDay(day: any) {
+    this.calendarDays.forEach((d) => (d.isSelected = false));
+    day.isSelected = true;
+
+    if (day.leadsCount > 0) {
+      this.showLeadsForDay(day.leads.map((lead: any) => lead.id));
+    }
+  }
+
+  calculateStats() {
+    this.totalLeads = this.Leads.length;
+
+    const today = new Date();
+    this.todayLeads = this.getLeadsForDate(today).length;
+
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+    this.weekLeads = this.Leads.filter((lead) => {
+      if (lead.data_appuntamento) {
+        const leadDate = new Date(lead.data_appuntamento);
+        return leadDate >= startOfWeek && leadDate <= endOfWeek;
+      }
+      return false;
+    }).length;
+  }
+
+  isSameDate(date1: Date, date2: Date): boolean {
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
+  }
+
+  trackByDay(index: number, day: any): any {
+    return day.fullDate.getTime();
+  }
+
+  refreshCalendar() {
+    console.log('Aggiornamento calendario - Lead totali:', this.Leads.length);
+    this.generateCalendar();
+  }
+}
