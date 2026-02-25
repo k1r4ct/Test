@@ -808,6 +808,9 @@ export class LeadsComponent implements OnInit {
   /**
    * Check if email or phone matches an existing lead in the system.
    * Called on blur/change of email and telefono fields in the new client form.
+   *
+   * Only triggers the warning if the matching lead is in "Lead OK" status,
+   * since only "Lead OK" leads are eligible for conversion to clients.
    */
   checkDuplicateLead(): void {
     // Skip check in convert mode — we ARE converting the lead
@@ -826,7 +829,8 @@ export class LeadsComponent implements OnInit {
       return;
     }
 
-    // Search through ALL leads (raw API data) for matching email or phone
+    // Search through ALL leads for matching email or phone,
+    // but ONLY trigger warning if lead status is "Lead OK"
     const matchingLead = this.rawLeadsData.find((lead: any) => {
       const leadEmail = (lead.email || '').trim().toLowerCase();
       const leadPhone = (lead.telefono || '').trim();
@@ -834,7 +838,10 @@ export class LeadsComponent implements OnInit {
       const emailMatch = email && leadEmail && email === leadEmail;
       const phoneMatch = telefono && leadPhone && telefono === leadPhone;
 
-      return emailMatch || phoneMatch;
+      // Only match leads in "Lead OK" status
+      const isLeadOk = lead.leadstatus?.micro_stato === 'Lead OK';
+
+      return (emailMatch || phoneMatch) && isLeadOk;
     });
 
     if (matchingLead) {
@@ -858,24 +865,12 @@ export class LeadsComponent implements OnInit {
   }
 
   /**
-   * User dismisses the duplicate warning — go to conversion of the existing lead instead
+   * Dismiss the duplicate warning popup and return to the form.
+   * The user can continue editing the form fields.
    */
-  goToConvertExistingLead(): void {
-    if (!this.duplicateLeadFound) return;
-
-    // Use the existing converti flow with the duplicate lead data
-    this.converti({
-      id: this.duplicateLeadFound.id,
-      nome: this.duplicateLeadFound.nome,
-      cognome: this.duplicateLeadFound.cognome,
-      email: this.duplicateLeadFound.email,
-      telefono: this.duplicateLeadFound.telefono,
-      is_converted: this.duplicateLeadFound.is_converted,
-    });
-
+  dismissDuplicateWarning(): void {
     this.showDuplicateWarning = false;
-    this.duplicateLeadFound = null;
-    this.showNewClient = false;
+    // Keep duplicateLeadFound so if they submit again it will re-check
   }
 
   /**

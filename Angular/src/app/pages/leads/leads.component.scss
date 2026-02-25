@@ -1,5 +1,6 @@
 // ========================================
 // LEADS COMPONENT - BLUE ECLIPSE THEME
+// Matches dashboard (tabellacontatti) exactly
 // #0F0E47 | #272757 | #505081 | #8686AC
 // ========================================
 
@@ -976,6 +977,7 @@ th.mat-header-cell {
   padding: 2rem;
   background: white !important;
   border-radius: 0 0 18px 18px;
+  position: relative;
 
   .create-lead-form {
     .form-grid {
@@ -1181,63 +1183,122 @@ th.mat-header-cell {
 }
 
 // ========================================
-// DUPLICATE LEAD WARNING
+// DUPLICATE LEAD WARNING — Popup Overlay
 // ========================================
-.duplicate-warning {
+.duplicate-warning-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
   display: flex;
-  gap: 1.25rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border-left: 5px solid #f59e0b;
-  border-radius: 0 16px 16px 0;
-  margin-bottom: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
 
-  .duplicate-warning-icon {
-    flex-shrink: 0;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(245, 158, 11, 0.25);
-    border-radius: 50%;
-
-    .material-icons {
-      font-size: 28px;
-      color: #b45309;
-    }
+  .duplicate-warning-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 14, 71, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
-  .duplicate-warning-content {
-    flex: 1;
+  .duplicate-warning-popup {
+    position: relative;
+    z-index: 1;
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(15, 14, 71, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.3);
+    border-top: 4px solid #f59e0b;
+    animation: duplicatePopupIn 0.25s ease-out;
 
-    .duplicate-warning-title {
-      margin: 0 0 0.5rem 0;
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #92400e;
+    .duplicate-warning-popup-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+
+      .duplicate-warning-icon {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-radius: 50%;
+
+        .material-icons {
+          font-size: 26px;
+          color: #b45309;
+        }
+      }
+
+      .duplicate-warning-title {
+        flex: 1;
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #92400e;
+      }
+
+      .duplicate-warning-close {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        color: #92400e;
+        transition: background 0.2s ease;
+
+        &:hover {
+          background: rgba(245, 158, 11, 0.15);
+        }
+
+        .material-icons {
+          font-size: 22px;
+        }
+      }
     }
 
     .duplicate-warning-text {
-      margin: 0 0 1rem 0;
+      margin: 0 0 1.25rem 0;
       font-size: 0.9rem;
       color: #78350f;
-      line-height: 1.5;
+      line-height: 1.6;
+
+      strong {
+        color: #92400e;
+      }
     }
 
     .duplicate-lead-info {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.5rem;
-      padding: 1rem;
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 12px;
-      margin-bottom: 1.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+      padding: 1.25rem;
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border-radius: 14px;
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(245, 158, 11, 0.2);
 
       .duplicate-lead-field {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
 
         .field-label {
           font-size: 0.7rem;
@@ -1251,6 +1312,11 @@ th.mat-header-cell {
           font-size: 0.9rem;
           font-weight: 500;
           color: #78350f;
+
+          &.status-lead-ok {
+            color: #059669;
+            font-weight: 700;
+          }
         }
       }
     }
@@ -1259,14 +1325,27 @@ th.mat-header-cell {
       display: flex;
       gap: 0.75rem;
       flex-wrap: wrap;
+      justify-content: flex-end;
 
       button {
-        border-radius: 10px;
+        border-radius: 12px !important;
         font-weight: 600;
         text-transform: none;
         font-size: 0.85rem;
+        padding: 0.5rem 1.25rem;
       }
     }
+  }
+}
+
+@keyframes duplicatePopupIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -2167,18 +2246,31 @@ th.mat-header-cell {
 
   .create-lead-form .form-grid .form-row { grid-template-columns: 1fr; }
 
-  // Duplicate warning responsive
-  .duplicate-warning {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+  // Duplicate warning popup responsive
+  .duplicate-warning-overlay {
+    padding: 1rem;
 
-    .duplicate-warning-content .duplicate-warning-actions {
-      justify-content: center;
-    }
+    .duplicate-warning-popup {
+      padding: 1.5rem;
+      border-radius: 16px;
 
-    .duplicate-lead-info {
-      grid-template-columns: 1fr 1fr;
+      .duplicate-warning-popup-header {
+        .duplicate-warning-icon {
+          width: 40px;
+          height: 40px;
+          .material-icons { font-size: 22px; }
+        }
+        .duplicate-warning-title { font-size: 1rem; }
+      }
+
+      .duplicate-lead-info {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .duplicate-warning-actions {
+        flex-direction: column;
+        button { width: 100%; }
+      }
     }
   }
 
@@ -2212,7 +2304,10 @@ th.mat-header-cell {
 @media (max-width: 480px) {
   .lead-contracts-detail .contracts-list .contract-cards .contract-card { grid-template-columns: 1fr; }
 
-  .duplicate-warning .duplicate-lead-info { grid-template-columns: 1fr; }
+  // Popup info grid single column on small screens
+  .duplicate-warning-overlay .duplicate-warning-popup .duplicate-lead-info {
+    grid-template-columns: 1fr;
+  }
 
   .calendar-container {
     .modern-calendar {

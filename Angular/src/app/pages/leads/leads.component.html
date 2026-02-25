@@ -75,16 +75,23 @@
 
     <div class="card-body modern-body form-container">
 
-      <!-- DUPLICATE LEAD WARNING -->
-      <div class="duplicate-warning" *ngIf="showDuplicateWarning && duplicateLeadFound">
-        <div class="duplicate-warning-icon">
-          <i class="material-icons">warning</i>
-        </div>
-        <div class="duplicate-warning-content">
-          <h3 class="duplicate-warning-title">Attenzione: Lead corrispondente trovato!</h3>
+      <!-- DUPLICATE LEAD WARNING — Popup overlay on top of the form -->
+      <div class="duplicate-warning-overlay" *ngIf="showDuplicateWarning && duplicateLeadFound">
+        <div class="duplicate-warning-backdrop" (click)="dismissDuplicateWarning()"></div>
+        <div class="duplicate-warning-popup">
+          <div class="duplicate-warning-popup-header">
+            <div class="duplicate-warning-icon">
+              <i class="material-icons">warning</i>
+            </div>
+            <h3 class="duplicate-warning-title">Attenzione: Lead in stato "Lead OK" trovato!</h3>
+            <button class="duplicate-warning-close" (click)="dismissDuplicateWarning()">
+              <i class="material-icons">close</i>
+            </button>
+          </div>
           <p class="duplicate-warning-text">
-            Esiste già un lead a sistema con gli stessi dati. La procedura corretta prevede
-            la conversione del lead esistente tramite l'apposito bottone.
+            Esiste già un lead in stato <strong>Lead OK</strong> con gli stessi dati.
+            La procedura corretta prevede la conversione del lead dalla sezione
+            <strong>Vedi Leads</strong> tramite il pulsante apposito.
           </p>
           <div class="duplicate-lead-info">
             <div class="duplicate-lead-field">
@@ -101,7 +108,7 @@
             </div>
             <div class="duplicate-lead-field">
               <span class="field-label">Stato</span>
-              <span class="field-value">{{ duplicateLeadFound.stato }}</span>
+              <span class="field-value status-lead-ok">{{ duplicateLeadFound.stato }}</span>
             </div>
             <div class="duplicate-lead-field">
               <span class="field-label">Inserito da</span>
@@ -109,19 +116,18 @@
             </div>
           </div>
           <div class="duplicate-warning-actions">
-            <button mat-raised-button color="primary" (click)="goToConvertExistingLead()">
-              <mat-icon>how_to_reg</mat-icon> Converti il lead esistente
-            </button>
             <button mat-stroked-button color="warn" (click)="proceedWithDuplicateClient()">
-              <mat-icon>warning</mat-icon> Procedi comunque (violazione procedura)
+              <mat-icon>warning</mat-icon> Procedi comunque (possibile violazione procedura)
             </button>
-            <button mat-stroked-button (click)="cancelNewClient()">Annulla</button>
+            <button mat-stroked-button (click)="dismissDuplicateWarning()">
+              <mat-icon>arrow_back</mat-icon> Torna al form
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- CLIENT CREATION FORM -->
-      <form [formGroup]="newClientForm" *ngIf="!showDuplicateWarning" class="create-lead-form">
+      <!-- CLIENT CREATION FORM — Always visible when showNewClient is true -->
+      <form [formGroup]="newClientForm" class="create-lead-form">
         <div class="form-grid">
 
           <!-- Tipo cliente selector -->

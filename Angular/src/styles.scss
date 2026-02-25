@@ -67,6 +67,18 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
+/* Log entity tooltip - for entity badges, filters and actions in log table */
+.logs-entity-tooltip {
+  background: rgba(0, 0, 0, 0.85) !important;
+  color: white !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  letter-spacing: 0.2px !important;
+}
+
 /* Tooltip arrow - optional enhancement */
 .mat-mdc-tooltip {
   --mdc-plain-tooltip-container-color: transparent;

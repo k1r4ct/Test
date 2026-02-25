@@ -440,10 +440,12 @@
                   <span class="message-text">{{ log.message }}</span>
                   <i class="fas fa-layer-group stack-trace-indicator" 
                      *ngIf="log.has_stack_trace"
-                     matTooltip="Contiene stack trace"></i>
+                     matTooltip="Contiene stack trace"
+                     matTooltipClass="logs-entity-tooltip"></i>
                   <i class="fas fa-exchange-alt changes-indicator" 
                      *ngIf="log.has_tracked_changes"
-                     matTooltip="Contiene modifiche tracciate"></i>
+                     matTooltip="Contiene modifiche tracciate"
+                     matTooltipClass="logs-entity-tooltip"></i>
                 </td>
                 
                 <!-- Entity Column -->
@@ -454,6 +456,7 @@
                           [class]="log.entity_type"
                           matTooltip="Mostra tutti i log di questa entità"
                           matTooltipPosition="above"
+                          matTooltipClass="logs-entity-tooltip"
                           (click)="$event.stopPropagation(); filterBySpecificEntity(log.entity_type, log.entity_id!, log.contract_id)">
                       <i class="fas" [ngClass]="getEntityTypeIcon(log.entity_type)"></i>
                       <span class="badge-label">{{ log.entity_type_label || getEntityTypeLabel(log.entity_type) }}</span>
@@ -465,7 +468,8 @@
                           *ngIf="log.entity_type"
                           (click)="$event.stopPropagation(); filterByEntityType(log.entity_type)"
                           matTooltip="Filtra per tipo: {{ getEntityTypeLabel(log.entity_type) }}"
-                          matTooltipPosition="above">
+                          matTooltipPosition="above"
+                          matTooltipClass="logs-entity-tooltip">
                       <i class="fas fa-filter"></i>
                     </span>
                   </div>
@@ -477,6 +481,7 @@
                         class="user-link"
                         matTooltip="Filtra utente"
                         matTooltipPosition="above"
+                        matTooltipClass="logs-entity-tooltip"
                         (click)="$event.stopPropagation(); filterByUser(log.user.id)">
                     {{ log.user.name }}
                   </span>
@@ -488,12 +493,14 @@
                   <button class="action-btn view" 
                           matTooltip="Dettagli"
                           matTooltipPosition="above"
+                          matTooltipClass="logs-entity-tooltip"
                           (click)="viewLogDetail(log)">
                     <i class="fas fa-eye"></i>
                   </button>
                   <button class="action-btn copy" 
                           matTooltip="Copia"
                           matTooltipPosition="above"
+                          matTooltipClass="logs-entity-tooltip"
                           (click)="copyLog(log)">
                     <i class="fas fa-copy"></i>
                   </button>
@@ -501,6 +508,7 @@
                           *ngIf="log.contract_id || (log.entity_type === 'contract' && log.entity_id)"
                           matTooltip="Cronologia"
                           matTooltipPosition="above"
+                          matTooltipClass="logs-entity-tooltip"
                           (click)="viewContractHistory((log.contract_id || log.entity_id)!)">
                     <i class="fas fa-history"></i>
                   </button>
@@ -508,6 +516,7 @@
                           *ngIf="isAdmin"
                           matTooltip="Elimina"
                           matTooltipPosition="above"
+                          matTooltipClass="logs-entity-tooltip"
                           (click)="deleteLog(log)">
                     <i class="fas fa-trash"></i>
                   </button>
@@ -656,6 +665,7 @@
         <ng-container *ngIf="selectedLog.user">
           <span class="clickable-link" 
                 matTooltip="Filtra per questo utente"
+                matTooltipClass="logs-entity-tooltip"
                 (click)="filterByUser(selectedLog.user.id)">
             {{ selectedLog.user.name }}
           </span>
@@ -709,6 +719,7 @@
           <span class="audit-value">
             <span class="entity-badge clickable" 
                   matTooltip="Filtra per questo tipo di entità"
+                  matTooltipClass="logs-entity-tooltip"
                   (click)="filterByEntityType(selectedLog.entity_type)">
               <i class="fas" [ngClass]="getEntityTypeIcon(selectedLog.entity_type)"></i>
               {{ selectedLog.entity_type_label || getEntityTypeLabel(selectedLog.entity_type) }}
@@ -721,6 +732,7 @@
           <span class="audit-value">
             <span class="contract-badge clickable" 
                   matTooltip="Filtra per questo contratto"
+                  matTooltipClass="logs-entity-tooltip"
                   (click)="filterByContract(selectedLog.contract_id)">
               <i class="fas fa-file-contract"></i>
               #{{ selectedLog.contract_id }}
@@ -728,7 +740,8 @@
             <span class="contract-code" *ngIf="selectedLog.contract_code">({{ selectedLog.contract_code }})</span>
             <button class="btn-history-inline" 
                     (click)="viewContractHistory(selectedLog.contract_id)"
-                    matTooltip="Vedi cronologia completa">
+                    matTooltip="Vedi cronologia completa"
+                    matTooltipClass="logs-entity-tooltip">
               <i class="fas fa-history"></i>
             </button>
           </span>
@@ -812,7 +825,8 @@
         <div class="device-card location" 
              *ngIf="selectedLog.geo_info && (selectedLog.geo_info.city || selectedLog.geo_info.country)"
              (click)="filterByLocation(selectedLog.geo_info.city || null, selectedLog.geo_info.country || null)"
-             matTooltip="Clicca per filtrare">
+             matTooltip="Clicca per filtrare"
+             matTooltipClass="logs-entity-tooltip">
           <div class="card-icon">
             <span class="flag-emoji">{{ getCountryFlag(selectedLog.geo_info.country_code || null) }}</span>
           </div>
@@ -830,7 +844,8 @@
         <div class="device-card isp" 
              *ngIf="selectedLog.geo_info?.isp"
              (click)="filterByIspClick(selectedLog.geo_info!.isp || '')"
-             matTooltip="Clicca per filtrare">
+             matTooltip="Clicca per filtrare"
+             matTooltipClass="logs-entity-tooltip">
           <div class="card-icon"><i class="fas fa-network-wired"></i></div>
           <div class="card-content">
             <span class="card-label">ISP</span>
@@ -843,7 +858,8 @@
         <div class="device-card device" 
              *ngIf="selectedLog.device_info && (selectedLog.device_info.type || selectedLog.device_info.os || selectedLog.device_info.browser)"
              (click)="filterByDeviceTypeClick(selectedLog.device_info.type || '')"
-             matTooltip="Clicca per filtrare per tipo">
+             matTooltip="Clicca per filtrare per tipo"
+             matTooltipClass="logs-entity-tooltip">
           <div class="card-icon">
             <i class="fas" [ngClass]="getDeviceIcon(selectedLog.device_info.type || 'Desktop')"></i>
           </div>
@@ -890,7 +906,8 @@
         <div class="device-card fingerprint" 
              *ngIf="selectedLog.device_info?.fingerprint"
              (click)="filterByFingerprint(selectedLog.device_info!.fingerprint || '')"
-             matTooltip="Clicca per filtrare">
+             matTooltip="Clicca per filtrare"
+             matTooltipClass="logs-entity-tooltip">
           <div class="card-icon"><i class="fas fa-fingerprint"></i></div>
           <div class="card-content">
             <span class="card-label">Fingerprint</span>
