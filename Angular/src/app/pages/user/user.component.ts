@@ -137,6 +137,7 @@ export class UserComponent implements OnInit, OnDestroy {
   platformId = inject(PLATFORM_ID);
 
   isCliente: boolean = false;
+  isBackOffice: boolean = false;
 
 
   vaiALead() {
@@ -209,9 +210,12 @@ export class UserComponent implements OnInit, OnDestroy {
             this.isCliente = false;
             this.hideTeamMembers = false;
           } else {
-            // Admin (1), BackOffice (4,5,6,9,10) - hide team orgchart
+            // Admin (1), BackOffice (5) - hide team orgchart
             this.isCliente = false;
             this.hideTeamMembers = true;
+            if (roleId === 5) {
+              this.isBackOffice = true;
+            }
           }
           
           // Configura il team dell'utente

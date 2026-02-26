@@ -5,19 +5,13 @@ import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.compon
 import { activateUsersFn } from './servizi/route-guard.service';
 import { ClientiComponent } from './pages/clienti/clienti.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
-import { TableComponent } from './pages/table/table.component';
 import { LeadsComponent } from './pages/leads/leads.component';
 import { ListaContrattiComponent } from './pages/listacontratti/listaContratti.component';
-import { ContrattiComponent } from './pages/contratti/contratti.component';
 import { NuovocontrattoComponent } from './pages/nuovocontratto/nuovocontratto.component';
 import { NuovoclienteComponent } from './pages/nuovocliente/nuovocliente.component';
 import { ProdottiComponent } from './pages/prodotto/prodotti.component';
 import { UserComponent } from './pages/user/user.component';
-import { TypographyComponent } from './pages/typography/typography.component';
 import { DomandeComponent } from './pages/domande/domande.component';
-import { IconsComponent } from './pages/icons/icons.component';
-import { NotificationsComponent } from './pages/notifications/notifications.component';
-import { UpgradeComponent } from './pages/upgrade/upgrade.component';
 import { GestioneProdottiComponent } from './pages/gestione-prodotti/gestione-prodotti.component';
 import { GestioneUtentiComponent } from './pages/gestione-utenti/gestione-utenti.component';
 import { SchedaUtenteComponent } from './pages/scheda-utente/scheda-utente.component';
@@ -52,10 +46,6 @@ export const AppRoutes: Routes = [
       { path: 'contratti', component: ListaContrattiComponent },
       { path: 'table', component: GestioneProdottiComponent },
       { path: 'macroprodotti', component: GestioneMacroprodottiComponent },
-      { path: 'typography', component: TypographyComponent },
-      { path: 'icons', component: IconsComponent },
-      { path: 'notifications', component: NotificationsComponent },
-      { path: 'upgrade', component: UpgradeComponent },
       { path: 'gestionedomande', component: DomandeComponent },
       { path: 'utenti', component: GestioneUtentiComponent },
       { path: 'schedapr', component: SchedaUtenteComponent },

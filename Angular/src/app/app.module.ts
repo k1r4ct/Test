@@ -20,7 +20,6 @@ import { ToastrModule } from "ngx-toastr";
 import { provideAnimations } from "@angular/platform-browser/animations";
 import { LeadsComponent } from "./pages/leads/leads.component";
 import { DomandeComponent } from "./pages/domande/domande.component";
-import { ContrattiComponent } from "./pages/contratti/contratti.component";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { ListaContrattiComponent } from "./pages/listacontratti/listaContratti.component";
 import { MaterialComponentsModule } from "./material-components/material-components/material-components.component";
@@ -79,7 +78,6 @@ import { CustomDateFormatter } from './custom-date-formatter';
 import { DragAndDropModule } from 'angular-draggable-droppable';
 registerLocaleData(localeIt);
 import { LeadRowColorDirective } from 'src/app/lead-row-color.directive';
-import { MessageNotificationComponent } from "./pages/message-notification/message-notification.component";
 import { SafeHtmlPipe } from './safe-html.pipe';
 import { GestioneUtentiComponent } from "./pages/gestione-utenti/gestione-utenti.component";
 import { ConvertiLeadComponent } from "./pages/converti-lead/converti-lead.component";
@@ -88,7 +86,6 @@ import { OrganizationChartModule } from 'primeng/organizationchart';
 import { ToolbarModule } from 'primeng/toolbar';
 import { DockModule } from 'primeng/dock';
 import { CommonModule } from '@angular/common';
-import { ChatbotComponent } from "./pages/chatbot/chatbot.component";
 import { MultiSelectModule } from 'primeng/multiselect';
 import { DropdownModule } from 'primeng/dropdown';
 import { ListboxModule } from 'primeng/listbox';
@@ -106,7 +103,6 @@ import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { ChartModule } from 'primeng/chart';
-import { LeadMonthsComponent } from './pages/user/chart/lead-months/lead-months.component';
 import { TabellacontattiComponent } from "./pages/user/clienti/tabellacontatti/tabellacontatti.component";
 import { TabellacontrattiComponent } from "./pages/user/clienti/tabellacontratti/tabellacontratti.component";
 import { DragDropModule } from '@angular/cdk/drag-drop';
@@ -141,7 +137,6 @@ import { EcommerceComponent } from "./pages/ecommerce/ecommerce.component";
     ClientiComponent,
     NavbarComponent,
     LeadsComponent,
-    ContrattiComponent,
     ListaContrattiComponent,
     NuovocontrattoComponent,
     RicercaclientiComponent,
@@ -161,13 +156,10 @@ import { EcommerceComponent } from "./pages/ecommerce/ecommerce.component";
     NuovoprodottoComponent,
     CalendarComponent,
     LeadRowColorDirective,
-    MessageNotificationComponent,
     SafeHtmlPipe,
     GestioneUtentiComponent,
     ConvertiLeadComponent,
-    ChatbotComponent,
     NuovofornitoreComponent,
-    LeadMonthsComponent,
     TabellacontattiComponent,
     TabellacontrattiComponent,
     CardStatisticComponent,

@@ -100,8 +100,9 @@
 
   <!-- ========================= 
        SEZIONE 2: DASHBOARD STATISTICHE MODERNIZZATO
+       (Nascosto per BackOffice)
        ========================= -->
-  <div class="dashboard-statistics-section" *ngIf="User.ruolo != 'Cliente'">
+  <div class="dashboard-statistics-section" *ngIf="User.ruolo != 'Cliente' && !isBackOffice">
     <!-- Header Sezione -->
     <div class="dashboard-header">
       <div class="header-content">
@@ -162,8 +163,8 @@
        SEZIONE 3: TABELLE DATI 
        ========================= -->
   <div class="data-tables-section">
-    <!-- Tabelle per Non-Clienti -->
-    <div class="tables-container" *ngIf="User.ruolo != 'Cliente'">
+    <!-- Tabelle per SEU/Advisor (side by side) -->
+    <div class="tables-container" *ngIf="User.ruolo != 'Cliente' && !isBackOffice">
       <div class="row">
         <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-6 mb-4">
           <div class="table-wrapper">
@@ -173,6 +174,24 @@
         <div class="col-12 col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-6 mb-4">
           <div class="table-wrapper">
             <app-tabellacontatti></app-tabellacontatti>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =====================================================
+         BackOffice: Gestione Leads (full width) + Contratti (full width)
+         ===================================================== -->
+    <div class="tables-container" *ngIf="isBackOffice">
+      <div class="row">
+        <div class="col-12 mb-4">
+          <div class="table-wrapper">
+            <app-tabellacontatti></app-tabellacontatti>
+          </div>
+        </div>
+        <div class="col-12 mb-4">
+          <div class="table-wrapper">
+            <app-tabellacontratti></app-tabellacontratti>
           </div>
         </div>
       </div>

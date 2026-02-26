@@ -1,7 +1,112 @@
-<!-- Dashboard: Only converted leads (amici inseriti a sistema) -->
+<!-- =====================================================
+     BACKOFFICE: HERO HEADER + INLINE FORMS + TABLE
+     ===================================================== -->
 <div class="contacts-container" @fadeIn>
   <div class="contacts-card">
-    <div class="card-header modern-header">
+
+    <!-- ==========================================
+         BO HERO HEADER (only for BackOffice)
+         ========================================== -->
+    <div class="card-header bo-hero-header" *ngIf="isBackOffice">
+      <div class="hero-content">
+        <div class="hero-icon">
+          <i class="material-icons">manage_accounts</i>
+        </div>
+        <div class="hero-text">
+          <h1 class="hero-title">Gestione Leads</h1>
+          <p class="hero-subtitle">Gestisci i tuoi lead e converti opportunità</p>
+        </div>
+        <div class="header-badge" *ngIf="Leads.length > 0">
+          <span class="count-badge">{{ Leads.length }}</span>
+        </div>
+      </div>
+
+      <!-- Hero action buttons (ALL INLINE — no navigation) -->
+      <div class="hero-actions">
+        <button class="hero-btn hero-btn-primary"
+          [class.active]="showLeadsTable && !showCreateLead && !showNewClient && !showQrcode"
+          (click)="toggleLeadsTable()">
+          <i class="material-icons">visibility</i>
+          <span class="btn-label">Vedi Leads</span>
+        </button>
+        <button class="hero-btn hero-btn-client"
+          [class.active]="showNewClient"
+          (click)="toggleNewClient()">
+          <i class="material-icons">group_add</i>
+          <span class="btn-label">Nuovo Cliente</span>
+        </button>
+        <button class="hero-btn hero-btn-accent"
+          [class.active]="showCreateLead"
+          (click)="toggleCreateLead()">
+          <i class="material-icons">add_circle_outline</i>
+          <span class="btn-label">Nuovo Lead</span>
+        </button>
+        <button class="hero-btn hero-btn-accent"
+          [class.active]="showQrcode"
+          (click)="toggleQrCode()">
+          <i class="material-icons">qr_code</i>
+          <span class="btn-label">Mostra QrCode</span>
+        </button>
+      </div>
+
+      <!-- Filters (visible when table is shown and has data) -->
+      <div class="filters-container" *ngIf="showLeadsTable && Leads.length > 0 && !showCreateLead && !showNewClient && !showQrcode">
+        <p-multiSelect
+          [options]="Leads"
+          [(ngModel)]="leadsSelected"
+          optionLabel="nominativoLead"
+          display="chip"
+          placeholder="Seleziona Lead"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
+
+        <p-multiSelect
+          [options]="statiUnivoci"
+          [(ngModel)]="statusSelected"
+          optionLabel="label"
+          display="chip"
+          placeholder="Seleziona Stato"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
+
+        <p-multiSelect
+          [options]="seuUnivoci"
+          [(ngModel)]="seuSelected"
+          optionLabel="nome"
+          display="chip"
+          placeholder="Inserito da"
+          appendTo="body"
+          (onChange)="applyFilter()"
+          class="modern-filter"
+        />
+
+        <p-datepicker
+          [(ngModel)]="DTRGinseritoil"
+          [iconDisplay]="'input'"
+          [showIcon]="true"
+          inputId="icondisplay"
+          appendTo="body"
+          dateFormat="dd/mm/yy"
+          (onSelect)="applyFilter()"
+          selectionMode="range"
+          class="modern-filter"
+        />
+
+        <button type="button" class="clear-button" (click)="clearFilter()">
+          <i class="material-icons">filter_alt_off</i>
+          Resetta Filtri
+        </button>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         NON-BO HEADER (Client / SEU / Advisor)
+         ========================================== -->
+    <div class="card-header modern-header" *ngIf="!isBackOffice">
       <div class="header-content">
         <div class="header-icon">
           <i class="material-icons">how_to_reg</i>
@@ -75,7 +180,294 @@
       </div>
     </div>
 
-    <div class="card-body modern-body">
+    <!-- ==========================================
+         BO INLINE: CREATE LEAD FORM
+         ========================================== -->
+    <div class="card-body modern-body" *ngIf="isBackOffice && showCreateLead"
+         [@fadeAnimation]="showCreateLead ? 'visible' : 'hidden'">
+      <div class="inline-panel-header">
+        <div class="panel-icon"><i class="material-icons">add_circle</i></div>
+        <div class="panel-text">
+          <h2 class="panel-title">Crea Nuovo Lead</h2>
+          <p class="panel-subtitle">Inserisci i dati del nuovo lead</p>
+        </div>
+        <button class="panel-close" (click)="showCreateLead = false">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <form [formGroup]="leadForm" (ngSubmit)="creaLead()" class="create-lead-form">
+        <div class="form-grid">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Nome</mat-label>
+              <input matInput formControlName="nome" placeholder="Inserisci il nome" required />
+              <mat-icon matSuffix>person</mat-icon>
+              <mat-error *ngIf="leadForm.get('nome')?.hasError('required')">Il nome è obbligatorio</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Cognome</mat-label>
+              <input matInput formControlName="cognome" placeholder="Inserisci il cognome" required />
+              <mat-icon matSuffix>badge</mat-icon>
+              <mat-error *ngIf="leadForm.get('cognome')?.hasError('required')">Il cognome è obbligatorio</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Email</mat-label>
+              <input matInput type="email" formControlName="email" placeholder="nome@esempio.it" required />
+              <mat-icon matSuffix>email</mat-icon>
+              <mat-error *ngIf="leadForm.get('email')?.hasError('required')">L'email è obbligatoria</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Telefono</mat-label>
+              <input matInput formControlName="telefono" placeholder="+39 xxx xxx xxxx" required />
+              <mat-icon matSuffix>phone</mat-icon>
+              <mat-error *ngIf="leadForm.get('telefono')?.hasError('required')">Il telefono è obbligatorio</mat-error>
+            </mat-form-field>
+          </div>
+
+          <!-- Consent section -->
+          <div class="consent-section">
+            <div class="consent-card">
+              <div class="consent-header">
+                <i class="material-icons consent-icon">security</i>
+                <h4 class="consent-title">Consenso al trattamento dati</h4>
+              </div>
+              <p class="consent-text">
+                Creando questo contatto ti prendi la responsabilità di autorizzare
+                Semprechiaro ad utilizzare i dati da te inseriti per contattare il contatto
+              </p>
+              <div class="consent-toggle">
+                <mat-slide-toggle formControlName="consenso" [(ngModel)]="checked"
+                  (change)="onConsensoChange($event)" color="primary">
+                  Accetto il trattamento dei dati
+                </mat-slide-toggle>
+              </div>
+              <mat-error *ngIf="leadForm.get('consenso')?.hasError('required') && leadForm.get('consenso')?.touched">
+                Il consenso è obbligatorio
+              </mat-error>
+            </div>
+          </div>
+
+          <div class="submit-section">
+            <button mat-fab extended color="primary" type="submit" [disabled]="!leadForm.valid" class="submit-button">
+              <mat-icon>add_circle_outline</mat-icon>
+              Crea Lead
+            </button>
+            <button mat-stroked-button type="button" (click)="showCreateLead = false" class="cancel-button">
+              <mat-icon>close</mat-icon> Annulla
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- ==========================================
+         BO INLINE: NEW CLIENT FORM
+         ========================================== -->
+    <div class="card-body modern-body" *ngIf="isBackOffice && showNewClient"
+         [@fadeAnimation]="showNewClient ? 'visible' : 'hidden'">
+      <div class="inline-panel-header">
+        <div class="panel-icon">
+          <i class="material-icons">{{ isConvertMode ? 'how_to_reg' : 'person_add' }}</i>
+        </div>
+        <div class="panel-text">
+          <h2 class="panel-title">{{ isConvertMode ? 'Converti Lead in Cliente' : 'Registra Nuovo Cliente' }}</h2>
+          <p class="panel-subtitle">{{ isConvertMode ? 'Completa i dati per finalizzare la conversione' : 'Inserisci i dati del nuovo cliente' }}</p>
+        </div>
+        <button class="panel-close" (click)="cancelNewClient()">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <!-- Convert mode info banner -->
+      <div class="convert-info-banner" *ngIf="isConvertMode">
+        <i class="material-icons">info</i>
+        <span>Stai convertendo il lead #{{ convertingLeadId }} — i dati del lead sono stati pre-compilati.</span>
+      </div>
+
+      <!-- Duplicate lead warning -->
+      <div class="duplicate-warning-card" *ngIf="showDuplicateWarning && duplicateLeadFound">
+        <div class="duplicate-warning-header">
+          <i class="material-icons">warning</i>
+          <h3>Lead corrispondente trovato!</h3>
+        </div>
+        <p class="duplicate-warning-text">
+          Esiste già un lead con email o telefono corrispondente in stato "Lead OK".
+          La procedura corretta prevede la conversione del lead dalla sezione
+          <strong>Vedi Leads</strong> tramite il pulsante apposito.
+        </p>
+        <div class="duplicate-lead-info">
+          <div class="duplicate-lead-field">
+            <span class="field-label">Nominativo</span>
+            <span class="field-value">{{ duplicateLeadFound.nome }} {{ duplicateLeadFound.cognome }}</span>
+          </div>
+          <div class="duplicate-lead-field">
+            <span class="field-label">Email</span>
+            <span class="field-value">{{ duplicateLeadFound.email }}</span>
+          </div>
+          <div class="duplicate-lead-field">
+            <span class="field-label">Telefono</span>
+            <span class="field-value">{{ duplicateLeadFound.telefono }}</span>
+          </div>
+          <div class="duplicate-lead-field">
+            <span class="field-label">Stato</span>
+            <span class="field-value status-lead-ok">{{ duplicateLeadFound.stato }}</span>
+          </div>
+        </div>
+        <div class="duplicate-warning-actions">
+          <button mat-stroked-button color="warn" (click)="proceedWithDuplicateClient()">
+            <mat-icon>warning</mat-icon> Procedi comunque
+          </button>
+          <button mat-stroked-button (click)="dismissDuplicateWarning()">
+            <mat-icon>arrow_back</mat-icon> Torna al form
+          </button>
+        </div>
+      </div>
+
+      <!-- Client creation form -->
+      <form [formGroup]="newClientForm" class="create-lead-form">
+        <div class="form-grid">
+          <!-- Tipo cliente selector -->
+          <div class="form-row tipo-selector-row">
+            <div class="tipo-selector">
+              <label class="tipo-label">Tipologia Cliente</label>
+              <div class="tipo-buttons">
+                <button type="button" mat-stroked-button
+                  [class.tipo-active]="selectTipoCliente === 'consumer'"
+                  (click)="selectTipoCliente = 'consumer'">
+                  <mat-icon>person</mat-icon> Consumer
+                </button>
+                <button type="button" mat-stroked-button
+                  [class.tipo-active]="selectTipoCliente === 'business'"
+                  (click)="selectTipoCliente = 'business'">
+                  <mat-icon>business</mat-icon> Business
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Consumer fields -->
+          <div class="form-row" *ngIf="selectTipoCliente === 'consumer'">
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Nome</mat-label>
+              <input matInput formControlName="nome" placeholder="Nome cliente" />
+              <mat-icon matSuffix>person</mat-icon>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Cognome</mat-label>
+              <input matInput formControlName="cognome" placeholder="Cognome cliente" />
+              <mat-icon matSuffix>badge</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row" *ngIf="selectTipoCliente === 'consumer'">
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Codice Fiscale</mat-label>
+              <input matInput formControlName="codice_fiscale" placeholder="16 caratteri" maxlength="16" />
+              <mat-icon matSuffix>fingerprint</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <!-- Business fields -->
+          <div class="form-row" *ngIf="selectTipoCliente === 'business'">
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Ragione Sociale</mat-label>
+              <input matInput formControlName="ragione_sociale" placeholder="Ragione sociale" />
+              <mat-icon matSuffix>business</mat-icon>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Partita IVA</mat-label>
+              <input matInput formControlName="partita_iva" placeholder="11 cifre" maxlength="11" />
+              <mat-icon matSuffix>receipt</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <!-- Common fields -->
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Email</mat-label>
+              <input matInput type="email" formControlName="email" placeholder="email@esempio.it"
+                (blur)="checkDuplicateLead()" />
+              <mat-icon matSuffix>email</mat-icon>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Telefono</mat-label>
+              <input matInput formControlName="telefono" placeholder="+39 xxx xxx xxxx"
+                (blur)="checkDuplicateLead()" />
+              <mat-icon matSuffix>phone</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Indirizzo</mat-label>
+              <input matInput formControlName="indirizzo" placeholder="Via/Piazza..." />
+              <mat-icon matSuffix>home</mat-icon>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Città</mat-label>
+              <input matInput formControlName="citta" placeholder="Città" />
+              <mat-icon matSuffix>location_city</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Provincia</mat-label>
+              <input matInput formControlName="provincia" placeholder="XX" maxlength="2" />
+              <mat-icon matSuffix>map</mat-icon>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>CAP</mat-label>
+              <input matInput formControlName="cap" placeholder="00000" maxlength="5" />
+              <mat-icon matSuffix>markunread_mailbox</mat-icon>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="modern-field">
+              <mat-label>Nazione</mat-label>
+              <input matInput formControlName="nazione" placeholder="Italia" />
+              <mat-icon matSuffix>public</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="submit-section">
+            <button mat-fab extended color="primary" type="button"
+              (click)="submitNewClient()" class="submit-button">
+              <mat-icon>{{ isConvertMode ? 'how_to_reg' : 'person_add' }}</mat-icon>
+              {{ isConvertMode ? 'Converti e Registra Cliente' : 'Registra Cliente' }}
+            </button>
+            <button mat-stroked-button type="button" (click)="cancelNewClient()" class="cancel-button">
+              <mat-icon>close</mat-icon> Annulla
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- ==========================================
+         BO INLINE: QRCODE PANEL
+         ========================================== -->
+    <div class="card-body modern-body" *ngIf="isBackOffice && showQrcode"
+         [@fadeAnimation]="showQrcode ? 'visible' : 'hidden'">
+      <div class="inline-panel-header">
+        <div class="panel-icon"><i class="material-icons">qr_code</i></div>
+        <div class="panel-text">
+          <h2 class="panel-title">QrCode</h2>
+          <p class="panel-subtitle">Link di invito e scansione QrCode</p>
+        </div>
+        <button class="panel-close" (click)="showQrcode = false">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+      <app-qrcode-generator></app-qrcode-generator>
+    </div>
+
+    <!-- ==========================================
+         TABLE BODY (shared by all roles)
+         ========================================== -->
+    <div class="card-body modern-body" *ngIf="!isBackOffice || (showLeadsTable && !showCreateLead && !showNewClient && !showQrcode)">
       <div class="table-container">
         <table mat-table [dataSource]="dataSource" class="modern-table">
 
@@ -131,7 +523,7 @@
             </td>
           </ng-container>
 
-          <!-- Assegnato a -->
+          <!-- Assegnato a / Inserito da -->
           <ng-container matColumnDef="assegnato_a">
             <th mat-header-cell *matHeaderCellDef>
               <span class="header-text">INSERITO DA</span>
@@ -150,10 +542,46 @@
               <span class="header-text">STATO</span>
             </th>
             <td mat-cell *matCellDef="let lead">
-              <span class="status-badge status-completato">
+              <!-- BO: dynamic status badge with color -->
+              <span *ngIf="isBackOffice" class="status-badge status-dynamic"
+                [style.background]="lead.colore">
+                {{ lead.microstato }}
+              </span>
+              <!-- Non-BO: static "Registrato" badge -->
+              <span *ngIf="!isBackOffice" class="status-badge status-completato">
                 <i class="material-icons" style="font-size: 14px; vertical-align: middle; margin-right: 2px;">check_circle</i>
                 Registrato
               </span>
+            </td>
+          </ng-container>
+
+          <!-- Azioni (BO only) -->
+          <ng-container matColumnDef="azioni">
+            <th mat-header-cell *matHeaderCellDef>
+              <span class="header-text">AZIONI</span>
+            </th>
+            <td mat-cell *matCellDef="let lead">
+              <div class="action-buttons-cell">
+                <button mat-stroked-button class="action-btn action-btn-manage"
+                  (click)="dettagliLead(lead)" matTooltip="Gestisci lead">
+                  <mat-icon>settings</mat-icon> Gestisci
+                </button>
+
+                <!-- Converti button (only if NOT converted and status is Lead OK) -->
+                <button *ngIf="!lead.is_converted" mat-raised-button
+                  class="action-btn action-btn-convert"
+                  [disabled]="lead.microstato !== 'Lead OK'"
+                  (click)="converti(lead)" matTooltip="Converti in cliente">
+                  <mat-icon>how_to_reg</mat-icon> Converti
+                </button>
+
+                <!-- Already converted badge -->
+                <button *ngIf="lead.is_converted" mat-flat-button
+                  class="action-btn action-btn-converted"
+                  (click)="showConvertedSnackbar(lead)" matTooltip="Già convertito">
+                  <mat-icon>thumb_up</mat-icon> Convertito
+                </button>
+              </div>
             </td>
           </ng-container>
 
@@ -165,8 +593,10 @@
             <td class="mat-cell empty-state" [attr.colspan]="displayedColumns.length">
               <div class="empty-state-content">
                 <i class="material-icons empty-icon">person_off</i>
-                <p>Nessun amico ancora registrato a sistema</p>
-                <span class="empty-hint">Gli amici invitati appariranno qui una volta inseriti</span>
+                <p *ngIf="!isBackOffice">Nessun amico ancora registrato a sistema</p>
+                <p *ngIf="isBackOffice">Nessun lead presente</p>
+                <span class="empty-hint" *ngIf="!isBackOffice">Gli amici invitati appariranno qui una volta inseriti</span>
+                <span class="empty-hint" *ngIf="isBackOffice">Crea un nuovo lead con il pulsante "Nuovo Lead"</span>
               </div>
             </td>
           </tr>
