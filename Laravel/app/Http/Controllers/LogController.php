@@ -273,7 +273,7 @@ class LogController extends Controller
                 ->get()
                 ->map(fn($u) => [
                     'id' => $u->id,
-                    'name' => trim($u->name . ' ' . $u->cognome),
+                    'name' => trim($u->name . ' ' . $u->cognome) ?: $u->email,
                     'email' => $u->email,
                 ]);
 

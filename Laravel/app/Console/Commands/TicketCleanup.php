@@ -35,6 +35,7 @@ class TicketCleanup extends Command
     private const RESOLVED_TO_CLOSED_DAYS = 10;
     private const CLOSED_TO_DELETED_DAYS = 10;
     private const DELETED_TO_REMOVED_DAYS = 5;
+    private const DELETED_TO_REMOVED_EXTRAORDINARY_DAYS = 50;
 
     /**
      * Execute the console command.
@@ -54,6 +55,8 @@ class TicketCleanup extends Command
             'resolved_to_closed' => 0,
             'closed_to_deleted' => 0,
             'permanently_removed' => 0,
+            'permanently_removed_ordinary' => 0,
+            'permanently_removed_extraordinary' => 0,
             'attachments_deleted' => 0,
             'errors' => 0,
         ];
@@ -68,7 +71,7 @@ class TicketCleanup extends Command
             $stats = $this->processClosedTickets($stats, $isDryRun);
         }
 
-        // Step 3: Permanently delete old deleted tickets (after 40 days)
+        // Step 3: Permanently delete old deleted tickets (ordinary after 5 days, extraordinary after 60 days)
         if (!$this->option('skip-deleted')) {
             $stats = $this->processDeletedTickets($stats, $isDryRun);
         }
@@ -78,7 +81,7 @@ class TicketCleanup extends Command
         $this->info('=== Cleanup Summary ===');
         $this->line("  Resolved → Closed:    {$stats['resolved_to_closed']}");
         $this->line("  Closed → Deleted:     {$stats['closed_to_deleted']}");
-        $this->line("  Permanently removed:  {$stats['permanently_removed']}");
+        $this->line("  Permanently removed:  {$stats['permanently_removed']} (ordinary: {$stats['permanently_removed_ordinary']}, extraordinary: {$stats['permanently_removed_extraordinary']})");
         $this->line("  Attachments deleted:  {$stats['attachments_deleted']}");
         
         if ($stats['errors'] > 0) {
@@ -172,27 +175,31 @@ class TicketCleanup extends Command
 
     /**
      * Process deleted tickets: permanently remove after threshold
+     * Ordinary tickets are removed after DELETED_TO_REMOVED_DAYS (default 5 days)
+     * Extraordinary tickets are removed after DELETED_TO_REMOVED_EXTRAORDINARY_DAYS (default 60 days)
      */
     private function processDeletedTickets(array $stats, bool $isDryRun): array
     {
+        // Step 3a: Process ORDINARY deleted tickets
         $this->newLine();
-        $this->info('Step 3: Processing DELETED tickets (>' . self::DELETED_TO_REMOVED_DAYS . ' days → PERMANENTLY REMOVED)');
+        $this->info('Step 3a: Processing DELETED ORDINARY tickets (>' . self::DELETED_TO_REMOVED_DAYS . ' days → PERMANENTLY REMOVED)');
 
-        $threshold = now()->subDays(self::DELETED_TO_REMOVED_DAYS);
+        $ordinaryThreshold = now()->subDays(self::DELETED_TO_REMOVED_DAYS);
 
-        $tickets = Ticket::where('status', Ticket::STATUS_DELETED)
-            ->where('deleted_at', '<=', $threshold)
+        $ordinaryTickets = Ticket::where('status', Ticket::STATUS_DELETED)
+            ->where('category', Ticket::CATEGORY_ORDINARY)
+            ->where('deleted_at', '<=', $ordinaryThreshold)
             ->with('attachments')
             ->get();
 
-        $this->line("  Found {$tickets->count()} tickets to permanently remove");
+        $this->line("  Found {$ordinaryTickets->count()} ordinary tickets to permanently remove");
 
-        foreach ($tickets as $ticket) {
+        foreach ($ordinaryTickets as $ticket) {
             try {
                 $daysDeleted = $ticket->deleted_at->diffInDays(now());
                 $attachmentCount = $ticket->attachments->count();
                 
-                $this->line("    Ticket #{$ticket->ticket_number}: deleted {$daysDeleted} days ago, {$attachmentCount} attachments → removing");
+                $this->line("    Ticket #{$ticket->ticket_number} [ordinary]: deleted {$daysDeleted} days ago, {$attachmentCount} attachments → removing");
 
                 if (!$isDryRun) {
                     $attachmentsDeleted = $this->permanentlyRemoveTicket($ticket);
@@ -202,6 +209,45 @@ class TicketCleanup extends Command
                 }
 
                 $stats['permanently_removed']++;
+                $stats['permanently_removed_ordinary']++;
+
+            } catch (\Exception $e) {
+                $stats['errors']++;
+                Log::error("Error permanently removing ticket #{$ticket->ticket_number}: " . $e->getMessage());
+                $this->error("    Error: " . $e->getMessage());
+            }
+        }
+
+        // Step 3b: Process EXTRAORDINARY deleted tickets
+        $this->newLine();
+        $this->info('Step 3b: Processing DELETED EXTRAORDINARY tickets (>' . self::DELETED_TO_REMOVED_EXTRAORDINARY_DAYS . ' days → PERMANENTLY REMOVED)');
+
+        $extraordinaryThreshold = now()->subDays(self::DELETED_TO_REMOVED_EXTRAORDINARY_DAYS);
+
+        $extraordinaryTickets = Ticket::where('status', Ticket::STATUS_DELETED)
+            ->where('category', Ticket::CATEGORY_EXTRAORDINARY)
+            ->where('deleted_at', '<=', $extraordinaryThreshold)
+            ->with('attachments')
+            ->get();
+
+        $this->line("  Found {$extraordinaryTickets->count()} extraordinary tickets to permanently remove");
+
+        foreach ($extraordinaryTickets as $ticket) {
+            try {
+                $daysDeleted = $ticket->deleted_at->diffInDays(now());
+                $attachmentCount = $ticket->attachments->count();
+                
+                $this->line("    Ticket #{$ticket->ticket_number} [extraordinary]: deleted {$daysDeleted} days ago, {$attachmentCount} attachments → removing");
+
+                if (!$isDryRun) {
+                    $attachmentsDeleted = $this->permanentlyRemoveTicket($ticket);
+                    $stats['attachments_deleted'] += $attachmentsDeleted;
+                } else {
+                    $stats['attachments_deleted'] += $attachmentCount;
+                }
+
+                $stats['permanently_removed']++;
+                $stats['permanently_removed_extraordinary']++;
 
             } catch (\Exception $e) {
                 $stats['errors']++;

@@ -717,9 +717,9 @@ class Log extends Model
                           ->whereIn('id', self::distinct()->pluck('user_id')->filter())
                           ->get()
                           ->map(fn($u) => [
-                              'id' => $u->id,
-                              'name' => trim($u->name . ' ' . $u->cognome),
-                              'email' => $u->email,
+                            'id' => $u->id,
+                            'name' => trim($u->name . ' ' . $u->cognome) ?: $u->email,
+                            'email' => $u->email,
                           ]),
             'sources' => self::distinct()->pluck('source')->filter()->values(),
             'levels' => self::distinct()->pluck('level')->filter()->values(),

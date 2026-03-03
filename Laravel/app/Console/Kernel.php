@@ -20,7 +20,8 @@ class Kernel extends ConsoleKernel
      * 2. Ticket Cleanup (daily at 02:00):
      *    - resolved > 10 days → closed
      *    - closed > 10 days → deleted
-     *    - deleted > 40 days → permanently removed from DB
+     *    - deleted ordinary > 5 days → permanently removed from DB
+     *    - deleted extraordinary > 50 days → permanently removed from DB
      * 
      * 3. Log Cleanup (configurable, default daily at 03:00):
      *    - Removes old logs based on retention settings per source
