@@ -30,6 +30,11 @@ use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 
+// E-commerce Homepage Admin Controllers
+use App\Http\Controllers\EcommerceHomepageConfigController;
+use App\Http\Controllers\EcommerceHomepageAdminController;
+use App\Http\Controllers\AssetController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -235,60 +240,77 @@ Route::group(['middleware'=>'api'],function(){
         // ------------------------------------------
         // CATALOG (StoreController)
         // ------------------------------------------
-        // Get all visible stores
         Route::get('/stores', [StoreController::class, 'getStores']);
-        // Get single store by slug
         Route::get('/stores/{slug}', [StoreController::class, 'getStore']);
-        // Get categories (optionally filtered by store_id)
         Route::get('/categories', [StoreController::class, 'getCategories']);
-        // Get articles with filters (store_id, category_id, featured, min_pv, max_pv, search, sort, per_page)
         Route::get('/articles', [StoreController::class, 'getArticles']);
-        // Get single article detail
         Route::get('/articles/{id}', [StoreController::class, 'getArticle']);
         
         // ------------------------------------------
         // CART (CartController)
         // ------------------------------------------
-        // Get current user's cart
         Route::get('/cart', [CartController::class, 'getCart']);
-        // Get cart summary (for header badge)
         Route::get('/cart/summary', [CartController::class, 'getSummary']);
-        // Add item to cart
         Route::post('/cart/add', [CartController::class, 'addToCart']);
-        // Update cart item quantity
         Route::put('/cart/update/{cartItemId}', [CartController::class, 'updateQuantity']);
-        // Remove item from cart
         Route::delete('/cart/remove/{cartItemId}', [CartController::class, 'removeItem']);
-        // Clear entire cart
         Route::delete('/cart/clear', [CartController::class, 'clearCart']);
         
         // ------------------------------------------
         // ORDERS - Customer (OrderController)
         // ------------------------------------------
-        // Checkout (create order from cart)
         Route::post('/checkout', [OrderController::class, 'checkout']);
-        // Get user's order history
         Route::get('/orders', [OrderController::class, 'getOrders']);
-        // Get order detail (customer view)
         Route::get('/orders/{orderId}', [OrderController::class, 'getOrderDetail']);
+
+        // ------------------------------------------
+        // HOMEPAGE CONFIG - Consumer
+        // ------------------------------------------
+        Route::get('/homepage/config', [EcommerceHomepageConfigController::class, 'getConfig']);
         
         // ------------------------------------------
-        // ORDERS - Backoffice (OrderController)
+        // ADMIN - Backoffice / Admin Panel
         // Requires role_id 1 (Admin) or 5 (BackOffice)
         // ------------------------------------------
         Route::prefix('admin')->group(function () {
-            // Get all orders for processing
+            
+            // ── Orders (existing) ──
             Route::get('/orders', [OrderController::class, 'getAllOrders']);
-            // Get order detail (admin view with internal notes)
             Route::get('/orders/{orderId}', [OrderController::class, 'getAdminOrderDetail']);
-            // Take order in charge (start processing)
             Route::post('/orders/{orderId}/process', [OrderController::class, 'startProcessing']);
-            // Fulfill order item (add redemption code)
             Route::post('/orders/{orderId}/items/{itemId}/fulfill', [OrderController::class, 'fulfillItem']);
-            // Cancel order
             Route::post('/orders/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
-            // Add admin note to order
             Route::post('/orders/{orderId}/note', [OrderController::class, 'addAdminNote']);
+
+            // ── Homepage Slides ──
+            Route::get('/homepage/slides', [EcommerceHomepageAdminController::class, 'getSlides']);
+            Route::post('/homepage/slides', [EcommerceHomepageAdminController::class, 'createSlide']);
+            Route::get('/homepage/slides/{id}', [EcommerceHomepageAdminController::class, 'getSlide']);
+            Route::put('/homepage/slides/{id}', [EcommerceHomepageAdminController::class, 'updateSlide']);
+            Route::delete('/homepage/slides/{id}', [EcommerceHomepageAdminController::class, 'deleteSlide']);
+            Route::put('/homepage/slides-reorder', [EcommerceHomepageAdminController::class, 'reorderSlides']);
+
+            // ── Homepage Product Rows ──
+            Route::get('/homepage/rows', [EcommerceHomepageAdminController::class, 'getRows']);
+            Route::post('/homepage/rows', [EcommerceHomepageAdminController::class, 'createRow']);
+            Route::get('/homepage/rows/{id}', [EcommerceHomepageAdminController::class, 'getRow']);
+            Route::put('/homepage/rows/{id}', [EcommerceHomepageAdminController::class, 'updateRow']);
+            Route::delete('/homepage/rows/{id}', [EcommerceHomepageAdminController::class, 'deleteRow']);
+            Route::put('/homepage/rows-reorder', [EcommerceHomepageAdminController::class, 'reorderRows']);
+
+            // ── Row Articles (per-row article selection) ──
+            Route::get('/homepage/rows/{rowId}/articles', [EcommerceHomepageAdminController::class, 'getRowArticles']);
+            Route::post('/homepage/rows/{rowId}/articles', [EcommerceHomepageAdminController::class, 'addRowArticle']);
+            Route::put('/homepage/rows/{rowId}/articles/{articleId}', [EcommerceHomepageAdminController::class, 'updateRowArticle']);
+            Route::delete('/homepage/rows/{rowId}/articles/{articleId}', [EcommerceHomepageAdminController::class, 'removeRowArticle']);
+            Route::put('/homepage/rows/{rowId}/articles-reorder', [EcommerceHomepageAdminController::class, 'reorderRowArticles']);
+
+            // ── Assets / Media Library ──
+            Route::post('/assets/upload', [AssetController::class, 'upload']);
+            Route::get('/assets', [AssetController::class, 'index']);
+            Route::get('/assets/{id}', [AssetController::class, 'show']);
+            Route::put('/assets/{id}', [AssetController::class, 'update']);
+            Route::delete('/assets/{id}', [AssetController::class, 'destroy']);
         });
     });
 

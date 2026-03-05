@@ -25,6 +25,7 @@ class Asset extends Model
         'display_order',
         'is_active',
         'uploaded_by_user_id',
+        'usage_context',
     ];
 
     protected $casts = [
@@ -41,6 +42,27 @@ class Asset extends Model
     public const TYPE_IMAGE = 'image';
     public const TYPE_VIDEO = 'video';
     public const TYPE_DOCUMENT = 'document';
+
+    /**
+     * Usage context constants for media library filtering.
+     */
+    public const CONTEXT_GENERAL = 'general';
+    public const CONTEXT_PRODUCT_THUMBNAIL = 'product_thumbnail';
+    public const CONTEXT_PRODUCT_GALLERY = 'product_gallery';
+    public const CONTEXT_SLIDE_IMAGE = 'slide_image';
+    public const CONTEXT_STORE_LOGO = 'store_logo';
+    public const CONTEXT_CATEGORY_IMAGE = 'category_image';
+    public const CONTEXT_CMS_CONTENT = 'cms_content';
+
+    public const VALID_CONTEXTS = [
+        self::CONTEXT_GENERAL,
+        self::CONTEXT_PRODUCT_THUMBNAIL,
+        self::CONTEXT_PRODUCT_GALLERY,
+        self::CONTEXT_SLIDE_IMAGE,
+        self::CONTEXT_STORE_LOGO,
+        self::CONTEXT_CATEGORY_IMAGE,
+        self::CONTEXT_CMS_CONTENT,
+    ];
 
     /**
      * Common image mime types.
@@ -84,6 +106,16 @@ class Asset extends Model
         return $this->hasMany(Store::class, 'logo_asset_id');
     }
 
+    public function ecommerceHomepageSlides()
+    {
+        return $this->hasMany(EcommerceHomepageSlide::class, 'image_asset_id');
+    }
+
+    public function ecommerceHomepageRowArticleThumbnails()
+    {
+        return $this->hasMany(EcommerceHomepageRowArticle::class, 'custom_thumbnail_asset_id');
+    }
+
     // ==================== EVENTS ====================
 
     protected static function booted()
@@ -121,6 +153,7 @@ class Asset extends Model
                 'dimensions' => $asset->getDimensions(),
                 'disk' => $asset->disk,
                 'file_path' => $asset->file_path,
+                'usage_context' => $asset->usage_context,
                 'uploaded_by' => $userName,
             ]);
         });
@@ -193,6 +226,11 @@ class Asset extends Model
     public function scopeByMimeType($query, string $mimeType)
     {
         return $query->where('mime_type', $mimeType);
+    }
+
+    public function scopeByContext($query, string $context)
+    {
+        return $query->where('usage_context', $context);
     }
 
     public function scopeUploadedBy($query, int $userId)
@@ -433,6 +471,9 @@ class Asset extends Model
             'by_type' => static::selectRaw('file_type, COUNT(*) as count, SUM(file_size) as total_size')
                                ->groupBy('file_type')
                                ->get(),
+            'by_context' => static::selectRaw('usage_context, COUNT(*) as count, SUM(file_size) as total_size')
+                                  ->groupBy('usage_context')
+                                  ->get(),
             'images_count' => static::images()->count(),
             'videos_count' => static::videos()->count(),
         ];
@@ -443,6 +484,8 @@ class Asset extends Model
         $orphaned = static::whereDoesntHave('articles')
                           ->whereDoesntHave('articlesWithThumbnail')
                           ->whereDoesntHave('storesWithLogo')
+                          ->whereDoesntHave('ecommerceHomepageSlides')
+                          ->whereDoesntHave('ecommerceHomepageRowArticleThumbnails')
                           ->get();
 
         $result = [
