@@ -82,13 +82,15 @@
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border: none;
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+  box-shadow: 0 4px 12px rgb(102 123 230);
 }
 
 /* Hover state for new ticket button */
 .btn-new-ticket:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(40, 167, 70, 0.685);
+  background: white;
+  color: #667eea;
+  border:#667eea 2px solid;
+  box-shadow: 0 4px 12px rgb(102 123 230);
 }
 
 /* Archive button (show/hide closed tickets) */
@@ -96,14 +98,13 @@
   background: #00bcd4;
   border: 2px solid #00bcd4;
   color: white;
-  box-shadow: 0 2px 8px rgba(0, 188, 212, 0.2);
+  box-shadow: 0 4px 12px rgb(8 185 207 / 50%);
 }
 
 .btn-archive:hover {
   background: #ffffff;
   color: #00bcd4;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.4);
+  box-shadow: 0 4px 12px rgb(8 185 207 / 50%);
 }
 
 .btn-archive.active {
@@ -124,16 +125,15 @@
 /* Delete tickets button (admin only) */
 .btn-delete-tickets {
   background: white;
-  color: #f44336;
-  border: 2px solid #f44336;
-  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2);
+  color: #f7a82c;
+  border: 2px solid #f7a82c;
+  box-shadow: 0 4px 12px rgba(231, 151, 21, 0.822);
 }
 
 .btn-delete-tickets:hover:not(:disabled) {
-  background: #f44336;
+  background: #f7a82c;
   color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+  box-shadow: 0 4px 12px rgba(231, 151, 21, 0.822);
 }
 
 .btn-delete-tickets:disabled {
@@ -153,7 +153,7 @@
   background: #f44336;
   color: #ffffff;
   border: 2px solid #f44336;
-  box-shadow: 0 2px 8px #f4433640;
+  box-shadow: 0 4px 12px #f76358;
 }
 
 .btn-show-deleted:hover {
