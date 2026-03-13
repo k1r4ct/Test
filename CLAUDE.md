@@ -4,6 +4,12 @@
 
 This is a **CRM/ERP platform** for **Semprechiaro**, an Italian energy consulting company. A white-label clone called **Visinnova** shares the same codebase. The system manages energy contracts, leads, customers, suppliers, products, tickets, and an e-commerce loyalty/rewards store.
 
+## Repository Access
+When project knowledge files are insufficient, clone the repo directly via bash:
+`git clone https://github.com/k1r4ct/Test.git /home/claude/repo`
+github.com is whitelisted in the bash environment. 
+Read any file with `view` or `bash` from `/home/claude/repo/`.
+
 ## 2. Tech Stack
 
 | Layer | Technology |
